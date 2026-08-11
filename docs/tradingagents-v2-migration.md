@@ -309,8 +309,25 @@ trade logic.
 - **Evaluation Harness:** safety, decision quality, and economic performance
   remain separate; economic results cannot excuse a safety failure.
 - **Stability Test:** a three-run validation fixture passes; the data-complete
-  live repeated-decision path remains `NOT TESTED`.
+  current public NBIS shadow bundle also passes three repeated model runs with
+  identical action, risk verdict, dominant thesis, invalidation set, and
+  preferred-candidate result.
 - **Merge Readiness:** operational validator, cash narrative, template enum,
-  and repository schema-execution gaps were corrected. Main merge remains
-  blocked only because live authority stability was not exercised after the
-  provider failed closed.
+  repository schema execution, provider cache, completed-bar filtering,
+  official-session verification, and public-only stability evaluation are
+  complete. The branch is eligible for conditional main merge and post-merge
+  validation.
+
+## 22. Final V2.1 Validation Addendum
+
+The final data-complete shadow used the 2026-08-10 completed U.S. session.
+NYSE calendar verification, Nasdaq independent-close checks for 16 symbols,
+technical validation for 15 tactical/proxy symbols, and both leveraged proxy
+relationships passed. The screen shortlisted MVLL, SOXL, and NBIS but did not
+force a trade.
+
+The repeated LLM stability harness deliberately excluded holdings, cash, cost
+basis, fills, and runtime state. Three identical public NBIS inputs returned
+`WAIT / ALLOW_REVIEW` with no material differences. All records validated as
+non-actionable `WATCH_ONLY`. Production readiness is therefore
+`READY_FOR_HUMAN_REVIEW_USE`, never automated trading.

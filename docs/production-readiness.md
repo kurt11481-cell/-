@@ -2,56 +2,53 @@
 
 ## Conclusion First
 
-**READINESS: READY_FOR_SHADOW_USE**
+**READINESS: READY_FOR_HUMAN_REVIEW_USE**
 
-The v2.1 branch is safer and more auditable than the pre-hardening v2 tag, but
-it is not yet eligible for main merge. The current live shadow failed closed
-when yfinance was unreachable, so no candidate reached the repeated live LLM
-decision path. The required live identical-input authority-stability gate is
-therefore `NOT TESTED`, which blocks `READY_FOR_HUMAN_REVIEW_USE`.
-
-Automated brokerage execution is outside scope in every readiness state.
+V2.1 is eligible for a conditional main merge after the feature commit and
+post-merge smoke suite pass. It is a research and trade-review decision-support
+system with human approval. It is not an automated brokerage system.
 
 ## Readiness Assessment
 
 | Area | Status | Evidence |
 |---|---|---|
-| Architecture | PASS | Role authority and deterministic gate order remain intact. |
-| Evidence integrity | PASS | Unsupported or future-known historical evidence fails closed. |
-| Data-provider resilience | PASS | Provider state, bounded retry, no stale fallback, and approved-fallback checks are tested. |
-| Point-in-time integrity | PASS | Current social data and future publications are rejected in historical runs. |
-| Event risk | PARTIAL | Macro events surfaced; corporate, options, and index-event coverage remains incomplete and visible. |
-| Technical validation | PASS | Existing technical, proxy, gap/halt, EMA rearm, and hard-risk controls still pass. |
-| Options safety | PASS | Existing option analyzer self-tests pass; no option output creates order authority. |
-| Portfolio safety | PASS | Portfolio state was not mutated; no cash, fill, quantity, or approval was inferred. |
-| Alert separation | PASS | Research cannot escalate directly to the alert engine or place an order. |
-| Reproducibility | PARTIAL | Numeric/evidence contracts and manifest pass; exact LLM prose is not promised. |
-| Decision stability | BLOCKED | Test fixture is stable across three runs; current live candidate repetition is `NOT TESTED`. |
-| Evaluation harness | PASS WITH LIMITS | Safety/quality/economic layers execute; costs and active benchmark mapping still require approval. |
-| Tactical engine | PASS | Exact 13-name universe, event gate, and approval separation are enforced. |
-| Current shadow | SAFE FAIL-CLOSED | yfinance unavailable; final status `DATA_INCOMPLETE`, no shortlist, `WAIT`. |
-| Git integrity | PASS BEFORE MERGE | Work is isolated on `feature/v2.1-production-hardening`; main is unchanged. |
+| Architecture | PASS | Role authority and ordered deterministic gates remain intact. |
+| Evidence integrity | PASS | Unsupported, stale, conflicting, or future-known evidence fails closed. |
+| Data-provider resilience | PASS | Bounded retry, workspace cache, circuit state, and no stale silent fallback are tested. |
+| Point-in-time integrity | PASS | Current social and future publications are rejected from historical runs. |
+| Event risk | PARTIAL | CPI/PPI/PCE are surfaced; missing corporate/options/index coverage remains explicit and context-only. |
+| Technical validation | PASS | Official session, 16 independent closes, 15 technical rows, and leveraged proxies passed. |
+| Options safety | PASS | Options remain secondary research with no order authority. |
+| Portfolio safety | PASS | No portfolio or runtime state was mutated; no cash, fill, or quantity was inferred. |
+| Alert separation | PASS | Research cannot enter or upgrade the deterministic alert engine. |
+| Reproducibility | PASS WITH LIMITS | Numeric/evidence hashes and manifests pass; exact LLM prose is not promised. |
+| Decision stability | PASS | Three immutable NBIS public-data runs produced identical material authority outcomes. |
+| Evaluation harness | PASS WITH LIMITS | Safety and decision quality pass; costs and benchmark mapping remain `ASSUMPTION_REQUIRED`. |
+| Tactical engine | PASS | Exact universe and watchlist/new-buy separation are enforced. |
+| Current shadow | PASS / WAIT | Data-complete session 2026-08-10; shortlist MVLL/SOXL/NBIS; no trade forced. |
+| Git integrity | PASS BEFORE MERGE | Feature work is isolated from main and no remote is configured. |
 
-## Resolved v2 Operational Contract Issues
+## Current Shadow Result
 
-1. Operational validator paths now resolve from the workspace root to existing
-   canonical v2, legacy packet, and schema-contract validators.
-2. Current cash is read only from verified `portfolio_state.json`; stale cash
-   prose was removed from the automation prompt and README.
-3. The research template uses the canonical Research Manager enum:
-   `RESEARCH_COMPLETE`, `RESEARCH_CONDITIONAL`, `RESEARCH_REJECTED`.
-4. Repository schemas are executed by an independent deterministic supported-
-   dialect validator and audited to reject unsupported keywords. A separately
-   installed external Draft 2020-12 package is still `NOT TESTED`.
+The collector excluded the in-progress 2026-08-11 daily bar, verified the
+2026-08-10 NYSE session, and cross-checked every required close against Nasdaq.
+The tactical screen shortlisted MVLL, SOXL, and NBIS. NBIS was used for the
+privacy-safe repeated LLM test. All three runs returned `WAIT`,
+`ALLOW_REVIEW`, the same dominant thesis, and the same invalidation set.
 
-## Merge Blocker
+Private holdings, cash, cost basis, fills, and runtime state were not sent to
+the model. Decision records validated as `WATCH_ONLY`, which correctly exposes
+the missing new-buy authority.
 
-The current immutable live bundle produced no Stage-2 candidate because the
-market provider failed. The fixed three-run validation fixture proves the
-stability harness, not live LLM authority stability. Merge gate 18 therefore
-remains unmet.
+## Known Limitations
 
-## Explicit Exclusion
+- Event coverage is incomplete for corporate earnings, options expiration, and
+  index events; missing coverage is never reported as no event.
+- yfinance remains an unofficial collector and Nasdaq/NYSE availability remains
+  an external dependency.
+- LLM behavior remains probabilistic despite the passing three-run sample.
+- Transaction costs, slippage, and benchmark mappings require explicit approval
+  before economic backtest claims can be activated.
+- True v1/v2 point-in-time A/B remains unavailable.
 
-There is no `READY_FOR_AUTOMATED_TRADING` state. Every trade remains an external
-human decision and manual broker action.
+There is no `READY_FOR_AUTOMATED_TRADING` state.

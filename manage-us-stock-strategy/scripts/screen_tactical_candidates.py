@@ -25,7 +25,10 @@ def _positive_number(value: Any) -> bool:
 def _market_integrity(market: dict[str, Any], row: dict[str, Any] | None, market_session: str | None) -> list[str]:
     reasons: list[str] = []
     session = market.get("session") or {}
-    if session.get("official_calendar_verified") is not True or session.get("calendar_verification_status") != "verified":
+    if (
+        session.get("official_calendar_verified") is not True
+        or session.get("calendar_verification_status") != "verified_trading_day"
+    ):
         reasons.append("official completed-session calendar is not verified")
     if session.get("regular_session_complete") is not True:
         reasons.append("regular session is not complete")

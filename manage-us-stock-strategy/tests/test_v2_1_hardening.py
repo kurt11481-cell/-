@@ -156,7 +156,7 @@ class V21HardeningTests(unittest.TestCase):
         market = {
             "session": {
                 "official_calendar_verified": True,
-                "calendar_verification_status": "verified",
+                "calendar_verification_status": "verified_trading_day",
                 "regular_session_complete": True,
                 "us_session_date": "2026-08-10",
             },

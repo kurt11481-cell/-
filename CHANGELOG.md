@@ -17,6 +17,8 @@
   stability comparison, and three-layer evaluation harness.
 - Current fail-closed tactical shadow artifacts for the 2026-08-10 completed
   session.
+- Privacy-safe OpenAI repeated-decision stability harness and immutable public
+  NBIS validation artifacts.
 
 ### Changed
 
@@ -26,6 +28,9 @@
 - Corrected operational validator paths, removed stale hard-coded cash prose,
   and aligned the research-template disposition enum with the v2 schema.
 - Added event visibility to tactical Stage 1 without changing trade authority.
+- Added a writable yfinance cache, excluded incomplete current-day daily bars,
+  verified exact official market sessions, and aligned the tactical calendar
+  enum with the canonical snapshot contract.
 
 ### Safety
 
@@ -35,3 +40,5 @@
 - Historical current-social and future-published evidence are rejected.
 - No event, fallback, benchmark proposal, or research consensus grants purchase,
   quantity, leverage, short-sale, alert, or brokerage authority.
+- Private holdings, cash, cost basis, fills, and runtime state are excluded from
+  external LLM stability inputs.

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "run_index": 2,
+  "provider": "OpenAI",
+  "model_requested": "gpt-5.6-terra",
+  "model_returned": "gpt-5.6-terra",
+  "response_id": "resp_0856f9a5e14fff3c016a7b354c0f60819b9b0679b2399f49dd",
+  "reasoning_effort": "medium",
+  "temperature": null,
+  "store": false,
+  "privacy_scope": "public_market_event_and_non_sensitive_research_authority_only",
+  "input_bundle_sha256": "c49e2600dc935a90beef3953830c78e08be46bafa75c26cc6bf98f2519a7d767",
+  "immutable_prompt_sha256": "d2bf3095495314b03c57c5084b17cf1f1a016149129cca5657774439aa58822d",
+  "structured_output": {
+    "identity_summary": "NBIS identity is verified by existing active policy and the completed 2026-08-10 regular-session close is independently cross-checked. The fixture states NOT_HELD_FOR_VALIDATION_FIXTURE; watchlist approval is research-only and is not new-buy approval.",
+    "technical_summary": "Technical data validation passed. NBIS closed at 184.11, below falling EMA10 (195.22), falling EMA20 (199.36), and MA50 (222.69), with a -16.2% one-month return and -35.8% drawdown from its 52-week high. RSI14 is 44.9 and MACD remains negative, though MACD is above its signal. Price remains above MA200 (143.77). Overall, the near-term regime is weak rather than a validated entry setup.",
+    "bull_case": "The evidence supports a structurally non-broken long-term reference: price remains above MA200, technical calculations and close cross-checks are validated, and MACD is less negative than its signal. NBIS survives the research screen in the AI-infrastructure lane.",
+    "bear_case": "Near-term trend evidence is adverse: price is below declining short-term EMAs and MA50, returns are negative, and the stock is materially below its 52-week high. Valuation is explicitly UNVERIFIED, event coverage is incomplete despite known CPI and PPI releases immediately following the cutoff, and no new-buy authority exists.",
+    "research_manager_status": "RESEARCH_CONDITIONAL",
+    "action": "WAIT",
+    "risk_verdict": "ALLOW_REVIEW",
+    "dominant_thesis_code": "WAIT_PERMISSION_AND_VALUATION",
+    "strongest_counter_thesis": "Validated market data and a price still above MA200 could support continued research monitoring, but neither offsets the missing valuation verification, incomplete event coverage, weak short-term technical regime, or absent new-buy approval.",
+    "invalidation_codes": [
+      "TECHNICAL_REGIME_INVALIDATES",
+      "EVENT_OR_DATA_GAP",
+      "VALUATION_REMAINS_UNVERIFIED",
+      "NEW_BUY_AUTHORITY_REMAINS_ABSENT"
+    ],
+    "preferred_candidate": "NBIS",
+    "unknowns": [
+      "Valuation evidence is absent and cannot be inferred.",
+      "Corporate earnings coverage for the tactical universe is incomplete.",
+      "Options-expiration and index-event coverage is incomplete.",
+      "Exact FOMC timestamp normalization is incomplete.",
+      "New-buy approval and order authority are absent."
+    ],
+    "event_risk_status": "EVENT_DATA_INCOMPLETE",
+    "quantity": null,
+    "order_authority": false
+  },
+  "secrets_recorded": false,
+  "order_authority": false
+}

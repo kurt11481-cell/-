@@ -1,0 +1,359 @@
+{
+  "schema_version": "2.0",
+  "decision_id": "NBIS-V21-STABILITY-02",
+  "created_at_utc": "2026-08-11T14:44:36.927108+00:00",
+  "test_only": true,
+  "symbol": "NBIS",
+  "instrument_registry_version": "2026-08-11-tradingagents-v2-v1",
+  "tactical_universe_version": "2026-08-11-tradingagents-v2-v1",
+  "portfolio_state_revision": null,
+  "policy_version": "v2.1-public-shadow-stability-v1",
+  "research_packet": {
+    "schema_version": "2.0",
+    "analysis_id": "NBIS-V21-STABILITY-ANALYSIS-02",
+    "analysis_kind": "TACTICAL_SELECTION",
+    "symbol": "NBIS",
+    "analysis_cutoff_utc": "2026-08-11T14:44:18.4581250Z",
+    "generated_at_utc": "2026-08-11T14:44:36.927108+00:00",
+    "analysis_session_date": "2026-08-10",
+    "evidence": [
+      {
+        "id": "E1",
+        "claim": "NBIS identity is registered for research and is not approved as a new buy.",
+        "record_type": "VERIFIED_FACT",
+        "source_url": null,
+        "source_type": "primary",
+        "published_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "retrieved_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "effective_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "observation_session": "2026-08-10",
+        "units": null,
+        "price_basis": null,
+        "formula_version": "2026-08-11-tradingagents-v2-v1",
+        "confidence": "HIGH",
+        "contradiction_status": "NONE",
+        "actionable": true,
+        "notes": "Research permission is intentionally separate from purchase authority."
+      },
+      {
+        "id": "E2",
+        "claim": "NBIS completed-session close and technical features passed independent close and technical validation.",
+        "record_type": "VERIFIED_FACT",
+        "source_url": "https://api.nasdaq.com/api/quote/nbis/historical?assetclass=stocks&fromdate=2026-08-10&limit=10",
+        "source_type": "market_data",
+        "published_at_utc": "2026-08-10T20:00:00+00:00",
+        "retrieved_at_utc": "2026-08-11T13:44:43.737119+00:00",
+        "effective_at_utc": "2026-08-10T20:00:00+00:00",
+        "observation_session": "2026-08-10",
+        "units": "USD per share",
+        "price_basis": "raw completed regular-session close; locally calculated adjusted indicators",
+        "formula_version": "2026-08-05-ema-atr-v2",
+        "confidence": "HIGH",
+        "contradiction_status": "NONE",
+        "actionable": true,
+        "notes": "The LLM did not recalculate or repair technical indicators."
+      },
+      {
+        "id": "E3",
+        "claim": "Verified macro events are present while corporate and market-structure event coverage remains incomplete.",
+        "record_type": "VERIFIED_FACT",
+        "source_url": "https://www.bls.gov/schedule/2026/home.htm",
+        "source_type": "primary",
+        "published_at_utc": "2026-08-11T13:00:00+00:00",
+        "retrieved_at_utc": "2026-08-11T13:00:00+00:00",
+        "effective_at_utc": "2026-08-11T13:00:00+00:00",
+        "observation_session": "2026-08-10",
+        "units": null,
+        "price_basis": null,
+        "formula_version": null,
+        "confidence": "HIGH",
+        "contradiction_status": "NONE",
+        "actionable": false,
+        "notes": "Missing coverage is not interpreted as no event."
+      },
+      {
+        "id": "E4",
+        "claim": "Current valuation is unavailable and cannot pass the ordered new-buy gate.",
+        "record_type": "CALCULATION",
+        "source_url": null,
+        "source_type": "calculation",
+        "published_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "retrieved_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "effective_at_utc": "2026-08-11T14:44:18.4581250Z",
+        "observation_session": "2026-08-10",
+        "units": null,
+        "price_basis": null,
+        "formula_version": "ordered-gates-v2.1",
+        "confidence": "HIGH",
+        "contradiction_status": "NONE",
+        "actionable": true,
+        "notes": "A validated technical snapshot cannot repair an unverified valuation gate."
+      }
+    ],
+    "analyst_outputs": [
+      {
+        "role": "identity_data_auditor",
+        "stance": "NEUTRAL",
+        "confidence": "HIGH",
+        "summary": "NBIS identity is verified by existing active policy and the completed 2026-08-10 regular-session close is independently cross-checked. The fixture states NOT_HELD_FOR_VALIDATION_FIXTURE; watchlist approval is research-only and is not new-buy approval.",
+        "claim_ids": [
+          "E1",
+          "E2"
+        ],
+        "unknowns": [],
+        "decision_impact": "NO_CHANGE",
+        "status": "RESEARCH_COMPLETE"
+      },
+      {
+        "role": "fundamental_valuation_analyst",
+        "stance": "NEUTRAL",
+        "confidence": "LOW",
+        "summary": "Current valuation is unverified; no new-buy conclusion is permitted.",
+        "claim_ids": [
+          "E4"
+        ],
+        "unknowns": [
+          "Current valuation is unverified."
+        ],
+        "decision_impact": "CONDITIONAL",
+        "status": "RESEARCH_CONDITIONAL"
+      },
+      {
+        "role": "market_technical_analyst",
+        "stance": "NEUTRAL",
+        "confidence": "HIGH",
+        "summary": "Technical data validation passed. NBIS closed at 184.11, below falling EMA10 (195.22), falling EMA20 (199.36), and MA50 (222.69), with a -16.2% one-month return and -35.8% drawdown from its 52-week high. RSI14 is 44.9 and MACD remains negative, though MACD is above its signal. Price remains above MA200 (143.77). Overall, the near-term regime is weak rather than a validated entry setup.",
+        "claim_ids": [
+          "E2"
+        ],
+        "unknowns": [],
+        "decision_impact": "CONDITIONAL",
+        "status": "RESEARCH_COMPLETE"
+      },
+      {
+        "role": "news_macro_analyst",
+        "stance": "NEUTRAL",
+        "confidence": "MEDIUM",
+        "summary": "Macro events are context-only and event coverage remains incomplete.",
+        "claim_ids": [
+          "E3"
+        ],
+        "unknowns": [
+          "Corporate earnings coverage is incomplete for the tactical universe.",
+          "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+          "Options-expiration and index-event coverage is incomplete."
+        ],
+        "decision_impact": "CONDITIONAL",
+        "status": "RESEARCH_CONDITIONAL"
+      },
+      {
+        "role": "bull_researcher",
+        "stance": "BULLISH",
+        "confidence": "MEDIUM",
+        "summary": "The evidence supports a structurally non-broken long-term reference: price remains above MA200, technical calculations and close cross-checks are validated, and MACD is less negative than its signal. NBIS survives the research screen in the AI-infrastructure lane.",
+        "claim_ids": [
+          "E2"
+        ],
+        "unknowns": [
+          "Corporate earnings coverage for the tactical universe is incomplete.",
+          "Corporate earnings coverage is incomplete for the tactical universe.",
+          "Current valuation is unverified.",
+          "Exact FOMC timestamp normalization is incomplete.",
+          "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+          "New-buy approval and order authority are absent.",
+          "Options-expiration and index-event coverage is incomplete.",
+          "Valuation evidence is absent and cannot be inferred."
+        ],
+        "decision_impact": "SUPPORTS",
+        "status": "RESEARCH_COMPLETE"
+      },
+      {
+        "role": "bear_researcher",
+        "stance": "BEARISH",
+        "confidence": "HIGH",
+        "summary": "Near-term trend evidence is adverse: price is below declining short-term EMAs and MA50, returns are negative, and the stock is materially below its 52-week high. Valuation is explicitly UNVERIFIED, event coverage is incomplete despite known CPI and PPI releases immediately following the cutoff, and no new-buy authority exists.",
+        "claim_ids": [
+          "E1",
+          "E3",
+          "E4"
+        ],
+        "unknowns": [
+          "Corporate earnings coverage for the tactical universe is incomplete.",
+          "Corporate earnings coverage is incomplete for the tactical universe.",
+          "Current valuation is unverified.",
+          "Exact FOMC timestamp normalization is incomplete.",
+          "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+          "New-buy approval and order authority are absent.",
+          "Options-expiration and index-event coverage is incomplete.",
+          "Valuation evidence is absent and cannot be inferred."
+        ],
+        "decision_impact": "OPPOSES",
+        "status": "RESEARCH_COMPLETE"
+      }
+    ],
+    "research_manager": {
+      "role": "research_manager",
+      "stance": "NEUTRAL",
+      "confidence": "HIGH",
+      "summary": "WAIT: NBIS is research-eligible, but new-buy authority, valuation, sizing, and risk-budget gates are not approved.",
+      "claim_ids": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "unknowns": [
+        "Corporate earnings coverage for the tactical universe is incomplete.",
+        "Corporate earnings coverage is incomplete for the tactical universe.",
+        "Current valuation is unverified.",
+        "Exact FOMC timestamp normalization is incomplete.",
+        "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+        "New-buy approval and order authority are absent.",
+        "Options-expiration and index-event coverage is incomplete.",
+        "Valuation evidence is absent and cannot be inferred."
+      ],
+      "decision_impact": "CONDITIONAL",
+      "status": "RESEARCH_CONDITIONAL",
+      "accepted_claim_ids": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "rejected_claim_ids": [],
+      "unresolved_conflicts": [
+        "Corporate earnings coverage is incomplete for the tactical universe.",
+        "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+        "Options-expiration and index-event coverage is incomplete."
+      ]
+    },
+    "strongest_counter_thesis": "Validated market data and a price still above MA200 could support continued research monitoring, but neither offsets the missing valuation verification, incomplete event coverage, weak short-term technical regime, or absent new-buy approval.",
+    "invalidation_conditions": [
+      "A later validated completed-session technical regime invalidates the setup.",
+      "A material event or data-integrity gap makes the candidate evidence incomplete.",
+      "A reliable current valuation gate remains unavailable.",
+      "Explicit new-buy, risk-budget, and quantity authority remain absent."
+    ],
+    "unresolved_conditions": [
+      "Corporate earnings coverage for the tactical universe is incomplete.",
+      "Corporate earnings coverage is incomplete for the tactical universe.",
+      "Current valuation is unverified.",
+      "Exact FOMC timestamp normalization is incomplete.",
+      "FOMC date is visible from the official calendar, but exact timestamp normalization is incomplete.",
+      "New-buy approval and order authority are absent.",
+      "Options-expiration and index-event coverage is incomplete.",
+      "Valuation evidence is absent and cannot be inferred."
+    ]
+  },
+  "trader_proposal": {
+    "symbol": "NBIS",
+    "position_status": "NOT_HELD",
+    "action": "WAIT",
+    "quantity": null,
+    "policy_rule_id": null,
+    "claim_ids": [
+      "E1",
+      "E2",
+      "E3",
+      "E4"
+    ],
+    "setup": "Public-evidence tactical research stability validation only.",
+    "invalidation_condition_ids": [
+      "I1",
+      "I2",
+      "I3",
+      "I4"
+    ],
+    "expiry": null,
+    "next_material_event": "CPI",
+    "event_time": "2026-08-12T08:30:00-04:00",
+    "event_risk_status": "EVENT_DATA_INCOMPLETE",
+    "event_source": "https://www.bls.gov/schedule/2026/home.htm",
+    "event_policy_effect": "EVENT_DATA_INCOMPLETE",
+    "order_authority": false
+  },
+  "risk_review": {
+    "verdict": "ALLOW_REVIEW",
+    "input_action": "WAIT",
+    "output_action": "WAIT",
+    "reasons": [
+      "WAIT is preserved without authority upgrade."
+    ],
+    "claim_ids": [
+      "E1",
+      "E3",
+      "E4"
+    ],
+    "may_upgrade": false,
+    "order_authority": false
+  },
+  "portfolio_decision": {
+    "action": "WAIT",
+    "quantity": null,
+    "preferred_candidate": null,
+    "alternative_candidate": null,
+    "strategic_allocation_change": false,
+    "portfolio_fit": "BLOCKED",
+    "constraints": [
+      "New buy is not approved.",
+      "Valuation is unverified.",
+      "No risk budget or quantity authority exists."
+    ],
+    "wait_reason": "Earlier ordered gates remain unresolved.",
+    "order_authority": false
+  },
+  "deterministic_gate": {
+    "status": "WATCH_ONLY",
+    "validated_at_utc": "2026-08-11T14:44:36.927108+00:00",
+    "errors": [],
+    "warnings": [
+      "new buy is not approved for this candidate"
+    ],
+    "order_authority": false
+  },
+  "final_action": "WAIT",
+  "human_decision": "NO_TRADE",
+  "evaluation_plan": {
+    "conditions": [
+      {
+        "id": "C1",
+        "kind": "CONFIRMATION",
+        "description": "A future cycle independently verifies valuation, technical entry, event coverage, risk budget, quantity, and explicit new-buy authority."
+      },
+      {
+        "id": "I1",
+        "kind": "INVALIDATION",
+        "description": "A later validated completed-session technical regime invalidates the setup."
+      },
+      {
+        "id": "I2",
+        "kind": "INVALIDATION",
+        "description": "A material event or data-integrity gap makes the candidate evidence incomplete."
+      },
+      {
+        "id": "I3",
+        "kind": "INVALIDATION",
+        "description": "A reliable current valuation gate remains unavailable."
+      },
+      {
+        "id": "I4",
+        "kind": "INVALIDATION",
+        "description": "Explicit new-buy, risk-budget, and quantity authority remain absent."
+      }
+    ],
+    "checkpoints": [
+      "next validated evidence cycle",
+      "next material event update"
+    ]
+  },
+  "artifact_hashes": {
+    "market_snapshot": "214a6c2037ba2891f2502b509b9c9cfcd737b84e8464affa1d485f325bb9e639",
+    "event_snapshot": "f7eab78829497b9d1563c73e3b207ec0c0833f76821ac597ed9fbb39dfcc5f0d",
+    "tactical_screen": "172b3d8434bb23f67effbbea6ac76ec0cf29a2e7f6cc468d62f5018be33b93a2",
+    "technical_validation": "431a754a18830227d60927b91768f8ba9df2ed2c298164e3032b2ed35f72b88c",
+    "instrument_registry": "734c53059c7a6b3352f516af390f4f00660b8356e643d46177944cc5290cee74",
+    "tactical_universe": "a97bdef205d781df03501869521bb5e72719d62a89fe696c0e56e087a448b17c"
+  },
+  "record_locked": true,
+  "order_authority": false
+}
