@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deterministic-gate-result.schema.json",
+  "title": "Read-Only Deterministic Gate Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "validated_at", "market_session", "status", "reason", "action", "quantity", "provider_circuit_state", "event_status", "portfolio_state_mutated", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "validated_at": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "status": {"enum": ["ELIGIBLE_FOR_REVIEW", "WATCH_ONLY", "REJECTED"]},
+    "reason": {"enum": ["PASS", "DATA_INCOMPLETE", "EVENT_DATA_INCOMPLETE", "POLICY_BLOCK"]},
+    "action": {"enum": ["WAIT", "NO_TRADE"]},
+    "quantity": {"type": "null"},
+    "provider_circuit_state": {"enum": ["HEALTHY", "DEGRADED", "OPEN"]},
+    "event_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_DATA_INCOMPLETE"]},
+    "portfolio_state_mutated": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

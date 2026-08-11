@@ -1,61 +1,55 @@
-# v2 Production Readiness
+# v2.1 Production Readiness
 
 ## Conclusion First
 
 **READINESS: READY_FOR_SHADOW_USE**
 
-The v2 framework is suitable for read-only research and deterministic shadow
-monitoring. It is not yet approved for human-assisted live buy/reduction review
-because three operational contracts are inconsistent and full JSON Schema
-runtime validation is not available. Automated brokerage execution remains
-outside scope in every readiness state.
+The v2.1 branch is safer and more auditable than the pre-hardening v2 tag, but
+it is not yet eligible for main merge. The current live shadow failed closed
+when yfinance was unreachable, so no candidate reached the repeated live LLM
+decision path. The required live identical-input authority-stability gate is
+therefore `NOT TESTED`, which blocks `READY_FOR_HUMAN_REVIEW_USE`.
+
+Automated brokerage execution is outside scope in every readiness state.
 
 ## Readiness Assessment
 
 | Area | Status | Evidence |
 |---|---|---|
-| A. Architecture | PASS | Role chain, ordered gates, and valid `WAIT` outcome are documented. |
-| B. Data integrity | PASS for current shadow | Official completed session, raw close, independent close check, and hashed snapshot. |
-| C. Technical validation | PASS | 44-test suite includes fail-closed calendar, close, indicator, gap/halt, and proxy checks. |
-| D. Research validation | PARTIAL | Structured role outputs exist; complete schema-engine validation and current Lane C packets do not. |
-| E. Policy/state separation | PASS | Research registry has no order authority; operational state was not migrated or mutated. |
-| F. Tactical candidate engine | PASS for screening | 13 exact names, three lanes, Stage 1 before Stage 2, no forced ranking or trade. |
-| G. A/B or regression evidence | PARTIAL | v1 code snapshot exists; true A/B unavailable; v2 regression passes. |
-| H. Live shadow run | PASS | 2026-08-10 session returned grade E and `WAIT / NO TRADE`. |
-| I. Git integrity | PASS | Existing history preserved; validation is isolated on `feature/v2-final-validation`. |
-| J. Remaining risks | BLOCKING FOR LIVE REVIEW | Operational validator reference, stale cash prose, template enum, schema-engine gap. |
+| Architecture | PASS | Role authority and deterministic gate order remain intact. |
+| Evidence integrity | PASS | Unsupported or future-known historical evidence fails closed. |
+| Data-provider resilience | PASS | Provider state, bounded retry, no stale fallback, and approved-fallback checks are tested. |
+| Point-in-time integrity | PASS | Current social data and future publications are rejected in historical runs. |
+| Event risk | PARTIAL | Macro events surfaced; corporate, options, and index-event coverage remains incomplete and visible. |
+| Technical validation | PASS | Existing technical, proxy, gap/halt, EMA rearm, and hard-risk controls still pass. |
+| Options safety | PASS | Existing option analyzer self-tests pass; no option output creates order authority. |
+| Portfolio safety | PASS | Portfolio state was not mutated; no cash, fill, quantity, or approval was inferred. |
+| Alert separation | PASS | Research cannot escalate directly to the alert engine or place an order. |
+| Reproducibility | PARTIAL | Numeric/evidence contracts and manifest pass; exact LLM prose is not promised. |
+| Decision stability | BLOCKED | Test fixture is stable across three runs; current live candidate repetition is `NOT TESTED`. |
+| Evaluation harness | PASS WITH LIMITS | Safety/quality/economic layers execute; costs and active benchmark mapping still require approval. |
+| Tactical engine | PASS | Exact 13-name universe, event gate, and approval separation are enforced. |
+| Current shadow | SAFE FAIL-CLOSED | yfinance unavailable; final status `DATA_INCOMPLETE`, no shortlist, `WAIT`. |
+| Git integrity | PASS BEFORE MERGE | Work is isolated on `feature/v2.1-production-hardening`; main is unchanged. |
 
-## Critical Safety Checks
+## Resolved v2 Operational Contract Issues
 
-- No order placement or scheduling path was added.
-- No fill, holding, cash, cost basis, or quantity was inferred.
-- Watchlist approval remains different from new-buy approval.
-- No tactical name enters strategic allocation automatically.
-- No short-selling approval exists.
-- Risk Controller cannot upgrade a proposal.
-- The direct leveraged-product close cannot be replaced with an underlying
-  proxy close.
-- Research packets remain untrusted until the deterministic evaluator
-  reconstructs the applicable state and market facts.
+1. Operational validator paths now resolve from the workspace root to existing
+   canonical v2, legacy packet, and schema-contract validators.
+2. Current cash is read only from verified `portfolio_state.json`; stale cash
+   prose was removed from the automation prompt and README.
+3. The research template uses the canonical Research Manager enum:
+   `RESEARCH_COMPLETE`, `RESEARCH_CONDITIONAL`, `RESEARCH_REJECTED`.
+4. Repository schemas are executed by an independent deterministic supported-
+   dialect validator and audited to reject unsupported keywords. A separately
+   installed external Draft 2020-12 package is still `NOT TESTED`.
 
-## Blocking Issues Before `READY_FOR_HUMAN_REVIEW_USE`
+## Merge Blocker
 
-1. Replace or implement the active `validate_research_cycle.py` contract through
-   one reviewed migration and add integration tests from automation prompt to
-   canonical validator.
-2. Remove hard-coded cash prose from the automation prompt and require all cash
-   language to be rendered from verified state.
-3. Align template Research Manager enums with the canonical decision contract.
-4. Run schemas through an independent Draft 2020-12 validator and prove the
-   standard-library gate is not weaker.
-5. Re-run the complete regression suite and one fresh completed-session shadow
-   run after those corrections.
-
-## Evidence Limitation
-
-No true point-in-time v1-v2 A/B case was eligible. Readiness therefore relies on
-static authority review, deterministic regression, and current shadow behavior.
-That is sufficient for shadow use only.
+The current immutable live bundle produced no Stage-2 candidate because the
+market provider failed. The fixed three-run validation fixture proves the
+stability harness, not live LLM authority stability. Merge gate 18 therefore
+remains unmet.
 
 ## Explicit Exclusion
 

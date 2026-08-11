@@ -1,4 +1,4 @@
 interface:
   display_name: "U.S. Stock Strategy & Deterministic Alerts"
-  short_description: "Multi-role research with deterministic risk gates"
-  default_prompt: "Use $manage-us-stock-strategy to analyze my U.S. portfolio with role-separated evidence and deterministic risk validation, without placing orders."
+  short_description: "Auditable research with event-aware deterministic gates"
+  default_prompt: "Use $manage-us-stock-strategy to analyze my U.S. portfolio with role-separated evidence, point-in-time and event-risk validation, provider-failure controls, and deterministic risk gates, without placing orders."

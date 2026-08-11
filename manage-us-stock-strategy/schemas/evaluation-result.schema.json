@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation-result.schema.json",
+  "title": "Three-Layer Evaluation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evaluation_id", "generated_at", "analysis_cutoff", "safety", "decision_quality", "economic_performance", "overall_merge_gate", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evaluation_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "safety": {"type": "object", "additionalProperties": false, "required": ["status", "checks"], "properties": {"status": {"enum": ["PASS", "FAIL", "NOT_TESTED"]}, "checks": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_TESTED"]}}}},
+    "decision_quality": {"type": "object", "additionalProperties": false, "required": ["status", "checks"], "properties": {"status": {"enum": ["PASS", "FAIL", "PARTIAL", "NOT_TESTED"]}, "checks": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "PARTIAL", "NOT_TESTED"]}}}},
+    "economic_performance": {"type": "object", "additionalProperties": false, "required": ["status", "transaction_cost_status", "benchmark_status", "metrics"], "properties": {"status": {"enum": ["PASS", "FAIL", "PARTIAL", "NOT_TESTED", "ASSUMPTION_REQUIRED"]}, "transaction_cost_status": {"enum": ["APPROVED", "ASSUMPTION_REQUIRED", "NOT_APPLICABLE"]}, "benchmark_status": {"enum": ["APPROVED", "PROPOSED_NOT_ACTIVE", "ASSUMPTION_REQUIRED", "NOT_APPLICABLE"]}, "metrics": {"type": "object", "additionalProperties": {"type": ["number", "null"]}}}},
+    "overall_merge_gate": {"enum": ["PASS", "FAIL", "BLOCKED"]},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "order_authority": {"const": false}
+  }
+}

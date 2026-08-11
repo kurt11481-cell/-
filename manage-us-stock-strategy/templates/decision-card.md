@@ -26,6 +26,14 @@
 - Portfolio Manager decision:
 - Deterministic gate result:
 
+## Event Risk
+
+- Next material event:
+- Event time:
+- Event risk status: `CLEAR | KNOWN_EVENT | EVENT_DATA_INCOMPLETE`
+- Event source:
+- Event policy effect: `CONTEXT_ONLY | WAIT_REQUIRED | EVENT_DATA_INCOMPLETE`
+
 ## Portfolio Context
 
 - Portfolio state revision:

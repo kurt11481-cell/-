@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-08-11T12:57:13.788856+00:00",
+  "session": {
+    "exchange_timezone": "America/New_York",
+    "us_session_date": null,
+    "expected_us_session_date": null,
+    "is_trading_day": null,
+    "regular_session_complete": false,
+    "is_early_close": null,
+    "official_calendar_verified": false,
+    "calendar_verification_status": "unverified",
+    "calendar_source_type": null,
+    "calendar_source": null,
+    "calendar_verified_at_utc": null
+  },
+  "account": {
+    "holdings_market_value_usd": null,
+    "cash_verified": true,
+    "brokerage_cash_usd": null,
+    "available_cash_usd": 3264.31,
+    "account_value_usd": null,
+    "account_value_is_estimate": false,
+    "account_value_status": "unavailable_incomplete_holdings_value"
+  },
+  "symbols": {},
+  "analytics": {
+    "correlations_63d": {}
+  },
+  "collection_provenance": {
+    "provider": "yfinance",
+    "provider_version": "1.5.2",
+    "provider_role": "unofficial research data",
+    "request_mode": "sequential_single_ticker",
+    "minimum_request_delay_seconds": 1.0,
+    "threads": false,
+    "prepost": false,
+    "auto_adjust": false,
+    "repair": false,
+    "independent_completed_close_crosscheck_required": true
+  },
+  "indicator_provenance": {
+    "formula_version": "2026-08-05-ema-atr-v2",
+    "execution_price_basis": "unadjusted daily OHLC",
+    "technical_price_basis": "split-adjusted OHLC rescaled to latest raw close",
+    "ema_formula": "pandas ewm(span=N, adjust=False); alpha=2/(N+1)",
+    "atr_formula": "Wilder ATR14 seeded with mean(TR1..TR14), then ATR=((prior*13)+TR)/14",
+    "relative_volume_formula": "completed-session volume divided by mean volume of the prior 20 completed sessions",
+    "timing_feature_version": "2026-08-05-timing-features-v1",
+    "ema_direction_formula": "(EMA_t - EMA_t-3) / ATR14: rising > 0.10, falling < -0.10, otherwise neutral",
+    "quote_crosscheck_tolerance": "max(USD 0.05, 0.10% of completed raw close)",
+    "source_role": "unofficial yfinance/Yahoo research data requiring independent session and quote verification"
+  },
+  "errors": [
+    "MVLL: MVLL yfinance request failed: empty yfinance download",
+    "SOXL: SOXL yfinance request failed: empty yfinance download",
+    "NBIS: NBIS yfinance request failed: empty yfinance download",
+    "FSLY: FSLY yfinance request failed: empty yfinance download",
+    "RBRK: RBRK yfinance request failed: empty yfinance download",
+    "NET: NET yfinance request failed: empty yfinance download",
+    "NOW: NOW yfinance request failed: empty yfinance download",
+    "MDB: MDB yfinance request failed: empty yfinance download",
+    "DDOG: DDOG yfinance request failed: empty yfinance download",
+    "SNOW: SNOW yfinance request failed: empty yfinance download",
+    "CRWD: CRWD yfinance request failed: empty yfinance download",
+    "PANW: PANW yfinance request failed: empty yfinance download",
+    "PLTR: PLTR yfinance request failed: empty yfinance download",
+    "MRVL: MRVL yfinance request failed: empty yfinance download",
+    "SOXX: SOXX yfinance request failed: empty yfinance download",
+    "NBIL: NBIL yfinance request failed: empty yfinance download"
+  ],
+  "limitations": [
+    "yfinance/Yahoo data are unofficial and require official calendar/session and independent close verification.",
+    "Sequential requests are rate-limited to reduce temporary Yahoo blocking risk; the delay is not a service-level guarantee.",
+    "Valuation, market breadth, credit spreads, rates, and earnings revisions require separate sourced checks."
+  ]
+}

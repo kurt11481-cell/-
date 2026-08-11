@@ -15,6 +15,8 @@ Screen the registered tactical universe with point-in-time inputs only:
 - exact identity and registry status;
 - watchlist approval;
 - data availability and completed-session integrity;
+- upcoming verified material events, event coverage quality, and reproducible
+  sessions or time remaining;
 - minimum liquidity and tradability evidence;
 - corporate-action, gap, and halt flags;
 - high-level thesis relevance;
@@ -55,8 +57,9 @@ Apply these ordinal gates:
 2. `thesis`: `STRONG`, `CONTESTED`, `WEAK`, or `UNVERIFIED`;
 3. `valuation`: `ATTRACTIVE`, `FAIR`, `STRETCHED`, or `UNVERIFIED`;
 4. `technical`: `READY`, `WATCH`, `INVALID`, or `UNAVAILABLE`;
-5. `risk_liquidity`: `ACCEPTABLE`, `CONSTRAINED`, or `VETO`;
-6. `portfolio_fit`: `FITS`, `CONSTRAINED`, or `BLOCKED`.
+5. `event_risk`: `CLEAR`, `KNOWN_EVENT`, or `EVENT_DATA_INCOMPLETE`;
+6. `risk_liquidity`: `ACCEPTABLE`, `CONSTRAINED`, or `VETO`;
+7. `portfolio_fit`: `FITS`, `CONSTRAINED`, or `BLOCKED`.
 
 Never average these labels into a master score. A later strong gate cannot
 offset an earlier failure. Use [scoring-calibration.md](scoring-calibration.md)
@@ -71,6 +74,7 @@ candidates and must state:
 - watchlist and new-buy approval status separately;
 - passed, conditional, and failed gates;
 - evidence cutoff;
+- next material event, source, event time, coverage status, and policy effect;
 - strongest counter-case;
 - valuation and technical conditions still required;
 - objective invalidation;

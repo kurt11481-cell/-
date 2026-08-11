@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-11-event-risk-v1",
+  "default_authority": "CONTEXT_ONLY",
+  "missing_event_data_status": "EVENT_DATA_INCOMPLETE",
+  "may_create_order": false,
+  "may_mutate_portfolio_state": false,
+  "may_invent_trade_threshold": false,
+  "historical_point_in_time": {
+    "require_public_knowledge_by_analysis_cutoff": true,
+    "reject_undated_authoritative_event_evidence": true,
+    "reject_future_announced_event": true
+  },
+  "approved_existing_rules": [
+    {
+      "rule_id": "ALERT_POLICY_SINGLE_STOCK_EARNINGS_BLACKOUT",
+      "source_policy": "stock-strategy-system/alert_policy.json",
+      "source_path": "timing_policy.watch_only_new_buy_activation.earnings_blackout_single_stocks",
+      "scope": "single_stock_new_buy_watch_upgrade_only",
+      "effect": "WAIT_REQUIRED",
+      "creates_quantity_authority": false
+    }
+  ],
+  "context_only_event_types": [
+    "INVESTOR_DAY",
+    "EX_DIVIDEND",
+    "SHAREHOLDER_MEETING",
+    "OFFERING_OR_LOCKUP",
+    "CORPORATE_ACTION",
+    "FOMC_DECISION",
+    "CPI",
+    "PPI",
+    "PCE",
+    "EMPLOYMENT_REPORT",
+    "MONTHLY_OPTIONS_EXPIRATION",
+    "QUARTERLY_EXPIRATION",
+    "INDEX_REBALANCE",
+    "INDEX_INCLUSION",
+    "INDEX_DELETION"
+  ]
+}

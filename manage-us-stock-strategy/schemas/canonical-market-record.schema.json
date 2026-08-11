@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "canonical-market-record.schema.json",
+  "title": "Canonical Market Evidence Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["symbol", "field", "value", "units", "exchange_session", "timestamp", "provider", "retrieved_at", "raw_or_adjusted", "quality_status", "source_identifier"],
+  "properties": {
+    "symbol": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "field": {"type": "string", "minLength": 1},
+    "value": {"type": "number"},
+    "units": {"type": "string", "minLength": 1},
+    "exchange_session": {"type": "string", "format": "date"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "provider": {"type": "string", "minLength": 1},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "raw_or_adjusted": {"enum": ["RAW", "ADJUSTED", "SPLIT_ADJUSTED_RESCALED"]},
+    "quality_status": {"enum": ["VALIDATED", "DEGRADED", "REJECTED"]},
+    "source_identifier": {"type": "string", "minLength": 1}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-snapshot.schema.json",
+  "title": "Point-in-Time Event Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "snapshot_mode", "generated_at", "analysis_cutoff", "market_session", "coverage_status", "events", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "snapshot_mode": {"enum": ["LIVE", "HISTORICAL"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "coverage_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_DATA_INCOMPLETE"]},
+    "coverage_notes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "ticker", "event_type", "scheduled_at", "timezone", "announced_at", "effective_at", "retrieved_at", "source_identifier", "source_type", "point_in_time_eligible", "confidence", "validation_status", "policy_effect"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "ticker": {"type": "string", "pattern": "^(GLOBAL|[A-Z0-9.^=-]{1,24})$"},
+          "event_type": {"enum": ["EARNINGS_RELEASE", "INVESTOR_DAY", "EX_DIVIDEND", "SHAREHOLDER_MEETING", "OFFERING_OR_LOCKUP", "CORPORATE_ACTION", "FOMC_DECISION", "CPI", "PPI", "PCE", "EMPLOYMENT_REPORT", "MONTHLY_OPTIONS_EXPIRATION", "QUARTERLY_EXPIRATION", "INDEX_REBALANCE", "INDEX_INCLUSION", "INDEX_DELETION"]},
+          "scheduled_at": {"type": "string", "format": "date-time"},
+          "timezone": {"type": "string", "minLength": 1},
+          "announced_at": {"type": ["string", "null"], "format": "date-time"},
+          "effective_at": {"type": ["string", "null"], "format": "date-time"},
+          "retrieved_at": {"type": "string", "format": "date-time"},
+          "source_identifier": {"type": "string", "minLength": 1},
+          "source_type": {"enum": ["primary", "market_data", "secondary", "social", "user_provided_unverified"]},
+          "point_in_time_eligible": {"type": "boolean"},
+          "confidence": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+          "validation_status": {"enum": ["VALIDATED", "REJECTED", "UNVERIFIED"]},
+          "policy_effect": {"enum": ["CONTEXT_ONLY", "WAIT_REQUIRED", "EVENT_DATA_INCOMPLETE"]}
+        }
+      }
+    },
+    "order_authority": {"const": false}
+  }
+}

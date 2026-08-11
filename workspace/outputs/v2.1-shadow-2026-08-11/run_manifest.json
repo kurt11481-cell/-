@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "run_id": "V21-SHADOW-20260811",
+  "analysis_id": "V21-SHADOW-20260811",
+  "run_type": "LIVE_SHADOW_REVIEW",
+  "generated_at": "2026-08-11T13:04:00+00:00",
+  "analysis_cutoff": "2026-08-11T13:01:00+00:00",
+  "market_session": "2026-08-10",
+  "code_provenance": {
+    "git_commit": "c185ed3eb38bac8388a072978b9add658d04adc5",
+    "git_branch": "feature/v2.1-production-hardening",
+    "git_dirty": true,
+    "working_tree_diff_hash": "30e6ed8d6e05a8e416634cb0e67636f1e5852281ca3471b86643ab77ce20cd76",
+    "skill_version": "v2.1-production-hardening-uncommitted",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "2026-08-05-v4",
+    "policy_version": "leveraged-ema-rearm-review-v4"
+  },
+  "llm_provenance": {
+    "provider": null,
+    "model": null,
+    "model_identifier": null,
+    "temperature": null,
+    "max_debate_rounds": 0,
+    "max_risk_rounds": 0
+  },
+  "input_hashes": {
+    "evidence_packet_hash": null,
+    "market_snapshot_hash": "5058a6f0641f2c21c3a5c4f615400acad9afe91b25fe0a8f59b412b57b493d51",
+    "event_snapshot_hash": "f7eab78829497b9d1563c73e3b207ec0c0833f76821ac597ed9fbb39dfcc5f0d",
+    "portfolio_state_hash": "e21356cc241ebdb2ed4610b19ed5430d507eda3d027054061752e051fcdf5f70",
+    "strategy_policy_hash": "09a046e782150a60d04bc334cb12ecf48e45803fc7349035262aa0e2b88663e0",
+    "alert_policy_hash": "09a046e782150a60d04bc334cb12ecf48e45803fc7349035262aa0e2b88663e0",
+    "instrument_registry_hash": "734c53059c7a6b3352f516af390f4f00660b8356e643d46177944cc5290cee74",
+    "candidate_universe_hash": "a97bdef205d781df03501869521bb5e72719d62a89fe696c0e56e087a448b17c"
+  },
+  "tool_provenance": {
+    "python_version": "3.12.13",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": null,
+    "decision_record_hash": null,
+    "tactical_screen_hash": "347072325c6f5bc29b1aa4ab6702ce143061ccbf9921614f72da1cd0055cf63d",
+    "deterministic_gate_hash": "6c1756a11aee6fe489e145562ee52cdc44617650999f0403f2cd0716c0dd8785",
+    "deterministic_gate_result": "DATA_INCOMPLETE_WAIT"
+  },
+  "secrets_recorded": false
+}

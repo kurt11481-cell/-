@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "critical_instability": false,
+  "run_count": 3,
+  "differences": [],
+  "normalized": [
+    {
+      "action": "WAIT",
+      "risk_verdict": "ALLOW_REVIEW",
+      "dominant_thesis": "WAIT because this is test-only and new-buy approval is absent.",
+      "invalidation": [
+        "The test fixture is used as live evidence."
+      ],
+      "preferred_candidate": null
+    },
+    {
+      "action": "WAIT",
+      "risk_verdict": "ALLOW_REVIEW",
+      "dominant_thesis": "WAIT because this is test-only and new-buy approval is absent.",
+      "invalidation": [
+        "The test fixture is used as live evidence."
+      ],
+      "preferred_candidate": null
+    },
+    {
+      "action": "WAIT",
+      "risk_verdict": "ALLOW_REVIEW",
+      "dominant_thesis": "WAIT because this is test-only and new-buy approval is absent.",
+      "invalidation": [
+        "The test fixture is used as live evidence."
+      ],
+      "preferred_candidate": null
+    }
+  ]
+}

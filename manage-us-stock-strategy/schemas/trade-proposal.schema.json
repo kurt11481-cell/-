@@ -15,6 +15,11 @@
     "setup": {"type": ["string", "null"]},
     "invalidation_condition_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
     "expiry": {"type": ["string", "null"], "format": "date-time"},
+    "next_material_event": {"type": ["string", "null"]},
+    "event_time": {"type": ["string", "null"], "format": "date-time"},
+    "event_risk_status": {"enum": ["CLEAR", "KNOWN_EVENT", "EVENT_DATA_INCOMPLETE"]},
+    "event_source": {"type": ["string", "null"]},
+    "event_policy_effect": {"enum": ["CONTEXT_ONLY", "WAIT_REQUIRED", "EVENT_DATA_INCOMPLETE"]},
     "order_authority": {"const": false}
   }
 }

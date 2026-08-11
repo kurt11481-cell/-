@@ -61,7 +61,10 @@ analysts when useful, then preserve their separate outputs.
    - Steelman opposite cases using claim IDs from the same evidence ledger.
 7. **Research Manager**
    - Reconcile the analyst ledger and bull/bear debate without taking order
-     authority. Return `READY_FOR_TRADER`, `NEEDS_MORE_RESEARCH`, or `WAIT`.
+     authority. Under the v2 contract, return `RESEARCH_COMPLETE`,
+     `RESEARCH_CONDITIONAL`, or `RESEARCH_REJECTED`. The older schema-1.1
+     lifecycle may retain its separately labelled legacy values, but those
+     values must not be inserted into a v2 decision record.
 8. **Trader**
    - Translate a ready research packet into one canonical review label. It may
      propose a review, but quantity remains null unless an existing approved

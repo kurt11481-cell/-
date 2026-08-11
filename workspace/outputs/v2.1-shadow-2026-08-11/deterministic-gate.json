@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "validated_at": "2026-08-11T13:02:30+00:00",
+  "market_session": "2026-08-10",
+  "status": "REJECTED",
+  "reason": "DATA_INCOMPLETE",
+  "action": "WAIT",
+  "quantity": null,
+  "provider_circuit_state": "OPEN",
+  "event_status": "EVENT_DATA_INCOMPLETE",
+  "portfolio_state_mutated": false,
+  "order_authority": false
+}

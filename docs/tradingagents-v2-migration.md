@@ -286,3 +286,31 @@ returned `WAIT_NO_TRADE`; no preferred or alternative candidate was forced.
 
 Final migration readiness: **READY_FOR_SHADOW_USE**, not yet
 `READY_FOR_HUMAN_REVIEW_USE`.
+
+## 21. V2.1 Production Hardening
+
+V2.1 preserves the v2 role chain and adds operational controls rather than new
+trade logic.
+
+- **Event Risk Layer:** canonical snapshots retain scheduled, announcement,
+  effective, and retrieval time. Missing coverage remains visible and no new
+  trade threshold is invented.
+- **Source Capability Registry:** provider capability is evidence-type-specific;
+  unknown claims stay unknown or disabled.
+- **Provider Failure Handling:** bounded retry, circuit state, no retry storm,
+  no IP rotation, no silent stale fallback, and no market-signal conversion.
+- **Point-in-Time Guard:** future publications and current social evidence are
+  rejected from historical decisions.
+- **Run Manifest:** Git, policy, evidence, tool, LLM configuration when exposed,
+  and result hashes are recorded without secrets.
+- **Reproducibility:** deterministic calculations and immutable evidence are
+  mandatory; LLM stability is assessed by material authority outcomes rather
+  than exact prose.
+- **Evaluation Harness:** safety, decision quality, and economic performance
+  remain separate; economic results cannot excuse a safety failure.
+- **Stability Test:** a three-run validation fixture passes; the data-complete
+  live repeated-decision path remains `NOT TESTED`.
+- **Merge Readiness:** operational validator, cash narrative, template enum,
+  and repository schema-execution gaps were corrected. Main merge remains
+  blocked only because live authority stability was not exercised after the
+  provider failed closed.

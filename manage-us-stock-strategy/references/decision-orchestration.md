@@ -13,9 +13,10 @@ Apply authority in this order:
 2. business thesis and falsification tests;
 3. current valuation;
 4. technical entry or exit timing;
-5. portfolio fit, sizing inputs, and verified instrument leverage;
-6. deterministic policy validation;
-7. explicit human approval.
+5. event risk and coverage quality;
+6. risk, liquidity, portfolio fit, sizing inputs, and verified instrument leverage;
+7. deterministic policy validation;
+8. explicit human approval.
 
 An earlier failed gate cannot be repaired by a later role. Agent agreement is
 not a policy exception. No role may create cash, holdings, fills, quantities,
@@ -33,7 +34,8 @@ Run only decision-relevant analysts, then preserve the following hand-offs:
 3. **Technical analyst** interprets a separately validated technical snapshot.
    It does not recompute or repair rejected indicators in prose.
 4. **News and macro analyst** records event time, publication time, transmission
-   path, lag, and look-ahead exclusion.
+   path, lag, and look-ahead exclusion. It consumes the validated event
+   snapshot and may not turn missing coverage into "no event."
 5. **Sentiment analyst** is optional and may add only low-authority positioning
    context.
 6. **Bull and Bear Researchers** steelman opposite cases from the same evidence
@@ -125,6 +127,8 @@ master score. Use the lane and gate rules in
 - Unverified valuation for a new buy: maximum `CONDITIONAL_BUY` if policy allows
   research watch; otherwise `WAIT`.
 - Rejected technical snapshot: maximum `WAIT` for timing.
+- Missing event coverage: expose `EVENT_DATA_INCOMPLETE`; enforce `WAIT` only
+  where an already-approved safety rule requires it.
 - Missing verified cash, risk budget, quantity authority, or new-buy approval:
   maximum `CONDITIONAL_BUY` with quantity `null`.
 - Risk `VETO`: `WAIT`.

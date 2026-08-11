@@ -13,7 +13,7 @@
     "maximum_preferred_candidates": 1,
     "maximum_alternative_candidates": 1,
     "wait_is_valid_output": true,
-    "ordered_gates": ["evidence", "thesis", "valuation", "technical", "risk_liquidity", "portfolio_fit"],
+    "ordered_gates": ["evidence", "thesis", "valuation", "technical", "event_risk", "risk_liquidity", "portfolio_fit"],
     "master_numeric_score_prohibited": true
   },
   "theme_tag_disclaimer": "AI Agent theme and subtheme tags are user-defined organizational labels, not claims about revenue purity or product exposure.",

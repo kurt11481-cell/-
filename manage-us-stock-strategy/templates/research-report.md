@@ -62,7 +62,15 @@
 - Material disagreements:
 - Missing evidence:
 - Scenario table:
-- Research disposition: `READY_FOR_TRADER | NEEDS_MORE_RESEARCH | WAIT`
+- Research disposition: `RESEARCH_COMPLETE | RESEARCH_CONDITIONAL | RESEARCH_REJECTED`
+
+## Event Risk
+
+- Next material event:
+- Scheduled / announced / effective / retrieval times:
+- Event source and validation status:
+- Point-in-time eligibility:
+- Policy effect: `CONTEXT_ONLY | WAIT_REQUIRED | EVENT_DATA_INCOMPLETE`
 
 ## Audit Notes
 

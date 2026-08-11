@@ -21,3 +21,11 @@ Never expose secrets or modify approved policy without explicit user approval.
 The canonical Skill source is `manage-us-stock-strategy/`; the research-only v2
 registry and tactical universe are under `workspace/policies/`. They do not
 replace the operational state or alert policy listed above.
+
+For high-consequence research, historical evaluation, tactical deep analysis,
+or live shadow review, also apply the v2.1 contracts for event risk, source
+capability, point-in-time eligibility, provider failure handling, and run
+provenance. Reuse one canonical validated market/event snapshot across roles.
+Missing or stale data must remain visible and fail closed; current social data
+must never enter a historical decision as point-in-time evidence. Reflection
+may record lessons but may not mutate policy or portfolio state.
