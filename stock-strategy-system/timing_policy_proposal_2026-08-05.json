@@ -1,0 +1,180 @@
+{
+  "schema_version": "1.0-activation-record",
+  "proposal_id": "2026-08-05-ema-timing-v1",
+  "activation_status": "activated_review_only_with_fail_closed_gates",
+  "referenced_by_active_evaluator": true,
+  "activated_policy_version": "2026-08-05-ema-timing-v2",
+  "activation_scope": "B-grade next-session human review candidates only; no order authority; new buys remain watch-only",
+  "order_authority": "none",
+  "purpose": "Deterministic next-session review conditions for buy, take-profit, staged reduction, and stop decisions.",
+  "safety": {
+    "signal_is_not_fill": true,
+    "never_infer_quantity_or_fill": true,
+    "never_place_or_schedule_orders": true,
+    "active_harness_max_grade": "B",
+    "conflict_priority": [
+      "hard_maximum_loss_review",
+      "technical_stop_review",
+      "weakness_reduction_review",
+      "strength_reduction_review",
+      "take_profit_review",
+      "buy_review"
+    ]
+  },
+  "data_contract_draft": {
+    "minimum_completed_daily_bars": 252,
+    "ema_spans": [10, 20],
+    "ema_slope_lookback_sessions": 3,
+    "atr_period": 14,
+    "breakout_lookback_completed_sessions": 20,
+    "relative_volume_lookback_completed_sessions": 20,
+    "technical_price_basis": "split-adjusted OHLC rescaled to latest raw close",
+    "official_calendar_required": true,
+    "second_quote_source_required": true,
+    "second_quote_tolerance_rule": "reject if absolute difference exceeds max(USD 0.05, 0.10% of completed close)",
+    "missing_or_duplicate_bar_action": "reject",
+    "unadjusted_early_close_volume_action": "reject"
+  },
+  "deterministic_definitions_draft": {
+    "ema_test_zone": "bar range overlaps EMA +/- 0.25 ATR14",
+    "ema_test_max_age_sessions": 3,
+    "reclaim": "completed close is above selected EMA by at least 0.10 ATR14 and above prior completed close",
+    "decisive_breach": "completed close is below selected level by at least 0.25 ATR14",
+    "ema_flat": "absolute EMA change over 3 completed sessions divided by ATR14 is no more than 0.10",
+    "ema_rising": "(current EMA minus the same EMA 3 completed sessions earlier) divided by ATR14 is greater than 0.10",
+    "ema_falling": "(current EMA minus the same EMA 3 completed sessions earlier) divided by ATR14 is less than -0.10",
+    "repeated_crossing": "at least 3 sign changes in close-minus-20EMA during the prior 8 completed sessions",
+    "breakout": "completed close is above prior 20-session high by at least 0.10 ATR14",
+    "breakout_acceptance": "next completed close remains at or above breakout level and session low is not more than 0.25 ATR14 below it",
+    "failed_higher_high": "session high exceeds prior 5-session high, closes below that prior high, and next completed close breaks the signal-session low",
+    "pullback_test_relative_volume_maximum": 1.0,
+    "pullback_reclaim_relative_volume_minimum": 1.0,
+    "pullback_reclaim_to_test_relative_volume_ratio_minimum": 1.2,
+    "breakout_relative_volume_minimum": 1.2,
+    "pullback_max_extension_above_20ema_atr": 1.5,
+    "breakout_max_extension_above_20ema_atr": 2.0,
+    "minimum_reward_to_risk": 2.0,
+    "minimum_average_daily_dollar_volume_usd": 10000000,
+    "maximum_bid_ask_spread_fraction": 0.005,
+    "excessive_gap_rule": "reject a new entry when absolute opening gap exceeds max(5%, 1.0 ATR14 / prior close), unless an event strategy is separately approved",
+    "overheat_rejection": "high is at least 2.5 ATR14 above 20EMA, close is no more than 2.0 ATR14 above 20EMA, close is in the lower 35% of the session range, and relative volume is at least 1.2",
+    "earnings_blackout": "for single stocks, no ordinary new entry from 2 completed sessions before scheduled earnings through the first completed session after results"
+  },
+  "new_entry_draft": {
+    "allowed_setups": [
+      "aligned_uptrend_pullback_reclaim",
+      "aligned_uptrend_breakout_acceptance"
+    ],
+    "early_recovery_exception": "disabled",
+    "aligned_downtrend_entry": "disabled",
+    "required_gates": [
+      "fresh_verified_broker_snapshot",
+      "positive_verified_available_cash",
+      "approved_ticker_and_instrument",
+      "verified_technical_snapshot",
+      "passed_research_packet",
+      "valuation_gate",
+      "thesis_gate",
+      "liquidity_gate",
+      "event_gate",
+      "portfolio_concentration_gate",
+      "minimum_reward_to_risk_gate",
+      "approved_quantity_and_expiry"
+    ],
+    "current_portfolio_effect": "watch_only because verified available cash is USD 0"
+  },
+  "take_profit_draft_for_new_trades_only": {
+    "planned_r_definition": "planned entry minus approved initial stop",
+    "actual_r_definition": "confirmed average fill minus unchanged approved initial stop",
+    "tranches": [
+      {
+        "id": "TP1_1R",
+        "trigger": "completed close or intraday trade reaches 1.0 actual R; review at completed session",
+        "fraction_of_confirmed_position": 0.25
+      },
+      {
+        "id": "TP2_2R",
+        "trigger": "completed close or intraday trade reaches 2.0 actual R; review at completed session",
+        "fraction_of_confirmed_position": 0.25
+      },
+      {
+        "id": "TP3_EXTENSION",
+        "trigger": "close is at least 2.5 ATR14 above 20EMA plus approved rejection or failed-higher-high confirmation",
+        "fraction_of_confirmed_position": 0.25
+      },
+      {
+        "id": "TP4_TRAIL",
+        "trigger": "two consecutive completed closes below 10EMA, or one decisive close below 20EMA with 10EMA below 20EMA",
+        "fraction_of_confirmed_position": 0.25
+      }
+    ],
+    "existing_holdings_without_recorded_initial_stop": "R-multiple targets disabled; use only separately approved absolute, EMA, or ATR rules"
+  },
+  "holding_specific_drafts": {
+    "SOXL": {
+      "current_direction": "hold",
+      "instrument_risk": "3x daily-reset leveraged semiconductor ETF",
+      "hard_maximum_loss_review_formula": "fresh verified average cost multiplied by (1 - approved maximum loss fraction)",
+      "current_reference_hard_maximum_loss_review_usd": 98.656,
+      "watch": "first completed close below 10EMA",
+      "first_weakness_reduction_review": "two consecutive completed closes below 10EMA while 10EMA is falling",
+      "second_weakness_reduction_review": "one decisive close below 20EMA with 10EMA below 20EMA, or failed 20EMA reclaim followed by break of signal low",
+      "existing_position_take_profit_review": "after close reaches at least 2.5 ATR14 above 20EMA and a failed-higher-high or rejection confirmation occurs; no R-multiple target is permitted",
+      "suggested_fraction_each_step": 0.25,
+      "all_fractions_and_quantities_approved": true
+    },
+    "MVLL": {
+      "current_direction": "reduce",
+      "instrument_risk": "leveraged single-stock exposure; exact issuer objective must be reverified before activation",
+      "hard_maximum_loss_review_formula": "fresh verified average cost multiplied by (1 - approved maximum loss fraction)",
+      "current_reference_hard_maximum_loss_review_usd": 16.712,
+      "strength_path_in_aligned_downtrend": [
+        "25% review after confirmed 10EMA reclaim",
+        "25% review after confirmed 20EMA reclaim",
+        "25% review at prior 20-session high or 2.5 ATR14 extension",
+        "remainder governed by approved technical stop or later explicit instruction"
+      ],
+      "weakness_path": [
+        "25% review after two consecutive closes below falling 10EMA",
+        "25% review after decisive close below 20EMA with 10EMA below 20EMA",
+        "remaining risk review at failed reclaim or hard maximum-loss boundary"
+      ],
+      "all_fractions_and_quantities_approved": true
+    }
+  },
+  "stop_draft": {
+    "initial_stop_formula": "highest approved price below entry among structural swing low minus 0.25 ATR14, 20EMA minus 0.75 ATR14, and existing hard maximum-loss boundary",
+    "swing_low_lookback_sessions": 10,
+    "ordinary_confirmation": "completed close",
+    "gap_through_stop": "human risk review at first reliable quote; never infer execution at stop",
+    "trading_halt": "freeze signal state and escalate to human review",
+    "time_stop": "review after 10 completed sessions when maximum favorable excursion is below 0.5 R and close is below 20EMA",
+    "average_cost_recalculation": "only after confirmed broker fill or fresh broker snapshot"
+  },
+  "tranche_quantity_draft": {
+    "anchor": "confirmed shares at policy activation; never inferred from a price touch",
+    "fractional_share_rule": "floor each non-final tranche to whole shares with a minimum of 1 share; assign all residual shares only to the explicitly approved final tranche",
+    "recompute_after_fill": false,
+    "unlock_next_tranche": "only after user-confirmed fill updates portfolio state",
+    "approved": true
+  },
+  "activation_requirements": [
+    "Fresh complete broker snapshot within the active freshness window",
+    "Explicit approval of every numeric threshold and definition",
+    "Per-symbol entry eligibility and instrument verification",
+    "Per-tranche percentage or exact shares, minimum remaining shares, and stable tranche IDs",
+    "Exact reset, expiry, confirmation, and deduplication rules",
+    "Approved capital-risk fraction, concentration cap, and correlation cap",
+    "Positive verified available cash for any new buy",
+    "Regression tests and forward test pass",
+    "EMA timing branches, stable event keys, and state transitions are implemented in evaluate_alerts.py and regression-tested",
+    "Explicit user instruction to merge this proposal into alert_policy.json"
+  ],
+  "known_current_blockers": [
+    "Broker and position snapshot is dated 2026-07-31 and must be refreshed before quantity-dependent advice",
+    "Verified available cash is USD 0, so all new buys remain watch-only",
+    "SOXL and MVLL have no recorded versioned initial stop, so R-based existing-position take-profit is unavailable",
+    "Quantity-bearing timing reviews remain fail-closed until a fresh broker snapshot confirms that holdings still satisfy the policy anchor equation",
+    "New-buy risk budget and positive verified available cash are still absent, so buy setup detection remains watch-only"
+  ]
+}

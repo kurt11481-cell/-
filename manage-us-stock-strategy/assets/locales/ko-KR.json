@@ -1,0 +1,12 @@
+{
+  "locale": "ko-KR",
+  "messages": {
+    "alert_present": "오늘 매매 검토 알림 있음",
+    "alert_none": "오늘 매매 검토 알림 없음",
+    "staged_reduction_review": "분할감축 검토",
+    "no_order_notice": "주문을 실행하거나 예약하지 않았습니다. 사람의 승인과 최신 브로커 상태가 필요합니다."
+  },
+  "command_aliases": {
+    "options": ["옵션"]
+  }
+}

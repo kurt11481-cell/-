@@ -1,0 +1,850 @@
+{
+  "generated_at_utc": "2026-08-05T10:41:12.388715+00:00",
+  "study_period": {
+    "start": "2025-08-05",
+    "end": "2026-08-04"
+  },
+  "latest_completed_session_assumption": "2026-08-04",
+  "validation_classification": {
+    "status": "in_sample_mechanical_replay_only",
+    "policy_formed_on": "2026-08-05",
+    "test_ends": "2026-08-04",
+    "predictive_validation": false,
+    "reason": "The 2026-08-05 policy is replayed mechanically over an already observable period; no untouched holdout or walk-forward validation is available."
+  },
+  "official_calendar_audit": {
+    "status": "passed",
+    "official_source": "https://www.nyse.com/markets/hours-calendars",
+    "interval": {
+      "start": "2024-06-01",
+      "end": "2026-08-04"
+    },
+    "full_closures_applied": [
+      "2024-06-19",
+      "2024-07-04",
+      "2024-09-02",
+      "2024-11-28",
+      "2024-12-25",
+      "2025-01-01",
+      "2025-01-09",
+      "2025-01-20",
+      "2025-02-17",
+      "2025-04-18",
+      "2025-05-26",
+      "2025-06-19",
+      "2025-07-04",
+      "2025-09-01",
+      "2025-11-27",
+      "2025-12-25",
+      "2026-01-01",
+      "2026-01-19",
+      "2026-02-16",
+      "2026-04-03",
+      "2026-05-25",
+      "2026-06-19",
+      "2026-07-03"
+    ],
+    "early_close_sessions_present": [
+      "2024-07-03",
+      "2024-11-29",
+      "2024-12-24",
+      "2025-07-03",
+      "2025-11-28",
+      "2025-12-24",
+      "2026-07-02"
+    ],
+    "symbols": {
+      "SOXL": {
+        "expected_session_count": 544,
+        "final_row_count": 544,
+        "missing_expected_sessions": [],
+        "unexpected_sessions": [],
+        "latest_session": "2026-08-04",
+        "passed": true
+      },
+      "SOXX": {
+        "expected_session_count": 544,
+        "final_row_count": 544,
+        "missing_expected_sessions": [],
+        "unexpected_sessions": [],
+        "latest_session": "2026-08-04",
+        "passed": true
+      }
+    }
+  },
+  "policy_version": "2026-08-05-ema-timing-v2",
+  "formula_version": "2026-08-05-ema-atr-v2",
+  "timing_feature_version": "2026-08-05-timing-features-v1",
+  "benchmark_identity": {
+    "SOXL": "Daily 300% of the NYSE Semiconductor Index before fees and expenses; daily reset",
+    "SOXX": "Tracks the NYSE Semiconductor Index before fees and expenses",
+    "issuer_sources": {
+      "SOXL": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+      "SOXX": "https://www.ishares.com/us/products/239705/fund"
+    }
+  },
+  "hash_manifest_sha256": {
+    "source_files": {
+      "alert_policy.json": "b643b61eb4d3495ffc742e0fc0db03a77102faedb3bf712ed7426a4f1a65087c",
+      "portfolio_state.json": "baa48644bec90f2902062517359ef9515cea9610ad1cba1bee0a9b54840f65e8",
+      "timing_engine.py": "a5918ccf0ba8dc57db6e727c52d9112aeb32dab4e57159c7c6d3db8ebb6e875b",
+      "build_market_snapshot.py": "bcbfcbdc3d3722aaeca4b8421de41e04f708beef941c099bb7bcb0d330e0c700",
+      "backtest_soxl_ema_policy_2026-08-05.py": "519c41b730455652ddde503ddcce82c6a55c0d41d4ae55e5ec8369b6d21b3029"
+    },
+    "generated_inputs_and_artifacts": {
+      "soxl_ema_policy_2025-08-05_2026-08-04_SOXL_input.csv": "7504425e6a404d2f0583fa8b7e86e6cee19d20b8b4a4f0196be7296bec73795b",
+      "soxl_ema_policy_2025-08-05_2026-08-04_SOXX_input.csv": "74244c20a51a3dc2d1ead7675d5fed2b2f490a71e6e68fedd981501dff7216f4",
+      "soxl_ema_policy_2025-08-05_2026-08-04_SOXL_adjusted_OHLCV.csv": "71866a14b561ff4ea686e016f41b43f09c2709e109ee4af85ba9f67d3705e338",
+      "soxl_ema_policy_2025-08-05_2026-08-04_SOXX_adjusted_OHLCV.csv": "2f97976a74d529e6ec40d074056ff54fd3eefbc27d0fe88607cf21b44844f4e8",
+      "soxl_ema_policy_2025-08-05_2026-08-04_trades.csv": "e4047c6d3a7c392cf85404cfd4226a6d111bb4216f861ea19b393183ab5cb6f2"
+    },
+    "encoding": "UTF-8"
+  },
+  "execution_assumptions": {
+    "signal_time": "completed regular-session close",
+    "execution_time": "next regular-session open",
+    "slippage_and_cost_bps_per_fill": 10.0,
+    "fractional_shares_binary_research_only": true,
+    "cash_yield": 0.0,
+    "tax": "excluded",
+    "fx": "excluded; USD-only",
+    "dividends": "cash credited on ex-date from Yahoo events"
+  },
+  "diagnostic_definitions_NOT_ACTIVE": {
+    "A": "After a weakness fill, both SOXL and SOXX must close above the relevant EMA before another weakness tranche; every B reduction requires three subsequently completed sessions between fills.",
+    "B": "Same as A, but weakness_10ema is logged as watch-only and cannot schedule a sale.",
+    "hard_risk": "D-grade hard maximum-loss remains unsized, is logged, and is never executed or suppressed."
+  },
+  "data_quality": {
+    "SOXL": {
+      "nasdaq_response_rows": 544,
+      "nasdaq_valid_parsed_rows": 543,
+      "nasdaq_invalid_rows": [
+        {
+          "date": "2026-04-20",
+          "reason": "unparseable_or_NA_OHLCV"
+        }
+      ],
+      "nasdaq_placeholder_volume_dates": [
+        "2026-04-17"
+      ],
+      "yahoo_response_rows": 544,
+      "yahoo_valid_parsed_rows": 544,
+      "yahoo_invalid_dates": [],
+      "raw_common_valid_rows_before_repair": 543,
+      "calendar_expected_rows": 544,
+      "final_rows_after_repair": 544,
+      "nasdaq_missing_expected_sessions": [
+        "2026-04-20"
+      ],
+      "yahoo_missing_expected_sessions": [],
+      "fallback_sessions": [
+        "2026-04-20"
+      ],
+      "volume_corrected_sessions": [
+        "2026-04-17"
+      ],
+      "first_date": "2024-06-03",
+      "last_date": "2026-08-04",
+      "maximum_close_difference_usd": 1.2207031261368684e-05,
+      "mismatch_count_above_tolerance": 0,
+      "nasdaq_url": "https://api.nasdaq.com/api/quote/SOXL/historical?assetclass=etf&fromdate=2024-06-01&todate=2026-08-04&limit=5000",
+      "yahoo_url": "https://query1.finance.yahoo.com/v8/finance/chart/SOXL?period1=1717200000&period2=1785888000&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "events": {
+        "dividends": {
+          "1719322200": {
+            "amount": 0.149,
+            "date": 1719322200
+          },
+          "1727184600": {
+            "amount": 0.06,
+            "date": 1727184600
+          },
+          "1734964200": {
+            "amount": 0.077,
+            "date": 1734964200
+          },
+          "1742909400": {
+            "amount": 0.065,
+            "date": 1742909400
+          },
+          "1750771800": {
+            "amount": 0.068,
+            "date": 1750771800
+          },
+          "1758634200": {
+            "amount": 0.01,
+            "date": 1758634200
+          }
+        }
+      }
+    },
+    "SOXX": {
+      "nasdaq_response_rows": 544,
+      "nasdaq_valid_parsed_rows": 544,
+      "nasdaq_invalid_rows": [],
+      "nasdaq_placeholder_volume_dates": [],
+      "yahoo_response_rows": 544,
+      "yahoo_valid_parsed_rows": 544,
+      "yahoo_invalid_dates": [],
+      "raw_common_valid_rows_before_repair": 544,
+      "calendar_expected_rows": 544,
+      "final_rows_after_repair": 544,
+      "nasdaq_missing_expected_sessions": [],
+      "yahoo_missing_expected_sessions": [],
+      "fallback_sessions": [],
+      "volume_corrected_sessions": [],
+      "first_date": "2024-06-03",
+      "last_date": "2026-08-04",
+      "maximum_close_difference_usd": 2.929687502728484e-05,
+      "mismatch_count_above_tolerance": 0,
+      "nasdaq_url": "https://api.nasdaq.com/api/quote/SOXX/historical?assetclass=etf&fromdate=2024-06-01&todate=2026-08-04&limit=5000",
+      "yahoo_url": "https://query1.finance.yahoo.com/v8/finance/chart/SOXX?period1=1717200000&period2=1785888000&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "events": {
+        "dividends": {
+          "1718112600": {
+            "amount": 0.31,
+            "date": 1718112600
+          },
+          "1727271000": {
+            "amount": 0.552,
+            "date": 1727271000
+          },
+          "1734445800": {
+            "amount": 0.358,
+            "date": 1734445800
+          },
+          "1742304600": {
+            "amount": 0.261,
+            "date": 1742304600
+          },
+          "1750080600": {
+            "amount": 0.483,
+            "date": 1750080600
+          },
+          "1758029400": {
+            "amount": 0.541,
+            "date": 1758029400
+          },
+          "1765895400": {
+            "amount": 0.436,
+            "date": 1765895400
+          },
+          "1773754200": {
+            "amount": 0.208,
+            "date": 1773754200
+          },
+          "1781530200": {
+            "amount": 0.283,
+            "date": 1781530200
+          }
+        }
+      }
+    }
+  },
+  "lookahead_audit": {
+    "SOXL": {
+      "status": "passed",
+      "checked_dates": [
+        "2025-08-05",
+        "2025-10-01",
+        "2025-11-26",
+        "2026-01-27",
+        "2026-03-25",
+        "2026-05-21",
+        "2026-07-21",
+        "2026-08-04"
+      ],
+      "maximum_numeric_difference": 3.552713678800501e-15,
+      "mismatches": [],
+      "method": "full-history causal series versus independently truncated history"
+    },
+    "SOXX": {
+      "status": "passed",
+      "checked_dates": [
+        "2025-08-05",
+        "2025-10-01",
+        "2025-11-26",
+        "2026-01-27",
+        "2026-03-25",
+        "2026-05-21",
+        "2026-07-21",
+        "2026-08-04"
+      ],
+      "maximum_numeric_difference": 1.1368683772161603e-13,
+      "mismatches": [],
+      "method": "full-history causal series versus independently truncated history"
+    }
+  },
+  "base_case": {
+    "cost_bps_per_fill": 10.0,
+    "metrics": [
+      {
+        "name": "buy_hold_99",
+        "start_value_usd": 2519.09658,
+        "end_value_usd": 13851.09,
+        "total_return": 4.4984354748320134,
+        "cagr": 4.504858321251387,
+        "annualized_volatility": 1.3211856318500919,
+        "maximum_drawdown": -0.6941285989759958,
+        "sharpe_rf0": 1.969165011163771,
+        "downside_deviation_annualized_target0": 0.8899007622046344,
+        "sortino_target0": 2.923508586559958,
+        "worst_day": -0.3051273267100605,
+        "trade_count": 1,
+        "turnover_multiple": 0.9990009990009991,
+        "estimated_cost_usd": 2.5165800000000003,
+        "average_equity_exposure": 0.999863918299652
+      },
+      {
+        "name": "active_staged_overlay_99",
+        "start_value_usd": 2519.09658,
+        "end_value_usd": 5545.32048,
+        "total_return": 1.201313170771722,
+        "cagr": 1.2025031876115162,
+        "annualized_volatility": 0.8290144747754941,
+        "maximum_drawdown": -0.5700442951557101,
+        "sharpe_rf0": 1.3782594206846634,
+        "downside_deviation_annualized_target0": 0.5795017213268223,
+        "sortino_target0": 1.9716887244565768,
+        "worst_day": -0.24425453370054384,
+        "trade_count": 4,
+        "turnover_multiple": 1.7014433007566547,
+        "estimated_cost_usd": 4.2861,
+        "average_equity_exposure": 0.5218371537567936
+      },
+      {
+        "name": "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE",
+        "start_value_usd": 2519.09658,
+        "end_value_usd": 5843.3424,
+        "total_return": 1.3196182498092237,
+        "cagr": 1.3209554384301363,
+        "annualized_volatility": 0.8311278411649774,
+        "maximum_drawdown": -0.5533673058172627,
+        "sharpe_rf0": 1.4403193928101126,
+        "downside_deviation_annualized_target0": 0.5825094457024593,
+        "sortino_target0": 2.055056027616388,
+        "worst_day": -0.2363067596101488,
+        "trade_count": 4,
+        "turnover_multiple": 1.8197714356787387,
+        "estimated_cost_usd": 4.584180000000001,
+        "average_equity_exposure": 0.568415617057077
+      },
+      {
+        "name": "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE",
+        "start_value_usd": 2519.09658,
+        "end_value_usd": 5882.66304,
+        "total_return": 1.3352272742159017,
+        "cagr": 1.3365841941711998,
+        "annualized_volatility": 0.8257779943175515,
+        "maximum_drawdown": -0.5512395499999284,
+        "sharpe_rf0": 1.452370292524506,
+        "downside_deviation_annualized_target0": 0.578604110062974,
+        "sortino_target0": 2.0728083439240503,
+        "worst_day": -0.235296597910729,
+        "trade_count": 4,
+        "turnover_multiple": 1.8353960847344726,
+        "estimated_cost_usd": 4.62354,
+        "average_equity_exposure": 0.5638291764762873
+      },
+      {
+        "name": "research_binary_long_cash_NOT_ACTIVE",
+        "start_value_usd": 2519.09658,
+        "end_value_usd": 2806.3230222607554,
+        "total_return": 0.1140196229637036,
+        "cagr": 0.11410201367960515,
+        "annualized_volatility": 0.3390938230264334,
+        "maximum_drawdown": -0.23378952129139996,
+        "sharpe_rf0": 0.48942464613792525,
+        "downside_deviation_annualized_target0": 0.2333125789476708,
+        "sortino_target0": 0.7113241604495378,
+        "worst_day": -0.12269144359464623,
+        "trade_count": 8,
+        "turnover_multiple": 9.068724713072692,
+        "estimated_cost_usd": 22.8449934096629,
+        "average_equity_exposure": 0.19122295029475547
+      }
+    ],
+    "trades": {
+      "buy_hold_99": [
+        {
+          "date": "2025-08-05",
+          "side": "buy",
+          "shares": 99.0,
+          "open_price": 25.42,
+          "execution_price": 25.44542,
+          "notional_usd": 2516.5800000000004,
+          "reason": "period_start_buy"
+        }
+      ],
+      "active_staged_overlay_99": [
+        {
+          "date": "2025-08-05",
+          "side": "buy",
+          "shares": 99.0,
+          "open_price": 25.42,
+          "execution_price": 25.44542,
+          "notional_usd": 2516.5800000000004,
+          "reason": "period_start_buy"
+        },
+        {
+          "date": "2025-08-06",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 23.84,
+          "execution_price": 23.81616,
+          "notional_usd": 572.16,
+          "reason": "weakness_10ema",
+          "slot_id": "SOXL-R25"
+        },
+        {
+          "date": "2025-08-07",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 25.48,
+          "execution_price": 25.45452,
+          "notional_usd": 611.52,
+          "reason": "weakness_20ema",
+          "slot_id": "SOXL-R50"
+        },
+        {
+          "date": "2025-09-04",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 24.41,
+          "execution_price": 24.38559,
+          "notional_usd": 585.84,
+          "reason": "technical_stop",
+          "slot_id": "SOXL-R75"
+        }
+      ],
+      "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE": [
+        {
+          "date": "2025-08-05",
+          "side": "buy",
+          "shares": 99.0,
+          "open_price": 25.42,
+          "execution_price": 25.44542,
+          "notional_usd": 2516.5800000000004,
+          "reason": "period_start_buy"
+        },
+        {
+          "date": "2025-08-06",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 23.84,
+          "execution_price": 23.81616,
+          "notional_usd": 572.16,
+          "reason": "weakness_10ema",
+          "slot_id": "SOXL-R25"
+        },
+        {
+          "date": "2025-09-04",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 24.41,
+          "execution_price": 24.38559,
+          "notional_usd": 585.84,
+          "reason": "technical_stop",
+          "slot_id": "SOXL-R50"
+        },
+        {
+          "date": "2025-11-17",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 37.9,
+          "execution_price": 37.8621,
+          "notional_usd": 909.5999999999999,
+          "reason": "technical_stop",
+          "slot_id": "SOXL-R75"
+        }
+      ],
+      "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE": [
+        {
+          "date": "2025-08-05",
+          "side": "buy",
+          "shares": 99.0,
+          "open_price": 25.42,
+          "execution_price": 25.44542,
+          "notional_usd": 2516.5800000000004,
+          "reason": "period_start_buy"
+        },
+        {
+          "date": "2025-08-07",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 25.48,
+          "execution_price": 25.45452,
+          "notional_usd": 611.52,
+          "reason": "weakness_20ema",
+          "slot_id": "SOXL-R25"
+        },
+        {
+          "date": "2025-09-04",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 24.41,
+          "execution_price": 24.38559,
+          "notional_usd": 585.84,
+          "reason": "technical_stop",
+          "slot_id": "SOXL-R50"
+        },
+        {
+          "date": "2025-11-17",
+          "side": "sell",
+          "shares": 24.0,
+          "open_price": 37.9,
+          "execution_price": 37.8621,
+          "notional_usd": 909.5999999999999,
+          "reason": "technical_stop",
+          "slot_id": "SOXL-R75"
+        }
+      ],
+      "research_binary_long_cash_NOT_ACTIVE": [
+        {
+          "date": "2025-08-13",
+          "side": "buy",
+          "shares": 87.8387434554974,
+          "open_price": 28.65,
+          "execution_price": 28.678649999999994,
+          "notional_usd": 2516.5800000000004,
+          "reason": "aligned_uptrend_pullback_reclaim"
+        },
+        {
+          "date": "2025-08-21",
+          "side": "sell",
+          "shares": 87.8387434554974,
+          "open_price": 25.4,
+          "execution_price": 25.374599999999997,
+          "notional_usd": 2231.1040837696337,
+          "reason": "weakness_10ema",
+          "slot_id": null
+        },
+        {
+          "date": "2025-09-11",
+          "side": "buy",
+          "shares": 76.63556473421139,
+          "open_price": 29.055,
+          "execution_price": 29.084054999999996,
+          "notional_usd": 2226.6463333525116,
+          "reason": "aligned_uptrend_pullback_reclaim"
+        },
+        {
+          "date": "2025-10-08",
+          "side": "sell",
+          "shares": 76.63556473421139,
+          "open_price": 38.87,
+          "execution_price": 38.831129999999995,
+          "notional_usd": 2978.8244012187965,
+          "reason": "take_profit_rejection",
+          "slot_id": null
+        },
+        {
+          "date": "2026-01-05",
+          "side": "buy",
+          "shares": 59.06521589374812,
+          "open_price": 50.345,
+          "execution_price": 50.39534499999999,
+          "notional_usd": 2973.638294170749,
+          "reason": "aligned_uptrend_pullback_reclaim"
+        },
+        {
+          "date": "2026-01-21",
+          "side": "sell",
+          "shares": 59.06521589374812,
+          "open_price": 60.24,
+          "execution_price": 60.17976,
+          "notional_usd": 3558.088605439387,
+          "reason": "take_profit_rejection",
+          "slot_id": null
+        },
+        {
+          "date": "2026-02-12",
+          "side": "buy",
+          "shares": 50.968559455958825,
+          "open_price": 69.67,
+          "execution_price": 69.73966999999999,
+          "notional_usd": 3550.9795372966514,
+          "reason": "aligned_uptrend_pullback_reclaim"
+        },
+        {
+          "date": "2026-03-03",
+          "side": "sell",
+          "shares": 50.968559455958825,
+          "open_price": 55.115,
+          "execution_price": 55.059885,
+          "notional_usd": 2809.1321544151706,
+          "reason": "weakness_10ema",
+          "slot_id": null
+        }
+      ]
+    },
+    "staged_alerts": [
+      {
+        "signal_date": "2025-08-05",
+        "grade": "B",
+        "trigger": "weakness_10ema",
+        "quantity": 24,
+        "slot_id": "SOXL-R25",
+        "warnings": []
+      },
+      {
+        "signal_date": "2025-08-06",
+        "grade": "B",
+        "trigger": "weakness_20ema",
+        "quantity": 24,
+        "slot_id": "SOXL-R50",
+        "warnings": []
+      },
+      {
+        "signal_date": "2025-09-03",
+        "grade": "B",
+        "trigger": "technical_stop",
+        "quantity": 24,
+        "slot_id": "SOXL-R75",
+        "warnings": []
+      },
+      {
+        "signal_date": "2025-11-28",
+        "grade": "F",
+        "trigger": null,
+        "quantity": null,
+        "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+      },
+      {
+        "signal_date": "2025-12-24",
+        "grade": "F",
+        "trigger": null,
+        "quantity": null,
+        "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+      },
+      {
+        "signal_date": "2026-07-02",
+        "grade": "F",
+        "trigger": null,
+        "quantity": null,
+        "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+      }
+    ],
+    "diagnostic_events": {
+      "A_reset_3session_cooldown_NOT_ACTIVE": [
+        {
+          "signal_date": "2025-08-05",
+          "grade": "B-diagnostic",
+          "trigger": "weakness_10ema",
+          "quantity": 24,
+          "slot_id": "SOXL-R25"
+        },
+        {
+          "signal_date": "2025-08-06",
+          "grade": "B-suppressed",
+          "trigger": "weakness_20ema",
+          "quantity": null,
+          "suppressed_reason": "three-completed-session cooldown"
+        },
+        {
+          "signal_date": "2025-08-08",
+          "event": "weakness_reset_rearmed",
+          "ema": 10
+        },
+        {
+          "signal_date": "2025-09-03",
+          "grade": "B-diagnostic",
+          "trigger": "technical_stop",
+          "quantity": 24,
+          "slot_id": "SOXL-R50"
+        },
+        {
+          "signal_date": "2025-11-14",
+          "grade": "B-diagnostic",
+          "trigger": "technical_stop",
+          "quantity": 24,
+          "slot_id": "SOXL-R75"
+        },
+        {
+          "signal_date": "2025-11-28",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        },
+        {
+          "signal_date": "2025-12-24",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        },
+        {
+          "signal_date": "2026-07-02",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        }
+      ],
+      "B_reset_cooldown_weakness10_watch_NOT_ACTIVE": [
+        {
+          "signal_date": "2025-08-05",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-08-06",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-08-06",
+          "grade": "B-diagnostic",
+          "trigger": "weakness_20ema",
+          "quantity": 24,
+          "slot_id": "SOXL-R25"
+        },
+        {
+          "signal_date": "2025-08-08",
+          "event": "weakness_reset_rearmed",
+          "ema": 20
+        },
+        {
+          "signal_date": "2025-08-20",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-08-21",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-09-02",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-09-03",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-09-03",
+          "grade": "B-diagnostic",
+          "trigger": "technical_stop",
+          "quantity": 24,
+          "slot_id": "SOXL-R50"
+        },
+        {
+          "signal_date": "2025-09-04",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-11-07",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-11-13",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-11-14",
+          "grade": "B-watch",
+          "trigger": "weakness_10ema",
+          "quantity": null,
+          "suppressed_reason": "diagnostic weakness_10ema watch-only"
+        },
+        {
+          "signal_date": "2025-11-14",
+          "grade": "B-diagnostic",
+          "trigger": "technical_stop",
+          "quantity": 24,
+          "slot_id": "SOXL-R75"
+        },
+        {
+          "signal_date": "2025-11-28",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        },
+        {
+          "signal_date": "2025-12-24",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        },
+        {
+          "signal_date": "2026-07-02",
+          "grade": "F",
+          "trigger": null,
+          "quantity": null,
+          "suppressed_reason": "unadjusted early-close volume is rejected by the active snapshot validator"
+        }
+      ]
+    },
+    "soxx_buy_hold_total_return_before_cost": 1.2532268014925942
+  },
+  "cost_sensitivity_total_returns": {
+    "0.0": {
+      "buy_hold_99": 4.503933910306845,
+      "active_staged_overlay_99": 1.2042176286865511,
+      "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE": 1.3227594592661474,
+      "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE": 1.3383997329709372,
+      "research_binary_long_cash_NOT_ACTIVE": 0.12296723770522777
+    },
+    "5.0": {
+      "buy_hold_99": 4.501183318647521,
+      "active_staged_overlay_99": 1.2027646739775335,
+      "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE": 1.3211880696277758,
+      "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE": 1.3368127108750896,
+      "research_binary_long_cash_NOT_ACTIVE": 0.11848448406309409
+    },
+    "10.0": {
+      "buy_hold_99": 4.4984354748320134,
+      "active_staged_overlay_99": 1.201313170771722,
+      "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE": 1.3196182498092237,
+      "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE": 1.3352272742159017,
+      "research_binary_long_cash_NOT_ACTIVE": 0.1140196229637036
+    },
+    "20.0": {
+      "buy_hold_99": 4.492948014278288,
+      "active_staged_overlay_99": 1.1984145101780799,
+      "diagnostic_A_reset_3session_cooldown_NOT_ACTIVE": 1.316483310231455,
+      "diagnostic_B_reset_cooldown_weakness10_watch_NOT_ACTIVE": 1.3320611477138704,
+      "research_binary_long_cash_NOT_ACTIVE": 0.10514328420460495
+    }
+  },
+  "limitations": [
+    "The live policy is a review-alert overlay, not an autonomous trading strategy.",
+    "The active hard-loss review has no deterministic sale quantity, so it is logged but not executed in the staged overlay.",
+    "The one-year staged overlay uses a hypothetical period-start cost anchor; the current USD 123.32 average cost cannot be applied before the actual acquisition dates without look-ahead.",
+    "All B alerts are assumed human-approved and filled at next open only for the simulation.",
+    "The 27-share SOXL residual has no EMA sale trigger and remains held.",
+    "The binary long/cash study completes missing entry/exit/size/reset rules and is not active policy.",
+    "Diagnostic A and B are predeclared sensitivity tests only; neither changes or optimizes the active policy.",
+    "SOXX is the policy confirmation proxy and references the same NYSE Semiconductor Index as SOXL; SOXL's daily reset prevents interpreting its multi-day return as three times SOXX.",
+    "One year is a single high-volatility regime and is insufficient for parameter optimization.",
+    "This is an in-sample mechanical replay of a policy formed after the tested period, not predictive validation."
+  ]
+}

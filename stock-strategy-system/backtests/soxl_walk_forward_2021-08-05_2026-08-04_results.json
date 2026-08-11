@@ -1,0 +1,52 @@
+{
+  "generated_at_utc": "2026-08-05T12:00:00+00:00",
+  "status": "failed_closed_missing_full_audited_history",
+  "classification": "no_performance_result_no_activation_verdict",
+  "oos_required": ["2021-08-05", "2026-08-04"],
+  "raw_history_required_from": "2018-08-01",
+  "network_attempt": {
+    "sandbox_error": "urllib.error.URLError caused by WinError 10061 connection refused",
+    "escalated_execution": "rejected_before_execution_due_to_Codex_usage_limit",
+    "retry_not_attempted_via_workaround": true
+  },
+  "local_data_audit": {
+    "full_2018_2026_SOXL_SOXX_found": false,
+    "available_audited_cache": "2024-06-03 through 2026-08-04; only 2025-08-05 through 2026-08-04 is an eligible one-year study",
+    "shortened_OOS_used": false
+  },
+  "metrics": null,
+  "fold_metrics": null,
+  "indicator_ablations": null,
+  "activation_eligible": false,
+  "candidate_activation": {
+    "quantity_bearing_reentry": false,
+    "peak_drawdown_20": false,
+    "peak_drawdown_25": false,
+    "peak_drawdown_30": false,
+    "peak_drawdown_35": false,
+    "time_stop_10": false,
+    "time_stop_20": false,
+    "time_stop_30": false,
+    "dynamic_factor_exposure_cap": false,
+    "SMA20_filter": false,
+    "SMA50_filter": false,
+    "SMA60_filter": false,
+    "SMA200_filter": false,
+    "MACD_12_26_9_filter": false,
+    "RVOL20_filter_change": false,
+    "Stochastic_20_3_3_filter": false,
+    "Chaikin_3_10_filter": false
+  },
+  "safety_controls_not_decided_by_return_test": {
+    "SOXL_weakness_10ema_watch_only": "may_be_considered_as_authority_reducing_safety_control",
+    "distinct_EMA_rearm": "may_be_considered_as_authority_reducing_safety_control",
+    "gap_halt_stale_fail_closed": "may_be_considered_as_authority_reducing_safety_control",
+    "citation_and_indicator_validation": "may_be_considered_as_authority_reducing_safety_control"
+  },
+  "validation": {
+    "script_py_compile": "passed",
+    "script_self_test": "passed_10_folds_split_adjustment_and_halt_freeze",
+    "independent_fail_closed_audit": "passed_as_failure_control"
+  },
+  "orders_placed_or_scheduled": false
+}

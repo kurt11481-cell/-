@@ -1,0 +1,36 @@
+# Workspace-local dependency and runtime caches
+.pnpm-store/
+.runtime-cache/
+
+# Unrelated application workspace kept outside this repository's scope
+environment-work-planner/
+
+# Python caches and generated test scratch space
+**/__pycache__/
+*.py[cod]
+stock-strategy-system/.tmp_skill_validation/
+stock-strategy-system/tmp_*.json
+
+# Mutable portfolio/runtime state and generated market-monitor artifacts
+stock-strategy-system/portfolio_state.json
+stock-strategy-system/alert_runtime_state.json
+stock-strategy-system/latest_alert*.json
+stock-strategy-system/latest_alert*.md
+stock-strategy-system/latest_snapshot_draft.json
+stock-strategy-system/leveraged_candidates_snapshot_draft.json
+stock-strategy-system/market_context.current.json
+stock-strategy-system/market_evidence.*.json
+stock-strategy-system/market_snapshot*.json
+stock-strategy-system/monitor_report_*.json
+stock-strategy-system/monitor_report_*.md
+stock-strategy-system/technical_validation*.json
+stock-strategy-system/transient_snapshot_*.json
+
+# Deployed/staging copies are not canonical source trees
+stock-strategy-system/skill-staging/
+
+# Editor and operating-system noise
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

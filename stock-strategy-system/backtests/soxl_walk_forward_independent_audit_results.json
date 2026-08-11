@@ -1,0 +1,84 @@
+{
+  "generated_at_utc": "2026-08-05T12:03:13.743008+00:00",
+  "protocol": "SOXL_WALK_FORWARD_PROTOCOL_2026-08-05.md",
+  "status": "failed_closed",
+  "policy_activation_eligible": false,
+  "oos_required": [
+    "2021-08-05",
+    "2026-08-04"
+  ],
+  "folds": [
+    {
+      "fold": 1,
+      "train_start": "2019-08-05",
+      "train_end": "2021-08-04",
+      "test_start": "2021-08-05",
+      "test_end": "2022-02-04"
+    },
+    {
+      "fold": 2,
+      "train_start": "2020-02-05",
+      "train_end": "2022-02-04",
+      "test_start": "2022-02-05",
+      "test_end": "2022-08-04"
+    },
+    {
+      "fold": 3,
+      "train_start": "2020-08-05",
+      "train_end": "2022-08-04",
+      "test_start": "2022-08-05",
+      "test_end": "2023-02-04"
+    },
+    {
+      "fold": 4,
+      "train_start": "2021-02-05",
+      "train_end": "2023-02-04",
+      "test_start": "2023-02-05",
+      "test_end": "2023-08-04"
+    },
+    {
+      "fold": 5,
+      "train_start": "2021-08-05",
+      "train_end": "2023-08-04",
+      "test_start": "2023-08-05",
+      "test_end": "2024-02-04"
+    },
+    {
+      "fold": 6,
+      "train_start": "2022-02-05",
+      "train_end": "2024-02-04",
+      "test_start": "2024-02-05",
+      "test_end": "2024-08-04"
+    },
+    {
+      "fold": 7,
+      "train_start": "2022-08-05",
+      "train_end": "2024-08-04",
+      "test_start": "2024-08-05",
+      "test_end": "2025-02-04"
+    },
+    {
+      "fold": 8,
+      "train_start": "2023-02-05",
+      "train_end": "2025-02-04",
+      "test_start": "2025-02-05",
+      "test_end": "2025-08-04"
+    },
+    {
+      "fold": 9,
+      "train_start": "2023-08-05",
+      "train_end": "2025-08-04",
+      "test_start": "2025-08-05",
+      "test_end": "2026-02-04"
+    },
+    {
+      "fold": 10,
+      "train_start": "2024-02-05",
+      "train_end": "2026-02-04",
+      "test_start": "2026-02-05",
+      "test_end": "2026-08-04"
+    }
+  ],
+  "inputs": {},
+  "reason": "ValueError: SOXL: begins 2024-06-03, later than required 2018-08-01"
+}

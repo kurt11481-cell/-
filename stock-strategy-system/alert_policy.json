@@ -1,0 +1,689 @@
+{
+  "schema_version": "1.3",
+  "strategy_version": "2026-08-05-v4",
+  "policy_version": "leveraged-ema-rearm-review-v4",
+  "exchange_timezone": "America/New_York",
+  "display_timezone": "Asia/Seoul",
+  "language_policy": {
+    "version": "2026-08-06-english-core-v1",
+    "accepted_user_input_languages": ["ko-KR", "en-US"],
+    "internal_task_specification_language": "en-US",
+    "skill_policy_schema_code_and_command_language": "en-US",
+    "core_source_ascii_only": true,
+    "default_output_locale": "ko-KR",
+    "localized_labels_resource": "assets/locales/ko-KR.json",
+    "canonical_headline_keys": ["alert_present", "alert_none"],
+    "preserve_external_paths_quotes_and_legal_names": true
+  },
+  "schedule_description": "KST Tuesday-Saturday after 07:30; verify the official U.S. exchange calendar on every run",
+  "daily_engine_scope": "leveraged_holding_risk_and_watchlist",
+  "deployment_gate": {
+    "status": "verified_installed_skill_sync",
+    "automatic_timing_monitor_allowed": true,
+    "manual_read_only_review_allowed": true,
+    "hard_risk_arithmetic_review_allowed": true,
+    "required_source_timing_engine_sha256": "DAC71EA7EB5EB2B1E7A2B07734AA360F287FEF3FF2487996B1FA9DFC0A5BB332",
+    "required_source_evaluator_sha256": "10E65F1D40F2DEB338D8D3BA85E2DD68088E9C34A041AEF2B4BA3E88473D7570",
+    "required_source_skill_sha256": "E9E42249BA9C8BD09393D0E1066160CFDF10927A7561FE5F7A13E5B8F45DBE59",
+    "required_source_builder_sha256": "70CE879D982C6E178BB6B1CA88B03D95D64D04E8FE54DC35EE538B7AB67469A3",
+    "required_source_yfinance_contract_sha256": "3474626329CBA60BD58BDDF6343A851C0BA0B7E22779D8B35C7FED70F234D746",
+    "required_source_output_locale_sha256": "319AFB05FE785196A5AEAC0282756E8D51BDE414B60E4D2DC08AD6F7EAA176E9",
+    "observed_installed_timing_engine_sha256": "DAC71EA7EB5EB2B1E7A2B07734AA360F287FEF3FF2487996B1FA9DFC0A5BB332",
+    "observed_installed_evaluator_sha256": "10E65F1D40F2DEB338D8D3BA85E2DD68088E9C34A041AEF2B4BA3E88473D7570",
+    "observed_installed_skill_sha256": "E9E42249BA9C8BD09393D0E1066160CFDF10927A7561FE5F7A13E5B8F45DBE59",
+    "observed_installed_builder_sha256": "70CE879D982C6E178BB6B1CA88B03D95D64D04E8FE54DC35EE538B7AB67469A3",
+    "observed_installed_yfinance_contract_sha256": "3474626329CBA60BD58BDDF6343A851C0BA0B7E22779D8B35C7FED70F234D746",
+    "observed_installed_output_locale_sha256": "319AFB05FE785196A5AEAC0282756E8D51BDE414B60E4D2DC08AD6F7EAA176E9",
+    "verified_at_kst": "2026-08-11T10:05:00+09:00",
+    "verification": "Source, staging, and installed hashes matched across all 30 non-cache Skill files; all 42 workspace Skill tests passed. MVLL direct-close resolution, supplemental MRVL daily-leverage corroboration, and the append-only research lifecycle were added. No strategy threshold, tranche, fill, cash, or order authority changed.",
+    "unblock_condition": "satisfied"
+  },
+  "maximum_snapshot_age_hours": 18,
+  "broker_snapshot_max_age_calendar_days": 4,
+  "cash_policy": {
+    "require_verified_available_cash_for_grade_a_buy": true,
+    "count_unfilled_sale_proceeds_as_cash": false,
+    "count_sgov_as_cash": false,
+    "count_margin_as_cash": false,
+    "watch_only_when_available_cash_lte_zero": true
+  },
+  "market_data_collection_policy": {
+    "version": "2026-08-06-yfinance-v1",
+    "primary_collector": "yfinance",
+    "provider_role": "unofficial_raw_ohlcv_research_data",
+    "required_interval": "1d",
+    "minimum_request_delay_seconds": 1.0,
+    "request_mode": "sequential_single_ticker",
+    "threads": false,
+    "prepost": false,
+    "auto_adjust": false,
+    "repair": false,
+    "compute_indicators_locally": true,
+    "reuse_one_transient_snapshot_per_run": true,
+    "bounded_retry_only": true,
+    "parallel_retry_prohibited": true,
+    "ip_rotation_or_throttle_bypass_prohibited": true,
+    "silent_stale_bar_substitution_prohibited": true,
+    "held_symbol_failure": "DATA_INCOMPLETE_F",
+    "watch_only_symbol_failure": "disable_only_affected_watch_item",
+    "independent_close_crosscheck_required": true,
+    "independent_close_source_must_not_share_yahoo_origin": true
+  },
+  "evidence_validation_policy": {
+    "version": "2026-08-05-evidence-ledger-v1",
+    "apply_every_run": true,
+    "official_calendar_required": true,
+    "held_instrument_identity_requires_official_issuer_source": true,
+    "held_ohlcv_requires_same_completed_regular_session": true,
+    "independent_close_crosscheck_required_for_timing": true,
+    "indicator_formula_recomputation_required_for_timing": true,
+    "technical_price_basis_required": "split_adjusted_ohlc_rescaled_to_latest_raw_close",
+    "hard_loss_price_basis_required": "raw_completed_regular_session_close",
+    "provenance_ledger_required_fields": [
+      "source",
+      "observation_session",
+      "retrieval_or_verification_time",
+      "units",
+      "price_basis",
+      "formula_version",
+      "independent_confirmation_status"
+    ],
+    "missing_or_contradictory_timing_evidence": "disable_timing_candidate_and_mark_verification_failure",
+    "missing_or_contradictory_held_raw_close": "DATA_INCOMPLETE_F",
+    "technical_failure_must_not_hide_valid_raw_close_hard_risk": true,
+    "research_claims_without_direct_source": "not_verified_and_cannot_upgrade_signal"
+  },
+  "decision_harness": {
+    "policy_version": "2026-07-31-research-gate-v1",
+    "schema_contract": {
+      "research_packet": "1.1",
+      "portfolio_state": "1.3",
+      "alert_policy": "1.3",
+      "market_snapshot": "1.0"
+    },
+    "llm_output_is_untrusted_input": true,
+    "validator_can_place_or_approve_orders": false,
+    "packet_to_candidate_adapter_enabled": false,
+    "maximum_validator_grade": "B",
+    "maximum_live_packet_age_hours": 18,
+    "required_roles_by_mode": {
+      "live_new_buy": [
+        "identity_data_auditor",
+        "fundamental_valuation_analyst",
+        "market_technical_analyst",
+        "news_macro_analyst",
+        "bull_researcher",
+        "bear_researcher",
+        "risk_controller",
+        "synthesizer"
+      ],
+      "holding_risk": [
+        "identity_data_auditor",
+        "market_technical_analyst",
+        "bear_researcher",
+        "risk_controller",
+        "synthesizer"
+      ],
+      "report_validation": [
+        "identity_data_auditor",
+        "fundamental_valuation_analyst",
+        "news_macro_analyst",
+        "bull_researcher",
+        "bear_researcher",
+        "risk_controller",
+        "synthesizer"
+      ]
+    },
+    "required_source_types_by_mode": {
+      "live_new_buy": ["primary", "market_data"],
+      "holding_risk": ["market_data"],
+      "report_validation": ["primary"]
+    },
+    "instrument_registry": {
+      "SOXL": {
+        "instrument_type": "leveraged_etf",
+        "identity_status": "verified",
+        "official_objective": "300% of the daily performance of the NYSE Semiconductor Index before fees and expenses",
+        "official_issuer": "Direxion",
+        "official_identity_source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+        "confirmation_symbol": "SOXX",
+        "holding_identity_verified": true,
+        "watchlist_approved": true,
+        "new_buy_instrument_approved": false
+      },
+      "MVLL": {
+        "instrument_type": "leveraged_etf",
+        "identity_status": "verified",
+        "official_objective": "200% of the daily percentage change of Marvell Technology common stock before fees and expenses",
+        "official_issuer": "GraniteShares",
+        "official_identity_source_url": "https://graniteshares.com/etfs/mvll/",
+        "confirmation_symbol": "MRVL",
+        "holding_identity_verified": true,
+        "watchlist_approved": false,
+        "new_buy_instrument_approved": false
+      },
+      "NBIL": {
+        "instrument_type": "leveraged_etf",
+        "identity_status": "verified",
+        "official_objective": "200% of the daily percentage change of Nebius Group N.V. common stock before fees and expenses",
+        "official_issuer": "GraniteShares",
+        "official_identity_source_url": "https://graniteshares.com/etfs/nbil/",
+        "confirmation_symbol": "NBIS",
+        "holding_identity_verified": true,
+        "watchlist_approved": false,
+        "new_buy_instrument_approved": false,
+        "monitoring_scope": "de_minimis_manual_exit_only"
+      },
+      "DRAM": {
+        "instrument_type": "spot_etf",
+        "identity_status": "verified",
+        "holding_identity_verified": false,
+        "watchlist_approved": true,
+        "new_buy_instrument_approved": false
+      },
+      "NBIS": {
+        "instrument_type": "stock",
+        "identity_status": "verified",
+        "holding_identity_verified": false,
+        "watchlist_approved": true,
+        "new_buy_instrument_approved": false
+      },
+      "BE": {
+        "instrument_type": "stock",
+        "identity_status": "verified",
+        "holding_identity_verified": false,
+        "watchlist_approved": true,
+        "new_buy_instrument_approved": false
+      }
+    },
+    "approved_rule_registry": {
+      "soxl_max_loss_review": {
+        "status": "approved",
+        "symbol": "SOXL",
+        "allowed_actions": ["reduce", "sell"],
+        "quantity_authority": "none",
+        "authority": "user-approved maximum loss; alert engine calculates the exact boundary"
+      },
+      "mvll_max_loss_review": {
+        "status": "approved",
+        "symbol": "MVLL",
+        "allowed_actions": ["reduce", "sell"],
+        "quantity_authority": "none",
+        "authority": "user-approved maximum loss; alert engine calculates the exact boundary"
+      },
+      "mvll_staged_reduction": {
+        "status": "approved_review_only",
+        "symbol": "MVLL",
+        "allowed_actions": ["reduce"],
+        "quantity_authority": "versioned_anchor_and_shared_tranche_slots",
+        "authority": "user instruction on 2026-08-05 to review, improve, and activate the proposed conditions; still no order authority"
+      },
+      "soxl_staged_timing": {
+        "status": "approved_review_only",
+        "symbol": "SOXL",
+        "allowed_actions": ["reduce"],
+        "quantity_authority": "versioned_anchor_and_shared_tranche_slots",
+        "authority": "user instruction on 2026-08-05 to review, improve, and activate the proposed conditions; still no order authority"
+      },
+      "nbil_de_minimis_manual_exit": {
+        "status": "approved_de_minimis_manual_exit",
+        "symbol": "NBIL",
+        "allowed_actions": ["manual_exit_review"],
+        "quantity_authority": "none",
+        "authority": "user explicitly stated the one-share position may be ignored or manually closed at any time"
+      },
+      "post_reduction_weakness_rearm": {
+        "status": "approved_review_only",
+        "symbols": ["SOXL", "MVLL"],
+        "allowed_actions": ["gate_next_weakness_review"],
+        "quantity_authority": "none",
+        "authority": "explicit user request to require recovery above the related EMA after a confirmed reduction"
+      }
+    }
+  },
+  "research_lifecycle_policy": {
+    "version": "2026-08-11-auditable-cycle-v1",
+    "status": "active_research_only_no_order_authority",
+    "packet_validator": "scripts/validate_research_packet.py",
+    "cycle_validator": "scripts/validate_research_cycle.py",
+    "required_stages": [
+      "research",
+      "counter_case",
+      "scenario_analysis",
+      "pre_trade_decision",
+      "local_disclosure",
+      "post_evaluation"
+    ],
+    "latest_news_scan_triggers": [
+      "new_held_position_grade_B_event",
+      "new_held_position_grade_D_event",
+      "material_issuer_sector_or_macro_event",
+      "before_any_new_buy_or_add_review",
+      "user_requested_strategy_review"
+    ],
+    "scheduled_refresh": {
+      "weekly": "after_the_final_completed_us_regular_session_of_each_week",
+      "monthly": "full_thesis_valuation_and_scenario_refresh_after_month_end"
+    },
+    "post_evaluation_checkpoints_completed_sessions": [5, 20, 60],
+    "evaluate_named_catalyst_dates": true,
+    "decision_record_mutability": "immutable_after_local_disclosure",
+    "outcome_record_mode": "append_only",
+    "external_publication_authorized": false,
+    "local_audit_artifact_required": true,
+    "reflection_can_mutate_policy_or_portfolio_state": false,
+    "direct_order_or_schedule_authority": false
+  },
+  "holding_risk_rules": {
+    "rule_version": "2026-07-31-cost-loss-v1",
+    "price_field": "raw_completed_regular_session_close",
+    "cost_basis_field": "state.average_cost_usd",
+    "threshold_formula": "average_cost_usd * (1 - maximum_loss_fraction_from_average_cost)",
+    "breach_operator": "less_than_or_equal",
+    "comparison_uses_unrounded_threshold": true,
+    "breach_grade": "D",
+    "actionability": "next_session_human_review_only",
+    "freeze_new_buy_candidates_on_any_breach": true,
+    "positions": {
+      "SOXL": {
+        "horizons": ["short", "medium"],
+        "default_direction": "hold",
+        "maximum_loss_fraction_from_average_cost": 0.2,
+        "reduction_plan_status": "not_applicable"
+      },
+      "MVLL": {
+        "horizons": ["short", "medium"],
+        "default_direction": "reduce",
+        "maximum_loss_fraction_from_average_cost": 0.6,
+        "reduction_plan_status": "approved"
+      }
+    },
+    "de_minimis_manual_exit_positions": {
+      "NBIL": {
+        "status": "approved_de_minimis_manual_exit",
+        "default_direction": "reduce",
+        "maximum_ignored_shares": 1,
+        "maximum_ignored_position_cost_basis_usd": 65.2,
+        "quantity_authority": "none",
+        "automatic_alert": false,
+        "automatic_order": false,
+        "fill_inference": false,
+        "cap_breach_policy": "STATE_MISMATCH_F"
+      }
+    }
+  },
+  "holding_timing_rules": {
+    "status": "approved_review_only",
+    "policy_version": "2026-08-05-ema-timing-v4",
+    "maximum_alert_grade": "B",
+    "formula_version": "2026-08-05-ema-atr-v2",
+    "timing_feature_version": "2026-08-05-timing-features-v1",
+    "one_candidate_per_symbol_per_session": true,
+    "candidate_validity": "next_regular_session_only",
+    "unlock_next_tranche_only_after_confirmed_fill": true,
+    "signal_is_not_fill": true,
+    "weakness_rearm": {
+      "status": "approved_review_only",
+      "applies_only_after_explicit_confirmed_reduction_fill": true,
+      "required_ema_by_confirmed_trigger": {
+        "technical_stop": 20,
+        "weakness_10ema": 10,
+        "weakness_20ema": 20,
+        "weakness_failed_reclaim": 20,
+        "strength_10ema_reclaim": 10,
+        "strength_20ema_reclaim": 20,
+        "strength_extension": 20,
+        "take_profit_rejection": 20
+      },
+      "minimum_common_recovery_sessions": 1,
+      "minimum_completed_sessions_after_fill": 3,
+      "requires_position_and_confirmation_proxy_same_session_recovery": true,
+      "missing_fill_session_or_timing_window_policy": "fail_closed_no_quantity_review",
+      "technical_stop_bypasses_rearm": false,
+      "hard_maximum_loss_bypasses_rearm": true
+    },
+    "technical_error_scope": "disable_only_ema_timing; preserve_raw-close_hard-risk_review",
+    "second_quote_crosscheck": {
+      "required": true,
+      "maximum_difference_formula": "max(USD 0.05, 0.001 * raw_completed_close)",
+      "independent_source_required": true
+    },
+    "definitions": {
+      "ema_test_zone_atr": 0.25,
+      "ema_test_max_age_sessions": 3,
+      "reclaim_buffer_atr": 0.1,
+      "decisive_breach_buffer_atr": 0.25,
+      "ema_direction_threshold_atr_over_3_sessions": 0.1,
+      "repeated_crossing_count": 3,
+      "repeated_crossing_lookback_sessions": 8,
+      "pullback_test_relative_volume_maximum": 1.0,
+      "pullback_reclaim_relative_volume_minimum": 1.0,
+      "pullback_reclaim_to_test_volume_ratio_minimum": 1.2,
+      "breakout_relative_volume_minimum": 1.2,
+      "pullback_max_extension_above_20ema_atr": 1.5,
+      "breakout_max_extension_above_20ema_atr": 2.0,
+      "overheat_high_above_20ema_atr": 2.5,
+      "overheat_close_max_above_20ema_atr": 2.0,
+      "overheat_close_position_maximum": 0.35,
+      "overheat_relative_volume_minimum": 1.2,
+      "minimum_average_daily_dollar_volume_usd": 10000000,
+      "maximum_bid_ask_spread_fraction": 0.005,
+      "excessive_gap_limit": "max(5%, ATR14 / prior completed close)",
+      "existing_position_technical_stop": "max(prior 10-session low - 0.25 ATR14, 20EMA - 0.75 ATR14, exact hard maximum-loss boundary)",
+      "technical_stop_confirmation": "one close at least 0.25 ATR14 below the dynamic stop, or two consecutive closes at or below the dynamic stop"
+    },
+  "conflict_priority": [
+    "hard_maximum_loss_review",
+    "halt_risk_watch",
+    "gap_risk_watch",
+    "technical_stop",
+      "weakness_20ema",
+      "weakness_failed_reclaim",
+      "weakness_10ema",
+      "strength_20ema_reclaim",
+      "strength_10ema_reclaim",
+      "strength_extension",
+      "take_profit_rejection",
+      "buy_review"
+    ],
+    "positions": {
+      "SOXL": {
+        "anchor_shares": 99,
+        "confirmation_symbol": "SOXX",
+        "default_direction": "hold",
+        "r_multiple_targets_enabled": false,
+        "watch_only_triggers": ["weakness_10ema", "gap_risk", "halt_risk"],
+        "slots": [
+          {"id": "SOXL-R25", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
+          {"id": "SOXL-R50", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
+          {"id": "SOXL-R75", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim"]},
+          {"id": "SOXL-FINAL-RESIDUAL", "quantity": 27, "allowed_triggers": []}
+        ],
+        "final_residual_policy": "hard-risk review or later explicit user instruction only"
+      },
+      "MVLL": {
+        "anchor_shares": 396,
+        "confirmation_symbol": "MRVL",
+        "default_direction": "reduce",
+        "r_multiple_targets_enabled": false,
+        "watch_only_triggers": ["gap_risk", "halt_risk"],
+        "slots": [
+          {"id": "MVLL-R25", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "weakness_10ema", "strength_20ema_reclaim", "strength_10ema_reclaim", "strength_extension"]},
+          {"id": "MVLL-R50", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_20ema_reclaim", "strength_extension"]},
+          {"id": "MVLL-R75", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_extension"]},
+          {"id": "MVLL-FINAL-RESIDUAL", "quantity": 99, "allowed_triggers": ["technical_stop"]}
+        ]
+      }
+    },
+    "watch_confirmations": {
+      "DRAM": {"leveraged": false, "confirmation_symbol": null},
+      "NBIS": {"leveraged": false, "confirmation_symbol": null},
+      "BE": {"leveraged": false, "confirmation_symbol": null},
+      "SOXL": {"leveraged": true, "confirmation_symbol": "SOXX"}
+    },
+    "new_buy_activation": {
+      "technical_setup_detection": "active_watch_only",
+      "aligned_downtrend_entry": "disabled",
+      "early_recovery_exception": "disabled",
+      "ordinary_entry_setups": ["aligned_uptrend_pullback_reclaim", "aligned_uptrend_breakout_acceptance"],
+      "cash_and_quantity_gate": "blocked_until_positive_verified_cash_and_user_approved_risk_budget",
+      "research_and_valuation_gate": "required_before_any_upgrade_above_B",
+      "earnings_blackout_single_stocks": "2 completed sessions before scheduled earnings through the first completed session after results"
+    },
+    "post_reduction_reentry_research": {
+      "status": "inactive_failed_closed_insufficient_3_to_5_year_walk_forward_data",
+      "activation_eligible": false,
+      "active_candidate_generation": false,
+      "applies_only_after_explicit_confirmed_reduction_fill": true,
+      "maximum_reentry_quantity": "no more than the most recently confirmed reduced slot, and only after a separate approved risk budget",
+      "required_gates": [
+        "verified positive available cash",
+        "explicit confirmed prior reduction fill record with tranche ID, session, trigger path, and quantity",
+        "position and confirmation proxy each close above 20EMA for two consecutive completed sessions",
+        "position and confirmation proxy each have 10EMA above 20EMA",
+        "both 20EMAs are rising under the active formula",
+        "no hard-risk freeze, excessive gap, explicit halt, stale quote, or unresolved corporate action",
+        "validated technical snapshot and independent same-session close cross-check",
+        "approved post-trade exposure and gross-leverage cap",
+        "user-approved initial stop, maximum-loss rule, and position-risk budget"
+      ],
+      "eligibility_expiry_completed_sessions": 10,
+      "draft_restore_fraction_grid": [0.25, 0.5, 0.75, 1.0],
+      "whole_share_rounding": "floor",
+      "quantity_cap_formula": "min(last confirmed sold-slot shares, settled verified cash shares, approved risk-budget shares, approved portfolio gross-leverage-cap shares)",
+      "zero_cash_effect": "diagnostic watch only; quantity must remain null",
+      "mvll_reentry_status": "disabled_while_default_direction_is_reduce",
+      "fill_policy": "never infer sale proceeds, reentry fills, or restored shares",
+      "activation_gate": "five-year stitched out-of-sample acceptance plus 3-to-6-month or 20-independent-signal forward shadow validation"
+    },
+    "risk_overlay_rules": {
+      "gap_response": {
+        "status": "approved_watch_only",
+        "trigger": "absolute opening gap exceeds max(5%, ATR14/prior close) or open gaps through the prior technical-stop level",
+        "grade": "B",
+        "quantity": null,
+        "response": "cancel stale candidate and require first-tradable-price human review; never infer a stop fill"
+      },
+      "halt_response": {
+        "status": "approved_watch_only",
+        "trigger": "explicit halted, paused, or suspended provider status only",
+        "zero_volume_alone_is_halt": false,
+        "grade": "B",
+        "quantity": null,
+        "response": "freeze new entries and require a human review after trading resumes; never infer a fill"
+      },
+      "peak_drawdown": {
+        "status": "inactive_failed_closed_insufficient_3_to_5_year_walk_forward_data",
+        "activation_eligible": false,
+        "active_candidate_generation": false,
+        "anchor_source": "prospective completed closes after an explicitly approved activation anchor",
+        "draft_threshold_fraction_grid": [0.2, 0.25, 0.3, 0.35],
+        "draft_confirmation": "fresh false-to-true peak-to-close breach while both holding and confirmation proxy close below EMA20",
+        "partial_reduction_hwm_reset": false,
+        "reentered_slot_uses_separate_hwm": true,
+        "existing_holdings_retroactive_application": false,
+        "broker_fill_inference": false,
+        "activation_gate": "five-year stitched out-of-sample acceptance plus forward shadow validation"
+      },
+      "time_stop": {
+        "status": "inactive_failed_closed_insufficient_3_to_5_year_walk_forward_data",
+        "activation_eligible": false,
+        "active_candidate_generation": false,
+        "draft_completed_session_grid": [10, 20, 30],
+        "draft_condition": "MFE remains below 0.5 planned R and both holding and confirmation proxy close below EMA20",
+        "applies_only_to": "future explicit entries or reentries with a versioned planned R anchor",
+        "existing_holdings_retroactive_application": false,
+        "halted_or_nontradable_sessions_count_toward_time_stop": false,
+        "broker_fill_inference": false,
+        "activation_gate": "five-year stitched out-of-sample acceptance plus forward shadow validation"
+      },
+      "dynamic_gross_leverage_cap": {
+        "status": "inactive_failed_closed_insufficient_portfolio_level_walk_forward_data",
+        "activation_eligible": false,
+        "active_candidate_generation": false,
+        "same_day_optimization_prohibited": true,
+        "llm_may_raise_numeric_cap": false,
+        "objective": "maximize out-of-sample geometric return subject to approved drawdown, recovery-time, concentration, liquidity, gap-risk, and turnover constraints",
+        "gross_effective_leverage_formula": "3*abs(SOXL market-value weight) + 2*abs(MVLL market-value weight) + 2*abs(NBIL market-value weight)",
+        "semiconductor_cluster_effective_leverage_formula": "3*abs(SOXL market-value weight) + 2*abs(MVLL market-value weight)",
+        "soxl_only_research_tiers": [0.75, 1.5, 2.25, 3.0],
+        "soxl_only_tier_map": {
+          "0.75": "SOXX close below SMA200 or aligned EMA downtrend",
+          "1.50": "neither risk-off nor risk-on",
+          "2.25": "SOXX close above rising SMA200 and EMA20, EMA10 above EMA20, and EMA20 rising",
+          "3.00": "2.25 conditions plus SMA50 above SMA200 and SMA50 rising over five completed sessions"
+        },
+        "tier_change_execution_assumption": "next regular open only when tier changes and target capital-weight difference is at least 10 percentage points",
+        "soxl_only_result_can_validate_live_portfolio_cap": false,
+        "activation_gate": "portfolio-level stitched out-of-sample maximum drawdown improvement of at least 5 percentage points and recovery-time improvement of at least 10 percent while retaining at least 90 percent of baseline CAGR, plus forward shadow validation"
+      },
+      "additional_indicator_filters": {
+        "status": "inactive_failed_closed_insufficient_3_to_5_year_walk_forward_data",
+        "activation_eligible": false,
+        "active_candidate_generation": false,
+        "candidate_indicators": ["MA20", "MA50", "MA60", "MA200", "MACD(12,26,9)", "RVOL20", "Stoch(20,3,3)", "ChaikinOscillator(3,10)"],
+        "scope": "entry and reentry filters only; never standalone exits",
+        "one_at_a_time_ablation_required": true,
+        "sma50_and_sma60_are_alternatives": true,
+        "sma20_and_macd_are_not_independent_votes_from_ema_trend": true,
+        "draft_minimal_set": ["EMA10", "EMA20", "SOXX SMA200 and slope", "ATR14", "RVOL20", "prior price structure"],
+        "stoch_role": "reentry filter candidate only",
+        "chaikin_role": "low-priority research; never label as institutional accumulation",
+        "activation_gate": "each candidate must independently pass the five-year stitched out-of-sample, cost-stress, fold, regime, and adjacent-parameter acceptance gate; then forward shadow validation"
+      },
+      "walk_forward_activation_gate": {
+        "status": "failed_closed",
+        "activation_eligible": false,
+        "required_raw_history_start_on_or_before": "2018-08-01",
+        "required_out_of_sample_period": ["2021-08-05", "2026-08-04"],
+        "required_folds": 10,
+        "available_local_history_start": "2024-06-03",
+        "failure_reason": "the available local SOXL and SOXX history cannot produce the required five-year multi-regime stitched out-of-sample test",
+        "safety_only_controls_exempt_from_return_gate": ["SOXL weakness_10ema watch-only", "confirmed-fill EMA rearm", "gap and halt watch-only fail-closed handling", "evidence and citation validation"],
+        "return_seeking_rules_blocked": ["post-reduction reentry", "peak drawdown exits", "time stops", "dynamic leverage cap", "additional indicator votes"]
+      }
+    }
+  },
+  "watchlist": {
+    "policy_version": "2026-07-31-watch-v1",
+    "actionability": "watch_only",
+    "cash_gate": "no_actionable_buy_when_verified_available_cash_lte_zero",
+    "entry_rules_status": "approved_technical_detection_watch_only",
+    "cash_change_alone_can_enable_grade_a": false,
+    "requirements_before_actionable_buy": [
+      "verified positive available cash",
+      "user-approved instrument and any leveraged ticker",
+      "user-approved entry rule or price band",
+      "user-approved position size or risk budget",
+      "user-approved maximum-loss rule"
+    ],
+    "candidates": [
+      {
+        "base_symbol": "DRAM",
+        "purpose": "new_position_watch",
+        "leverage_permitted": true,
+        "approved_leveraged_symbol": null
+      },
+      {
+        "base_symbol": "NBIS",
+        "purpose": "new_position_watch",
+        "leverage_permitted": true,
+        "approved_leveraged_symbol": null
+      },
+      {
+        "base_symbol": "BE",
+        "purpose": "new_position_watch",
+        "leverage_permitted": true,
+        "approved_leveraged_symbol": null
+      },
+      {
+        "base_symbol": "SOXL",
+        "purpose": "possible_add_on_watch",
+        "leverage_permitted": true,
+        "approved_leveraged_symbol": "SOXL"
+      }
+    ]
+  },
+  "alert_grades": {
+    "A": "next-session execution candidate; human approval still required",
+    "B": "non-actionable watch or strategy-plan review; no order quantity may be inferred",
+    "C": "scheduled review",
+    "D": "hard holding-risk review; a maximum-loss boundary was reached or breached; no automatic order",
+    "E": "no new alert",
+    "F": "critical data or state error; freeze every trade candidate"
+  },
+  "archived_prior_strategy": {
+    "archived_at_strategy_version": "2026-07-31-v2",
+    "prior_strategy_version": "2026-07-31-v1",
+    "band_version": "2026-07-31-initial-v1",
+    "daily_engine_scope": "active_staged_plan_only",
+    "tracking_symbols": ["DGRO", "DVY", "SCHD", "FNDX", "SPYM", "QQQM", "SPMO", "SOXX", "DRAM", "XLV"],
+    "zero_target_exceptions": ["DIVB"],
+    "market_context_symbols": ["SPYM"],
+    "exposure_caps": {"SOXX": 0.1, "DRAM": 0.05},
+    "minimum_trade_fraction": 0.02,
+    "minimum_cash_buffer_fraction": 0.02,
+    "watch_distance_fraction": 0.01,
+    "band_revision_threshold_fraction": 0.02,
+    "auto_mutate_bands": false,
+    "trend_confirmation": {
+      "status": "provisional_v1_requires_forward_test",
+      "buy_rule": "At least 3 of close>=MA20, MA20>=MA50, MA50 non-falling over 5 sessions, close>=MA200",
+      "buy_minimum_pass_count": 3,
+      "sell_rule": "close>=MA20 or RSI14>=55 while price is in the approved sale band",
+      "sell_rsi_minimum": 55
+    },
+    "strategic_core_weights": {"SPYM": 0.4, "DGRO": 0.15, "FNDX": 0.15},
+    "core_rebalance": {
+      "cadence": "last_completed_us_session_of_calendar_quarter",
+      "target_share_recalculation_requires_user_approval": true,
+      "weight_band_fraction": null
+    },
+    "relative_momentum": {
+      "cadence": "last_completed_us_session_of_calendar_month",
+      "candidate_symbols": ["DVY", "SCHD", "XLV", "QQQM", "SPMO", "SOXX", "DRAM"],
+      "ranking_metric": "six_month_dividend_reinvested_total_return",
+      "minimum_six_month_rows": 126,
+      "minimum_long_trend_rows": 252,
+      "switch_threshold_percentage_points": 5.0,
+      "eligibility": ["close_above_10_month_moving_average", "12_month_absolute_total_return_positive", "63_day_volatility_not_above_1.5_times_candidate_median"],
+      "top_n": 1,
+      "tie_break": ["lower_63_day_volatility", "alphabetical_ticker"],
+      "ineligible_allocation_destination": "SGOV",
+      "new_etf_proxy_allowed": false,
+      "baseline_tracking_shares": 1,
+      "active_overlay_total_shares": 5,
+      "overlay_requires_user_approval": true
+    },
+    "risk_pause": {
+      "condition": "SPYM and the active tactical satellite are both below their 10-month moving averages and both have negative 12-month absolute total returns",
+      "action": "freeze later-stage buys and retain SGOV/brokerage cash",
+      "missing_active_satellite_policy": "evaluate SPYM only and issue C review rather than D"
+    },
+    "approved_bands": {
+      "spym_buy_1": [86.8, 87.7], "spym_buy_2": [84.5, 86.0], "spym_buy_3": [82.0, 83.5],
+      "dgro_buy_1": [76.2, 77.2], "dgro_buy_2": [74.8, 75.8], "dgro_buy_3": [72.8, 74.0],
+      "fndx_buy_1": [31.05, 31.5], "fndx_buy_2": [30.3, 30.9], "fndx_buy_3": [29.4, 30.1],
+      "xlv_buy_1": [159.5, 161.5],
+      "schd_sell_1": [33.15, 33.5], "schd_sell_2": [33.5, 33.9], "schd_sell_3": [32.7, 33.3],
+      "dvy_sell_1": [162.0, 164.0], "dvy_sell_2": [164.0, 165.5],
+      "divb_sell_1": [64.0, 64.5]
+    },
+    "stages": {
+      "1": {
+        "status": "active",
+        "legs": [
+          {"symbol": "SCHD", "side": "sell", "quantity": 5, "band_key": "schd_sell_1"},
+          {"symbol": "DVY", "side": "sell", "quantity": 10, "band_key": "dvy_sell_1"},
+          {"symbol": "DIVB", "side": "sell", "quantity": 10, "band_key": "divb_sell_1"},
+          {"symbol": "SPYM", "side": "buy", "quantity": 39, "band_key": "spym_buy_1"},
+          {"symbol": "DGRO", "side": "buy", "quantity": 15, "band_key": "dgro_buy_1"},
+          {"symbol": "FNDX", "side": "buy", "quantity": 40, "band_key": "fndx_buy_1"},
+          {"symbol": "XLV", "side": "buy", "quantity": 1, "band_key": "xlv_buy_1"}
+        ],
+        "funding_leg": {"symbol": "SGOV", "side": "sell", "quantity": 47, "trigger": "only with a user-approved net basket"}
+      },
+      "2": {
+        "status": "blocked_until_stage_1_fills_confirmed",
+        "legs": [
+          {"symbol": "SCHD", "side": "sell", "quantity": 5, "band_key": "schd_sell_2"},
+          {"symbol": "DVY", "side": "sell", "quantity": 4, "band_key": "dvy_sell_2"},
+          {"symbol": "SPYM", "side": "buy", "quantity": 35, "band_key": "spym_buy_2"},
+          {"symbol": "DGRO", "side": "buy", "quantity": 15, "band_key": "dgro_buy_2"},
+          {"symbol": "FNDX", "side": "buy", "quantity": 35, "band_key": "fndx_buy_2"}
+        ],
+        "funding_leg": {"symbol": "SGOV", "side": "sell", "quantity": 45, "trigger": "only with a user-approved net basket"}
+      },
+      "3": {
+        "status": "blocked_until_stage_2_fills_confirmed",
+        "legs": [
+          {"symbol": "SCHD", "side": "sell", "quantity": 5, "band_key": "schd_sell_3"},
+          {"symbol": "SPYM", "side": "buy", "quantity": 30, "band_key": "spym_buy_3"},
+          {"symbol": "DGRO", "side": "buy", "quantity": 15, "band_key": "dgro_buy_3"},
+          {"symbol": "FNDX", "side": "buy", "quantity": 35, "band_key": "fndx_buy_3"}
+        ],
+        "funding_leg": {"symbol": "SGOV", "side": "sell", "quantity": 40, "trigger": "only with a user-approved net basket"}
+      }
+    }
+  }
+}
