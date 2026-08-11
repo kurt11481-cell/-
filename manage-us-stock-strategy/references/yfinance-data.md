@@ -67,3 +67,11 @@ Before a technical signal can enter the live evaluator:
 Another Yahoo page, yfinance `Ticker.history`, or the legacy Yahoo chart
 endpoint is not an independent cross-check for a yfinance download because the
 underlying source is the same.
+
+For a single-stock leveraged ETF, its underlying stock may be used only as a
+supplemental integrity check. Compare the ETF's observed close-to-close return
+with the stated daily multiple of the underlying return and record tracking
+error. This relationship can identify an implausible adjusted or stale quote,
+but it cannot replace a direct, same-session completed close for the ETF. Use
+`scripts/resolve_leveraged_quote.py` only after a direct independent ETF close
+has been identified and its raw-close field meaning is explicit.

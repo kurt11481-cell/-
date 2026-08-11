@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research-packet.schema.json",
+  "title": "V2 Research Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "analysis_kind",
+    "symbol",
+    "analysis_cutoff_utc",
+    "generated_at_utc",
+    "analysis_session_date",
+    "evidence",
+    "analyst_outputs",
+    "research_manager"
+  ],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "analysis_id": {"type": "string", "minLength": 1},
+    "analysis_kind": {"enum": ["LIVE_NEW_BUY", "HOLDING_REVIEW", "REPORT_VALIDATION", "TACTICAL_SELECTION"]},
+    "symbol": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "analysis_cutoff_utc": {"type": "string", "format": "date-time"},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "analysis_session_date": {"type": ["string", "null"], "format": "date"},
+    "evidence": {"type": "array", "items": {"$ref": "evidence-record.schema.json"}, "minItems": 1},
+    "analyst_outputs": {"type": "array", "items": {"$ref": "analyst-output.schema.json"}, "minItems": 2},
+    "research_manager": {"$ref": "analyst-output.schema.json"},
+    "strongest_counter_thesis": {"type": "string", "minLength": 1},
+    "invalidation_conditions": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "unresolved_conditions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

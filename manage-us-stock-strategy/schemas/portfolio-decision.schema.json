@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision.schema.json",
+  "title": "Portfolio Manager Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "quantity", "preferred_candidate", "alternative_candidate", "strategic_allocation_change", "portfolio_fit", "order_authority"],
+  "properties": {
+    "action": {"enum": ["WAIT", "CONDITIONAL_BUY", "BUY_REVIEW", "HOLD", "TAKE_PROFIT_REVIEW", "REDUCTION_REVIEW", "STOP_REVIEW"]},
+    "quantity": {"type": "null"},
+    "preferred_candidate": {"type": ["string", "null"], "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "alternative_candidate": {"type": ["string", "null"], "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "strategic_allocation_change": {"const": false},
+    "portfolio_fit": {"enum": ["FITS", "CONSTRAINED", "BLOCKED"]},
+    "constraints": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "wait_reason": {"type": ["string", "null"]},
+    "order_authority": {"const": false}
+  }
+}

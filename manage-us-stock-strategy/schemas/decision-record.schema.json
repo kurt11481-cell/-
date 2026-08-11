@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decision-record.schema.json",
+  "title": "V2 Auditable Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision_id",
+    "created_at_utc",
+    "test_only",
+    "symbol",
+    "instrument_registry_version",
+    "tactical_universe_version",
+    "portfolio_state_revision",
+    "policy_version",
+    "research_packet",
+    "trader_proposal",
+    "risk_review",
+    "portfolio_decision",
+    "deterministic_gate",
+    "final_action",
+    "human_decision",
+    "evaluation_plan",
+    "record_locked",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "decision_id": {"type": "string", "minLength": 1},
+    "created_at_utc": {"type": "string", "format": "date-time"},
+    "test_only": {"type": "boolean"},
+    "symbol": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "instrument_registry_version": {"type": "string", "minLength": 1},
+    "tactical_universe_version": {"type": "string", "minLength": 1},
+    "portfolio_state_revision": {"type": ["integer", "null"], "minimum": 0},
+    "policy_version": {"type": "string", "minLength": 1},
+    "research_packet": {"$ref": "research-packet.schema.json"},
+    "trader_proposal": {"$ref": "trade-proposal.schema.json"},
+    "risk_review": {"$ref": "risk-review.schema.json"},
+    "portfolio_decision": {"$ref": "portfolio-decision.schema.json"},
+    "deterministic_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "validated_at_utc", "errors", "warnings", "order_authority"],
+      "properties": {
+        "status": {"enum": ["REJECTED", "WATCH_ONLY", "ELIGIBLE_FOR_REVIEW"]},
+        "validated_at_utc": {"type": "string", "format": "date-time"},
+        "errors": {"type": "array", "items": {"type": "string"}},
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "order_authority": {"const": false}
+      }
+    },
+    "final_action": {"enum": ["WAIT", "CONDITIONAL_BUY", "BUY_REVIEW", "HOLD", "TAKE_PROFIT_REVIEW", "REDUCTION_REVIEW", "STOP_REVIEW"]},
+    "human_decision": {"enum": ["PENDING", "REJECTED", "ACCEPTED_FOR_MANUAL_REVIEW", "NO_TRADE"]},
+    "evaluation_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conditions", "checkpoints"],
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "description"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "kind": {"enum": ["CONFIRMATION", "INVALIDATION"]},
+              "description": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "checkpoints": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1}
+      }
+    },
+    "artifact_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "record_locked": {"const": true},
+    "order_authority": {"const": false}
+  }
+}

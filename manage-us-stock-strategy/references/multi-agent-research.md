@@ -59,13 +59,21 @@ analysts when useful, then preserve their separate outputs.
      substitute for filings or market data.
 6. **Bull and bear researchers**
    - Steelman opposite cases using claim IDs from the same evidence ledger.
-7. **Independent risk controller**
-   - Test leverage decay, concentration, liquidity, gap risk, financing,
-     invalidation, and portfolio interactions. It may veto but not authorize.
-8. **Synthesizer**
-   - Produce a structured proposal and explicitly list disagreements and
-     unresolved conditions.
-9. **Deterministic gate**
+7. **Research Manager**
+   - Reconcile the analyst ledger and bull/bear debate without taking order
+     authority. Return `READY_FOR_TRADER`, `NEEDS_MORE_RESEARCH`, or `WAIT`.
+8. **Trader**
+   - Translate a ready research packet into one canonical review label. It may
+     propose a review, but quantity remains null unless an existing approved
+     deterministic policy owns exact sizing authority.
+9. **Independent Risk Controller**
+   - Test leverage decay, concentration, liquidity, gap and halt risk,
+     financing, invalidation, and portfolio interactions. It returns only
+     `ALLOW_REVIEW`, `DOWNGRADE`, or `VETO`; it can never upgrade a proposal.
+10. **Portfolio Manager**
+   - Select the portfolio-compatible review label after risk review. It cannot
+     bypass risk, cash, holdings, identity, concentration, or instrument gates.
+11. **Deterministic gate**
    - Run `scripts/validate_research_packet.py`, then the applicable market
      snapshot and alert evaluator independently. The validator has no adapter
      that can insert, copy, or transform a packet proposal into an alert
@@ -75,6 +83,14 @@ analysts when useful, then preserve their separate outputs.
 
 Cap bull/bear and risk debate rounds. Repetition is not new evidence. Stop when
 no new claim ID, contradiction, or decision-changing condition is added.
+
+Use [decision-orchestration.md](decision-orchestration.md) as the v2 role and
+transition contract. Use [candidate-selection.md](candidate-selection.md) for
+tactical-universe narrowing, [scoring-calibration.md](scoring-calibration.md)
+for ordinal comparisons and calibrated confidence, and
+[decision-memory.md](decision-memory.md) for locked decisions and outcome
+evaluation. These v2 documents extend this workflow; they do not replace the
+existing research packet validator or alert engine.
 
 ## Evidence ledger
 
@@ -104,7 +120,9 @@ new-buy proposal needs both primary evidence and market data; holding-risk
 analysis needs same-session market data; report validation needs primary
 evidence. Weak sources may add context but cannot satisfy a stronger tier.
 
-## Structured role contract
+## Structured role contracts
+
+### Legacy schema 1.1 compatibility
 
 Each role should return:
 
@@ -143,6 +161,20 @@ authorizes a risk review, never a sell quantity. Suggested rule, quantity, or
 band changes use a new proposal version and remain non-actionable until user
 approval.
 
+Do not remove or reinterpret the schema-1.1 contract because existing alert and
+research tooling depends on it.
+
+### V2 decision contract
+
+New v2 orchestration uses the JSON schemas in `../schemas/` and the canonical
+review labels `WAIT`, `CONDITIONAL_BUY`, `BUY_REVIEW`, `HOLD`,
+`TAKE_PROFIT_REVIEW`, `REDUCTION_REVIEW`, and `STOP_REVIEW`. It embeds the
+research packet, Trader proposal, independent Risk Controller result, and
+Portfolio Manager decision in one locked decision record. Run
+`scripts/validate_decision_record.py` with the checked-in instrument registry
+and tactical universe. This is an additive contract; it does not alter legacy
+packet interpretation or convert any review label into an order.
+
 ## Deterministic rejection and downgrade rules
 
 Reject the packet when identity, timestamps, strategy version, state revision,
@@ -180,3 +212,6 @@ approved bands, loss limits, holdings, cash, or leverage permissions.
 Use point-in-time data for backtests. Compare outcomes with an appropriate
 benchmark and include costs, slippage, and the effect of daily leverage reset.
 Do not treat a small or selectively chosen backtest as validation.
+
+For the full repeatable research -> counter-case -> decision -> disclosure ->
+post-evaluation cycle, also use [research-lifecycle.md](research-lifecycle.md).

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "risk-review.schema.json",
+  "title": "Independent Risk Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "input_action", "output_action", "reasons", "claim_ids", "may_upgrade", "order_authority"],
+  "properties": {
+    "verdict": {"enum": ["ALLOW_REVIEW", "DOWNGRADE", "VETO"]},
+    "input_action": {"enum": ["WAIT", "CONDITIONAL_BUY", "BUY_REVIEW", "HOLD", "TAKE_PROFIT_REVIEW", "REDUCTION_REVIEW", "STOP_REVIEW"]},
+    "output_action": {"enum": ["WAIT", "CONDITIONAL_BUY", "BUY_REVIEW", "HOLD", "TAKE_PROFIT_REVIEW", "REDUCTION_REVIEW", "STOP_REVIEW"]},
+    "reasons": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "claim_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "may_upgrade": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

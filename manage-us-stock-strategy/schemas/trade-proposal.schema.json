@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trade-proposal.schema.json",
+  "title": "Untrusted Trader Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["symbol", "position_status", "action", "quantity", "claim_ids", "invalidation_condition_ids", "order_authority"],
+  "properties": {
+    "symbol": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "position_status": {"enum": ["HELD", "NOT_HELD"]},
+    "action": {"enum": ["WAIT", "CONDITIONAL_BUY", "BUY_REVIEW", "HOLD", "TAKE_PROFIT_REVIEW", "REDUCTION_REVIEW", "STOP_REVIEW"]},
+    "quantity": {"type": "null"},
+    "policy_rule_id": {"type": ["string", "null"]},
+    "claim_ids": {"type": "array", "items": {"type": "string", "pattern": "^E[0-9]+$"}, "uniqueItems": true},
+    "setup": {"type": ["string", "null"]},
+    "invalidation_condition_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+    "expiry": {"type": ["string", "null"], "format": "date-time"},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "universe_version": "2026-08-11-tradingagents-v2-v1",
+  "status": "active_for_research_only",
+  "strategic_allocation_effect": "none",
+  "watchlist_inclusion_is_new_buy_approval": false,
+  "forced_trade_selection": false,
+  "screening": {
+    "stage_one": "deterministic_or_light_screen",
+    "stage_two": "role_separated_deep_research",
+    "deep_research_shortlist_minimum": 3,
+    "deep_research_shortlist_maximum": 5,
+    "maximum_preferred_candidates": 1,
+    "maximum_alternative_candidates": 1,
+    "wait_is_valid_output": true,
+    "ordered_gates": ["evidence", "thesis", "valuation", "technical", "risk_liquidity", "portfolio_fit"],
+    "master_numeric_score_prohibited": true
+  },
+  "theme_tag_disclaimer": "AI Agent theme and subtheme tags are user-defined organizational labels, not claims about revenue purity or product exposure.",
+  "lanes": {
+    "leveraged_semiconductor": {
+      "symbols": ["MVLL", "SOXL"],
+      "required_proxy_confirmation": true,
+      "watchlist_approved": true,
+      "new_buy_approved": false
+    },
+    "ai_infrastructure": {
+      "symbols": ["NBIS"],
+      "required_proxy_confirmation": false,
+      "watchlist_approved": true,
+      "new_buy_approved": false
+    },
+    "ai_agent_theme": {
+      "symbols": ["FSLY", "RBRK", "NET", "NOW", "MDB", "DDOG", "SNOW", "CRWD", "PANW", "PLTR"],
+      "required_proxy_confirmation": false,
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "subthemes": {
+        "application_workflow": ["NOW", "PLTR"],
+        "data_database": ["MDB", "SNOW"],
+        "runtime_edge_observability": ["DDOG", "NET", "FSLY"],
+        "security_data_protection": ["CRWD", "PANW", "RBRK"]
+      }
+    }
+  },
+  "candidates": {
+    "MVLL": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "SOXL": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "NBIS": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "FSLY": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "RBRK": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "NET": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "NOW": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "MDB": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "DDOG": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "SNOW": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "CRWD": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "PANW": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false},
+    "PLTR": {"watchlist_approved": true, "new_buy_approved": false, "short_approved": false}
+  },
+  "authority": {
+    "llm_can_approve_new_buy": false,
+    "llm_can_approve_short": false,
+    "llm_can_select_quantity": false,
+    "llm_can_modify_strategic_allocation": false,
+    "llm_can_place_or_schedule_orders": false
+  }
+}

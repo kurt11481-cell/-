@@ -84,3 +84,24 @@ Always test:
 - announced capacity arriving after the cycle peaks.
 
 State whether a news item changes current earnings, future probability, valuation sentiment, or only the narrative.
+
+## V2 semiconductor role output
+
+When this reference is used in a v2 research packet, expose these fields in the
+analyst's structured attachment without weakening the shared analyst schema:
+
+```json
+{
+  "economic_layer": "verified layer or unknown",
+  "commercialization_stage": "announcement|engineering_sample|customer_qualification|design_win|committed_order_or_backlog|volume_production|recognized_revenue|cash_collection_or_sustainable_gross_profit|unknown",
+  "current_earnings_impact": "supported description or not_verified",
+  "future_probability_impact": "supported description or not_verified",
+  "valuation_impact": "supported description or not_verified",
+  "narrative_only": false
+}
+```
+
+Keep the attachment tied to evidence IDs. `narrative_only=true` is mandatory
+when the reported event has not progressed beyond a narrative, announcement,
+or unverified partnership claim. Never translate a design win into recognized
+revenue or a capex borrower into a supplier receiving the order.
