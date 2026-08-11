@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "proposal_version": "2026-08-11-benchmark-proposal-v1",
+  "status": "PROPOSED_NOT_ACTIVE",
+  "activation_requires_explicit_user_approval": true,
+  "mappings": [
+    {
+      "instrument": "SOXL",
+      "primary_benchmark": "SOXX",
+      "broad_market_benchmark": "SPY",
+      "basis": "Existing verified confirmation proxy plus a broad-market comparator.",
+      "approved": false
+    },
+    {
+      "instrument": "MVLL",
+      "primary_benchmark": "MRVL",
+      "broad_market_benchmark": "SPY",
+      "basis": "Existing verified daily-leverage reference stock plus a broad-market comparator.",
+      "approved": false
+    }
+  ],
+  "default_for_unmapped_instruments": "ASSUMPTION_REQUIRED"
+}

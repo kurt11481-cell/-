@@ -42,6 +42,7 @@ TIMING_FEATURE_VERSION = "2026-08-05-timing-features-v1"
 INDICATOR_TOLERANCE = 1e-8
 DEFAULT_MARKET_DATA_PROVIDER = "yfinance"
 DEFAULT_REQUEST_DELAY_SECONDS = 1.0
+DEFAULT_YFINANCE_CACHE_DIRECTORY_NAME = ".yfinance-cache"
 
 
 class SnapshotError(RuntimeError):
@@ -85,6 +86,26 @@ def finite(value: Any) -> bool:
 
 def safe_float(value: Any) -> float | None:
     return float(value) if finite(value) else None
+
+
+def completed_daily_frame(
+    frame: pd.DataFrame, *, observed_at_utc: datetime | None = None
+) -> pd.DataFrame:
+    """Exclude an in-progress current-session daily bar.
+
+    Yahoo may expose the current regular session through the daily endpoint
+    before that bar is complete. Retain a same-day bar only after 17:00 ET so
+    technical calculations use completed regular sessions. Official-calendar
+    and independent-close verification remain separate mandatory gates.
+    """
+
+    if frame.empty:
+        return frame
+    observed = (observed_at_utc or datetime.now(UTC)).astimezone(ET)
+    latest_date = frame.index[-1].date()
+    if latest_date == observed.date() and observed.hour < 17:
+        return frame.iloc[:-1].copy()
+    return frame
 
 
 def _flatten_yfinance_columns(frame: pd.DataFrame, ticker: str) -> pd.DataFrame:
@@ -869,7 +890,9 @@ def timing_window_records(
 
 
 def calculate_metrics(ticker: str, result: dict[str, Any]) -> tuple[dict[str, Any], pd.Series]:
-    frame = chart_frame(result)
+    frame = completed_daily_frame(chart_frame(result))
+    if frame.empty:
+        raise SnapshotError("no completed regular-session price rows")
     adj = frame["adjclose"]
     technical = normalized_technical_frame(frame)
     tech_close = technical["close"]
@@ -1124,6 +1147,21 @@ def self_test() -> None:
     features = derive_timing_features(technical, ema10, ema20, atr14)
     assert features["timing_feature_version"] == TIMING_FEATURE_VERSION
     assert features["ema10_direction_3d"] == "rising"
+    current_day = datetime(2026, 8, 11, 15, 0, tzinfo=ET)
+    two_rows = raw.tail(2).copy()
+    two_rows.index = pd.DatetimeIndex(
+        [
+            datetime(2026, 8, 10, 16, 0, tzinfo=ET),
+            datetime(2026, 8, 11, 16, 0, tzinfo=ET),
+        ]
+    )
+    assert len(
+        completed_daily_frame(two_rows, observed_at_utc=current_day.astimezone(UTC))
+    ) == 1
+    after_close = datetime(2026, 8, 11, 17, 0, tzinfo=ET)
+    assert len(
+        completed_daily_frame(two_rows, observed_at_utc=after_close.astimezone(UTC))
+    ) == 2
     assert MARKET_SNAPSHOT_SCHEMA_VERSION == "1.0"
     print("Self-test passed")
 
@@ -1145,6 +1183,14 @@ def main() -> int:
         default=DEFAULT_REQUEST_DELAY_SECONDS,
         help="Minimum delay between external ticker requests; live collection requires at least 1.0 second.",
     )
+    parser.add_argument(
+        "--yfinance-cache-dir",
+        type=Path,
+        help=(
+            "Writable yfinance timezone/cache directory. Defaults to a hidden "
+            "directory beside the output file."
+        ),
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -1160,6 +1206,21 @@ def main() -> int:
     if invalid:
         print(f"Invalid tickers: {invalid}", file=sys.stderr)
         return 2
+    if args.provider == "yfinance":
+        if yf is None:
+            print("yfinance is not installed", file=sys.stderr)
+            return 2
+        cache_directory = (
+            args.yfinance_cache_dir
+            if args.yfinance_cache_dir is not None
+            else args.output.parent / DEFAULT_YFINANCE_CACHE_DIRECTORY_NAME
+        )
+        cache_directory.mkdir(parents=True, exist_ok=True)
+        try:
+            yf.set_tz_cache_location(str(cache_directory.resolve()))
+        except Exception as exc:
+            print(f"Unable to configure yfinance cache: {exc}", file=sys.stderr)
+            return 2
     snapshot = build_snapshot(
         state,
         tickers,

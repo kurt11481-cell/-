@@ -244,8 +244,10 @@
   "research_lifecycle_policy": {
     "version": "2026-08-11-auditable-cycle-v1",
     "status": "active_research_only_no_order_authority",
-    "packet_validator": "scripts/validate_research_packet.py",
-    "cycle_validator": "scripts/validate_research_cycle.py",
+    "validator_path_base": "workspace_root",
+    "legacy_packet_validator": "manage-us-stock-strategy/scripts/validate_research_packet.py",
+    "canonical_v2_decision_validator": "manage-us-stock-strategy/scripts/validate_decision_record.py",
+    "canonical_v2_schema_contract_validator": "manage-us-stock-strategy/scripts/validate_schema_contracts.py",
     "required_stages": [
       "research",
       "counter_case",

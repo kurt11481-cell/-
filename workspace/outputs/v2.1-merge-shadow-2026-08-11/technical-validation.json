@@ -1,0 +1,29 @@
+{
+  "status": "verified",
+  "schema_version": "1.0",
+  "formula_version": "2026-08-05-ema-atr-v2",
+  "session_date": "2026-08-10",
+  "required_symbols": [
+    "MVLL",
+    "SOXL",
+    "NBIS",
+    "FSLY",
+    "RBRK",
+    "NET",
+    "NOW",
+    "MDB",
+    "DDOG",
+    "SNOW",
+    "CRWD",
+    "PANW",
+    "PLTR",
+    "MRVL",
+    "SOXX"
+  ],
+  "checked_symbol_count": 15,
+  "official_calendar_required": true,
+  "errors": [],
+  "warnings": [],
+  "snapshot_sha256": "d4058e0291a837c08184007fb20667dbd5b7b365410a54ffaa41e0c56bb62a7a",
+  "scope_note": "This gate validates snapshot structure, provenance, and internal calculations; the independent completed-close cross-check is structural and does not authorize an order."
+}

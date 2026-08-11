@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tactical-screen.schema.json",
+  "title": "Read-Only Tactical Screen",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "analysis_cutoff", "market_session", "data_status", "event_status", "universe", "stage_one", "shortlist", "deep_research_candidates", "preferred_candidate", "alternative_candidate", "final_status", "reasons", "missing_permissions", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "data_status": {"enum": ["VALIDATED", "PARTIAL", "DATA_INCOMPLETE"]},
+    "event_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_DATA_INCOMPLETE"]},
+    "universe": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "stage_one": {"type": "array", "items": {"type": "object"}, "minItems": 1},
+    "shortlist": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "deep_research_candidates": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "preferred_candidate": {"type": ["string", "null"]},
+    "alternative_candidate": {"type": ["string", "null"]},
+    "final_status": {"enum": ["SHORTLIST_READY", "WAIT_NO_TRADE", "DATA_INCOMPLETE"]},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "missing_permissions": {"type": "array", "items": {"type": "string"}},
+    "order_authority": {"const": false}
+  }
+}

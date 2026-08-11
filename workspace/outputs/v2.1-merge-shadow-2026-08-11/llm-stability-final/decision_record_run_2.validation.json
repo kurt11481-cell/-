@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.0",
+  "validated_at_utc": "2026-08-11T14:45:06.315564+00:00",
+  "decision_id": "NBIS-V21-STABILITY-02",
+  "symbol": "NBIS",
+  "status": "WATCH_ONLY",
+  "errors": [],
+  "warnings": [
+    "new buy is not approved for this candidate"
+  ],
+  "decision_record_sha256": "721542637514c4c36d956b3b88d621d006f3cef70544f0ff06e97ea218960c0e",
+  "instrument_registry_sha256": "cc4126ee592e96280fe4a81ddcaf5e5c8133f45d9005ad9fe03c04a63edcb039",
+  "tactical_universe_sha256": "491251899e83fd622be1074127dd3bbaf3a149e04eee77eb5d214cc89c8d44ed",
+  "portfolio_state_sha256": "751160d91afd4f7e00de1b89acb52fccc649e9d308cfa14a474c4f4ced95317e",
+  "order_authority": false,
+  "order_status": "no order was placed or scheduled"
+}

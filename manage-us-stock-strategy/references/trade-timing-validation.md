@@ -56,6 +56,13 @@ Require all of the following before using a technical signal:
 6. Record source, observation session, retrieval time, units, price basis,
    formula version, and corporate-action treatment.
 
+When a single-stock leveraged ETF quote source contains conflicting display
+fields, do not replace the ETF with its underlying stock. Resolve a direct raw
+completed ETF close first. The underlying may then corroborate the resolution
+by comparing the ETF's daily return with the approved leverage multiple times
+the underlying daily return. A passing proxy relationship is supporting
+evidence only; without the direct ETF close the technical gate remains `Wait/F`.
+
 If yfinance is throttled, times out, or returns an empty frame, use only bounded
 backoff. Do not parallelize retries or silently substitute a stale bar. Missing
 held-symbol OHLCV fails closed; a missing watch-only symbol disables only that

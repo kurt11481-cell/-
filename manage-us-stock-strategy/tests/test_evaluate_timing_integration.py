@@ -107,8 +107,18 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         self.assertFalse(active[0]["actionable"])
         self.assertTrue(all(item["quantity"] is None for item in result["watchlist"]))
         self.assertTrue(active[0]["evidence_verification"]["all_required_evidence_verified"])
+        cash_verified = (
+            self.state["last_confirmed_broker_snapshot"].get("cash_verified") is True
+        )
+        available_cash = self.state.get("available_cash_usd")
+        if not cash_verified:
+            expected_watch_status = "watch_only_cash_unverified"
+        elif isinstance(available_cash, (int, float)) and available_cash <= 0:
+            expected_watch_status = "watch_only_zero_cash"
+        else:
+            expected_watch_status = "watch_only_entry_rules_not_approved"
         self.assertTrue(
-            all(item["status"] == "watch_only_zero_cash" for item in result["watchlist"])
+            all(item["status"] == expected_watch_status for item in result["watchlist"])
         )
 
     def test_stale_broker_state_fails_closed(self) -> None:

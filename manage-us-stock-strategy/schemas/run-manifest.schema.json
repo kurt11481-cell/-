@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run-manifest.schema.json",
+  "title": "Run Reproducibility Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "analysis_id", "run_type", "generated_at", "analysis_cutoff", "market_session", "code_provenance", "llm_provenance", "input_hashes", "tool_provenance", "result_provenance", "secrets_recorded"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "analysis_id": {"type": "string", "minLength": 1},
+    "run_type": {"enum": ["HIGH_CONSEQUENCE_ANALYSIS", "TACTICAL_SHORTLIST", "HISTORICAL_EVALUATION", "LIVE_SHADOW_REVIEW", "VALIDATION_TEST"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "code_provenance": {"type": "object", "additionalProperties": false, "required": ["git_commit", "git_branch", "git_dirty", "working_tree_diff_hash", "skill_version", "schema_versions", "strategy_version", "policy_version"], "properties": {"git_commit": {"type": "string", "minLength": 1}, "git_branch": {"type": "string", "minLength": 1}, "git_dirty": {"type": "boolean"}, "working_tree_diff_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "skill_version": {"type": "string", "minLength": 1}, "schema_versions": {"type": "object", "additionalProperties": {"type": "string"}}, "strategy_version": {"type": "string", "minLength": 1}, "policy_version": {"type": "string", "minLength": 1}}},
+    "llm_provenance": {"type": "object", "additionalProperties": false, "required": ["provider", "model", "model_identifier", "temperature", "max_debate_rounds", "max_risk_rounds"], "properties": {"provider": {"type": ["string", "null"]}, "model": {"type": ["string", "null"]}, "model_identifier": {"type": ["string", "null"]}, "temperature": {"type": ["number", "null"]}, "max_debate_rounds": {"type": "integer", "minimum": 0}, "max_risk_rounds": {"type": "integer", "minimum": 0}}},
+    "input_hashes": {"type": "object", "additionalProperties": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}},
+    "tool_provenance": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+    "result_provenance": {"type": "object", "additionalProperties": false, "required": ["research_packet_hash", "decision_record_hash", "tactical_screen_hash", "deterministic_gate_hash", "deterministic_gate_result"], "properties": {"research_packet_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "decision_record_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "tactical_screen_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "deterministic_gate_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}, "deterministic_gate_result": {"type": "string", "minLength": 1}}},
+    "secrets_recorded": {"const": false}
+  }
+}

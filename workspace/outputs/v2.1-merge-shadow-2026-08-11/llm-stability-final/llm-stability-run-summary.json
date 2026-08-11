@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "validation_setting_runs": 3,
+  "provider": "OpenAI",
+  "model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "temperature": null,
+  "openai_sdk_version": "2.53.0",
+  "privacy_scope": "public_market_event_and_non_sensitive_research_authority_only",
+  "input_bundle_sha256": "c49e2600dc935a90beef3953830c78e08be46bafa75c26cc6bf98f2519a7d767",
+  "immutable_prompt_sha256": "d2bf3095495314b03c57c5084b17cf1f1a016149129cca5657774439aa58822d",
+  "stability": {
+    "status": "PASS",
+    "critical_instability": false,
+    "run_count": 3,
+    "differences": [],
+    "authority_classes": [
+      "NO_TRADE"
+    ],
+    "compared_fields": [
+      "action",
+      "dominant_thesis_code",
+      "invalidation_codes",
+      "preferred_candidate",
+      "risk_verdict"
+    ],
+    "note": "Minor prose differences are intentionally excluded."
+  },
+  "runs": [
+    {
+      "run_index": 1,
+      "model_returned": "gpt-5.6-terra",
+      "model_action": "WAIT",
+      "model_risk_verdict": "ALLOW_REVIEW",
+      "final_action": "WAIT",
+      "dominant_thesis_code": "WAIT_PERMISSION_AND_VALUATION",
+      "invalidation_codes": [
+        "TECHNICAL_REGIME_INVALIDATES",
+        "EVENT_OR_DATA_GAP",
+        "VALUATION_REMAINS_UNVERIFIED",
+        "NEW_BUY_AUTHORITY_REMAINS_ABSENT"
+      ],
+      "decision_record": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\decision_record_run_1.json",
+      "llm_output": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\llm_output_run_1.json"
+    },
+    {
+      "run_index": 2,
+      "model_returned": "gpt-5.6-terra",
+      "model_action": "WAIT",
+      "model_risk_verdict": "ALLOW_REVIEW",
+      "final_action": "WAIT",
+      "dominant_thesis_code": "WAIT_PERMISSION_AND_VALUATION",
+      "invalidation_codes": [
+        "TECHNICAL_REGIME_INVALIDATES",
+        "EVENT_OR_DATA_GAP",
+        "VALUATION_REMAINS_UNVERIFIED",
+        "NEW_BUY_AUTHORITY_REMAINS_ABSENT"
+      ],
+      "decision_record": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\decision_record_run_2.json",
+      "llm_output": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\llm_output_run_2.json"
+    },
+    {
+      "run_index": 3,
+      "model_returned": "gpt-5.6-terra",
+      "model_action": "WAIT",
+      "model_risk_verdict": "ALLOW_REVIEW",
+      "final_action": "WAIT",
+      "dominant_thesis_code": "WAIT_PERMISSION_AND_VALUATION",
+      "invalidation_codes": [
+        "TECHNICAL_REGIME_INVALIDATES",
+        "EVENT_OR_DATA_GAP",
+        "VALUATION_REMAINS_UNVERIFIED",
+        "NEW_BUY_AUTHORITY_REMAINS_ABSENT"
+      ],
+      "decision_record": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\decision_record_run_3.json",
+      "llm_output": "workspace\\outputs\\v2.1-merge-shadow-2026-08-11\\llm-stability-final\\llm_output_run_3.json"
+    }
+  ],
+  "secrets_recorded": false,
+  "order_authority": false
+}

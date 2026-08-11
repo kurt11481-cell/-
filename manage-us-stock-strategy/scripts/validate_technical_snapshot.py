@@ -482,6 +482,57 @@ def validate_snapshot(
         else:
             errors.append(prefix + "quote cross-check completed close is invalid")
 
+        proxy_check = crosscheck.get("leveraged_proxy_check")
+        if proxy_check is not None:
+            if not isinstance(proxy_check, dict):
+                errors.append(prefix + "leveraged proxy check must be an object")
+            else:
+                proxy_symbol = proxy_check.get("proxy_symbol")
+                proxy_row = symbols.get(proxy_symbol) if isinstance(proxy_symbol, str) else None
+                if proxy_check.get("role") != "supplemental_integrity_check_not_a_quote_substitute":
+                    errors.append(prefix + "leveraged proxy check role is invalid")
+                if proxy_check.get("required_for_resolution") is not True:
+                    errors.append(prefix + "leveraged proxy resolution gate is not explicit")
+                if proxy_check.get("status") != "corroborated":
+                    errors.append(prefix + "leveraged proxy relationship is not corroborated")
+                if proxy_check.get("bar_date") != session_date:
+                    errors.append(prefix + "leveraged proxy check session mismatch")
+                if not isinstance(proxy_row, dict):
+                    errors.append(prefix + "leveraged proxy symbol is missing")
+                else:
+                    required_values = (
+                        row.get("close"),
+                        row.get("close_prev"),
+                        proxy_row.get("close"),
+                        proxy_row.get("close_prev"),
+                        proxy_check.get("leverage_multiple"),
+                        proxy_check.get("maximum_tracking_error_fraction"),
+                    )
+                    if not all(finite(value) and float(value) > 0 for value in required_values):
+                        errors.append(prefix + "leveraged proxy check inputs are invalid")
+                    elif proxy_row.get("bar_date") != session_date:
+                        errors.append(prefix + "leveraged proxy bar date mismatch")
+                    else:
+                        product_return = float(row["close"]) / float(row["close_prev"]) - 1.0
+                        proxy_return = float(proxy_row["close"]) / float(proxy_row["close_prev"]) - 1.0
+                        expected_return = float(proxy_check["leverage_multiple"]) * proxy_return
+                        tracking_error = product_return - expected_return
+                        recorded = {
+                            "product_return_fraction": product_return,
+                            "proxy_return_fraction": proxy_return,
+                            "expected_product_return_fraction": expected_return,
+                            "tracking_error_fraction": tracking_error,
+                        }
+                        for field, expected_value in recorded.items():
+                            if not finite(proxy_check.get(field)) or not close_enough(
+                                float(proxy_check[field]), expected_value
+                            ):
+                                errors.append(prefix + f"leveraged proxy {field} mismatch")
+                        if abs(tracking_error) > float(
+                            proxy_check["maximum_tracking_error_fraction"]
+                        ) + 1e-12:
+                            errors.append(prefix + "leveraged proxy tracking error exceeds tolerance")
+
         _validate_timing_window(row, prefix, errors)
 
         calculation = row.get("indicator_validation") or {}

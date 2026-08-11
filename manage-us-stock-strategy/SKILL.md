@@ -27,6 +27,11 @@ Lead with the decision. Treat accuracy, timestamp integrity, reproducibility, an
 Load only the references needed for the current task:
 
 - For company, ETF, news, or report analysis, read [research-policy.md](references/research-policy.md).
+- For provider selection, fallback, historical evidence, or any provider
+  failure, also read [data-provider-resilience.md](references/data-provider-resilience.md).
+- For high-consequence analysis, tactical screening, historical evaluation, or
+  a live shadow review, read [event-risk.md](references/event-risk.md) and keep
+  missing event coverage visible as `EVENT_DATA_INCOMPLETE`.
 - For semiconductor and AI-infrastructure companies, also read [semiconductor-infrastructure.md](references/semiconductor-infrastructure.md).
 - For chart-based entries, exits, risk levels, trade plans, or any new-buy strategy, read [technical-strategy.md](references/technical-strategy.md). When collecting completed-session OHLCV, also read [yfinance-data.md](references/yfinance-data.md) and use `scripts/build_market_snapshot.py`. yfinance is an unofficial raw-data collector only; calculate indicators locally and retain the independent completed-close check.
 - For actual buy, take-profit, staged-reduction, stop, or 10/20-EMA timing, also read [trade-timing-validation.md](references/trade-timing-validation.md). Run `scripts/validate_technical_snapshot.py` after the official-session fields are verified. Treat a rejected technical snapshot as `Wait` or `F`, never as a trade signal.
@@ -38,11 +43,22 @@ Load only the references needed for the current task:
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
 - For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
-- For high-consequence strategy formation, conflicting evidence, or a user request for multi-agent analysis, read [multi-agent-research.md](references/multi-agent-research.md). Use role-separated research and `scripts/validate_research_packet.py`; do not let an LLM proposal bypass the deterministic alert engine.
+- For high-consequence strategy formation, conflicting evidence, new-buy selection, or a user request for multi-agent analysis, read [multi-agent-research.md](references/multi-agent-research.md), [decision-orchestration.md](references/decision-orchestration.md), and [scoring-calibration.md](references/scoring-calibration.md). Use role-separated research and the applicable validator; do not let an LLM proposal bypass the deterministic alert engine.
+- For tactical candidate ranking, also read [candidate-selection.md](references/candidate-selection.md). Apply the lightweight screen before deep research, select at most one preferred and one alternative candidate, and allow `WAIT` when no candidate passes.
+- For a decision that should enter the journal or outcome review, also read [decision-memory.md](references/decision-memory.md) and [research-lifecycle.md](references/research-lifecycle.md). Run `scripts/validate_decision_record.py` before disclosure and `scripts/evaluate_outcome.py` only against an append-only outcome record. Keep the original decision immutable.
+- For a regression, A/B, production-readiness, or repeated-run task, read
+  [reproducibility.md](references/reproducibility.md) and
+  [evaluation-harness.md](references/evaluation-harness.md). Build and validate
+  a run manifest. Do not call fixture comparison a true v1/v2 A/B unless an
+  exact archived v1 exists.
 
 Do not execute every module by default. Combine modules only when their evidence can materially change the decision.
 
-For a new-buy decision, apply gates in this order: **evidence integrity -> thesis validity -> current valuation -> technical entry -> portfolio concentration and position sizing**. If an earlier gate is not verified, later technical strength cannot upgrade the decision above `Wait`.
+For a new-buy decision, apply gates in this order: **evidence integrity ->
+thesis validity -> current valuation -> technical entry -> event risk -> risk
+and liquidity -> portfolio fit -> deterministic policy -> human approval**. If
+an earlier gate is not verified, later technical strength cannot upgrade the
+decision above `Wait`.
 
 Keep authority asymmetric: LLM roles may discover evidence, debate scenarios, and propose a plan; deterministic scripts own arithmetic, identity, point-in-time cutoffs, policy compliance, and event deduplication; the user owns final approval. Agent consensus is never an execution rule.
 
@@ -102,3 +118,5 @@ Before returning a result, verify that:
 - alerts are deduplicated and do not imply an executed trade;
 - every cited material fact has an evidence-ledger record and every reported technical indicator passed the formula, price-basis, session, and provenance checks required by the applicable timing policy;
 - all material missing data and conflicts remain visible.
+- the source capability and point-in-time gates passed for historical evidence;
+- the event snapshot and run manifest passed their validators when required.

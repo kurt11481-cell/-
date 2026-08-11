@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "run_id": "V21-MERGE-SHADOW-20260811",
+  "analysis_id": "NBIS-V21-STABILITY-ANALYSIS-01",
+  "run_type": "LIVE_SHADOW_REVIEW",
+  "generated_at": "2026-08-11T14:51:30.419043+00:00",
+  "analysis_cutoff": "2026-08-11T14:45:32.1849016Z",
+  "market_session": "2026-08-10",
+  "code_provenance": {
+    "git_commit": "23574ef43b299d7203cc3200c8e3c197e7992206",
+    "git_branch": "feature/v2.1-production-hardening",
+    "git_dirty": true,
+    "working_tree_diff_hash": "155b99c03214cd10509c7298bba60ec8b4856768754d87aa9e4819695e37eccf",
+    "skill_version": "v2.1-production-hardening",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "2026-08-05-v4",
+    "policy_version": "leveraged-ema-rearm-review-v4"
+  },
+  "llm_provenance": {
+    "provider": "OpenAI",
+    "model": "gpt-5.6-terra",
+    "model_identifier": "gpt-5.6-terra",
+    "temperature": null,
+    "max_debate_rounds": 1,
+    "max_risk_rounds": 1
+  },
+  "input_hashes": {
+    "evidence_packet_hash": "e1e911be7f874640e1ec4646fb1ab63e9872c7d45a3b6853cf09c86915e90a51",
+    "market_snapshot_hash": "214a6c2037ba2891f2502b509b9c9cfcd737b84e8464affa1d485f325bb9e639",
+    "event_snapshot_hash": "f7eab78829497b9d1563c73e3b207ec0c0833f76821ac597ed9fbb39dfcc5f0d",
+    "portfolio_state_hash": "e21356cc241ebdb2ed4610b19ed5430d507eda3d027054061752e051fcdf5f70",
+    "strategy_policy_hash": "09a046e782150a60d04bc334cb12ecf48e45803fc7349035262aa0e2b88663e0",
+    "alert_policy_hash": "09a046e782150a60d04bc334cb12ecf48e45803fc7349035262aa0e2b88663e0",
+    "instrument_registry_hash": "734c53059c7a6b3352f516af390f4f00660b8356e643d46177944cc5290cee74",
+    "candidate_universe_hash": "a97bdef205d781df03501869521bb5e72719d62a89fe696c0e56e087a448b17c"
+  },
+  "tool_provenance": {
+    "python_version": "3.12.13",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": "4ae1f782b43c4f01664f91a175c23b0c732967558206191712ad28f49b74118d",
+    "decision_record_hash": "66d8cf468ead604d79f5b4e995a9653ef10a24f000ec41af0e0631b41964e899",
+    "tactical_screen_hash": "172b3d8434bb23f67effbbea6ac76ec0cf29a2e7f6cc468d62f5018be33b93a2",
+    "deterministic_gate_hash": "8127c72670cdf6731a3be19a992a1da50bfcca7a61e2f09dc9da170413592745",
+    "deterministic_gate_result": "PASS"
+  },
+  "secrets_recorded": false
+}

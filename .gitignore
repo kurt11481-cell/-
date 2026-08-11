@@ -2,6 +2,12 @@
 .pnpm-store/
 .runtime-cache/
 
+# Local secrets (never commit)
+.env
+.env.local
+.env.*.local
+**/.yfinance-cache/
+
 # Unrelated application workspace kept outside this repository's scope
 environment-work-planner/
 

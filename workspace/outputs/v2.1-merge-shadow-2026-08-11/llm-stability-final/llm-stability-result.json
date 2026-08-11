@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "critical_instability": false,
+  "run_count": 3,
+  "differences": [],
+  "authority_classes": [
+    "NO_TRADE"
+  ],
+  "compared_fields": [
+    "action",
+    "dominant_thesis_code",
+    "invalidation_codes",
+    "preferred_candidate",
+    "risk_verdict"
+  ],
+  "note": "Minor prose differences are intentionally excluded."
+}

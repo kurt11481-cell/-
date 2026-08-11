@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "analyst-output.schema.json",
+  "title": "Analyst Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role", "stance", "confidence", "summary", "claim_ids", "unknowns", "decision_impact"],
+  "properties": {
+    "role": {
+      "enum": [
+        "identity_data_auditor",
+        "fundamental_valuation_analyst",
+        "market_technical_analyst",
+        "news_macro_analyst",
+        "sentiment_analyst",
+        "bull_researcher",
+        "bear_researcher",
+        "research_manager"
+      ]
+    },
+    "stance": {"enum": ["BULLISH", "NEUTRAL", "BEARISH", "VETO", "NOT_APPLICABLE"]},
+    "confidence": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+    "summary": {"type": "string", "minLength": 1},
+    "claim_ids": {"type": "array", "items": {"type": "string", "pattern": "^E[0-9]+$"}, "uniqueItems": true},
+    "unknowns": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "decision_impact": {"enum": ["SUPPORTS", "CONDITIONAL", "OPPOSES", "NO_CHANGE"]},
+    "status": {"enum": ["RESEARCH_COMPLETE", "RESEARCH_CONDITIONAL", "RESEARCH_REJECTED", "NOT_APPLICABLE"]},
+    "accepted_claim_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "rejected_claim_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "unresolved_conflicts": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "semiconductor_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["economic_layer", "commercialization_stage", "current_earnings_impact", "future_probability_impact", "valuation_impact", "narrative_only"],
+      "properties": {
+        "economic_layer": {"type": "string", "minLength": 1},
+        "commercialization_stage": {"enum": ["announcement", "engineering_sample", "customer_qualification", "design_win", "committed_order_or_backlog", "volume_production", "recognized_revenue", "cash_collection_or_sustainable_gross_profit", "unknown"]},
+        "current_earnings_impact": {"type": "string", "minLength": 1},
+        "future_probability_impact": {"type": "string", "minLength": 1},
+        "valuation_impact": {"type": "string", "minLength": 1},
+        "narrative_only": {"type": "boolean"}
+      }
+    }
+  }
+}

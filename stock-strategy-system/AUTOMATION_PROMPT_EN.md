@@ -155,13 +155,14 @@ direction, volume confirmation, gap limit, extension limit, dollar-volume gate,
 earnings blackout, and leveraged-proxy confirmation. Do not enable an aligned-
 downtrend or early-recovery buy.
 
-The user explicitly verified brokerage cash and available cash at USD 0 on
-2026-08-05. Therefore DRAM, NBIS, BE, and SOXL remain non-actionable watch items
-even when a technical setup is detected. A
-cash increase alone cannot create grade `A`; the user must separately approve
-the exact instrument, risk budget, concentration cap, initial stop, quantity,
-and research/valuation gates. Do not invent a leveraged ticker for DRAM, NBIS,
-or BE.
+Read brokerage and available cash only from the current verified
+`portfolio_state.json` on every run. Never copy a historical cash value from
+this prompt, a prior report, or a market snapshot. Missing or unverified cash
+keeps every new-buy item non-actionable. Positive verified cash removes only
+the zero-cash gate; it cannot create grade `A`. The user must still separately
+approve the exact instrument, risk budget, concentration cap, initial stop,
+quantity, and research/valuation gates. Do not invent a leveraged ticker for
+DRAM, NBIS, or BE.
 
 ## Inactive return-seeking research
 
@@ -190,10 +191,13 @@ but cannot hide a valid raw-close hard-risk review; missing held raw OHLCV is
 
 For any qualitative escalation, treat multi-agent or free-form LLM proposals as
 untrusted research. Use separate identity/data, technical, bear-case, and risk-
-controller roles; record an evidence ledger; and run
-`validate_research_packet.py`. The validator may reject or cap a proposal at
-watch, but it cannot create cash, approve a ticker or quantity, override policy,
-or authorize an order.
+controller roles and record an evidence ledger. Validate a canonical v2 record
+with `manage-us-stock-strategy/scripts/validate_decision_record.py`; validate a
+clearly labelled legacy schema-1.1 packet only with
+`manage-us-stock-strategy/scripts/validate_research_packet.py`. Resolve both
+from the workspace root. A validator may reject or downgrade a proposal, but it
+cannot create cash, approve a ticker or quantity, override policy, or authorize
+an order.
 
 Apply `research_lifecycle_policy` for every qualitative escalation. Run a
 bounded latest-news scan when a new held-position B or D event appears, before
@@ -203,7 +207,11 @@ after the final completed U.S. session of the week and run a full valuation and
 scenario refresh after month-end. Record bull/base/bear scenarios, the strongest
 counter-thesis, objective invalidations, and the pre-trade decision before any
 user-executed transaction. Save a local disclosure artifact and validate the
-record with `validate_research_cycle.py`. External publication is not authorized.
+canonical v2 decision record with
+`manage-us-stock-strategy/scripts/validate_decision_record.py`, resolved from
+the workspace root. Legacy schema-1.1 packets may still use
+`manage-us-stock-strategy/scripts/validate_research_packet.py`; they must not be
+presented as v2 decision records. External publication is not authorized.
 After an explicit user-confirmed fill or explicit no-trade decision, append
 post-evaluations at 5, 20, and 60 completed sessions and named catalyst dates.
 Never rewrite the locked decision or let reflection mutate policy, holdings,

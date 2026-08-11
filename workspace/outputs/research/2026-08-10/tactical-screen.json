@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0",
+  "run_type": "current_read_only_shadow",
+  "generated_at_kst": "2026-08-11T21:23:21+09:00",
+  "generated_at_et": "2026-08-11T08:23:21-04:00",
+  "latest_completed_us_regular_session": "2026-08-10",
+  "official_session": {
+    "status": "verified_normal_session",
+    "early_close": false,
+    "sources": [
+      "https://www.nyse.com/markets/hours-calendars",
+      "https://www.nyse.com/publicdocs/nyse/ICE_NYSE_2026_Yearly_Trading_Calendar.pdf"
+    ]
+  },
+  "inputs": {
+    "market_snapshot": "stock-strategy-system/transient_snapshot_2026-08-10.json",
+    "market_snapshot_sha256": "c58a9dd570dfdf282a5e33e51f25adb6fe6cecb8e1459bc127d48af146a79c8c",
+    "portfolio_state_sha256": "e21356cc241ebdb2ed4610b19ed5430d507eda3d027054061752e051fcdf5f70",
+    "alert_policy_sha256": "cdf320aee4d44c20843a927726b360346dd003b5292c564de268fbc0a0aba649",
+    "instrument_registry_sha256": "734c53059c7a6b3352f516af390f4f00660b8356e643d46177944cc5290cee74",
+    "tactical_universe_sha256": "2a412545bcaa4d44493a53a098a4fcb1e244e6e510a1ab3791b51cd622f01913",
+    "data_contract": {
+      "collector": "yfinance 1.5.2 unofficial raw-data collector",
+      "sequential_requests": true,
+      "minimum_request_delay_seconds": 1.0,
+      "auto_adjust": false,
+      "prepost": false,
+      "independent_completed_close_crosscheck": true
+    }
+  },
+  "portfolio_context": {
+    "verified_cash_usd": 3264.31,
+    "held_tactical_symbols": ["SOXL", "MVLL"],
+    "portfolio_state_mutated": false,
+    "runtime_state_mutated": false
+  },
+  "stage_one": {
+    "purpose": "shortlist_only_no_trade_authority",
+    "candidates": [
+      {
+        "symbol": "MVLL",
+        "lane": "leveraged_semiconductor",
+        "held": true,
+        "identity": "verified_by_existing_active_policy",
+        "leverage_factor": 2.0,
+        "confirmation_proxy": "MRVL",
+        "direct_close_status": "verified",
+        "proxy_status": "verified_corroboration_only",
+        "technical_status": "verified_mixed_regime",
+        "portfolio_eligibility": "held_position_review_only",
+        "result": "NO_STAGE_TWO_ESCALATION",
+        "reason": "No active reduction or hard-risk trigger; new-buy authority is absent."
+      },
+      {
+        "symbol": "SOXL",
+        "lane": "leveraged_semiconductor",
+        "held": true,
+        "identity": "verified_by_existing_active_policy",
+        "leverage_factor": 3.0,
+        "confirmation_proxy": "SOXX",
+        "direct_close_status": "verified",
+        "proxy_status": "verified_corroboration_only",
+        "technical_status": "verified_weakness_but_reduction_slot_locked",
+        "portfolio_eligibility": "held_position_review_only",
+        "result": "NO_STAGE_TWO_ESCALATION",
+        "reason": "The next weakness slot is locked pending confirmed common-session EMA20 recovery and cooldown; possible-add rules are not approved."
+      },
+      {
+        "symbol": "NBIS",
+        "lane": "ai_infrastructure",
+        "held": false,
+        "identity": "verified_by_existing_active_policy",
+        "leverage_factor": 1.0,
+        "confirmation_proxy": null,
+        "direct_close_status": "verified",
+        "technical_status": "verified_below_ema10_and_ema20",
+        "portfolio_eligibility": "watchlist_only_new_buy_not_approved",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "Technical regime is not aligned and exact-instrument new-buy and sizing authority are absent."
+      },
+      {
+        "symbol": "FSLY",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "RBRK",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "NET",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "NOW",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "MDB",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "DDOG",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "SNOW",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "CRWD",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "PANW",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      },
+      {
+        "symbol": "PLTR",
+        "lane": "user_defined_ai_agent_theme",
+        "held": false,
+        "identity": "user_supplied_pending_primary_verification",
+        "result": "REJECTED_AT_STAGE_ONE",
+        "reason": "No same-cutoff verified identity, fundamentals, valuation, and technical evidence bundle."
+      }
+    ],
+    "shortlist": []
+  },
+  "stage_two": {
+    "deep_research_candidates": [],
+    "preferred_candidate": null,
+    "alternative_candidate": null,
+    "status": "NOT_RUN_NO_ELIGIBLE_SHORTLIST"
+  },
+  "deterministic_gate": {
+    "state": "DAILY_REVIEW",
+    "grade": "E",
+    "result": "NO_ACTIONABLE_CANDIDATE",
+    "orders_placed_or_scheduled": false
+  },
+  "missing_permissions": [
+    "new-buy instrument approval for every non-held tactical candidate",
+    "approved quantity and risk budget for any new buy",
+    "short-sale approval"
+  ],
+  "missing_data": [
+    "same-cutoff primary-source identity, commercialization, fundamentals, valuation, and validated technical packets for the user-defined AI Agent theme",
+    "approved entry rules for NBIS and other non-held names"
+  ],
+  "final_action": "WAIT_NO_TRADE",
+  "next_review_trigger": "A later completed U.S. regular session with fresh verified close data, a deterministic held-position risk trigger, or explicit user-approved new-buy and sizing policy with complete evidence."
+}

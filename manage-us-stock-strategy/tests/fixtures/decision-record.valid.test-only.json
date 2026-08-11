@@ -1,0 +1,132 @@
+{
+  "schema_version": "2.0",
+  "decision_id": "NBIS-TEST-20260811-001",
+  "created_at_utc": "2026-08-11T12:00:00+00:00",
+  "test_only": true,
+  "symbol": "NBIS",
+  "instrument_registry_version": "2026-08-11-tradingagents-v2-v1",
+  "tactical_universe_version": "2026-08-11-tradingagents-v2-v1",
+  "portfolio_state_revision": null,
+  "policy_version": "tradingagents-v2-test",
+  "research_packet": {
+    "schema_version": "2.0",
+    "analysis_id": "NBIS-TEST-ANALYSIS-001",
+    "analysis_kind": "TACTICAL_SELECTION",
+    "symbol": "NBIS",
+    "analysis_cutoff_utc": "2026-08-11T12:00:00+00:00",
+    "generated_at_utc": "2026-08-11T12:00:00+00:00",
+    "analysis_session_date": "2026-08-10",
+    "evidence": [
+      {
+        "id": "E1",
+        "claim": "Synthetic identity evidence for validator testing only.",
+        "record_type": "VERIFIED_FACT",
+        "source_url": "https://example.test/nbis/identity",
+        "source_type": "primary",
+        "published_at_utc": "2026-08-11T11:00:00+00:00",
+        "retrieved_at_utc": "2026-08-11T12:00:00+00:00",
+        "effective_at_utc": "2026-08-11T11:00:00+00:00",
+        "observation_session": "2026-08-10",
+        "units": null,
+        "price_basis": null,
+        "formula_version": null,
+        "confidence": "HIGH",
+        "contradiction_status": "NONE",
+        "actionable": true,
+        "notes": "Synthetic fixture; not live research."
+      },
+      {
+        "id": "E2",
+        "claim": "Synthetic opposing evidence for validator testing only.",
+        "record_type": "SCENARIO",
+        "source_url": null,
+        "source_type": "calculation",
+        "published_at_utc": "2026-08-11T11:00:00+00:00",
+        "retrieved_at_utc": "2026-08-11T12:00:00+00:00",
+        "effective_at_utc": "2026-08-11T11:00:00+00:00",
+        "observation_session": "2026-08-10",
+        "units": null,
+        "price_basis": null,
+        "formula_version": "synthetic-v1",
+        "confidence": "MEDIUM",
+        "contradiction_status": "NONE",
+        "actionable": false,
+        "notes": "Synthetic fixture; not live research."
+      }
+    ],
+    "analyst_outputs": [
+      {"role": "identity_data_auditor", "stance": "NEUTRAL", "confidence": "HIGH", "summary": "Identity is internally consistent for this test.", "claim_ids": ["E1"], "unknowns": [], "decision_impact": "NO_CHANGE", "status": "RESEARCH_COMPLETE"},
+      {"role": "fundamental_valuation_analyst", "stance": "NEUTRAL", "confidence": "LOW", "summary": "No live valuation claim is made in this synthetic test.", "claim_ids": ["E1"], "unknowns": ["Live valuation is intentionally absent."], "decision_impact": "CONDITIONAL", "status": "RESEARCH_CONDITIONAL"},
+      {"role": "market_technical_analyst", "stance": "NEUTRAL", "confidence": "LOW", "summary": "No live technical signal is used.", "claim_ids": ["E1"], "unknowns": ["Live completed-session data is intentionally absent."], "decision_impact": "CONDITIONAL", "status": "RESEARCH_CONDITIONAL"},
+      {"role": "bull_researcher", "stance": "BULLISH", "confidence": "LOW", "summary": "The synthetic bull case exists only to test role separation.", "claim_ids": ["E1"], "unknowns": [], "decision_impact": "SUPPORTS", "status": "RESEARCH_COMPLETE"},
+      {"role": "bear_researcher", "stance": "BEARISH", "confidence": "MEDIUM", "summary": "The lack of live evidence requires WAIT.", "claim_ids": ["E2"], "unknowns": [], "decision_impact": "OPPOSES", "status": "RESEARCH_COMPLETE"}
+    ],
+    "research_manager": {
+      "role": "research_manager",
+      "stance": "NEUTRAL",
+      "confidence": "HIGH",
+      "summary": "WAIT because this is test-only and new-buy approval is absent.",
+      "claim_ids": ["E1", "E2"],
+      "unknowns": ["Live evidence is intentionally absent."],
+      "decision_impact": "NO_CHANGE",
+      "status": "RESEARCH_COMPLETE",
+      "accepted_claim_ids": ["E1", "E2"],
+      "rejected_claim_ids": [],
+      "unresolved_conflicts": []
+    },
+    "strongest_counter_thesis": "A watchlist candidate is not an approved new buy.",
+    "invalidation_conditions": ["The test fixture is used as live evidence."],
+    "unresolved_conditions": ["No live evidence was collected."]
+  },
+  "trader_proposal": {
+    "symbol": "NBIS",
+    "position_status": "NOT_HELD",
+    "action": "WAIT",
+    "quantity": null,
+    "policy_rule_id": null,
+    "claim_ids": ["E1", "E2"],
+    "setup": null,
+    "invalidation_condition_ids": ["I1"],
+    "expiry": null,
+    "order_authority": false
+  },
+  "risk_review": {
+    "verdict": "ALLOW_REVIEW",
+    "input_action": "WAIT",
+    "output_action": "WAIT",
+    "reasons": ["No upgrade is permitted without live evidence and approval."],
+    "claim_ids": ["E1", "E2"],
+    "may_upgrade": false,
+    "order_authority": false
+  },
+  "portfolio_decision": {
+    "action": "WAIT",
+    "quantity": null,
+    "preferred_candidate": null,
+    "alternative_candidate": null,
+    "strategic_allocation_change": false,
+    "portfolio_fit": "BLOCKED",
+    "constraints": ["New buy is not approved."],
+    "wait_reason": "Test-only record with no new-buy authority.",
+    "order_authority": false
+  },
+  "deterministic_gate": {
+    "status": "WATCH_ONLY",
+    "validated_at_utc": "2026-08-11T12:00:00+00:00",
+    "errors": [],
+    "warnings": ["new buy is not approved for this candidate"],
+    "order_authority": false
+  },
+  "final_action": "WAIT",
+  "human_decision": "PENDING",
+  "evaluation_plan": {
+    "conditions": [
+      {"id": "C1", "kind": "CONFIRMATION", "description": "A future approved live research cycle confirms the thesis."},
+      {"id": "I1", "kind": "INVALIDATION", "description": "This synthetic fixture is used as live evidence."}
+    ],
+    "checkpoints": ["T+5", "T+20", "T+60"]
+  },
+  "artifact_hashes": {},
+  "record_locked": true,
+  "order_authority": false
+}

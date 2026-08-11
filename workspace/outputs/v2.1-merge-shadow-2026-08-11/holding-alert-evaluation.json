@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-08-11T22:46:44.978142+09:00",
+  "strategy_version": "2026-08-05-v4",
+  "rules_hash": "5f3f15c7c0a547bc",
+  "band_version": null,
+  "state_updated_at": "2026-08-11T10:22:25+09:00",
+  "us_session_date": "2026-08-10",
+  "expected_us_session_date": "2026-08-10",
+  "official_calendar_verified": true,
+  "state": "NO_NEW_SESSION",
+  "grade": "E",
+  "headline_key": "alert_none",
+  "headline": "No trade review alert",
+  "candidates": [],
+  "watchlist": [],
+  "risk_freeze_active": false,
+  "warnings": [
+    "session already processed"
+  ],
+  "funding_context": null,
+  "evidence_validation_policy_version": "2026-08-05-evidence-ledger-v1"
+}

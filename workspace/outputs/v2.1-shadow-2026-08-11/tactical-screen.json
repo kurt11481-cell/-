@@ -1,0 +1,297 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-11T13:02:00+00:00",
+  "analysis_cutoff": "2026-08-11T13:01:00+00:00",
+  "market_session": "2026-08-10",
+  "data_status": "DATA_INCOMPLETE",
+  "event_status": "EVENT_DATA_INCOMPLETE",
+  "universe": [
+    "MVLL",
+    "SOXL",
+    "NBIS",
+    "FSLY",
+    "RBRK",
+    "NET",
+    "NOW",
+    "MDB",
+    "DDOG",
+    "SNOW",
+    "CRWD",
+    "PANW",
+    "PLTR"
+  ],
+  "stage_one": [
+    {
+      "symbol": "MVLL",
+      "lane": "leveraged_semiconductor",
+      "identity_status": "verified_by_existing_active_policy",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable"
+      ]
+    },
+    {
+      "symbol": "SOXL",
+      "lane": "leveraged_semiconductor",
+      "identity_status": "verified_by_existing_active_policy",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable"
+      ]
+    },
+    {
+      "symbol": "NBIS",
+      "lane": "ai_infrastructure",
+      "identity_status": "verified_by_existing_active_policy",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable"
+      ]
+    },
+    {
+      "symbol": "FSLY",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "RBRK",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "NET",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "NOW",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "MDB",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "DDOG",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "SNOW",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "CRWD",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "PANW",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    },
+    {
+      "symbol": "PLTR",
+      "lane": "ai_agent_theme",
+      "identity_status": "user_supplied_pending_primary_verification",
+      "watchlist_approved": true,
+      "new_buy_approved": false,
+      "evidence": "FAIL",
+      "valuation": "UNVERIFIED",
+      "technical": "UNAVAILABLE",
+      "event_risk": "EVENT_DATA_INCOMPLETE",
+      "portfolio_eligibility": "RESEARCH_ONLY",
+      "screen_status": "REJECTED",
+      "reasons": [
+        "official completed-session calendar is not verified",
+        "regular session is not complete",
+        "market snapshot session mismatch",
+        "canonical completed-session market data unavailable",
+        "primary identity verification remains pending"
+      ]
+    }
+  ],
+  "shortlist": [],
+  "deep_research_candidates": [],
+  "preferred_candidate": null,
+  "alternative_candidate": null,
+  "final_status": "DATA_INCOMPLETE",
+  "reasons": [
+    "No candidate passed Stage 1.",
+    "The live provider failed; stale market data were not substituted."
+  ],
+  "missing_permissions": [
+    "new-buy instrument approval",
+    "approved quantity or sizing authority",
+    "approved risk budget and maximum-loss rule"
+  ],
+  "order_authority": false
+}

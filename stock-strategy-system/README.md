@@ -7,10 +7,10 @@
 현재 운영 모드는 `leveraged_holding_risk_and_watchlist`이며,
 `2026-08-05-ema-timing-v2`가 B등급 다음 세션 검토용으로 활성화되어 있습니다.
 
-- 전체 보유: SOXL 99주, 평균단가 USD 123.32
-- 전체 보유: MVLL 396주, 평균단가 USD 41.78
-- 브로커 현금 및 신규매수 가용현금: USD 0
-- 기준시각: 2026-07-31 15:48 KST
+- 현재 보유수량, 평균단가, 브로커 현금 및 신규매수 가용현금은
+  `portfolio_state.json`의 최신 사용자 검증값만 사용합니다.
+- README, 과거 보고서, 과거 시장 스냅샷에 기록된 금액은 현재 운영
+  사실로 재사용하지 않습니다.
 - 신규 관찰목록: DRAM, NBIS, BE, SOXL
 
 이전 배당·코어 ETF 단계별 전환전략은 삭제되지 않았으며 state와 policy의 `archived_prior_strategy`에 보존됩니다. 현재 운영에는 사용되지 않습니다.
@@ -55,7 +55,10 @@ SOXX, MVLL은 MRVL의 동일 방향까지 확인합니다. 기술 검증 실패�
 
 ## 신규 관찰목록과 현금 게이트
 
-DRAM, NBIS, BE, SOXL은 현금 USD 0인 동안 전부 `actionable=false`, `quantity=null`인 관찰항목입니다. 현금이 생기는 것만으로 매수후보가 활성화되지 않습니다. 다음 항목이 추가로 승인돼야 합니다.
+DRAM, NBIS, BE, SOXL은 검증된 가용현금이 없거나 0 이하인 동안 전부
+`actionable=false`, `quantity=null`인 관찰항목입니다. 양의 가용현금이
+확인되더라도 그것만으로 매수후보가 활성화되지 않습니다. 다음 항목이
+추가로 승인돼야 합니다.
 
 1. 실제 매수할 정확한 종목
 2. 레버리지 상품을 사용할 경우 정확한 티커와 공식 상품 검증
@@ -85,11 +88,15 @@ DRAM, NBIS, BE, SOXL은 현금 USD 0인 동안 전부 `actionable=false`, `quant
 
 중대한 전략 변경이나 상충하는 뉴스가 있을 때는 TradingAgents에서 참고한 역할분리 구조를 사용합니다. 데이터 감사, 펀더멘털·밸류에이션, 기술, 뉴스·매크로, 강세·약세 반론, 독립 위험검토, 종합 역할을 분리하되 다수결로 매매를 결정하지 않습니다.
 
-LLM의 구조화 제안도 신뢰하지 않고 `validate_research_packet.py`로 시점·근거 ID·보유수량·현금·레버리지 승인·정책 규칙을 먼저 검증합니다. 검증기는 `rejected`, `watch_only`, `eligible_for_alert_engine`만 반환하며, 마지막 상태도 주문 승인이 아닙니다. 실제 경보 등급은 별도의 `evaluate_alerts.py`가 결정하고 사용자가 최종 판단합니다.
+LLM의 구조화 제안도 신뢰하지 않습니다. v2 결정 기록은 작업공간 루트에서
+`manage-us-stock-strategy/scripts/validate_decision_record.py`로 시점·근거 ID·보유수량·현금·레버리지
+승인·정책 규칙을 검증합니다. schema 1.1 구형 패킷만
+`manage-us-stock-strategy/scripts/validate_research_packet.py`를 사용합니다. 검증기는 주문 승인을 반환하지
+않으며, 실제 경보 등급은 별도의 `evaluate_alerts.py`가 결정하고 사용자가 최종 판단합니다.
 
 일상적인 E 무신호 점검에는 다중 Agent 토론을 실행하지 않습니다. 새로운 D 위험이벤트나 실질적인 기업·섹터 사건처럼 정성적 문맥이 결정에 영향을 줄 때만 제한적으로 사용합니다.
 
-정성적 전략 검토는 `research-lifecycle.md`의 반복 구조를 사용합니다. 최신 뉴스와 근거 조사 → 가장 강한 반대논리 → 상승·기본·하락 시나리오 → 거래 전 투자논리와 무효화 기준 기록 → 로컬 감사자료 공개 → T+5/T+20/T+60 및 촉매일 사후평가 순서입니다. `validate_research_cycle.py`가 누락된 반대논리·시나리오·무효화 기준과 사후적으로 바뀐 판단기록을 거부합니다. 외부 공개나 주문 실행은 별도 권한 없이는 수행하지 않습니다.
+정성적 전략 검토는 `research-lifecycle.md`의 반복 구조를 사용합니다. 최신 뉴스와 근거 조사 → 가장 강한 반대논리 → 상승·기본·하락 시나리오 → 거래 전 투자논리와 무효화 기준 기록 → 로컬 감사자료 공개 → T+5/T+20/T+60 및 촉매일 사후평가 순서입니다. v2 결정·반대논리·무효화 필드는 `validate_decision_record.py`와 독립 schema-contract 검증으로 검증하며, Reflection은 정책이나 상태를 변경할 수 없습니다. 외부 공개나 주문 실행은 별도 권한 없이는 수행하지 않습니다.
 
 ## 안전 원칙
 
@@ -108,7 +115,8 @@ LLM의 구조화 제안도 신뢰하지 않고 `validate_research_packet.py`로 
 ```powershell
 python manage-us-stock-strategy/scripts/evaluate_alerts.py --self-test
 python manage-us-stock-strategy/scripts/validate_research_packet.py --self-test
-python manage-us-stock-strategy/scripts/validate_research_cycle.py --cycle <cycle.json> --packet <research_packet.json>
+python manage-us-stock-strategy/scripts/validate_decision_record.py --self-test
+python manage-us-stock-strategy/scripts/validate_schema_contracts.py --schema-dir manage-us-stock-strategy/schemas
 python manage-us-stock-strategy/scripts/resolve_leveraged_quote.py --help
 python manage-us-stock-strategy/scripts/build_market_snapshot.py --self-test
 python manage-us-stock-strategy/scripts/validate_technical_snapshot.py --self-test
