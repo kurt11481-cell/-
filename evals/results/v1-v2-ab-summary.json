@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-11T21:23:21+09:00",
+  "v1_code_baseline_status": "AVAILABLE_AS_EXACT_PRE_V2_SNAPSHOT",
+  "immutable_point_in_time_bundle_status": "UNAVAILABLE",
+  "overall_ab_status": "UNAVAILABLE",
+  "reason": "No case has a demonstrably point-in-time-clean evidence bundle shared identically by v1 and v2.",
+  "cases": {
+    "MRVL": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false},
+    "SNDK": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false},
+    "NBIS": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false},
+    "AVGO": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false},
+    "LITE": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false},
+    "SOXL": {"status": "INELIGIBLE_FOR_A_B", "cutoff": null, "outcome_tested": false}
+  },
+  "not_substituted_for_ab": [
+    "v2 regression tests",
+    "current read-only shadow run",
+    "static architecture comparison"
+  ]
+}

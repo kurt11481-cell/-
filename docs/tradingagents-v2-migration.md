@@ -205,3 +205,84 @@ from verified cash; this was a stale-test correction, not a policy change.
 4. Review all validation output and any pre-existing failures.
 5. Open a Pull Request from `feature/tradingagents-v2` to `main`.
 6. Merge only after explicit user approval; do not push or merge automatically.
+
+## 20. Final Validation Review
+
+Validation cutoff: 2026-08-11 KST. Claim classifications below are based on
+repository files, bundled deterministic tests, and one read-only shadow run.
+
+### Architecture Status — VERIFIED
+
+The implemented chain is User Request → Skill Router → Evidence/Identity Gate →
+Relevant Analysts → Bull/Bear → Research Manager → Trader → independent Risk
+Controller → Portfolio Manager → Deterministic Gate → human review → immutable
+decision/outcome reflection. The research roles are conditional rather than
+mandatory for every lightweight screen.
+
+### Authority-Boundary Status — VERIFIED
+
+- Research Manager resolves research disagreement but cannot authorize quantity
+  or execution.
+- Trader proposal quantity is null and has no cash, leverage, or order authority.
+- Risk Controller can only `ALLOW_REVIEW`, `DOWNGRADE`, or `VETO`; the validator
+  rejects an upgrade.
+- Portfolio Manager evaluates fit but cannot bypass deterministic policy.
+- The human retains every external action.
+
+### Tactical-Universe Status — VERIFIED
+
+The research-only universe contains exactly MVLL, SOXL, NBIS, FSLY, RBRK, NET,
+NOW, MDB, DDOG, SNOW, CRWD, PANW, and PLTR. MVLL→MRVL and SOXL→SOXX leverage and
+proxy relationships come from existing active policy rather than ticker-name
+inference. All 13 names are watchlist-approved, new-buy false, and short false.
+Strategic allocation effect is explicitly `none`.
+
+### Schema Status — PARTIALLY VERIFIED
+
+All seven JSON contracts parse and all local `$ref` targets exist. Fixtures and
+the standard-library decision validator pass bundled tests. A separate Draft
+2020-12 schema engine is not bundled, so full runtime equivalence between every
+schema keyword and hand-coded validation remains untested.
+
+### Script Status — PARTIALLY VERIFIED
+
+The full 44-test suite, compile check, and eight script self-tests pass. Direct
+leveraged-product price remains mandatory and proxy evidence is corroboration
+only. However, active policy and automation prompt reference a missing
+`validate_research_cycle.py` while v2 defines `validate_decision_record.py`.
+
+### State Migration Status — VERIFIED
+
+No holdings, cash, cost basis, fills, timing stages, loss boundaries, policy
+approvals, or runtime/dedup facts were migrated into `workspace/`. Operational
+state remains under `stock-strategy-system/`. The current validation did not
+modify portfolio or runtime state.
+
+### A/B Status — UNTESTED / UNAVAILABLE
+
+The exact pre-v2 code snapshot is Git commit
+`2419497e1f11873fa758dfc8eecdefa2e64572d0`, but no immutable identical
+point-in-time evidence bundle exists for the six requested cases. True v1-v2
+decision A/B is therefore unavailable and was not fabricated.
+
+### Current Shadow Status — VERIFIED
+
+For completed session 2026-08-10, the deterministic evaluator returned
+`DAILY_REVIEW`, grade `E`, and no actionable candidate. The tactical screen
+returned `WAIT_NO_TRADE`; no preferred or alternative candidate was forced.
+
+### Unresolved Risks
+
+1. Reconcile the missing cycle-validator reference across active policy,
+   automation prompt, and v2 canonical validator.
+2. Remove the automation prompt's stale narrative statement that cash is USD 0;
+   cash must always be derived from verified portfolio state.
+3. Align the research-report template's legacy disposition names with the
+   canonical Research Manager enum.
+4. Add independent JSON Schema execution through a separately reviewed
+   dependency change.
+5. Keep the repo v2 Skill in shadow until installation/deployment hashes and
+   operational prompt references are reviewed together.
+
+Final migration readiness: **READY_FOR_SHADOW_USE**, not yet
+`READY_FOR_HUMAN_REVIEW_USE`.

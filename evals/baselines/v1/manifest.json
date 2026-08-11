@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "baseline_label": "exact_pre_v2_workspace_snapshot",
+  "code_baseline_status": "AVAILABLE_AS_EXACT_PRE_V2_SNAPSHOT",
+  "point_in_time_ab_evidence_status": "UNAVAILABLE",
+  "git_commit": "2419497e1f11873fa758dfc8eecdefa2e64572d0",
+  "git_commit_subject": "chore: establish stock strategy workspace baseline",
+  "git_commit_timestamp": "2026-08-11T20:36:55+09:00",
+  "provenance": {
+    "source": "local Git history on main",
+    "relationship_to_v2": "immediate parent of the v2 implementation commit",
+    "lossless": true,
+    "working_tree_reconstruction_performed": false
+  },
+  "representative_git_blob_ids": {
+    "manage-us-stock-strategy/SKILL.md": "1e8820262a173edc350def919bbc7e3c48016317",
+    "manage-us-stock-strategy/references/multi-agent-research.md": "70a5ae44e976faab3c91470d127f4d7eb49dd494",
+    "manage-us-stock-strategy/scripts/evaluate_alerts.py": "c895f28ade25d0a44c2ff9f290969449ce4d3faa",
+    "manage-us-stock-strategy/scripts/validate_research_packet.py": "dd3666abbcc29a96a240ef6ed495cbb7ee1f944f",
+    "stock-strategy-system/alert_policy.json": "40dfa0ca07f0ede2cda442f49e4cd2602fa7b7ae"
+  },
+  "limitations": [
+    "The exact code snapshot does not contain immutable, identical, point-in-time evidence bundles for MRVL, SNDK, NBIS, AVGO, LITE, and SOXL.",
+    "The case README files are evaluation placeholders, not historical evidence bundles or frozen v1 outputs.",
+    "The code baseline therefore cannot support a faithful decision-output A/B test without fabricating inputs or outputs."
+  ]
+}
