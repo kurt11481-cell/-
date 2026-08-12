@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "last_processed_session": "2026-08-11",
+  "last_run_at": "2026-08-12T13:23:00+00:00",
+  "holdings": {
+    "MVLL": {
+      "strategy_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "fingerprint": "6c532340c095807fdc843b159e9ce4de0f88f38eda1a17a771b70ed9ef710009",
+      "last_deep_research_session": null
+    },
+    "NBIS": {
+      "strategy_state": "EXIT_REVIEW",
+      "execution_state": "HUMAN_REVIEW_REQUIRED",
+      "fingerprint": "c661547a0dbfde2f24b3a9608e25ce556fdd1eeae102877295f75c8c41556b4e",
+      "last_deep_research_session": null
+    },
+    "SOXL": {
+      "strategy_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "fingerprint": "b57c9f702023d11f0cc869dcbb2fa44b24cb30727b5b556f9073214cd61efcb8",
+      "last_deep_research_session": null
+    }
+  },
+  "deliveries": {},
+  "order_authority": false
+}

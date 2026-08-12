@@ -41,7 +41,7 @@ Reject a broker snapshot older than the configured calendar-day limit. A schedul
 
 ## Engine scopes
 
-Support both policy scopes without silently translating one into the other:
+Support lower-level policy scopes without silently translating one into another:
 
 - `active_staged_plan_only`: the legacy staged price-band engine. It requires a valid current stage and preserves its existing cash, quantity, band, trend, and funding gates.
 - `leveraged_holding_risk_and_watchlist`: the leveraged-position monitoring engine. It does not require a current stage. It evaluates verified held-position risk first, then emits non-actionable watchlist context.
@@ -50,6 +50,16 @@ Support both policy scopes without silently translating one into the other:
   runtime/dedup state and research/audit artifacts. It has lower priority than
   held-position hard risk and may not mutate portfolio state, policy, cash,
   holdings, cost basis, fills, quantities, or order state.
+
+- `portfolio_strategy_orchestrator`: a read-only coordination scope above the
+  lower-level engines. It consumes their separately validated results in this
+  order: official session, holding risk, holding strategy, tactical radar,
+  cash/funding classification, capital redeployment, and morning report. It is
+  not a second calculation authority. Held grade-D risk remains above tactical
+  buying, domain-specific failures remain visible, and opportunity quality
+  stays separate from execution eligibility. It may write only monitoring
+  runtime and research/audit outputs; it may not write portfolio state, policy,
+  holdings, cash, cost basis, fills, or approved quantities.
 
 The tactical radar normally runs Tuesday through Saturday at 07:45 KST, but an
 official completed-session gate remains authoritative. Return

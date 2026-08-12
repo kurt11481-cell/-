@@ -4,7 +4,34 @@
     "alert_present": "오늘 매매 검토 알림 있음",
     "alert_none": "오늘 매매 검토 알림 없음",
     "staged_reduction_review": "분할감축 검토",
-    "no_order_notice": "주문을 실행하거나 예약하지 않았습니다. 사람의 승인과 최신 브로커 상태가 필요합니다."
+    "no_order_notice": "주문을 실행하거나 예약하지 않았습니다. 사람의 승인과 최신 브로커 상태가 필요합니다.",
+    "portfolio_no_hard_risk": "활성 hard-risk 검토 없음",
+    "portfolio_no_human_review": "현재 사람의 검토가 필요한 항목 없음",
+    "portfolio_title": "아침 포트폴리오 전략",
+    "critical_risk_heading": "A. 핵심 위험",
+    "holdings_heading": "B. 기존 보유 종목",
+    "opportunities_heading": "C. 신규 기회",
+    "cash_heading": "D. 현금 및 자금 상태",
+    "redeployment_heading": "E. 자본 재배치",
+    "review_heading": "F. 최종 사람 검토 항목",
+    "strategy_execution_label": "전략 / 실행 상태",
+    "primary_reason_label": "핵심 사유",
+    "quantity_authority_label": "수량 / 수량 권한",
+    "next_review_label": "다음 검토 조건",
+    "add_conditions_label": "추가매수 조건",
+    "reduce_conditions_label": "감축 조건",
+    "verified_cash_label": "검증된 가용현금",
+    "projected_proceeds_label": "예상 매도대금",
+    "unsettled_proceeds_label": "미결제·미확인 대금",
+    "purchasing_power_label": "실행 가능 구매력",
+    "funding_status_label": "자금 상태",
+    "preferred_use_label": "우선 자금 용도",
+    "alternative_use_label": "대안 자금 용도",
+    "keep_cash_label": "현금 유지 선택지"
+  },
+  "reason_translations": {
+    "The approved maximum-loss review boundary was breached on the validated completed close.": "검증된 정규장 종가가 승인된 최대손실 검토 경계를 하회했습니다.",
+    "Validated completed-session price, indicators, and independent close cross-check are unavailable.": "완료 세션의 검증 가격·지표·독립 종가 교차검증이 충분하지 않습니다."
   },
   "command_aliases": {
     "options": ["옵션"]

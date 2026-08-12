@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "capital-redeployment-plan.schema.json",
+  "title": "Capital Redeployment Review Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "analysis_cutoff", "market_session", "funding_status", "verified_available_cash_usd", "projected_sale_proceeds_usd", "projected_sale_details", "unsettled_or_unconfirmed_proceeds_usd", "execution_purchasing_power_usd", "projected_proceeds_status", "cost_impact_status", "candidate_uses", "preferred_use", "alternative_use", "cash_reserve_option", "execution_blockers", "policy_version", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.3"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "funding_status": {"enum": ["FUNDED_VERIFIED", "NO_VERIFIED_FUNDING", "UNFUNDED_PROJECTED_PLAN", "DATA_BLOCKED"]},
+    "verified_available_cash_usd": {"type": ["number", "null"], "minimum": 0},
+    "projected_sale_proceeds_usd": {"type": ["number", "null"], "minimum": 0},
+    "projected_sale_details": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "quantity", "reference_price_usd", "gross_projected_proceeds_usd", "status", "fill_confirmed", "quantity_authority", "policy_rule_id", "tranche_id", "trigger_path"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+          "quantity": {"type": "integer", "minimum": 1},
+          "reference_price_usd": {"type": "number", "minimum": 0},
+          "gross_projected_proceeds_usd": {"type": "number", "minimum": 0},
+          "status": {"const": "PROJECTED_ONLY_NOT_AVAILABLE_CASH"},
+          "fill_confirmed": {"const": false},
+          "quantity_authority": {"const": "deterministic_existing_policy"},
+          "policy_rule_id": {"type": "string", "minLength": 1},
+          "tranche_id": {"type": "string", "minLength": 1},
+          "trigger_path": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "unsettled_or_unconfirmed_proceeds_usd": {"type": ["number", "null"], "minimum": 0},
+    "execution_purchasing_power_usd": {"type": ["number", "null"], "minimum": 0},
+    "projected_proceeds_status": {"enum": ["NONE", "PROJECTED_ONLY_NOT_AVAILABLE_CASH_NO_FILL_CONFIRMED"]},
+    "cost_impact_status": {"enum": ["NOT_APPLICABLE", "ASSUMPTION_REQUIRED"]},
+    "candidate_uses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["use_id", "type", "ticker", "opportunity_or_strategy_state", "execution_state", "portfolio_fit", "primary_reason", "remaining_conditions", "quantity", "quantity_authority"],
+        "properties": {
+          "use_id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["NEW_POSITION", "EXISTING_HOLDING_ADD", "KEEP_CASH"]},
+          "ticker": {"type": ["string", "null"]},
+          "opportunity_or_strategy_state": {"type": "string", "minLength": 1},
+          "execution_state": {"type": "string", "minLength": 1},
+          "portfolio_fit": {"type": "string", "minLength": 1},
+          "primary_reason": {"type": "string", "minLength": 1},
+          "remaining_conditions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "quantity": {"type": ["integer", "null"], "minimum": 1},
+          "quantity_authority": {"enum": ["none", "deterministic_existing_policy"]}
+        }
+      }
+    },
+    "preferred_use": {"type": ["string", "null"]},
+    "alternative_use": {"type": ["string", "null"]},
+    "cash_reserve_option": {"const": "KEEP_CASH"},
+    "execution_blockers": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "policy_version": {"type": "string", "minLength": 1},
+    "order_authority": {"const": false}
+  }
+}

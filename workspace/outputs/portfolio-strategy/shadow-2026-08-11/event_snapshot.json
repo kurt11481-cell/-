@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "V23-SHADOW-2026-08-11",
+  "snapshot_mode": "LIVE",
+  "generated_at": "2026-08-12T13:21:14+00:00",
+  "analysis_cutoff": "2026-08-12T13:21:00+00:00",
+  "market_session": "2026-08-11",
+  "coverage_status": "EVENT_DATA_INCOMPLETE",
+  "coverage_notes": [
+    "Live authoritative event coverage was not independently completed for this shadow run."
+  ],
+  "events": [],
+  "order_authority": false
+}

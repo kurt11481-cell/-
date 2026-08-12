@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-strategy-report.schema.json",
+  "title": "Combined Morning Portfolio Strategy Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "analysis_cutoff", "market_session", "data_status", "holding_data_status", "tactical_data_status", "event_data_status", "holding_risk_result", "holding_strategies", "tactical_radar_result", "cash_funding_state", "capital_redeployment", "final_portfolio_strategy", "notifications", "component_artifacts", "deterministic_gate_result", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.3"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "data_status": {"enum": ["VALIDATED", "PARTIAL", "DATA_INCOMPLETE"]},
+    "holding_data_status": {"enum": ["VALIDATED", "PARTIAL", "DATA_INCOMPLETE"]},
+    "tactical_data_status": {"enum": ["VALIDATED", "PARTIAL", "DATA_INCOMPLETE"]},
+    "event_data_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_DATA_INCOMPLETE"]},
+    "holding_risk_result": {"type": "object"},
+    "holding_strategies": {"type": "array", "items": {"$ref": "holding-strategy.schema.json"}, "minItems": 1},
+    "tactical_radar_result": {"type": "object"},
+    "cash_funding_state": {"type": "object"},
+    "capital_redeployment": {"$ref": "capital-redeployment-plan.schema.json"},
+    "final_portfolio_strategy": {"type": "object"},
+    "notifications": {"type": "array", "items": {"type": "object"}},
+    "component_artifacts": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+    "deterministic_gate_result": {"enum": ["PASS", "WAIT", "DATA_BLOCKED", "HARD_RISK_REVIEW"]},
+    "order_authority": {"const": false}
+  }
+}

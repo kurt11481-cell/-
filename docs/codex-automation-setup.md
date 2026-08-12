@@ -1,37 +1,37 @@
-# Codex Automation Setup: Morning Tactical Opportunity Radar
+# Codex Automation Setup: Morning Portfolio Strategy
 
 ## Intended configuration
 
-- Name: `Morning Tactical Opportunity Radar`
-- Platform: Codex automation only
-- Schedule: Tuesday through Saturday at 07:45 `Asia/Seoul`
+- Name: `Morning Portfolio Strategy`
+- Platform: Codex automation/heartbeat only
+- Schedule: Tuesday through Saturday at approximately 07:45 `Asia/Seoul`
 - Workspace: `E:\사업\##금동한\코덱스저장소`
-- Windows Task Scheduler: not installed and not permitted by this design
+- Source branch: committed `main`
+- Windows Task Scheduler: not installed and prohibited by this design
 
-The automation must use the exact prompt in
-`stock-strategy-system/TACTICAL_RADAR_AUTOMATION_PROMPT_EN.md`.
+Use the exact prompt in
+`stock-strategy-system/PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`.
 
-## Manual fallback
+The combined workflow supersedes a separate morning tactical-only heartbeat for
+this task. It does not replace the lower-level deterministic engines; it invokes
+or consumes them in authority order. Avoid running both a 07:30 holding-only
+heartbeat and a 07:45 tactical-only heartbeat when one combined morning
+automation can do both.
 
-Current API result: `CODEX_AUTOMATION_REQUIRES_MANUAL_SETUP`. This task already
-has the active `미국 주식 매매시점 점검` heartbeat, and the Codex surface
-permits only one heartbeat per task. The existing 07:30 holding-risk automation
-was intentionally left unchanged; a cron or Windows scheduler workaround was
-not created.
+## Native automation status
 
-If native Codex automation creation is unavailable:
+`CODEX_AUTOMATION_CONFIGURED`
 
-1. Open Codex Automations.
-2. Create a recurring heartbeat named `Morning Tactical Opportunity Radar`.
-3. Set the schedule to Tuesday through Saturday at 07:45 in the
-   `Asia/Seoul` timezone.
-4. Select the workspace `E:\사업\##금동한\코덱스저장소`.
-5. Paste the complete content of
-   `stock-strategy-system/TACTICAL_RADAR_AUTOMATION_PROMPT_EN.md` as the
-   automation prompt.
-6. Keep notification preferences outside the prompt.
-7. Do not install or invoke Windows Task Scheduler.
+The existing heartbeat automation `automation` was updated in place. It is
+active Tuesday-Saturday at 07:45 `Asia/Seoul`, targets the existing stock
+strategy task, and points to
+`stock-strategy-system/PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`. No duplicate
+heartbeat, cron job, or Windows Task Scheduler task was created.
 
-After setup, the first valid run must verify the latest completed official U.S.
-session, preserve `quantity=null`, write only tactical runtime/audit artifacts,
-and explicitly report that no order was placed or scheduled.
+Notification preferences remain outside the analytical prompt. The first
+scheduled production run must still be audited for output-boundary compliance
+and byte-identical `stock-strategy-system/portfolio_state.json`.
+
+The first valid run must show all holding strategies, all seven tactical
+opportunities, verified cash separately from projected/unconfirmed proceeds,
+and `order_authority=false`.

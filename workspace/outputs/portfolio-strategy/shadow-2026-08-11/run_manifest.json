@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "run_id": "PORTFOLIO-STRATEGY-2026-08-11",
+  "analysis_id": "PORTFOLIO-STRATEGY-2026-08-11",
+  "run_type": "LIVE_SHADOW_REVIEW",
+  "generated_at": "2026-08-12T13:23:00+00:00",
+  "analysis_cutoff": "2026-08-12T13:22:59+00:00",
+  "market_session": "2026-08-11",
+  "code_provenance": {
+    "git_commit": "7bf3760a17da506523839e76959f337bb5f7965e",
+    "git_branch": "feature/v2.3-portfolio-strategy-orchestrator",
+    "git_dirty": true,
+    "working_tree_diff_hash": "826c1fd5acfa617a86e5ec3426d46779c9c63a95cd9bd8375645b1e34659322d",
+    "skill_version": "2.3",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "2026-08-05-v4",
+    "policy_version": "2026-08-05-v4"
+  },
+  "llm_provenance": {
+    "provider": null,
+    "model": null,
+    "model_identifier": null,
+    "temperature": null,
+    "max_debate_rounds": 0,
+    "max_risk_rounds": 0
+  },
+  "input_hashes": {
+    "evidence_packet_hash": null,
+    "market_snapshot_hash": "5cc3fab329c23e1bdf3f6e3046ff75c8fc7f4f1d21a63ed77d65d0ec0d01aea8",
+    "event_snapshot_hash": "fa35783b583ebd469109dfca79f2d061198e506846d5eb748f1191b6c0073ca4",
+    "portfolio_state_hash": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+    "strategy_policy_hash": null,
+    "alert_policy_hash": "b00d97aedfc48cc56ba5d93cab8dff00dcd8cab81ec69f139e9b4ea64f809799",
+    "instrument_registry_hash": "92a674f32663d6b97ce74b6cbf35d7ffac71c8954e1d3fa4a4f10d5d87240b22",
+    "candidate_universe_hash": "d1fa12e8ad6b0d111394c13a06709b4ba0d2e327e70bf0e4c5661c9798ce1f75"
+  },
+  "tool_provenance": {
+    "python_version": "3.12.13",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": null,
+    "decision_record_hash": null,
+    "tactical_screen_hash": "975d30789fd04cf6d2f5af02238bf5d430f88e3e035494fbc10357824b089689",
+    "deterministic_gate_hash": "5d1142c2f4ec656693fce1c64868f40e3a5bcb5109769dc47f17a1fc968ab396",
+    "deterministic_gate_result": "HARD_RISK_REVIEW"
+  },
+  "secrets_recorded": false
+}
