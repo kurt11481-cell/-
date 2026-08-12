@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "run_id": "V2.2-SHADOW-2026-08-12",
+  "analysis_id": "TACTICAL-RADAR-2026-08-11",
+  "run_type": "LIVE_SHADOW_REVIEW",
+  "generated_at": "2026-08-12T11:30:00+00:00",
+  "analysis_cutoff": "2026-08-12T11:30:00+00:00",
+  "market_session": "2026-08-11",
+  "code_provenance": {
+    "git_commit": "bafb67ad23021bc328a806dcd71b34a5228c03a1",
+    "git_branch": "feature/v2.2-tactical-opportunity-radar",
+    "git_dirty": true,
+    "working_tree_diff_hash": "9695ebaffc889afe67b0aa3435a00c1d5ebcce4e37ef2ec9c24207fa58fc6bb0",
+    "skill_version": "2.2",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "2026-08-05-v4",
+    "policy_version": "2026-08-12-tactical-opportunity-radar-v2.2"
+  },
+  "llm_provenance": {
+    "provider": null,
+    "model": null,
+    "model_identifier": null,
+    "temperature": null,
+    "max_debate_rounds": 0,
+    "max_risk_rounds": 0
+  },
+  "input_hashes": {
+    "evidence_packet_hash": null,
+    "market_snapshot_hash": "27a1edd7865a54d0563b5066b60fbab95d1d49635ec431e80565966a3223ac9c",
+    "event_snapshot_hash": "7b5ef5e7a3f9daa95f65bbe157150d2c47030b1b2a142974dcf1431eef3c7b8d",
+    "portfolio_state_hash": "e21356cc241ebdb2ed4610b19ed5430d507eda3d027054061752e051fcdf5f70",
+    "strategy_policy_hash": "e7c20e61851d41686201024f084b66144a2511940363e4be5094465f9e5cf2e5",
+    "alert_policy_hash": "d59d8d22cc69f2a7e690b1ff787f860ea5b084772de2d0817fb60a1f35331e7f",
+    "instrument_registry_hash": "b911e5879d007f9f6a1ef21c653c5cac7d53061500280f1fd00b22d7f606232b",
+    "candidate_universe_hash": "87505d45a94efd18f9299ac9cc98e561cbdec82badf4acd04b1f43c1de9b0736"
+  },
+  "tool_provenance": {
+    "python_version": "3.12.13",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": null,
+    "decision_record_hash": null,
+    "tactical_screen_hash": "838bd10b7fa7389d11e63bf06fd0060e6a4563e6bc65d8b0e0c6253a762a0ba3",
+    "deterministic_gate_hash": null,
+    "deterministic_gate_result": "DATA_INCOMPLETE"
+  },
+  "secrets_recorded": false
+}

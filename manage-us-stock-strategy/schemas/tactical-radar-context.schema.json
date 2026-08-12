@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tactical-radar-context.schema.json",
+  "title": "Untrusted Tactical Radar Research Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidates", "deep_research_results"],
+  "properties": {
+    "available_cash_usd": {"type": ["number", "null"]},
+    "cash_source": {"type": ["string", "null"]},
+    "candidates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "validation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "evidence_packet_validated", "deterministic_gate_status", "risk_controller_status"],
+            "properties": {
+              "status": {"enum": ["VALIDATED", "UNVALIDATED"]},
+              "evidence_packet_validated": {"type": "boolean"},
+              "deterministic_gate_status": {"enum": ["PASS", "FAIL", "NOT_RUN"]},
+              "risk_controller_status": {"enum": ["ALLOW_REVIEW", "DOWNGRADE", "VETO", "NOT_RUN"]}
+            }
+          },
+          "thesis_status": {"enum": ["STRONG", "CONTESTED", "WEAK", "UNVERIFIED"]},
+          "valuation_status": {"enum": ["ATTRACTIVE", "FAIR", "STRETCHED", "UNVERIFIED"]},
+          "technical_status": {"enum": ["READY", "WATCH", "INVALID", "UNAVAILABLE"]},
+          "risk_liquidity_status": {"enum": ["ACCEPTABLE", "CONSTRAINED", "VETO"]},
+          "portfolio_fit_status": {"enum": ["FITS", "CONSTRAINED", "BLOCKED", "UNVERIFIED"]},
+          "technical_remaining_conditions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "remaining_conditions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "next_review_trigger": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "deep_research_requested": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "material_change_symbols": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "opportunity_upgrade_symbols": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "deep_research_results": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "research_packet_hash"],
+        "properties": {
+          "status": {"enum": ["VALIDATED", "UNVALIDATED", "FAILED"]},
+          "research_packet_hash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

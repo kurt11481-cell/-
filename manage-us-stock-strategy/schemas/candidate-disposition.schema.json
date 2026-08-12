@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "candidate-disposition.schema.json",
+  "title": "Tactical Candidate Disposition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "lane", "opportunity_state", "execution_state", "evidence_status", "thesis_status", "valuation_status", "technical_status", "event_risk_status", "event_policy_effect", "risk_liquidity_status", "portfolio_fit_status", "identity_status", "new_buy_approval", "primary_blocker", "remaining_conditions", "next_review_trigger", "evidence_cutoff", "quantity", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "lane": {"enum": ["leveraged_semiconductor", "ai_infrastructure", "user_defined_ai_agent"]},
+    "opportunity_state": {"enum": ["READY", "NEAR_TRIGGER", "WATCH", "NOT_READY", "DATA_BLOCKED"]},
+    "execution_state": {"enum": ["ELIGIBLE_FOR_REVIEW", "WATCH_ONLY", "NOT_APPROVED", "CASH_BLOCKED", "PORTFOLIO_BLOCKED", "DATA_BLOCKED"]},
+    "evidence_status": {"enum": ["PASS", "CONDITIONAL", "FAIL"]},
+    "thesis_status": {"enum": ["STRONG", "CONTESTED", "WEAK", "UNVERIFIED"]},
+    "valuation_status": {"enum": ["ATTRACTIVE", "FAIR", "STRETCHED", "UNVERIFIED"]},
+    "technical_status": {"enum": ["READY", "WATCH", "INVALID", "UNAVAILABLE"]},
+    "event_risk_status": {"enum": ["CLEAR", "KNOWN_EVENT", "EVENT_DATA_INCOMPLETE"]},
+    "event_policy_effect": {"enum": ["NONE", "CONTEXT_ONLY", "WAIT_REQUIRED", "EVENT_DATA_INCOMPLETE"]},
+    "risk_liquidity_status": {"enum": ["ACCEPTABLE", "CONSTRAINED", "VETO"]},
+    "portfolio_fit_status": {"enum": ["FITS", "CONSTRAINED", "BLOCKED", "UNVERIFIED"]},
+    "identity_status": {"type": "string", "minLength": 1},
+    "new_buy_approval": {"type": "boolean"},
+    "primary_blocker": {"type": ["string", "null"]},
+    "remaining_conditions": {"type": "array", "items": {"type": "string"}},
+    "next_review_trigger": {"type": "string", "minLength": 1},
+    "evidence_cutoff": {"type": "string", "format": "date-time"},
+    "quantity": {"const": null},
+    "order_authority": {"const": false}
+  }
+}

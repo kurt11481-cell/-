@@ -1,0 +1,38 @@
+[
+  {
+    "event_id": "BLS-CPI-2026-08-12",
+    "ticker": "GLOBAL",
+    "event_type": "CPI",
+    "scheduled_at": "2026-08-12T08:30:00-04:00",
+    "timezone": "America/New_York",
+    "announced_at": null,
+    "effective_at": "2026-08-12T08:30:00-04:00",
+    "retrieved_at": "2026-08-12T11:30:00+00:00",
+    "source_identifier": "https://www.bls.gov/schedule/2026/home.htm",
+    "source_type": "primary"
+  },
+  {
+    "event_id": "BLS-PPI-2026-08-13",
+    "ticker": "GLOBAL",
+    "event_type": "PPI",
+    "scheduled_at": "2026-08-13T08:30:00-04:00",
+    "timezone": "America/New_York",
+    "announced_at": null,
+    "effective_at": "2026-08-13T08:30:00-04:00",
+    "retrieved_at": "2026-08-12T11:30:00+00:00",
+    "source_identifier": "https://www.bls.gov/schedule/2026/home.htm",
+    "source_type": "primary"
+  },
+  {
+    "event_id": "BEA-PCE-2026-08-26",
+    "ticker": "GLOBAL",
+    "event_type": "PCE",
+    "scheduled_at": "2026-08-26T08:30:00-04:00",
+    "timezone": "America/New_York",
+    "announced_at": null,
+    "effective_at": "2026-08-26T08:30:00-04:00",
+    "retrieved_at": "2026-08-12T11:30:00+00:00",
+    "source_identifier": "https://www.bea.gov/news/schedule/full",
+    "source_type": "primary"
+  }
+]

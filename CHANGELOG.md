@@ -1,5 +1,24 @@
 # Changelog
 
+## v2.2 - Tactical Opportunity Radar
+
+- Added a seven-symbol morning tactical research radar for MVLL, SOXL, NBIS,
+  BE, TOST, NOW, and FSLY.
+- Separated opportunity quality from execution eligibility so missing cash or
+  permission cannot erase research visibility.
+- Made the workspace instrument registry the canonical research authority and
+  added deterministic policy-cache drift validation.
+- Added candidate-disposition, radar-report, runtime-state, and transition-event
+  schemas plus state-transition/dedup tests.
+- Added bounded deep-research shortlist semantics and preserved inactive
+  historical AI-agent registry records.
+- Added a Codex-only morning automation contract and read-only shadow run.
+- Added forward-tested fail-closed controls for stale sessions, context-based
+  technical upgrades, event-policy authority, condition IDs, output paths,
+  schema-before-write validation, and validated deep-research completion.
+- Did not add brokerage execution, inferred fills, quantities, leverage
+  approval, short approval, or portfolio-state mutation.
+
 ## Unreleased
 
 ### Added

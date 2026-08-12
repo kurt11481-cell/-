@@ -17,25 +17,35 @@
   },
   "schedule_description": "KST Tuesday-Saturday after 07:30; verify the official U.S. exchange calendar on every run",
   "daily_engine_scope": "leveraged_holding_risk_and_watchlist",
+  "research_monitoring_scopes": {
+    "tactical_candidate_radar": {
+      "status": "approved_read_only_research_scope",
+      "policy_path": "workspace/policies/tactical_radar_policy.json",
+      "runtime_state_path": "workspace/state/tactical_radar_runtime.json",
+      "priority_relative_to_holding_risk": "lower",
+      "can_mutate_portfolio_state": false,
+      "can_create_or_schedule_orders": false
+    }
+  },
   "deployment_gate": {
     "status": "verified_installed_skill_sync",
     "automatic_timing_monitor_allowed": true,
     "manual_read_only_review_allowed": true,
     "hard_risk_arithmetic_review_allowed": true,
-    "required_source_timing_engine_sha256": "DAC71EA7EB5EB2B1E7A2B07734AA360F287FEF3FF2487996B1FA9DFC0A5BB332",
+    "required_source_timing_engine_sha256": "D1F63110E9C2145688D15999EF578125B3425F63DCC4FD7D28B0A66904C5A9C7",
     "required_source_evaluator_sha256": "10E65F1D40F2DEB338D8D3BA85E2DD68088E9C34A041AEF2B4BA3E88473D7570",
-    "required_source_skill_sha256": "E9E42249BA9C8BD09393D0E1066160CFDF10927A7561FE5F7A13E5B8F45DBE59",
-    "required_source_builder_sha256": "70CE879D982C6E178BB6B1CA88B03D95D64D04E8FE54DC35EE538B7AB67469A3",
-    "required_source_yfinance_contract_sha256": "3474626329CBA60BD58BDDF6343A851C0BA0B7E22779D8B35C7FED70F234D746",
+    "required_source_skill_sha256": "28AB69415EDADB034A38374BB1C0506F53607FC0B789D3539377B6B1942C1C27",
+    "required_source_builder_sha256": "7BFA84E49CDAF235267532391A22C169EC927760A214D661757B8DAA4C0D53FC",
+    "required_source_yfinance_contract_sha256": "52A2884B69D4EAB0EE4C28D2E05DA77A5311F4CB86ACDF651CB3F8946B222F31",
     "required_source_output_locale_sha256": "319AFB05FE785196A5AEAC0282756E8D51BDE414B60E4D2DC08AD6F7EAA176E9",
-    "observed_installed_timing_engine_sha256": "DAC71EA7EB5EB2B1E7A2B07734AA360F287FEF3FF2487996B1FA9DFC0A5BB332",
+    "observed_installed_timing_engine_sha256": "D1F63110E9C2145688D15999EF578125B3425F63DCC4FD7D28B0A66904C5A9C7",
     "observed_installed_evaluator_sha256": "10E65F1D40F2DEB338D8D3BA85E2DD68088E9C34A041AEF2B4BA3E88473D7570",
-    "observed_installed_skill_sha256": "E9E42249BA9C8BD09393D0E1066160CFDF10927A7561FE5F7A13E5B8F45DBE59",
-    "observed_installed_builder_sha256": "70CE879D982C6E178BB6B1CA88B03D95D64D04E8FE54DC35EE538B7AB67469A3",
-    "observed_installed_yfinance_contract_sha256": "3474626329CBA60BD58BDDF6343A851C0BA0B7E22779D8B35C7FED70F234D746",
+    "observed_installed_skill_sha256": "28AB69415EDADB034A38374BB1C0506F53607FC0B789D3539377B6B1942C1C27",
+    "observed_installed_builder_sha256": "7BFA84E49CDAF235267532391A22C169EC927760A214D661757B8DAA4C0D53FC",
+    "observed_installed_yfinance_contract_sha256": "52A2884B69D4EAB0EE4C28D2E05DA77A5311F4CB86ACDF651CB3F8946B222F31",
     "observed_installed_output_locale_sha256": "319AFB05FE785196A5AEAC0282756E8D51BDE414B60E4D2DC08AD6F7EAA176E9",
-    "verified_at_kst": "2026-08-11T10:05:00+09:00",
-    "verification": "Source, staging, and installed hashes matched across all 30 non-cache Skill files; all 42 workspace Skill tests passed. MVLL direct-close resolution, supplemental MRVL daily-leverage corroboration, and the append-only research lifecycle were added. No strategy threshold, tranche, fill, cash, or order authority changed.",
+    "verified_at_kst": "2026-08-12T20:55:00+09:00",
+    "verification": "Canonical source and installed Codex Skill hashes match for the deployment-gated files after the v2.2 tactical-radar sync. The full workspace suite passed 92 tests. No strategy threshold, fill, cash, quantity, leverage, short-sale, or order authority changed.",
     "unblock_condition": "satisfied"
   },
   "maximum_snapshot_age_hours": 18,
@@ -139,6 +149,14 @@
       "holding_risk": ["market_data"],
       "report_validation": ["primary"]
     },
+    "instrument_registry_authority": {
+      "canonical_path": "workspace/policies/instrument_registry.json",
+      "required_canonical_sha256": "b911e5879d007f9f6a1ef21c653c5cac7d53061500280f1fd00b22d7f606232b",
+      "embedded_registry_role": "non_authoritative_operational_cache",
+      "mismatch_code": "POLICY_REGISTRY_MISMATCH",
+      "research_scan_on_mismatch": "continue_with_canonical_registry_and_display_mismatch",
+      "execution_review_on_mismatch": "fail_closed"
+    },
     "instrument_registry": {
       "SOXL": {
         "instrument_type": "leveraged_etf",
@@ -159,7 +177,7 @@
         "official_identity_source_url": "https://graniteshares.com/etfs/mvll/",
         "confirmation_symbol": "MRVL",
         "holding_identity_verified": true,
-        "watchlist_approved": false,
+        "watchlist_approved": true,
         "new_buy_instrument_approved": false
       },
       "NBIL": {

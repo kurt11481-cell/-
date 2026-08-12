@@ -45,6 +45,19 @@ Support both policy scopes without silently translating one into the other:
 
 - `active_staged_plan_only`: the legacy staged price-band engine. It requires a valid current stage and preserves its existing cash, quantity, band, trend, and funding gates.
 - `leveraged_holding_risk_and_watchlist`: the leveraged-position monitoring engine. It does not require a current stage. It evaluates verified held-position risk first, then emits non-actionable watchlist context.
+- `tactical_candidate_radar`: an independent read-only research scope for the
+  approved seven-symbol tactical universe. It may update only its separate
+  runtime/dedup state and research/audit artifacts. It has lower priority than
+  held-position hard risk and may not mutate portfolio state, policy, cash,
+  holdings, cost basis, fills, quantities, or order state.
+
+The tactical radar normally runs Tuesday through Saturday at 07:45 KST, but an
+official completed-session gate remains authoritative. Return
+`NO_NEW_SESSION` for duplicates, weekends, holidays, or stale catch-up
+attempts. Emit a short summary on every valid new session, while urgent
+notifications are limited to new `READY`, new `NEAR_TRIGGER`, material
+opportunity upgrades, and material data-blocked transitions. An unchanged
+`READY` state must not generate repeated urgent delivery.
 
 For the leveraged-position engine, keep broker facts in `portfolio_state.json` and user mandates in `alert_policy.json`. Calculate each hard boundary from the verified average cost and the positive loss magnitude:
 

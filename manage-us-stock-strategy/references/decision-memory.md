@@ -55,5 +55,12 @@ new version of a reference or policy. It may never mutate:
 - alert runtime state;
 - a historical calibration result.
 
+The tactical radar runtime is not brokerage memory. It may retain only the
+candidate session, opportunity state, execution state, primary blocker,
+remaining conditions, last deep-research session, signal fingerprint, and
+delivery metadata. Keep stable transition `event_key` and session-specific
+`delivery_id` values. Never copy a radar state change into holdings, cash,
+cost basis, fills, or policy.
+
 Use `scripts/validate_decision_record.py` before disclosure and
 `scripts/evaluate_outcome.py` for a separate outcome artifact.

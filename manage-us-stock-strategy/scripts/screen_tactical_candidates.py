@@ -57,7 +57,11 @@ def _market_integrity(market: dict[str, Any], row: dict[str, Any] | None, market
 
 
 def screen(universe: dict[str, Any], registry: dict[str, Any], market: dict[str, Any], events: dict[str, Any], *, generated_at: str, analysis_cutoff: str, market_session: str | None) -> dict[str, Any]:
-    candidates = universe.get("candidates") or {}
+    candidates = {
+        symbol: candidate
+        for symbol, candidate in (universe.get("candidates") or {}).items()
+        if candidate.get("candidate_status", "active") == "active"
+    }
     instruments = registry.get("instruments") or {}
     symbols = market.get("symbols") or {}
     event_status = events.get("coverage_status", "EVENT_DATA_INCOMPLETE")
@@ -98,7 +102,13 @@ def screen(universe: dict[str, Any], registry: dict[str, Any], market: dict[str,
             survivors.append(symbol)
         rows.append(row)
     max_candidates = int((universe.get("screening") or {}).get("deep_research_shortlist_maximum", 5))
+    target_minimum = int((universe.get("screening") or {}).get("deep_research_shortlist_target_minimum", 3))
     shortlist = survivors[:max_candidates]
+    skipped = [
+        {"ticker": symbol, "reason": "STAGE_ONE_GATE_REJECTED"}
+        for symbol in candidates
+        if symbol not in shortlist
+    ]
     if validated_market_rows == len(candidates):
         data_status = "VALIDATED"
     elif validated_market_rows:
@@ -118,6 +128,11 @@ def screen(universe: dict[str, Any], registry: dict[str, Any], market: dict[str,
         "event_status": event_status,
         "universe": list(candidates),
         "stage_one": rows,
+        "screen_survivors": survivors,
+        "deep_research_shortlist": shortlist,
+        "deep_research_completed": [],
+        "deep_research_skipped": skipped,
+        "shortlist_below_target_due_to_gates": len(shortlist) < target_minimum,
         "shortlist": shortlist,
         "deep_research_candidates": shortlist,
         "preferred_candidate": None,

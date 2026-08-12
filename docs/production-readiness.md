@@ -1,5 +1,22 @@
 # v2.1 Production Readiness
 
+## v2.2 Tactical Radar Addendum — 2026-08-12
+
+**READINESS: READY_FOR_HUMAN_REVIEW_USE**
+
+The v2.2 tactical radar preserves the v2.1 authority boundary and passed 92
+workspace tests plus two forward-test reviews after remediation. Its current
+shadow outcome is `DATA_INCOMPLETE`, because the independent completed-close
+cross-check was unavailable; this is accepted fail-closed safety behavior.
+Opportunity and execution states remain separate, preferred-candidate output
+requires validated deep research, and no order/quantity authority was added.
+
+Native creation of a second task heartbeat was not available because this task
+already has an active 07:30 automation. The existing automation was preserved;
+the separate 07:45 radar heartbeat requires the documented manual setup in a
+separate Codex task. This operational limitation does not weaken the code merge
+gate and does not authorize an OS scheduler workaround.
+
 ## Conclusion First
 
 **READINESS: READY_FOR_HUMAN_REVIEW_USE**
