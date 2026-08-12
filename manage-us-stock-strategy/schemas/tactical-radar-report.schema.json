@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tactical-radar-report.schema.json",
+  "title": "Read-Only Tactical Opportunity Radar Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "analysis_cutoff", "market_session", "session_gate", "registry_status", "data_status", "event_status", "active_universe", "candidate_dispositions", "screen_survivors", "deep_research_shortlist", "deep_research_completed", "deep_research_skipped", "shortlist_below_target_due_to_gates", "transitions", "preferred_candidate", "alternative_candidate", "final_conclusion", "quantity", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.2"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "session_gate": {"enum": ["VALID_SESSION", "NO_NEW_SESSION", "DATA_INCOMPLETE"]},
+    "registry_status": {"enum": ["VALIDATED", "POLICY_REGISTRY_MISMATCH"]},
+    "data_status": {"enum": ["VALIDATED", "PARTIAL", "DATA_INCOMPLETE"]},
+    "event_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_DATA_INCOMPLETE"]},
+    "active_universe": {"type": "array", "items": {"type": "string"}, "minItems": 7, "uniqueItems": true},
+    "candidate_dispositions": {"type": "array", "items": {"$ref": "candidate-disposition.schema.json"}, "minItems": 7},
+    "screen_survivors": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "deep_research_shortlist": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "deep_research_completed": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "deep_research_skipped": {"type": "array", "items": {"type": "object"}},
+    "shortlist_below_target_due_to_gates": {"type": "boolean"},
+    "transitions": {"type": "array", "items": {"$ref": "opportunity-transition-event.schema.json"}},
+    "preferred_candidate": {"type": ["string", "null"]},
+    "alternative_candidate": {"type": ["string", "null"]},
+    "final_conclusion": {"enum": ["BUY_REVIEW", "WAIT", "NO_TRADE", "DATA_INCOMPLETE", "NO_NEW_SESSION"]},
+    "quantity": {"const": null},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "opportunity-transition-event.schema.json",
+  "title": "Tactical Opportunity Transition Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "session", "transition_type", "previous_opportunity_state", "opportunity_state", "execution_state", "event_key", "delivery_id", "signal_fingerprint", "notify", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "session": {"type": "string", "format": "date"},
+    "transition_type": {"enum": ["NEW_READY", "NEW_NEAR_TRIGGER", "OPPORTUNITY_UPGRADE", "OPPORTUNITY_DOWNGRADE", "DATA_BLOCKED", "NO_MATERIAL_CHANGE"]},
+    "previous_opportunity_state": {"type": ["string", "null"]},
+    "opportunity_state": {"enum": ["READY", "NEAR_TRIGGER", "WATCH", "NOT_READY", "DATA_BLOCKED"]},
+    "execution_state": {"enum": ["ELIGIBLE_FOR_REVIEW", "WATCH_ONLY", "NOT_APPROVED", "CASH_BLOCKED", "PORTFOLIO_BLOCKED", "DATA_BLOCKED"]},
+    "event_key": {"type": "string", "minLength": 1},
+    "delivery_id": {"type": "string", "minLength": 1},
+    "signal_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "notify": {"type": "boolean"},
+    "order_authority": {"const": false}
+  }
+}

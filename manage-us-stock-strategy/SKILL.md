@@ -43,6 +43,12 @@ Load only the references needed for the current task:
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
 - For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
+- For a morning tactical scan, best new-buy candidate request, or opportunity
+  monitoring across the approved seven-symbol research universe, also read
+  [tactical-opportunity-radar.md](references/tactical-opportunity-radar.md) and
+  [candidate-selection.md](references/candidate-selection.md). Keep opportunity
+  quality separate from execution eligibility and validate canonical-registry
+  consistency before any `BUY_REVIEW` can be shown.
 - For high-consequence strategy formation, conflicting evidence, new-buy selection, or a user request for multi-agent analysis, read [multi-agent-research.md](references/multi-agent-research.md), [decision-orchestration.md](references/decision-orchestration.md), and [scoring-calibration.md](references/scoring-calibration.md). Use role-separated research and the applicable validator; do not let an LLM proposal bypass the deterministic alert engine.
 - For tactical candidate ranking, also read [candidate-selection.md](references/candidate-selection.md). Apply the lightweight screen before deep research, select at most one preferred and one alternative candidate, and allow `WAIT` when no candidate passes.
 - For a decision that should enter the journal or outcome review, also read [decision-memory.md](references/decision-memory.md) and [research-lifecycle.md](references/research-lifecycle.md). Run `scripts/validate_decision_record.py` before disclosure and `scripts/evaluate_outcome.py` only against an append-only outcome record. Keep the original decision immutable.
