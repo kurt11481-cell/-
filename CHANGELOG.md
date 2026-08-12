@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.3 - Portfolio Strategy Orchestrator
+
+- Added a read-only combined holding-strategy, tactical-opportunity, and capital-
+  redeployment orchestrator for human review.
+- Added strict holding-strategy, capital-redeployment, and combined-report
+  schemas with separate strategy, execution, and data-domain statuses.
+- Preserved operational hard-risk precedence and exact deterministic tranche
+  provenance while leaving quantity null when current authority is absent.
+- Separated verified cash, projected sale proceeds, and unsettled or unconfirmed
+  proceeds; only verified cash contributes to execution purchasing power.
+- Added transition/dedup runtime metadata, a combined morning automation prompt,
+  Korean-facing decision-card labels, and a fail-closed current shadow run.
+- Preserved the exact v2.2 tactical universe: MVLL, SOXL, NBIS, BE, TOST, NOW,
+  and FSLY.
+- Did not add brokerage execution, inferred fills, inferred cash, automatic
+  quantity, leverage approval, short approval, or portfolio-state mutation.
+
 ## v2.2 - Tactical Opportunity Radar
 
 - Added a seven-symbol morning tactical research radar for MVLL, SOXL, NBIS,

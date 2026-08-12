@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-12-tactical-opportunity-radar-v2.2",
+  "last_processed_us_session": "2026-08-11",
+  "last_run_at": "2026-08-12T13:23:00+00:00",
+  "candidates": {
+    "MVLL": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "139fb8d0bfe26ac26bdc9e4b60c128f8db6ac739bd0f223e96118a257de09dd4"
+    },
+    "SOXL": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "483cc131f3d5dd698ffdd6e4f4dddab188fb9d974778268395f533200eeffdf4"
+    },
+    "NBIS": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "ad2db8040c410d77fafadefac14bd7a11391e39a7ad4744d6de1b19f1ecdb6a6"
+    },
+    "BE": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "7e299f752790f350acbfac4d44258187787b48eed95617ec93b86c229464ba0a"
+    },
+    "TOST": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "aee92de1759b125c7f87c3bf36b4832f40823a323b45b8a66ac2f193340d7388"
+    },
+    "NOW": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "EMA10_RECLAIM_CONFIRMED",
+        "EMA20_RECLAIM_CONFIRMED",
+        "BREAKOUT_ACCEPTANCE_CONFIRMED",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "ab69031bedba8bb7fbeb3e5a35b9da5bdb3a9b7598053138a89a3551d6117ce5"
+    },
+    "FSLY": {
+      "session": "2026-08-11",
+      "opportunity_state": "DATA_BLOCKED",
+      "execution_state": "DATA_BLOCKED",
+      "primary_blocker": "INDEPENDENT_COMPLETED_CLOSE",
+      "remaining_conditions": [
+        "INDEPENDENT_COMPLETED_CLOSE",
+        "THESIS_RESEARCH",
+        "VALUATION_REFRESH",
+        "EVENT_CLEARANCE",
+        "NEW_BUY_INSTRUMENT_APPROVAL",
+        "VERIFIED_AVAILABLE_CASH",
+        "PORTFOLIO_REVIEW"
+      ],
+      "last_deep_research_session": null,
+      "signal_fingerprint": "2a1f31f7da06a86e73a17fa9d3dc02bffd688120385f02d5c8d0d739b9856dc0"
+    }
+  },
+  "deliveries": {
+    "bf1b659c251d178d44aa04993f41e0aaf5749c7770a55fa13fc7da1a56fbd985": {
+      "ticker": "MVLL",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "9a093fc5a1777707e4c254fb0499412e6156a64f35e098e048ef5e1637478260": {
+      "ticker": "SOXL",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "2e23449dbfb466f5d0f59bb9ef1d654c639398420802cddd3664ca721c540263": {
+      "ticker": "NBIS",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "961b29bf1124c948d4b46479c4e91a75554c4a14be7f9876468eaa75ddc31741": {
+      "ticker": "BE",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "0cdb29dc26c9451b71f4ef777201effad47719ecaefb09c983e4293f7350619b": {
+      "ticker": "TOST",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "78be29ada843db88332c131e4786f686b9bff531e44fdb1a657229b97c55a319": {
+      "ticker": "NOW",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    },
+    "183de92254090fdb0158423aea1628d3629aea1d886f0d22ab5496ed148a35ab": {
+      "ticker": "FSLY",
+      "session": "2026-08-11",
+      "transition_type": "DATA_BLOCKED",
+      "delivered_at": "2026-08-12T13:23:00+00:00"
+    }
+  },
+  "order_authority": false
+}

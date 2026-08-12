@@ -43,6 +43,15 @@ Load only the references needed for the current task:
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
 - For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
+- For portfolio strategy, what to do with current holdings, hold/add/reduce/exit
+  review, capital redeployment, use-of-proceeds, or a combined morning portfolio
+  review, read [holding-strategy-orchestration.md](references/holding-strategy-orchestration.md),
+  [capital-redeployment.md](references/capital-redeployment.md),
+  [portfolio-policy.md](references/portfolio-policy.md), and
+  [alert-automation.md](references/alert-automation.md). When a strategy refresh
+  is required, also route through research policy, technical strategy, event
+  risk, multi-agent research, and decision orchestration. Keep strategy state,
+  execution eligibility, and funding source separate.
 - For a morning tactical scan, best new-buy candidate request, or opportunity
   monitoring across the approved seven-symbol research universe, also read
   [tactical-opportunity-radar.md](references/tactical-opportunity-radar.md) and

@@ -1,0 +1,37 @@
+{
+  "schema_version": "2.3",
+  "generated_at": "2026-08-12T13:23:00+00:00",
+  "analysis_cutoff": "2026-08-12T13:22:59+00:00",
+  "market_session": "2026-08-11",
+  "funding_status": "NO_VERIFIED_FUNDING",
+  "verified_available_cash_usd": 0.0,
+  "projected_sale_proceeds_usd": null,
+  "projected_sale_details": [],
+  "unsettled_or_unconfirmed_proceeds_usd": null,
+  "execution_purchasing_power_usd": 0.0,
+  "projected_proceeds_status": "NONE",
+  "cost_impact_status": "NOT_APPLICABLE",
+  "candidate_uses": [
+    {
+      "use_id": "KEEP_CASH",
+      "type": "KEEP_CASH",
+      "ticker": null,
+      "opportunity_or_strategy_state": "ALWAYS_AVAILABLE",
+      "execution_state": "ELIGIBLE_FOR_REVIEW",
+      "portfolio_fit": "FITS",
+      "primary_reason": "Capital deployment is not forced; verified cash may remain unallocated.",
+      "remaining_conditions": [],
+      "quantity": null,
+      "quantity_authority": "none"
+    }
+  ],
+  "preferred_use": "KEEP_CASH",
+  "alternative_use": null,
+  "cash_reserve_option": "KEEP_CASH",
+  "execution_blockers": [
+    "VERIFIED_AVAILABLE_CASH_IS_ZERO",
+    "HARD_RISK_NEW_BUY_FREEZE"
+  ],
+  "policy_version": "2026-08-12-tactical-opportunity-radar-v2.2",
+  "order_authority": false
+}
