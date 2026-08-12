@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "independent-close-snapshot.schema.json",
+  "title": "Independent Completed-Close Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "completed_session", "primary_provider", "capability_status", "global_failure", "provider_health", "records", "missing_tickers", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "completed_session": {"type": "string", "format": "date"},
+    "primary_provider": {"type": "string", "minLength": 1},
+    "capability_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "global_failure": {"type": ["string", "null"]},
+    "provider_health": {"type": "object"},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "completed_session", "close", "currency", "provider", "source_identifier", "retrieved_at", "source_timestamp", "independent_of_primary_builder", "validation_status", "tolerance_result"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+          "completed_session": {"type": "string", "format": "date"},
+          "close": {"type": "number", "minimum": 0},
+          "currency": {"type": "string", "minLength": 1},
+          "provider": {"type": "string", "minLength": 1},
+          "source_identifier": {"type": "string", "minLength": 1},
+          "retrieved_at": {"type": "string", "format": "date-time"},
+          "source_timestamp": {"type": ["string", "null"], "format": "date-time"},
+          "independent_of_primary_builder": {"type": "boolean"},
+          "validation_status": {"enum": ["VALIDATED", "REJECTED"]},
+          "tolerance_result": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]}
+        }
+      }
+    },
+    "missing_tickers": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "order_authority": {"const": false}
+  }
+}

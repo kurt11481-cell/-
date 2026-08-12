@@ -87,3 +87,33 @@ not update holdings.
 The system must never place or schedule orders, infer fills or cash, invent
 quantities, grant leverage or short authority, move tactical names into the
 strategic portfolio, or let LLM consensus override the deterministic gate.
+
+## K. v2.4 Post-Market Full Strategy
+
+1. Verify the latest completed U.S. regular session.
+2. Run one independent-close provider preflight before symbol processing.
+3. Build one canonical market/event snapshot and read canonical broker state.
+4. Produce separate holding Risk/Strategy states, Tactical Radar, strict Cash
+   Status, redeployment review, POST_MARKET manifest, and immutable baseline.
+5. Aggregate a provider-wide outage once; isolate symbol failures.
+6. Hash portfolio state before and after. Any difference is critical failure.
+
+`VERIFIED_ZERO` cash yields `NO_FUNDED_ACTION`; projected/unsettled proceeds do
+not create purchasing power. A hard-risk threshold with unverified action
+authority requires policy reconciliation, not automatic exit mapping.
+
+## L. v2.4 Pre-Open Delta Refresh
+
+1. Verify the upcoming official session and latest post-market baseline.
+2. Validate baseline/report/session/hash/commit/policy/strategy compatibility.
+3. Refresh only authoritative overnight events, indicative premarket data, and
+   optional fresh verified read-only broker facts.
+4. Preserve completed-session strategy/opportunity states. Premarket cannot
+   confirm daily indicators or hard-risk breach.
+5. Apply only approved gap/event/liquidity downgrades; otherwise show context.
+6. If unchanged, return `NO_MATERIAL_PREOPEN_CHANGE`.
+7. Write PRE_OPEN manifest/runtime and confirm no portfolio/policy mutation.
+
+Use Codex Scheduled Tasks only. Configuration starts as `FIRST_RUN_PENDING` and
+does not become `DELIVERY_VERIFIED` until the first valid output passes hash,
+schema, commit, and policy checks.

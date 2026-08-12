@@ -239,3 +239,17 @@ and watchlist setup status. Watch-only rows must use quantity `null` and
 `actionable=false`.
 
 When no action exists, list only the three most important unmet conditions. Distinguish `no signal` from `data failure`.
+
+## Dual-phase automation lifecycle
+
+Every event key and delivery ID includes `run_phase`, either `POST_MARKET` or
+`PRE_OPEN`. Aggregate a provider-wide failure into one global notification;
+symbol-level failures remain local. An unchanged post-market candidate is not a
+second urgent pre-open alert.
+
+Automation lifecycle is explicit: `NOT_CONFIGURED`, `CONFIGURED`,
+`FIRST_RUN_PENDING`, `DELIVERY_VERIFIED`, or `FAILED`. Configuration is never
+reported as delivery success. Only a validated scheduled output with matching
+commit/policy provenance and identical portfolio-state hashes before and after
+may become `DELIVERY_VERIFIED`. Use Codex Scheduled Tasks only; never install an
+OS scheduler or service.

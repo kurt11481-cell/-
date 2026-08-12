@@ -1,5 +1,26 @@
 # v2.1 Production Readiness
 
+## v2.4 Dual-Phase Addendum — 2026-08-13
+
+**SYSTEM SAFETY: READY_FOR_HUMAN_REVIEW_USE**
+
+Subsystem readiness is intentionally separate:
+
+| Subsystem | Status | Reason |
+|---|---|---|
+| Holding Hard-Risk Monitor | READY_FOR_HUMAN_REVIEW_USE | Raw completed-close warning and policy provenance remain visible; no unsupported action mapping |
+| Holding Strategy Engine | READY_FOR_HUMAN_REVIEW_USE | Risk/Strategy states separated and all strategy-state fixtures pass |
+| Tactical New-Buy Radar | DATA_PROVIDER_BLOCKED | No approved live independent completed-close provider is configured |
+| Capital Redeployment | READY_FOR_HUMAN_REVIEW_USE | Strict cash and zero-funding semantics pass; no quantity authority |
+| Post-Market Orchestrator | READY_FOR_SHADOW_USE | Fail-closed shadow passed; live Radar component is provider blocked |
+| Pre-Open Refresh | TESTED_ONLY | Deterministic/CLI fixtures pass; real scheduled delivery not yet verified |
+| Post-Market Automation | CONFIGURED_FIRST_RUN_PENDING | Delivery must be proven by a valid scheduled artifact |
+| Pre-Open Automation | NOT_CONFIGURED | Timezone-anchored Codex task card requires user confirmation; no OS workaround used |
+| Installed Skill Deployment | READY_FOR_HUMAN_REVIEW_USE | 123 canonical files match the installed Skill; all six policy-gated normalized hashes validate |
+
+This is not automated-trading readiness. External provider unavailability is
+disclosed and does not justify stale fallback or reduced evidence standards.
+
 ## v2.2 Tactical Radar Addendum — 2026-08-12
 
 **READINESS: READY_FOR_HUMAN_REVIEW_USE**

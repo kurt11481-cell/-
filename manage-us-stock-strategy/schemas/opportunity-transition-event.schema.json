@@ -4,10 +4,11 @@
   "title": "Tactical Opportunity Transition Event",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ticker", "session", "transition_type", "previous_opportunity_state", "opportunity_state", "execution_state", "event_key", "delivery_id", "signal_fingerprint", "notify", "order_authority"],
+  "required": ["ticker", "session", "run_phase", "transition_type", "previous_opportunity_state", "opportunity_state", "execution_state", "event_key", "delivery_id", "signal_fingerprint", "notify", "order_authority"],
   "properties": {
     "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
     "session": {"type": "string", "format": "date"},
+    "run_phase": {"enum": ["POST_MARKET", "PRE_OPEN"]},
     "transition_type": {"enum": ["NEW_READY", "NEW_NEAR_TRIGGER", "OPPORTUNITY_UPGRADE", "OPPORTUNITY_DOWNGRADE", "DATA_BLOCKED", "NO_MATERIAL_CHANGE"]},
     "previous_opportunity_state": {"type": ["string", "null"]},
     "opportunity_state": {"enum": ["READY", "NEAR_TRIGGER", "WATCH", "NOT_READY", "DATA_BLOCKED"]},

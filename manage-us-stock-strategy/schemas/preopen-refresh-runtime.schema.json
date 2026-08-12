@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preopen-refresh-runtime.schema.json",
+  "title": "Pre-Open Monitoring Runtime",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "last_run_at", "last_upcoming_session", "deliveries", "items", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "last_run_at": {"type": "string", "format": "date-time"},
+    "last_upcoming_session": {"type": "string", "format": "date"},
+    "deliveries": {"type": "object"},
+    "items": {"type": "object"},
+    "order_authority": {"const": false}
+  }
+}

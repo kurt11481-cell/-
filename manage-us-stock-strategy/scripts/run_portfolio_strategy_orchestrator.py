@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coordinate v2.3 holding strategy, tactical radar, and capital review.
+"""Coordinate the v2.4 post-market portfolio strategy build.
 
 All inputs are read-only.  Lower-level deterministic modules retain calculation
 authority; this module only coordinates, validates, and reports their outputs.
@@ -17,8 +17,11 @@ from typing import Any
 
 from build_capital_redeployment_plan import build_capital_redeployment_plan
 from build_holding_strategy_review import build_holding_strategies
+from build_post_market_baseline import build_baseline, validate_baseline
 from build_run_manifest import build_manifest
 from evaluate_alerts import evaluate
+from portfolio_policy_gates import evaluate_cash_status
+from provider_preflight import preflight
 from run_tactical_opportunity_radar import build_radar
 from validate_registry_consistency import validate_registry_consistency
 from validation_common import canonical_hash, load_json, validate_instance, write_json
@@ -51,6 +54,8 @@ def _component_output_paths(output_directory: Path, protected: set[Path]) -> dic
         "risk": output_directory / "holding_risk_result.json",
         "markdown": output_directory / "morning_portfolio_strategy.md",
         "manifest": output_directory / "run_manifest.json",
+        "baseline": output_directory / "post_market_baseline.json",
+        "provider_incident": output_directory / "provider_incident.json",
     }
     collisions = sorted(str(path) for path in paths.values() if path.resolve() in protected)
     if collisions:
@@ -88,6 +93,7 @@ def update_holding_runtime(
     market_session: str | None,
     generated_at: str,
     session_valid: bool,
+    run_phase: str = "POST_MARKET",
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     updated = deepcopy(runtime)
     updated.setdefault("schema_version", "1.0")
@@ -103,10 +109,10 @@ def update_holding_runtime(
         transition = "NO_MATERIAL_CHANGE" if duplicate else _runtime_transition(previous, strategy["strategy_state"])
         fingerprint = canonical_hash({key: strategy.get(key) for key in ("ticker", "strategy_state", "execution_state", "primary_reason", "quantity", "tranche_id", "trigger_path")})
         material = transition not in {"NO_MATERIAL_CHANGE", "INITIAL_STATE"}
-        delivery_id = canonical_hash({"session": market_session, "ticker": symbol, "transition": transition, "fingerprint": fingerprint})
+        delivery_id = canonical_hash({"session": market_session, "run_phase": run_phase, "ticker": symbol, "transition": transition, "fingerprint": fingerprint})
         delivered = delivery_id in updated["deliveries"]
         notify = bool(session_valid and material and market_session and not duplicate and not delivered)
-        notifications.append({"ticker": symbol, "transition": transition, "notify": notify,
+        notifications.append({"ticker": symbol, "run_phase": run_phase, "transition": transition, "notify": notify,
             "delivery_id": delivery_id, "strategy_state": strategy["strategy_state"], "order_authority": False})
         if session_valid and market_session and not duplicate:
             updated["holdings"][symbol] = {"strategy_state": strategy["strategy_state"],
@@ -114,7 +120,7 @@ def update_holding_runtime(
                 "last_deep_research_session": market_session if strategy.get("research_packet_hash") else (updated["holdings"].get(symbol) or {}).get("last_deep_research_session")}
             if notify:
                 updated["deliveries"][delivery_id] = {"ticker": symbol, "session": market_session,
-                    "transition": transition, "delivered_at": generated_at}
+                    "run_phase": run_phase, "transition": transition, "delivered_at": generated_at}
     if session_valid and market_session and not duplicate:
         updated["last_processed_session"] = market_session
     updated["last_run_at"] = generated_at
@@ -143,17 +149,24 @@ def build_portfolio_strategy_report(
     latest_completed_session: str | None,
     holding_risk_result: dict[str, Any] | None = None,
     unsettled_or_unconfirmed_proceeds_usd: float | None = None,
+    provider_preflight_result: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     risk_result = holding_risk_result or evaluate(portfolio_state, alert_policy, market_snapshot, alert_runtime)
+    cash_gate = evaluate_cash_status(portfolio_state, reference_session=market_session,
+        maximum_age_calendar_days=int(alert_policy.get("broker_snapshot_max_age_calendar_days", 4)),
+        required_strategy_version=alert_policy.get("strategy_version"))
     strategies = build_holding_strategies(portfolio_state, alert_policy, registry, market_snapshot, event_snapshot,
         risk_result, holding_research_context, analysis_cutoff=analysis_cutoff, market_session=market_session)
     radar, updated_radar = build_radar(universe, registry, registry_validation, market_snapshot, event_snapshot,
         radar_context, portfolio_state, radar_runtime, radar_policy, generated_at=generated_at,
-        analysis_cutoff=analysis_cutoff, market_session=market_session, latest_completed_session=latest_completed_session)
+        analysis_cutoff=analysis_cutoff, market_session=market_session, latest_completed_session=latest_completed_session,
+        provider_preflight=provider_preflight_result, cash_gate=cash_gate, run_phase="POST_MARKET")
     capital = build_capital_redeployment_plan(portfolio_state, strategies, radar, risk_result, market_snapshot,
         generated_at=generated_at, analysis_cutoff=analysis_cutoff, market_session=market_session,
         policy_version=str(radar_policy.get("policy_version") or "UNVERSIONED"),
-        unsettled_or_unconfirmed_proceeds_usd=unsettled_or_unconfirmed_proceeds_usd)
+        unsettled_or_unconfirmed_proceeds_usd=unsettled_or_unconfirmed_proceeds_usd,
+        maximum_broker_age_calendar_days=int(alert_policy.get("broker_snapshot_max_age_calendar_days", 4)),
+        required_strategy_version=alert_policy.get("strategy_version"))
     session = market_snapshot.get("session") or {}
     session_valid = bool(
         market_session
@@ -170,6 +183,7 @@ def build_portfolio_strategy_report(
         market_session=market_session,
         generated_at=generated_at,
         session_valid=session_valid,
+        run_phase="POST_MARKET",
     )
     holding_status = _holding_data_status(strategies)
     tactical_status = radar.get("data_status", "DATA_INCOMPLETE")
@@ -182,12 +196,21 @@ def build_portfolio_strategy_report(
         for item in strategies if item["strategy_state"] in {"ADD_REVIEW", "REDUCTION_REVIEW", "EXIT_REVIEW"}
     ]
     deterministic_gate = "HARD_RISK_REVIEW" if hard_risk else ("DATA_BLOCKED" if overall == "DATA_INCOMPLETE" else ("PASS" if review_items else "WAIT"))
+    holding_risk_data_status = "DATA_INCOMPLETE" if risk_result.get("state") in {"DATA_INCOMPLETE", "STATE_MISMATCH"} else "VALIDATED"
+    independent_close_status = (provider_preflight_result or {}).get("capability_status") or ("AVAILABLE" if tactical_status == "VALIDATED" else "PARTIAL")
     report = {
-        "schema_version": "2.3", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
+        "schema_version": "2.4", "run_phase": "POST_MARKET", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
         "market_session": market_session, "data_status": overall, "holding_data_status": holding_status,
         "tactical_data_status": tactical_status, "event_data_status": event_snapshot.get("coverage_status", "EVENT_DATA_INCOMPLETE"),
+        "holding_risk_data_status": holding_risk_data_status,
+        "holding_strategy_data_status": holding_status,
+        "independent_close_data_status": independent_close_status,
+        "broker_state_status": cash_gate["cash_status"],
+        "capital_redeployment_status": capital["deployment_decision"],
+        "provider_health": provider_preflight_result or {},
+        "global_failures": list(radar.get("global_failures") or []),
         "holding_risk_result": risk_result, "holding_strategies": strategies, "tactical_radar_result": radar,
-        "cash_funding_state": {"verified_available_cash_usd": capital["verified_available_cash_usd"],
+        "cash_funding_state": {"cash_status": capital["cash_status"], "verified_available_cash_usd": capital["verified_available_cash_usd"],
             "projected_sale_proceeds_usd": capital["projected_sale_proceeds_usd"],
             "unsettled_or_unconfirmed_proceeds_usd": capital["unsettled_or_unconfirmed_proceeds_usd"],
             "execution_purchasing_power_usd": capital["execution_purchasing_power_usd"],
@@ -195,7 +218,7 @@ def build_portfolio_strategy_report(
         "capital_redeployment": capital,
         "final_portfolio_strategy": {"hard_risk_active": hard_risk, "human_review_items": review_items,
             "preferred_capital_use": capital["preferred_use"], "alternative_capital_use": capital["alternative_use"],
-            "keep_cash_option": True, "human_approval_required": True},
+            "keep_cash_option": capital["keep_cash_option"], "human_approval_required": True},
         "notifications": notifications,
         "component_artifacts": {"portfolio_state_hash": canonical_hash(portfolio_state),
             "market_snapshot_hash": canonical_hash(market_snapshot), "event_snapshot_hash": canonical_hash(event_snapshot),
@@ -241,7 +264,7 @@ def render_morning_markdown(report: dict[str, Any]) -> str:
         f"- {msg('funding_status_label', 'Funding status')}: {capital['funding_status']}",
         f"- {msg('preferred_use_label', 'Preferred use')}: {capital['preferred_use']}",
         f"- {msg('alternative_use_label', 'Alternative use')}: {capital['alternative_use']}",
-        f"- {msg('keep_cash_label', 'Keep cash option')}: KEEP_CASH", "",
+        f"- {msg('keep_cash_label', 'Keep cash option')}: {capital['keep_cash_option']}", "",
         f"## {msg('review_heading', 'F. Final Human-Review Items')}", ""])
     review_items = report["final_portfolio_strategy"]["human_review_items"]
     lines.extend([f"- {item['ticker']}: {item['strategy_state']} ({item['execution_state']}), quantity={item['quantity']}" for item in review_items]
@@ -264,6 +287,7 @@ def main() -> int:
     parser.add_argument("--alert-runtime", required=True, type=Path)
     parser.add_argument("--radar-runtime", required=True, type=Path)
     parser.add_argument("--holding-runtime", required=True, type=Path)
+    parser.add_argument("--provider-preflight", type=Path)
     parser.add_argument("--generated-at", default=datetime.now(timezone.utc).isoformat())
     parser.add_argument("--analysis-cutoff", required=True)
     parser.add_argument("--market-session", required=True)
@@ -295,6 +319,8 @@ def main() -> int:
     context_errors = validate_instance(radar_context, root / "manage-us-stock-strategy" / "schemas" / "tactical-radar-context.schema.json")
     if context_errors:
         raise SystemExit("invalid radar context: " + "; ".join(context_errors))
+    preflight_result = load_json(args.provider_preflight) if args.provider_preflight else preflight(
+        load_json(root / "workspace" / "policies" / "source_capabilities.json"), capability="INDEPENDENT_COMPLETED_CLOSE")
     report, holding_runtime, strategies, capital, radar_runtime = build_portfolio_strategy_report(
         portfolio_state=portfolio, alert_policy=alert_policy, registry=registry, registry_validation=registry_validation,
         universe=load_json(args.universe), radar_policy=load_json(args.radar_policy), market_snapshot=load_json(args.market),
@@ -302,7 +328,8 @@ def main() -> int:
         alert_runtime=load_json(args.alert_runtime), radar_runtime=load_json(args.radar_runtime),
         holding_runtime=load_json(args.holding_runtime), generated_at=args.generated_at, analysis_cutoff=args.analysis_cutoff,
         market_session=args.market_session, latest_completed_session=args.latest_completed_session,
-        unsettled_or_unconfirmed_proceeds_usd=args.unsettled_proceeds_usd)
+        unsettled_or_unconfirmed_proceeds_usd=args.unsettled_proceeds_usd,
+        provider_preflight_result=preflight_result)
     schemas = root / "manage-us-stock-strategy" / "schemas"
     errors = [error for strategy in strategies for error in validate_instance(strategy, schemas / "holding-strategy.schema.json")]
     errors.extend(validate_instance(capital, schemas / "capital-redeployment-plan.schema.json"))
@@ -321,7 +348,7 @@ def main() -> int:
     combined_artifact = artifacts["combined"]
     radar_artifact = artifacts["radar"]
     risk_artifact = artifacts["risk"]
-    write_json(holding_artifact, {"schema_version": "2.3", "analysis_cutoff": args.analysis_cutoff,
+    write_json(holding_artifact, {"schema_version": "2.4", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
         "market_session": args.market_session, "holding_strategies": strategies, "order_authority": False})
     write_json(capital_artifact, capital)
     write_json(radar_artifact, report["tactical_radar_result"])
@@ -334,9 +361,9 @@ def main() -> int:
         _atomic_write(args.radar_runtime_output, radar_runtime)
 
     manifest_args = argparse.Namespace(repo=root, run_id=f"PORTFOLIO-STRATEGY-{args.market_session}",
-        analysis_id=f"PORTFOLIO-STRATEGY-{args.market_session}", run_type="LIVE_SHADOW_REVIEW",
+        run_phase="POST_MARKET", analysis_id=f"PORTFOLIO-STRATEGY-{args.market_session}", run_type="LIVE_SHADOW_REVIEW",
         generated_at=args.generated_at, analysis_cutoff=args.analysis_cutoff, market_session=args.market_session,
-        skill_version="2.3", strategy_version=str(portfolio.get("strategy_version")),
+        skill_version="2.4", strategy_version=str(portfolio.get("strategy_version")),
         policy_version=str(alert_policy.get("strategy_version") or alert_policy.get("band_version") or "UNVERSIONED"),
         llm_provider=None, llm_model=None, llm_identifier=None, temperature=None, max_debate_rounds=0, max_risk_rounds=0,
         hash=[["market_snapshot_hash", str(args.market)], ["event_snapshot_hash", str(args.events)],
@@ -349,6 +376,41 @@ def main() -> int:
     if manifest_errors:
         raise SystemExit("run manifest validation failed: " + "; ".join(manifest_errors))
     write_json(artifacts["manifest"], manifest)
+    baseline = build_baseline(
+        report,
+        manifest,
+        git_commit=manifest["code_provenance"]["git_commit"],
+        strategy_version=str(portfolio.get("strategy_version")),
+        policy_version=str(alert_policy.get("strategy_version") or alert_policy.get("band_version") or "UNVERSIONED"),
+        run_manifest_hash=canonical_hash(manifest),
+    )
+    baseline_errors = validate_baseline(baseline, schemas / "post-market-baseline.schema.json")
+    if baseline_errors:
+        raise SystemExit("post-market baseline validation failed: " + "; ".join(baseline_errors))
+    write_json(artifacts["baseline"], baseline)
+    provider_incidents = report["tactical_radar_result"].get("global_notifications") or []
+    if provider_incidents:
+        notification = provider_incidents[0]
+        incident = {
+            "schema_version": "2.4",
+            "run_phase": "POST_MARKET",
+            "completed_session": args.market_session,
+            "event_type": notification["event_type"],
+            "affected_tickers": notification["affected_tickers"],
+            "provider": notification.get("provider"),
+            "failure_type": notification["failure_type"],
+            "last_success": notification.get("last_success"),
+            "retry_after": notification.get("retry_after"),
+            "next_review_trigger": notification["next_review_trigger"],
+            "event_key": notification["event_key"],
+            "delivery_id": notification["delivery_id"],
+            "notify": notification["notify"],
+            "order_authority": False,
+        }
+        incident_errors = validate_instance(incident, schemas / "provider-incident.schema.json")
+        if incident_errors:
+            raise SystemExit("provider incident validation failed: " + "; ".join(incident_errors))
+        write_json(artifacts["provider_incident"], incident)
     print(json.dumps({"status": report["deterministic_gate_result"], "data_status": report["data_status"],
         "holding_states": {item["ticker"]: item["strategy_state"] for item in strategies},
         "preferred_use": capital["preferred_use"], "order_authority": False}, ensure_ascii=False, indent=2))

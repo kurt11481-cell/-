@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preopen-transition-event.schema.json",
+  "title": "Pre-Open Delta Transition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "run_phase", "event_type", "baseline_state", "preopen_readiness_state", "event_key", "delivery_id", "notify", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "^(GLOBAL|[A-Z0-9.^=-]{1,24})$"},
+    "run_phase": {"const": "PRE_OPEN"},
+    "event_type": {"enum": ["NO_MATERIAL_CHANGE", "GAP_INVALIDATED", "EVENT_BLOCKED", "RESEARCH_REFRESH_REQUIRED", "CASH_GATE_REEVALUATED", "GLOBAL_PREMARKET_DATA_OUTAGE", "TICKER_PREMARKET_DATA_FAILURE", "POST_MARKET_BASELINE_MISSING", "POST_MARKET_BASELINE_INVALID"]},
+    "baseline_state": {"type": ["string", "null"]},
+    "preopen_readiness_state": {"enum": ["CLEAR", "CAUTION", "RESEARCH_REFRESH_REQUIRED", "GAP_INVALIDATED", "EVENT_BLOCKED", "LIQUIDITY_BLOCKED", "DATA_INCOMPLETE"]},
+    "event_key": {"type": "string", "minLength": 1},
+    "delivery_id": {"type": "string", "minLength": 1},
+    "notify": {"type": "boolean"},
+    "order_authority": {"const": false}
+  }
+}

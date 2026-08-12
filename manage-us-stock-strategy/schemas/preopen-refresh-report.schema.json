@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preopen-refresh-report.schema.json",
+  "title": "Pre-Open Portfolio Delta Refresh",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_phase", "generated_at", "upcoming_regular_session", "baseline_session", "baseline_run_id", "baseline_hash_status", "premarket_data_status", "overnight_event_status", "broker_refresh_status", "provider_health", "global_failures", "items", "transitions", "final_conclusion", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "run_phase": {"const": "PRE_OPEN"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "upcoming_regular_session": {"type": "string", "format": "date"},
+    "baseline_session": {"type": ["string", "null"], "format": "date"},
+    "baseline_run_id": {"type": ["string", "null"]},
+    "baseline_hash_status": {"enum": ["VALID", "POST_MARKET_BASELINE_MISSING", "POST_MARKET_BASELINE_INVALID"]},
+    "premarket_data_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "overnight_event_status": {"enum": ["CLEAR", "MATERIAL_CHANGE", "EVENT_DATA_INCOMPLETE"]},
+    "broker_refresh_status": {"enum": ["VERIFIED_POSITIVE", "VERIFIED_ZERO", "UNVERIFIED", "STALE", "STATE_MISMATCH"]},
+    "provider_health": {"type": "object"},
+    "global_failures": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "items": {"type": "array", "items": {"type": "object"}},
+    "transitions": {"type": "array", "items": {"$ref": "preopen-transition-event.schema.json"}},
+    "final_conclusion": {"enum": ["NO_MATERIAL_PREOPEN_CHANGE", "PREOPEN_REVIEW_REQUIRED", "DATA_INCOMPLETE"]},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

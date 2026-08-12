@@ -70,7 +70,7 @@ class V21HardeningTests(unittest.TestCase):
 
     def _manifest(self) -> dict:
         return {
-            "schema_version": "1.0", "run_id": "RUN-TEST", "analysis_id": "ANALYSIS-TEST",
+            "schema_version": "1.0", "run_phase": "VALIDATION", "run_id": "RUN-TEST", "analysis_id": "ANALYSIS-TEST",
             "run_type": "VALIDATION_TEST", "generated_at": "2026-08-11T13:00:00+00:00",
             "analysis_cutoff": "2026-08-11T12:00:00+00:00", "market_session": "2026-08-10",
             "code_provenance": {"git_commit": "abc", "git_branch": "feature/test", "git_dirty": False, "working_tree_diff_hash": None, "skill_version": "2.1", "schema_versions": {"decision": "2.0"}, "strategy_version": "test", "policy_version": "test"},

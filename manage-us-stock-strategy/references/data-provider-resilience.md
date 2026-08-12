@@ -28,3 +28,18 @@ is not an official exchange calendar or independent Yahoo-free cross-check.
 Normalize accepted records to symbol, field, value, units, exchange session,
 timestamp, provider, retrieval time, raw/adjusted basis, quality status, and
 source identifier.
+
+## v2.4 completed-close preflight
+
+Run `scripts/provider_preflight.py` once before a post-market scan. The
+`INDEPENDENT_COMPLETED_CLOSE` capability must be enabled, Yahoo-independent,
+session compatible, timestamped, and explicitly eligible in the capability
+registry. `build_independent_close_snapshot.py` is provider-agnostic; it does
+not select or silently activate a vendor. A second Yahoo endpoint never counts
+as independent.
+
+When no approved provider is healthy, return one global
+`GLOBAL_INDEPENDENT_CLOSE_OUTAGE`, suppress per-ticker retries, keep affected
+rows visible as data blocked, and report `DATA_PROVIDER_BLOCKED`. A symbol-level
+missing record or mismatch blocks only that ticker when common infrastructure
+and the official session remain valid.

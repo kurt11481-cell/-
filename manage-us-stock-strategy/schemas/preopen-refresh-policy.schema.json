@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preopen-refresh-policy.schema.json",
+  "title": "Pre-Open Delta Refresh Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_version", "scope", "timezone", "local_time", "official_upcoming_session_required", "post_market_baseline_required", "premarket_price_is_indicative", "completed_session_technical_authority", "hard_risk_breach_authority", "quantity_authority", "order_authority", "human_approval_required", "gap_policy", "liquidity_policy", "overnight_research", "dedup"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "scope": {"const": "preopen_delta_refresh"},
+    "timezone": {"const": "America/New_York"},
+    "local_time": {"const": "08:45"},
+    "official_upcoming_session_required": {"const": true},
+    "post_market_baseline_required": {"const": true},
+    "premarket_price_is_indicative": {"const": true},
+    "completed_session_technical_authority": {"const": false},
+    "hard_risk_breach_authority": {"const": false},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false},
+    "human_approval_required": {"const": true},
+    "gap_policy": {"type": "object", "required": ["default_effect", "approved_gap_rules"], "properties": {"default_effect": {"const": "CONTEXT_ONLY"}, "approved_gap_rules": {"type": "object"}}, "additionalProperties": false},
+    "liquidity_policy": {"type": "object", "required": ["default_effect", "approved_liquidity_rules"], "properties": {"default_effect": {"const": "CONTEXT_ONLY"}, "approved_liquidity_rules": {"type": "object"}}, "additionalProperties": false},
+    "overnight_research": {"type": "object", "required": ["authoritative_sources_required", "full_universe_refresh_prohibited", "material_event_refresh_only"], "properties": {"authoritative_sources_required": {"const": true}, "full_universe_refresh_prohibited": {"const": true}, "material_event_refresh_only": {"const": true}}, "additionalProperties": false},
+    "dedup": {"type": "object", "required": ["run_phase_required", "unchanged_post_market_ready_is_not_urgent"], "properties": {"run_phase_required": {"const": true}, "unchanged_post_market_ready_is_not_urgent": {"const": true}}, "additionalProperties": false}
+  }
+}

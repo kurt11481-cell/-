@@ -25,3 +25,9 @@ Identical inputs that produce materially opposite outcomes such as
 Use `scripts/build_run_manifest.py`, validate with
 `scripts/validate_run_manifest.py`, and retain code, LLM, input, tool, and result
 provenance. Never record API keys.
+
+For v2.4, each post-market run also writes an immutable
+`post_market_baseline.json`. A pre-open run validates its session, report hash,
+policy/strategy versions, and generation time, then writes its own PRE_OPEN
+manifest. Premarket evidence is a separate immutable bundle and is never mixed
+into completed-session OHLCV or daily indicator hashes.

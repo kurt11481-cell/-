@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from portfolio_policy_gates import evaluate_cash_status
 from validation_common import load_json, validate_instance, write_json
 
 
@@ -48,12 +49,16 @@ def build_capital_redeployment_plan(
     market_session: str | None,
     policy_version: str,
     unsettled_or_unconfirmed_proceeds_usd: float | None = None,
+    maximum_broker_age_calendar_days: int = 4,
+    required_strategy_version: str | None = None,
 ) -> dict[str, Any]:
     broker = portfolio_state.get("last_confirmed_broker_snapshot") or {}
-    cash = portfolio_state.get("available_cash_usd")
-    cash_verified = broker.get("cash_verified") is True and _finite(cash) and float(cash) >= 0
-    verified_cash = float(cash) if cash_verified else None
-    execution_power = verified_cash
+    cash_gate = evaluate_cash_status(portfolio_state, reference_session=market_session,
+        maximum_age_calendar_days=maximum_broker_age_calendar_days,
+        required_strategy_version=required_strategy_version or portfolio_state.get("strategy_version"))
+    cash_status = cash_gate["cash_status"]
+    verified_cash = cash_gate["verified_available_cash_usd"]
+    execution_power = cash_gate["execution_purchasing_power_usd"]
     if unsettled_or_unconfirmed_proceeds_usd is not None and (not _finite(unsettled_or_unconfirmed_proceeds_usd) or unsettled_or_unconfirmed_proceeds_usd < 0):
         raise ValueError("unsettled proceeds must be a non-negative explicit value or null")
 
@@ -85,26 +90,39 @@ def build_capital_redeployment_plan(
         holding_risk_result.get("risk_freeze_active")
         or any(strategy.get("hard_risk_active") is True for strategy in holding_strategies)
     )
+    holdings = portfolio_state.get("holdings") or {}
+    portfolio_verified = bool(broker.get("verified") is True and broker.get("holdings_complete") is True and isinstance(holdings, dict))
+    positive_holdings = {symbol for symbol, quantity in holdings.items()
+                         if _finite(quantity) and int(quantity) > 0} if portfolio_verified else set()
     candidate_uses: list[dict[str, Any]] = []
+    represented: set[str] = set()
     for item in tactical_radar.get("candidate_dispositions", []):
         if item.get("opportunity_state") not in {"READY", "NEAR_TRIGGER"}:
             continue
         execution = item.get("execution_state", "DATA_BLOCKED")
         remaining = list(item.get("remaining_conditions") or [])
+        if not portfolio_verified:
+            execution = "DATA_BLOCKED"
+            if "PORTFOLIO_STATE_UNVERIFIED" not in remaining:
+                remaining.append("PORTFOLIO_STATE_UNVERIFIED")
         if hard_risk_freeze:
             if "HARD_RISK_NEW_BUY_FREEZE" not in remaining:
                 remaining.append("HARD_RISK_NEW_BUY_FREEZE")
             if execution not in {"DATA_BLOCKED", "NOT_APPROVED"}:
                 execution = "PORTFOLIO_BLOCKED"
+        use_type = "EXISTING_HOLDING_ADD" if item["ticker"] in positive_holdings else "NEW_POSITION"
         candidate_uses.append({
-            "use_id": f"NEW_POSITION:{item['ticker']}", "type": "NEW_POSITION", "ticker": item["ticker"],
+            "use_id": f"{use_type}:{item['ticker']}", "type": use_type, "ticker": item["ticker"],
             "opportunity_or_strategy_state": item["opportunity_state"], "execution_state": execution,
             "portfolio_fit": item.get("portfolio_fit_status", "UNVERIFIED"),
             "primary_reason": item.get("primary_blocker") or "Validated tactical opportunity remains subject to all execution gates.",
             "remaining_conditions": remaining, "quantity": None, "quantity_authority": "none",
         })
+        represented.add(str(item["ticker"]))
     for strategy in holding_strategies:
         if strategy.get("strategy_state") not in {"ADD_REVIEW", "ADD_ON_WATCH"}:
+            continue
+        if strategy["ticker"] in represented:
             continue
         candidate_uses.append({
             "use_id": f"EXISTING_HOLDING_ADD:{strategy['ticker']}", "type": "EXISTING_HOLDING_ADD",
@@ -113,50 +131,49 @@ def build_capital_redeployment_plan(
             "primary_reason": strategy["primary_reason"], "remaining_conditions": list(strategy["remaining_conditions"]),
             "quantity": None, "quantity_authority": "none",
         })
-    candidate_uses.append({
-        "use_id": "KEEP_CASH", "type": "KEEP_CASH", "ticker": None,
-        "opportunity_or_strategy_state": "ALWAYS_AVAILABLE", "execution_state": "ELIGIBLE_FOR_REVIEW" if cash_verified else "DATA_BLOCKED",
-        "portfolio_fit": "FITS", "primary_reason": "Capital deployment is not forced; verified cash may remain unallocated.",
-        "remaining_conditions": [] if cash_verified else ["VERIFIED_AVAILABLE_CASH"], "quantity": None,
-        "quantity_authority": "none",
-    })
+    if cash_status == "VERIFIED_POSITIVE":
+        candidate_uses.append({
+            "use_id": "KEEP_CASH", "type": "KEEP_CASH", "ticker": None,
+            "opportunity_or_strategy_state": "AVAILABLE", "execution_state": "ELIGIBLE_FOR_REVIEW",
+            "portfolio_fit": "FITS", "primary_reason": "Verified positive cash may remain unallocated; deployment is not forced.",
+            "remaining_conditions": [], "quantity": None, "quantity_authority": "none",
+        })
 
     executable = [item for item in candidate_uses if item["type"] != "KEEP_CASH" and item["execution_state"] == "ELIGIBLE_FOR_REVIEW"]
     researched = [item for item in candidate_uses if item["type"] != "KEEP_CASH" and item["opportunity_or_strategy_state"] in {"READY", "ADD_REVIEW"}]
     preferred_ticker = tactical_radar.get("preferred_candidate")
     alternative_ticker = tactical_radar.get("alternative_candidate")
-    ranked_use_ids = [f"NEW_POSITION:{symbol}" for symbol in (preferred_ticker, alternative_ticker) if isinstance(symbol, str)]
+    ranked_use_ids = [f"{'EXISTING_HOLDING_ADD' if symbol in positive_holdings else 'NEW_POSITION'}:{symbol}"
+                      for symbol in (preferred_ticker, alternative_ticker) if isinstance(symbol, str)]
     executable_ids = {item["use_id"] for item in executable}
     researched_ids = {item["use_id"] for item in researched}
-    preferred = "KEEP_CASH"
-    if verified_cash and verified_cash > 0:
+    preferred: str | None = None
+    if cash_status == "VERIFIED_POSITIVE":
         preferred = next((use_id for use_id in ranked_use_ids if use_id in executable_ids), "KEEP_CASH")
-    elif projected:
-        preferred = next((use_id for use_id in ranked_use_ids if use_id in researched_ids), "KEEP_CASH")
-    eligible_for_alternative = executable_ids | (researched_ids if projected else set())
+    eligible_for_alternative = executable_ids
     alternative = next((use_id for use_id in ranked_use_ids if use_id != preferred and use_id in eligible_for_alternative), None)
-    if alternative is None and preferred != "KEEP_CASH":
+    if cash_status == "VERIFIED_POSITIVE" and alternative is None and preferred != "KEEP_CASH":
         alternative = "KEEP_CASH"
-    if not cash_verified:
+    if cash_status in {"UNVERIFIED", "STALE", "STATE_MISMATCH"}:
         funding_status = "DATA_BLOCKED"
-    elif verified_cash > 0:
+    elif cash_status == "VERIFIED_POSITIVE":
         funding_status = "FUNDED_VERIFIED"
     elif projected:
         funding_status = "UNFUNDED_PROJECTED_PLAN"
     else:
         funding_status = "NO_VERIFIED_FUNDING"
     blockers: list[str] = []
-    if not cash_verified:
-        blockers.append("VERIFIED_AVAILABLE_CASH_NOT_CONFIRMED")
-    elif verified_cash <= 0:
+    if cash_status in {"UNVERIFIED", "STALE", "STATE_MISMATCH"}:
+        blockers.extend(cash_gate["reasons"] or ["VERIFIED_AVAILABLE_CASH_NOT_CONFIRMED"])
+    elif cash_status == "VERIFIED_ZERO":
         blockers.append("VERIFIED_AVAILABLE_CASH_IS_ZERO")
     if hard_risk_freeze:
         blockers.append("HARD_RISK_NEW_BUY_FREEZE")
     if projected:
         blockers.append("PROJECTED_PROCEEDS_ARE_NOT_EXECUTION_PURCHASING_POWER")
     return {
-        "schema_version": "2.3", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
-        "market_session": market_session, "funding_status": funding_status,
+        "schema_version": "2.4", "run_phase": "POST_MARKET", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
+        "market_session": market_session, "cash_status": cash_status, "funding_status": funding_status,
         "verified_available_cash_usd": verified_cash, "projected_sale_proceeds_usd": projected,
         "projected_sale_details": projected_details,
         "unsettled_or_unconfirmed_proceeds_usd": float(unsettled_or_unconfirmed_proceeds_usd) if unsettled_or_unconfirmed_proceeds_usd is not None else None,
@@ -164,7 +181,11 @@ def build_capital_redeployment_plan(
         "projected_proceeds_status": "PROJECTED_ONLY_NOT_AVAILABLE_CASH_NO_FILL_CONFIRMED" if projected else "NONE",
         "cost_impact_status": "ASSUMPTION_REQUIRED" if projected else "NOT_APPLICABLE",
         "candidate_uses": candidate_uses, "preferred_use": preferred, "alternative_use": alternative,
-        "cash_reserve_option": "KEEP_CASH", "execution_blockers": list(dict.fromkeys(blockers)),
+        "conditional_redeployment_plan": [use_id for use_id in ranked_use_ids if use_id in researched_ids] if funding_status == "UNFUNDED_PROJECTED_PLAN" else [],
+        "deployment_decision": "FUNDED_REVIEW_AVAILABLE" if funding_status == "FUNDED_VERIFIED" else ("DATA_BLOCKED" if funding_status == "DATA_BLOCKED" else "NO_FUNDED_ACTION"),
+        "keep_cash_option": "KEEP_CASH" if cash_status == "VERIFIED_POSITIVE" else "NOT_APPLICABLE",
+        "portfolio_state_status": "VERIFIED" if portfolio_verified else "PORTFOLIO_STATE_UNVERIFIED",
+        "execution_blockers": list(dict.fromkeys(blockers)),
         "policy_version": policy_version, "order_authority": False,
     }
 

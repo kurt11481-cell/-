@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automation-delivery-runtime.schema.json",
+  "title": "Codex Automation Delivery Runtime",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "automations", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "automations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["automation_name", "run_phase", "schedule", "status", "last_attempted_run", "last_successful_run", "last_completed_session", "output_artifact", "notification_status", "git_commit", "policy_version", "portfolio_state_hash_before", "portfolio_state_hash_after", "failure_reason"],
+        "properties": {
+          "automation_name": {"type": "string", "minLength": 1},
+          "run_phase": {"enum": ["POST_MARKET", "PRE_OPEN"]},
+          "schedule": {"type": "string", "minLength": 1},
+          "status": {"enum": ["NOT_CONFIGURED", "CONFIGURED", "FIRST_RUN_PENDING", "DELIVERY_VERIFIED", "FAILED"]},
+          "last_attempted_run": {"type": ["string", "null"], "format": "date-time"},
+          "last_successful_run": {"type": ["string", "null"], "format": "date-time"},
+          "last_completed_session": {"type": ["string", "null"], "format": "date"},
+          "output_artifact": {"type": ["string", "null"]},
+          "notification_status": {"type": ["string", "null"]},
+          "git_commit": {"type": ["string", "null"]},
+          "policy_version": {"type": ["string", "null"]},
+          "portfolio_state_hash_before": {"type": ["string", "null"]},
+          "portfolio_state_hash_after": {"type": ["string", "null"]},
+          "failure_reason": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "order_authority": {"const": false}
+  }
+}

@@ -1,37 +1,54 @@
-# Codex Automation Setup: Morning Portfolio Strategy
+# Codex Automation Setup: v2.4 Dual Phase
 
-## Intended configuration
+Use Codex Scheduled Tasks/heartbeat automations only. No Windows Task
+Scheduler, service, startup script, cron workaround, or background daemon is
+permitted.
 
-- Name: `Morning Portfolio Strategy`
-- Platform: Codex automation/heartbeat only
-- Schedule: Tuesday through Saturday at approximately 07:45 `Asia/Seoul`
+## Morning Portfolio Strategy
+
+- Run phase: `POST_MARKET`
+- Schedule: Tuesday-Saturday 07:45 `Asia/Seoul`
 - Workspace: `E:\사업\##금동한\코덱스저장소`
-- Source branch: committed `main`
-- Windows Task Scheduler: not installed and prohibited by this design
+- Source: committed `main`
+- Prompt:
+  `stock-strategy-system/POST_MARKET_PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`
+- Codex automation ID: `automation`
+- Configuration status: `FIRST_RUN_PENDING`
+- Delivery status: not yet verified
 
-Use the exact prompt in
-`stock-strategy-system/PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`.
+The existing automation was updated in place; no duplicate was created.
 
-The combined workflow supersedes a separate morning tactical-only heartbeat for
-this task. It does not replace the lower-level deterministic engines; it invokes
-or consumes them in authority order. Avoid running both a 07:30 holding-only
-heartbeat and a 07:45 tactical-only heartbeat when one combined morning
-automation can do both.
+## Pre-Open Portfolio Risk Refresh
 
-## Native automation status
+- Run phase: `PRE_OPEN`
+- Schedule: Monday-Friday 08:45 `America/New_York`
+- Workspace: `E:\사업\##금동한\코덱스저장소`
+- Source: committed `main`
+- Prompt:
+  `stock-strategy-system/PREOPEN_PORTFOLIO_REFRESH_AUTOMATION_PROMPT_EN.md`
+- Configuration status: `NOT_CONFIGURED`
+- Delivery status: not verified
 
-`CODEX_AUTOMATION_CONFIGURED`
+The Codex automation API rejected immediate creation with an anchored `DTSTART`
+because timezone-specific wall-clock semantics require an explicit suggested
+task confirmation. A correctly timezone-anchored task card was rendered in the
+app. Accept that card to complete setup; do not replace it with a fixed KST time
+because U.S. daylight-saving changes would make the schedule wrong.
 
-The existing heartbeat automation `automation` was updated in place. It is
-active Tuesday-Saturday at 07:45 `Asia/Seoul`, targets the existing stock
-strategy task, and points to
-`stock-strategy-system/PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`. No duplicate
-heartbeat, cron job, or Windows Task Scheduler task was created.
+Operational result: `CODEX_AUTOMATION_REQUIRES_MANUAL_SETUP` for PRE_OPEN only.
 
-Notification preferences remain outside the analytical prompt. The first
-scheduled production run must still be audited for output-boundary compliance
-and byte-identical `stock-strategy-system/portfolio_state.json`.
+## First-run verification
 
-The first valid run must show all holding strategies, all seven tactical
-opportunities, verified cash separately from projected/unconfirmed proceeds,
-and `order_authority=false`.
+Configuration never equals delivery success. After each task's first valid run,
+verify:
+
+1. output commit/policy versions match committed main;
+2. report, runtime, baseline/manifest schemas pass;
+3. portfolio-state hashes before and after are identical;
+4. no policy/source/registry mutation occurred;
+5. `order_authority=false` and quantity remains unauthorized.
+
+Only then may `workspace/state/automation_delivery_runtime.json` move that task
+to `DELIVERY_VERIFIED`.
+
+`WINDOWS_TASK_SCHEDULER_INSTALLED = false`.

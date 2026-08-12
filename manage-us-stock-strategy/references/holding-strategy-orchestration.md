@@ -73,3 +73,17 @@ last session, prior state, fingerprint, deep-research session, and delivery IDs.
 It never stores brokerage holdings, cash, cost basis, or fills. Only material
 state transitions generate urgent delivery candidates. Reflection may record a
 lesson but cannot mutate policy or portfolio state.
+
+## v2.4 risk and strategy separation
+
+Store `holding_risk_state` separately from `strategy_state`. Risk values are
+`NO_HARD_RISK`, `HARD_RISK_WATCH`, `HARD_RISK_BREACH`,
+`POLICY_AUTHORITY_UNVERIFIED`, and `DATA_BLOCKED`. A completed-close breach may
+map to `EXIT_REVIEW` or `REDUCTION_REVIEW` only when the exact rule provenance
+and `action_on_breach` approval both pass. Otherwise retain the warning, set
+`STRATEGY_REFRESH_REQUIRED`, require human review, and leave quantity null.
+
+Expose primary-close, independent-close, policy-approval, rule-ID,
+average-cost, execution, and quantity authority independently. Premarket quotes
+may create only `PREMARKET_RISK_WATCH`; they cannot create a completed-session
+hard-risk breach.

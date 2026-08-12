@@ -55,3 +55,19 @@ Name at most one preferred and one alternative use only when ordered gates
 support that distinction. `KEEP_CASH`, `NO_VERIFIED_FUNDING`, and
 `UNFUNDED_PROJECTED_PLAN` are valid outcomes. Every result remains a human
 review with `order_authority=false`.
+
+## v2.4 cash and identity gates
+
+Executable cash requires numeric positive cash plus a fresh, fully verified
+broker snapshot, `cash_verified=true`, `holdings_complete=true`, availability
+scope confirmation, and compatible state/strategy versions. Canonical statuses
+are `VERIFIED_POSITIVE`, `VERIFIED_ZERO`, `UNVERIFIED`, `STALE`, and
+`STATE_MISMATCH`; only the first creates purchasing power.
+
+`VERIFIED_ZERO` means `NO_FUNDED_ACTION`, `preferred_use=null`,
+`alternative_use=null`, and `keep_cash_option=NOT_APPLICABLE`. It does not mean
+`KEEP_CASH`. Projected or unsettled proceeds cannot alter this result.
+
+A Radar ticker with verified shares above zero is represented once as
+`EXISTING_HOLDING_ADD`, never again as `NEW_POSITION`. Unknown or stale holding
+status fails closed as `PORTFOLIO_STATE_UNVERIFIED`.
