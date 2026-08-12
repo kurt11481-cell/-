@@ -203,7 +203,9 @@
       "NBIS": {
         "instrument_type": "stock",
         "identity_status": "verified",
-        "holding_identity_verified": false,
+        "official_issuer": "Nebius Group N.V.",
+        "official_identity_source_url": "https://nebius.com/investor-hub",
+        "holding_identity_verified": true,
         "watchlist_approved": true,
         "new_buy_instrument_approved": false
       },
@@ -229,6 +231,13 @@
         "allowed_actions": ["reduce", "sell"],
         "quantity_authority": "none",
         "authority": "user-approved maximum loss; alert engine calculates the exact boundary"
+      },
+      "nbis_max_loss_review": {
+        "status": "approved",
+        "symbol": "NBIS",
+        "allowed_actions": ["risk_review"],
+        "quantity_authority": "none",
+        "authority": "user approved a 10 percent maximum-loss review boundary on 2026-08-12; no order or quantity authority"
       },
       "mvll_staged_reduction": {
         "status": "approved_review_only",
@@ -296,7 +305,7 @@
     "direct_order_or_schedule_authority": false
   },
   "holding_risk_rules": {
-    "rule_version": "2026-07-31-cost-loss-v1",
+    "rule_version": "2026-08-12-cost-loss-v2",
     "price_field": "raw_completed_regular_session_close",
     "cost_basis_field": "state.average_cost_usd",
     "threshold_formula": "average_cost_usd * (1 - maximum_loss_fraction_from_average_cost)",
@@ -317,6 +326,14 @@
         "default_direction": "reduce",
         "maximum_loss_fraction_from_average_cost": 0.6,
         "reduction_plan_status": "approved"
+      },
+      "NBIS": {
+        "horizons": ["strategy_analysis_defined"],
+        "default_direction": "hold",
+        "default_direction_status": "fail_closed_hold_pending_validated_strategy_analysis_and_human_review",
+        "direction_policy": "validated_strategy_analysis_may_propose_hold_or_reduce_but_cannot_mutate_policy_or_place_an_order",
+        "maximum_loss_fraction_from_average_cost": 0.1,
+        "reduction_plan_status": "not_applicable"
       }
     },
     "de_minimis_manual_exit_positions": {

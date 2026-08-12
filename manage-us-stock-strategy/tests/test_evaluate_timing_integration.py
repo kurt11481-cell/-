@@ -60,6 +60,14 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.policy = json.loads((SYSTEM_ROOT / "alert_policy.json").read_text(encoding="utf-8"))
         self.state = json.loads((SYSTEM_ROOT / "portfolio_state.json").read_text(encoding="utf-8"))
+        # The generic technical fixture trades near USD 102. Normalize the NBIS
+        # test-only cost so unrelated integration cases do not accidentally
+        # trigger the live 10% NBIS hard-risk boundary.
+        if self.state.get("holdings", {}).get("NBIS", 0) > 0:
+            self.state["average_cost_usd"]["NBIS"] = 100.0
+            self.state["position_cost_basis_usd"]["NBIS"] = (
+                100.0 * self.state["holdings"]["NBIS"]
+            )
         now = datetime.now(timezone.utc)
         session_date = now.date()
         self.state["last_confirmed_broker_snapshot"]["as_of"] = session_date.isoformat()
@@ -147,6 +155,7 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
     def test_nbil_de_minimis_share_cap_fails_closed(self) -> None:
         broken = copy.deepcopy(self.state)
         broken["holdings"]["NBIL"] = 2
+        broken["average_cost_usd"]["NBIL"] = 65.2
         broken["position_cost_basis_usd"]["NBIL"] = 130.4
         result = EVALUATOR.evaluate(broken, self.policy, self.snapshot, {})
         self.assertEqual(result["state"], "STATE_MISMATCH")
@@ -155,6 +164,8 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
 
     def test_nbil_de_minimis_cost_basis_cap_fails_closed(self) -> None:
         broken = copy.deepcopy(self.state)
+        broken["holdings"]["NBIL"] = 1
+        broken["average_cost_usd"]["NBIL"] = 65.2
         broken["position_cost_basis_usd"]["NBIL"] = 65.21
         result = EVALUATOR.evaluate(broken, self.policy, self.snapshot, {})
         self.assertEqual(result["state"], "STATE_MISMATCH")
@@ -183,6 +194,27 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
             and item["symbol"] == "SOXL"
         ][0]
         self.assertEqual(hard["evaluated_grade"], "D")
+
+    def test_nbis_exact_ten_percent_boundary_generates_hard_risk_review(self) -> None:
+        state = copy.deepcopy(self.state)
+        state["average_cost_usd"]["NBIS"] = 100.0
+        state["position_cost_basis_usd"]["NBIS"] = 1500.0
+        snapshot = copy.deepcopy(self.snapshot)
+        row = snapshot["symbols"]["NBIS"]
+        row.update({"open": 91.0, "high": 92.0, "low": 89.0, "close": 90.0})
+        row["quote_crosscheck"].update({"close": 90.0, "difference_fraction": 0.0})
+        result = EVALUATOR.evaluate(state, self.policy, snapshot, {})
+        hard = next(
+            item
+            for item in result["candidates"]
+            if item["event_type"] == "holding_max_loss_breach"
+            and item["symbol"] == "NBIS"
+        )
+        self.assertEqual(result["grade"], "D", result)
+        self.assertEqual(hard["hard_boundary_usd"], 90.0)
+        self.assertTrue(hard["breached"])
+        self.assertIsNone(hard["quantity"])
+        self.assertFalse(hard["actionable"])
 
     def test_missing_held_ohlcv_provenance_fails_closed(self) -> None:
         broken = copy.deepcopy(self.snapshot)
