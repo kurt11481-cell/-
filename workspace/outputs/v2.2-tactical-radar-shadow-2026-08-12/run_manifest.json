@@ -7,10 +7,10 @@
   "analysis_cutoff": "2026-08-12T11:30:00+00:00",
   "market_session": "2026-08-11",
   "code_provenance": {
-    "git_commit": "bafb67ad23021bc328a806dcd71b34a5228c03a1",
-    "git_branch": "feature/v2.2-tactical-opportunity-radar",
+    "git_commit": "353e77ac2c691b10040625724931ba462d76b595",
+    "git_branch": "main",
     "git_dirty": true,
-    "working_tree_diff_hash": "9695ebaffc889afe67b0aa3435a00c1d5ebcce4e37ef2ec9c24207fa58fc6bb0",
+    "working_tree_diff_hash": "be337eaa41c28fa9b3d2cad61563f0cc99a3e1f8498c612731f7611260bfdc23",
     "skill_version": "2.2",
     "schema_versions": {
       "decision": "2.0",
@@ -34,10 +34,10 @@
     "market_snapshot_hash": "27a1edd7865a54d0563b5066b60fbab95d1d49635ec431e80565966a3223ac9c",
     "event_snapshot_hash": "7b5ef5e7a3f9daa95f65bbe157150d2c47030b1b2a142974dcf1431eef3c7b8d",
     "portfolio_state_hash": "e21356cc241ebdb2ed4610b19ed5430d507eda3d027054061752e051fcdf5f70",
-    "strategy_policy_hash": "e7c20e61851d41686201024f084b66144a2511940363e4be5094465f9e5cf2e5",
-    "alert_policy_hash": "d59d8d22cc69f2a7e690b1ff787f860ea5b084772de2d0817fb60a1f35331e7f",
-    "instrument_registry_hash": "b911e5879d007f9f6a1ef21c653c5cac7d53061500280f1fd00b22d7f606232b",
-    "candidate_universe_hash": "87505d45a94efd18f9299ac9cc98e561cbdec82badf4acd04b1f43c1de9b0736"
+    "strategy_policy_hash": "08a7d47b7ef9bacc2a4e9c3d0ebfa6992fdd63f93143cf832a35874e292a1c4e",
+    "alert_policy_hash": "1aca23e8683294af7cb454acbb446344ea2d0b7589405918dd31695c4126f970",
+    "instrument_registry_hash": "92a674f32663d6b97ce74b6cbf35d7ffac71c8954e1d3fa4a4f10d5d87240b22",
+    "candidate_universe_hash": "d1fa12e8ad6b0d111394c13a06709b4ba0d2e327e70bf0e4c5661c9798ce1f75"
   },
   "tool_provenance": {
     "python_version": "3.12.13",

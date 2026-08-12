@@ -45,7 +45,7 @@
     "observed_installed_yfinance_contract_sha256": "52A2884B69D4EAB0EE4C28D2E05DA77A5311F4CB86ACDF651CB3F8946B222F31",
     "observed_installed_output_locale_sha256": "319AFB05FE785196A5AEAC0282756E8D51BDE414B60E4D2DC08AD6F7EAA176E9",
     "verified_at_kst": "2026-08-12T20:55:00+09:00",
-    "verification": "Canonical source and installed Codex Skill hashes match for the deployment-gated files after the v2.2 tactical-radar sync. The full workspace suite passed 92 tests. No strategy threshold, fill, cash, quantity, leverage, short-sale, or order authority changed.",
+    "verification": "Canonical source and installed Codex Skill hashes match for the deployment-gated files after the v2.2 tactical-radar sync. The full workspace suite passed 93 tests, including canonical registry hash portability across LF/CRLF. No strategy threshold, fill, cash, quantity, leverage, short-sale, or order authority changed.",
     "unblock_condition": "satisfied"
   },
   "maximum_snapshot_age_hours": 18,
@@ -151,7 +151,7 @@
     },
     "instrument_registry_authority": {
       "canonical_path": "workspace/policies/instrument_registry.json",
-      "required_canonical_sha256": "b911e5879d007f9f6a1ef21c653c5cac7d53061500280f1fd00b22d7f606232b",
+      "required_canonical_sha256": "aff020514b22ef66296fcbaab6058b6121147c5b4a60143484e988c6c2c97b49",
       "embedded_registry_role": "non_authoritative_operational_cache",
       "mismatch_code": "POLICY_REGISTRY_MISMATCH",
       "research_scan_on_mismatch": "continue_with_canonical_registry_and_display_mismatch",

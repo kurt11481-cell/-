@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from validation_common import file_hash, load_json
+from validation_common import canonical_hash, load_json
 
 
 CRITICAL_FIELDS = (
@@ -26,14 +26,16 @@ def validate_registry_consistency(
     errors: list[str] = []
     warnings: list[str] = []
     reference = ((policy.get("decision_harness") or {}).get("instrument_registry_authority") or {})
-    canonical_hash = file_hash(canonical_path)
+    # Hash normalized JSON content so Git/OS line-ending conversion cannot
+    # create a false registry-authority mismatch.
+    canonical_digest = canonical_hash(canonical)
     if canonical.get("canonical_authority") is not True:
         errors.append("canonical registry does not declare canonical_authority=true")
     if reference.get("canonical_path") != "workspace/policies/instrument_registry.json":
         errors.append("policy does not reference the canonical registry path")
     if reference.get("embedded_registry_role") != "non_authoritative_operational_cache":
         errors.append("embedded registry is not marked non-authoritative")
-    if reference.get("required_canonical_sha256") != canonical_hash:
+    if reference.get("required_canonical_sha256") != canonical_digest:
         errors.append("canonical registry hash differs from policy reference")
 
     cache = ((policy.get("decision_harness") or {}).get("instrument_registry") or {})
@@ -50,7 +52,7 @@ def validate_registry_consistency(
     return {
         "status": "VALIDATED" if not errors else "POLICY_REGISTRY_MISMATCH",
         "canonical_path": str(canonical_path),
-        "canonical_sha256": canonical_hash,
+        "canonical_sha256": canonical_digest,
         "errors": errors,
         "warnings": warnings,
         "research_scan_authority": "canonical_registry",

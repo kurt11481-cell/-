@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -128,6 +129,15 @@ class V22TacticalRadarTests(unittest.TestCase):
         broken["decision_harness"]["instrument_registry_authority"]["required_canonical_sha256"] = "0" * 64
         result = validate_registry_consistency(self.registry, broken, self.registry_path)
         self.assertEqual(result["status"], "POLICY_REGISTRY_MISMATCH")
+
+    def test_registry_hash_is_line_ending_independent(self) -> None:
+        temporary = ROOT / "workspace" / "outputs" / "registry-line-ending-test.json"
+        try:
+            temporary.write_text(json.dumps(self.registry, ensure_ascii=False, indent=2).replace("\n", "\r\n") + "\r\n", encoding="utf-8")
+            result = validate_registry_consistency(self.registry, self.alert_policy, temporary)
+            self.assertEqual(result["status"], "VALIDATED")
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def test_shortlist_semantics_for_five_three_and_one_survivors(self) -> None:
         for ready_count, expected in ((7, 5), (3, 3), (1, 1)):
