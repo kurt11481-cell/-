@@ -1,0 +1,38 @@
+{
+  "schema_version": "2.4",
+  "automations": {
+    "morning_portfolio_strategy": {
+      "automation_name": "Morning Portfolio Strategy",
+      "run_phase": "POST_MARKET",
+      "schedule": "Tuesday-Saturday 07:45 Asia/Seoul",
+      "status": "FIRST_RUN_PENDING",
+      "last_attempted_run": null,
+      "last_successful_run": null,
+      "last_completed_session": null,
+      "output_artifact": null,
+      "notification_status": null,
+      "git_commit": null,
+      "policy_version": null,
+      "portfolio_state_hash_before": null,
+      "portfolio_state_hash_after": null,
+      "failure_reason": null
+    },
+    "preopen_portfolio_risk_refresh": {
+      "automation_name": "Pre-Open Portfolio Risk Refresh",
+      "run_phase": "PRE_OPEN",
+      "schedule": "Monday-Friday 08:45 America/New_York",
+      "status": "NOT_CONFIGURED",
+      "last_attempted_run": null,
+      "last_successful_run": null,
+      "last_completed_session": null,
+      "output_artifact": null,
+      "notification_status": null,
+      "git_commit": null,
+      "policy_version": null,
+      "portfolio_state_hash_before": null,
+      "portfolio_state_hash_after": null,
+      "failure_reason": null
+    }
+  },
+  "order_authority": false
+}

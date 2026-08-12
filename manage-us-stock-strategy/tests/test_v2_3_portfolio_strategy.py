@@ -101,6 +101,15 @@ class V23PortfolioStrategyTests(unittest.TestCase):
         self.assertEqual(result["strategy_state"], "ADD_REVIEW")
         self.assertEqual(result["execution_state"], "CASH_BLOCKED")
 
+    def test_validated_add_with_pending_entry_is_add_on_watch(self) -> None:
+        result = self._holding(self._research(signal="ADD_CANDIDATE", technical="WATCH"))[0]
+        self.assertEqual(result["strategy_state"], "ADD_ON_WATCH")
+        self.assertEqual(result["execution_state"], "WATCH_ONLY")
+        self.assertEqual(result["strongest_counter_case"], "Test-only counter case.")
+        self.assertEqual(result["next_review_trigger"], "NEXT_COMPLETED_US_SESSION")
+        self.assertEqual(len(result["snapshot_hash"]), 64)
+        self.assertEqual(len(result["event_snapshot_hash"]), 64)
+
     def test_validated_deterioration_is_reduction_review_without_quantity(self) -> None:
         result = self._holding(self._research(signal="REDUCE_CANDIDATE", thesis="CONTESTED", technical="DETERIORATING", risk="CONSTRAINED"))[0]
         self.assertEqual(result["strategy_state"], "REDUCTION_REVIEW")
@@ -209,7 +218,8 @@ class V23PortfolioStrategyTests(unittest.TestCase):
         hard = {"event_type": "holding_max_loss_breach", "symbol": "SOXL", "breached": True,
             "grade": "D", "event_key": "HARD-RISK-TEST"}
         strategy = self._holding(self._research(signal="ADD_CANDIDATE", technical="READY"), risk=self._risk([hard], hard=True))[0]
-        self.assertEqual(strategy["strategy_state"], "EXIT_REVIEW")
+        self.assertEqual(strategy["holding_risk_state"], "POLICY_AUTHORITY_UNVERIFIED")
+        self.assertEqual(strategy["strategy_state"], "STRATEGY_REFRESH_REQUIRED")
         radar = {"candidate_dispositions": [{"ticker": "NOW", "opportunity_state": "READY",
             "execution_state": "CASH_BLOCKED", "portfolio_fit_status": "FITS", "primary_blocker": "VERIFIED_AVAILABLE_CASH",
             "remaining_conditions": ["VERIFIED_AVAILABLE_CASH"]}]}
@@ -227,7 +237,8 @@ class V23PortfolioStrategyTests(unittest.TestCase):
         risk = self._risk([hard], hard=False)
         risk["state"] = "DATA_INCOMPLETE"
         strategy = self._holding(self._research(signal="ADD_CANDIDATE", technical="READY"), risk=risk)[0]
-        self.assertEqual(strategy["strategy_state"], "EXIT_REVIEW")
+        self.assertEqual(strategy["holding_risk_state"], "POLICY_AUTHORITY_UNVERIFIED")
+        self.assertEqual(strategy["strategy_state"], "STRATEGY_REFRESH_REQUIRED")
         self.assertTrue(strategy["hard_risk_active"])
         radar = {"candidate_dispositions": [{"ticker": "NOW", "opportunity_state": "READY",
             "execution_state": "CASH_BLOCKED", "portfolio_fit_status": "FITS",

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "post-market-baseline.schema.json",
+  "title": "Immutable Post-Market Strategy Baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_phase", "post_market_run_id", "post_market_session", "generated_at", "git_commit", "strategy_version", "policy_version", "market_snapshot_hash", "event_snapshot_hash", "holding_strategy_hash", "tactical_radar_hash", "capital_redeployment_hash", "run_manifest_hash", "portfolio_strategy_report_hash", "baseline_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "run_phase": {"const": "POST_MARKET"},
+    "post_market_run_id": {"type": "string", "minLength": 1},
+    "post_market_session": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "git_commit": {"type": "string", "minLength": 1},
+    "strategy_version": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "market_snapshot_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "event_snapshot_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "holding_strategy_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "tactical_radar_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "capital_redeployment_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "run_manifest_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "portfolio_strategy_report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "baseline_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

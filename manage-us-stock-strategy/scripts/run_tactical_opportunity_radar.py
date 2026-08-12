@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from screen_tactical_candidates import _lane_for, _market_integrity
+from portfolio_policy_gates import evaluate_cash_status
 from validate_registry_consistency import validate_registry_consistency
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
@@ -135,14 +136,14 @@ def _opportunity_state(*, identity_status: str, evidence: str, thesis: str, valu
 
 
 def _execution_state(opportunity_state: str, *, registry_valid: bool, new_buy_approved: bool,
-                     available_cash_usd: Any, portfolio_fit: str) -> str:
+                     cash_status: str, portfolio_fit: str) -> str:
     if opportunity_state == "DATA_BLOCKED" or not registry_valid:
         return "DATA_BLOCKED"
     if not new_buy_approved:
         return "NOT_APPROVED"
     if portfolio_fit == "BLOCKED":
         return "PORTFOLIO_BLOCKED"
-    if not isinstance(available_cash_usd, (int, float)) or isinstance(available_cash_usd, bool) or available_cash_usd <= 0:
+    if cash_status != "VERIFIED_POSITIVE":
         return "CASH_BLOCKED"
     return "ELIGIBLE_FOR_REVIEW" if opportunity_state == "READY" else "WATCH_ONLY"
 
@@ -187,7 +188,10 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
                 market: dict[str, Any], events: dict[str, Any], context: dict[str, Any],
                 portfolio_state: dict[str, Any], runtime: dict[str, Any], policy: dict[str, Any], *,
                 generated_at: str, analysis_cutoff: str, market_session: str | None,
-                latest_completed_session: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
+                latest_completed_session: str | None, provider_preflight: dict[str, Any] | None = None,
+                cash_gate: dict[str, Any] | None = None, run_phase: str = "POST_MARKET") -> tuple[dict[str, Any], dict[str, Any]]:
+    if run_phase != "POST_MARKET":
+        raise ValueError("Tactical Radar completed-session authority requires run_phase=POST_MARKET")
     active = _active_candidates(universe)
     if active != list(ACTIVE_SYMBOLS):
         raise ValueError(f"active tactical universe must be exactly {list(ACTIVE_SYMBOLS)}, got {active}")
@@ -207,7 +211,15 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
     candidates = universe.get("candidates") or {}
     market_rows = market.get("symbols") or {}
     candidate_context = context.get("candidates") or {}
-    available_cash = portfolio_state.get("available_cash_usd")
+    cash_gate = cash_gate or evaluate_cash_status(portfolio_state, reference_session=market_session,
+        maximum_age_calendar_days=4, required_strategy_version=portfolio_state.get("strategy_version"))
+    cash_status = str(cash_gate.get("cash_status", "UNVERIFIED"))
+    provider_preflight = provider_preflight or {}
+    global_failures: list[str] = []
+    if session_gate == "DATA_INCOMPLETE":
+        global_failures.append("OFFICIAL_COMPLETED_SESSION_FAILURE")
+    if provider_preflight.get("capability_status") == "UNAVAILABLE":
+        global_failures.append("GLOBAL_INDEPENDENT_CLOSE_OUTAGE")
     approved = set(((policy.get("technical_authority") or {}).get("approved_condition_ids") or [])) | INTERNAL_CONDITION_IDS
     dispositions: list[dict[str, Any]] = []
     survivors: list[str] = []
@@ -220,6 +232,8 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         candidate = candidates.get(symbol) or {}
         row = market_rows.get(symbol)
         market_errors = _market_integrity(market, row, market_session)
+        if "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" in global_failures and not any("cross-check" in error for error in market_errors):
+            market_errors.append("independent completed-close cross-check provider is globally unavailable")
         if session_gate == "DATA_INCOMPLETE" and "OFFICIAL_SESSION_VERIFICATION" not in [_condition_code(x) for x in market_errors]:
             market_errors.append("official latest-completed-session verification did not pass")
         market_conditions = [_condition_code(error) for error in market_errors]
@@ -254,12 +268,12 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
             portfolio_fit=portfolio_fit, context_valid=context_valid, condition_rejected=condition_rejected)
         new_buy_approved = candidate.get("new_buy_approved") is True and instrument.get("new_buy_instrument_approved") is True
         execution = _execution_state(opportunity, registry_valid=registry_valid, new_buy_approved=new_buy_approved,
-            available_cash_usd=available_cash, portfolio_fit=portfolio_fit)
+            cash_status=cash_status, portfolio_fit=portfolio_fit)
         if not registry_valid and "POLICY_REGISTRY_CONSISTENCY" not in remaining:
             remaining.append("POLICY_REGISTRY_CONSISTENCY")
         if not new_buy_approved and "NEW_BUY_INSTRUMENT_APPROVAL" not in remaining:
             remaining.append("NEW_BUY_INSTRUMENT_APPROVAL")
-        if not isinstance(available_cash, (int, float)) or isinstance(available_cash, bool) or available_cash <= 0:
+        if cash_status != "VERIFIED_POSITIVE":
             if "VERIFIED_AVAILABLE_CASH" not in remaining:
                 remaining.append("VERIFIED_AVAILABLE_CASH")
         if portfolio_fit in {"BLOCKED", "UNVERIFIED"} and "PORTFOLIO_REVIEW" not in remaining:
@@ -289,14 +303,16 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         previous = (previous_candidates.get(symbol) or {}).get("opportunity_state")
         transition_type = "NO_MATERIAL_CHANGE" if duplicate_session else _transition(previous, opportunity)
         fingerprint = canonical_hash({key: disposition[key] for key in ("ticker", "opportunity_state", "execution_state", "primary_blocker", "remaining_conditions")})
-        event_key = f"{policy.get('policy_version')}:{symbol}:{opportunity}"
+        event_key = f"{policy.get('policy_version')}:{run_phase}:{symbol}:{opportunity}"
         delivery_id = hashlib.sha256(f"{event_key}:{market_session}:{transition_type}".encode("utf-8")).hexdigest()
         urgent = transition_type in set((policy.get("notification") or {}).get("urgent_transition_events") or [])
         delivered = delivery_id in (runtime.get("deliveries") or {})
-        transitions.append({"ticker": symbol, "session": market_session or "1970-01-01", "transition_type": transition_type,
+        transitions.append({"ticker": symbol, "session": market_session or "1970-01-01", "run_phase": run_phase, "transition_type": transition_type,
             "previous_opportunity_state": previous, "opportunity_state": opportunity, "execution_state": execution,
             "event_key": event_key, "delivery_id": delivery_id, "signal_fingerprint": fingerprint,
-            "notify": bool(session_gate == "VALID_SESSION" and urgent and not delivered and not duplicate_session), "order_authority": False})
+            "notify": bool(session_gate == "VALID_SESSION" and urgent and not delivered and not duplicate_session
+                           and "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" not in global_failures),
+            "order_authority": False})
 
     requested = set(context.get("deep_research_requested") or [])
     material = set(context.get("material_change_symbols") or []) | set(context.get("opportunity_upgrade_symbols") or [])
@@ -326,9 +342,25 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
     preferred_execution = next((item["execution_state"] for item in dispositions if item["ticker"] == preferred), None)
     valid_rows = sum(1 for item in dispositions if item["evidence_status"] == "PASS")
     data_status = "VALIDATED" if valid_rows == len(active) else ("PARTIAL" if valid_rows else "DATA_INCOMPLETE")
+    global_notifications: list[dict[str, Any]] = []
+    if "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" in global_failures:
+        affected = [item["ticker"] for item in dispositions if item["evidence_status"] == "FAIL"]
+        incident_key = f"{policy.get('policy_version')}:{run_phase}:GLOBAL:GLOBAL_INDEPENDENT_CLOSE_OUTAGE"
+        incident_delivery = hashlib.sha256(f"{incident_key}:{market_session}".encode("utf-8")).hexdigest()
+        delivered = incident_delivery in (runtime.get("deliveries") or {})
+        global_notifications.append({
+            "ticker": "GLOBAL", "run_phase": run_phase, "event_type": "GLOBAL_INDEPENDENT_CLOSE_OUTAGE",
+            "affected_tickers": affected, "provider": provider_preflight.get("selected_provider"),
+            "failure_type": provider_preflight.get("global_failure") or "NO_APPROVED_HEALTHY_PROVIDER",
+            "last_success": provider_preflight.get("last_success"), "retry_after": provider_preflight.get("retry_after"),
+            "next_review_trigger": "INDEPENDENT_COMPLETED_CLOSE_PROVIDER_RECOVERY",
+            "event_key": incident_key, "delivery_id": incident_delivery,
+            "notify": bool(session_gate == "VALID_SESSION" and not delivered and not duplicate_session),
+            "order_authority": False,
+        })
     if session_gate == "NO_NEW_SESSION":
         conclusion = "NO_NEW_SESSION"
-    elif session_gate != "VALID_SESSION" or data_status != "VALIDATED":
+    elif session_gate != "VALID_SESSION" or global_failures:
         conclusion = "DATA_INCOMPLETE"
     elif preferred and preferred_execution == "ELIGIBLE_FOR_REVIEW":
         conclusion = "BUY_REVIEW"
@@ -336,12 +368,14 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         conclusion = "WAIT"
     else:
         conclusion = "NO_TRADE"
-    report = {"schema_version": "2.2", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
+    report = {"schema_version": "2.4", "run_phase": run_phase, "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
         "market_session": market_session, "session_gate": session_gate, "registry_status": registry_validation.get("status"),
         "data_status": data_status, "event_status": events.get("coverage_status", "EVENT_DATA_INCOMPLETE"),
         "active_universe": active, "candidate_dispositions": dispositions, "screen_survivors": survivors,
         "deep_research_shortlist": shortlist, "deep_research_completed": completed, "deep_research_skipped": skipped,
         "shortlist_below_target_due_to_gates": len(shortlist) < target_minimum, "transitions": transitions,
+        "global_failures": list(dict.fromkeys(global_failures)), "global_notifications": global_notifications,
+        "provider_health": provider_preflight, "cash_status": cash_status,
         "preferred_candidate": preferred, "alternative_candidate": alternative, "final_conclusion": conclusion,
         "quantity": None, "order_authority": False}
 
@@ -363,6 +397,10 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
             if transition["notify"]:
                 updated["deliveries"][transition["delivery_id"]] = {"ticker": disposition["ticker"], "session": market_session,
                     "transition_type": transition["transition_type"], "delivered_at": generated_at}
+        for notification in global_notifications:
+            if notification["notify"]:
+                updated["deliveries"][notification["delivery_id"]] = {"ticker": "GLOBAL", "session": market_session,
+                    "run_phase": run_phase, "transition_type": notification["event_type"], "delivered_at": generated_at}
     updated.setdefault("last_processed_us_session", None)
     updated["order_authority"] = False
     return report, updated
@@ -391,6 +429,7 @@ def main() -> int:
     parser.add_argument("--analysis-cutoff", required=True)
     parser.add_argument("--market-session", required=True)
     parser.add_argument("--latest-completed-session", required=True)
+    parser.add_argument("--provider-preflight", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--runtime-output", type=Path)
     args = parser.parse_args()
@@ -419,10 +458,15 @@ def main() -> int:
     portfolio_state = load_json(args.portfolio_state)
     if not isinstance(portfolio_state.get("available_cash_usd"), (int, float)) or isinstance(portfolio_state.get("available_cash_usd"), bool):
         raise SystemExit("canonical portfolio state has no numeric available_cash_usd")
+    cash_gate = evaluate_cash_status(portfolio_state, reference_session=args.market_session,
+        maximum_age_calendar_days=int(alert_policy.get("broker_snapshot_max_age_calendar_days", 4)),
+        required_strategy_version=alert_policy.get("strategy_version"))
     report, updated = build_radar(load_json(args.universe), registry, registry_validation, load_json(args.market),
         load_json(args.events), context, portfolio_state, runtime, load_json(args.radar_policy),
         generated_at=args.generated_at, analysis_cutoff=args.analysis_cutoff, market_session=args.market_session,
-        latest_completed_session=args.latest_completed_session)
+        latest_completed_session=args.latest_completed_session,
+        provider_preflight=load_json(args.provider_preflight) if args.provider_preflight else None,
+        cash_gate=cash_gate, run_phase="POST_MARKET")
     report_errors = validate_instance(report, root / "manage-us-stock-strategy" / "schemas" / "tactical-radar-report.schema.json")
     runtime_errors = validate_instance(updated, root / "manage-us-stock-strategy" / "schemas" / "tactical-radar-state.schema.json")
     if report_errors or runtime_errors:

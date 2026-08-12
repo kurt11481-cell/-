@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "premarket-snapshot.schema.json",
+  "title": "Indicative Premarket Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_phase", "generated_at", "upcoming_regular_session", "latest_completed_regular_session", "official_upcoming_session_verified", "session_verification_status", "provider_status", "global_failure", "records", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "run_phase": {"const": "PRE_OPEN"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "upcoming_regular_session": {"type": "string", "format": "date"},
+    "latest_completed_regular_session": {"type": "string", "format": "date"},
+    "official_upcoming_session_verified": {"type": "boolean"},
+    "session_verification_status": {"enum": ["verified_trading_day", "unverified", "closed", "holiday"]},
+    "provider_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "global_failure": {"type": ["string", "null"]},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "quote", "bid", "ask", "spread", "quote_timestamp", "timezone", "provider", "source_identifier", "premarket_session", "latest_completed_regular_session", "reference_completed_close", "gap_fraction", "volume", "data_quality", "indicative_only", "completed_regular_session", "daily_indicator_authority", "hard_risk_authority", "order_authority"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+          "quote": {"type": ["number", "null"], "minimum": 0},
+          "bid": {"type": ["number", "null"], "minimum": 0},
+          "ask": {"type": ["number", "null"], "minimum": 0},
+          "spread": {"type": ["number", "null"], "minimum": 0},
+          "quote_timestamp": {"type": ["string", "null"], "format": "date-time"},
+          "timezone": {"type": "string", "minLength": 1},
+          "provider": {"type": "string", "minLength": 1},
+          "source_identifier": {"type": "string", "minLength": 1},
+          "premarket_session": {"type": "string", "format": "date"},
+          "latest_completed_regular_session": {"type": "string", "format": "date"},
+          "reference_completed_close": {"type": ["number", "null"], "minimum": 0},
+          "gap_fraction": {"type": ["number", "null"]},
+          "volume": {"type": ["number", "null"], "minimum": 0},
+          "data_quality": {"enum": ["VALIDATED_INDICATIVE", "PARTIAL", "DATA_INCOMPLETE"]},
+          "indicative_only": {"const": true},
+          "completed_regular_session": {"const": false},
+          "daily_indicator_authority": {"const": false},
+          "hard_risk_authority": {"const": false},
+          "order_authority": {"const": false}
+        }
+      }
+    },
+    "order_authority": {"const": false}
+  }
+}

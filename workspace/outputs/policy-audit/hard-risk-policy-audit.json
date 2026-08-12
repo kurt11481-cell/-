@@ -1,0 +1,57 @@
+{
+  "schema_version": "2.4",
+  "generated_at": "2026-08-13T00:00:00+00:00",
+  "policy_version": "2026-08-12-cost-loss-v3-provenance",
+  "rules": [
+    {
+      "rule_id": "HR-MVLL-MAXLOSS-60",
+      "rule_version": "2026-08-12-cost-loss-v3-provenance",
+      "ticker": "MVLL",
+      "maximum_loss_fraction": 0.6,
+      "calculation_basis": "verified_average_cost_usd_times_one_minus_maximum_loss_fraction_compared_with_raw_completed_regular_session_close",
+      "action_on_breach": null,
+      "approval_status": "VERIFIED_USER_APPROVAL",
+      "approved_by": "user",
+      "approved_at": null,
+      "user_approval_reference": "Explicit user instruction: MVLL maximum allowed loss is -60 percent.",
+      "average_cost_source_requirement": "canonical_portfolio_state_verified_broker_or_explicit_user_confirmation",
+      "action_approval_status": "UNVERIFIED",
+      "policy_authority_status": "THRESHOLD_VERIFIED_ACTION_UNVERIFIED",
+      "quantity_authority": "none"
+    },
+    {
+      "rule_id": "HR-NBIS-MAXLOSS-10",
+      "rule_version": "2026-08-12-cost-loss-v3-provenance",
+      "ticker": "NBIS",
+      "maximum_loss_fraction": 0.1,
+      "calculation_basis": "verified_average_cost_usd_times_one_minus_maximum_loss_fraction_compared_with_raw_completed_regular_session_close",
+      "action_on_breach": null,
+      "approval_status": "VERIFIED_USER_APPROVAL",
+      "approved_by": "user",
+      "approved_at": "2026-08-12",
+      "user_approval_reference": "Explicit user instruction on 2026-08-12: NBIS maximum loss rate is -10 percent.",
+      "average_cost_source_requirement": "canonical_portfolio_state_verified_broker_or_explicit_user_confirmation",
+      "action_approval_status": "UNVERIFIED",
+      "policy_authority_status": "THRESHOLD_VERIFIED_ACTION_UNVERIFIED",
+      "quantity_authority": "none"
+    },
+    {
+      "rule_id": "HR-SOXL-MAXLOSS-20",
+      "rule_version": "2026-08-12-cost-loss-v3-provenance",
+      "ticker": "SOXL",
+      "maximum_loss_fraction": 0.2,
+      "calculation_basis": "verified_average_cost_usd_times_one_minus_maximum_loss_fraction_compared_with_raw_completed_regular_session_close",
+      "action_on_breach": null,
+      "approval_status": "VERIFIED_USER_APPROVAL",
+      "approved_by": "user",
+      "approved_at": null,
+      "user_approval_reference": "Explicit user instruction: SOXL maximum allowed loss is -20 percent.",
+      "average_cost_source_requirement": "canonical_portfolio_state_verified_broker_or_explicit_user_confirmation",
+      "action_approval_status": "UNVERIFIED",
+      "policy_authority_status": "THRESHOLD_VERIFIED_ACTION_UNVERIFIED",
+      "quantity_authority": "none"
+    }
+  ],
+  "overall_status": "PARTIAL",
+  "order_authority": false
+}

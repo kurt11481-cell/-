@@ -13,6 +13,7 @@ import math
 from pathlib import Path
 from typing import Any
 
+from portfolio_policy_gates import evaluate_cash_status, hard_risk_rule_audit
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
 
@@ -20,6 +21,7 @@ STRATEGY_STATES = {
     "HOLD", "ADD_ON_WATCH", "ADD_REVIEW", "REDUCTION_REVIEW",
     "EXIT_REVIEW", "STRATEGY_REFRESH_REQUIRED", "DATA_BLOCKED",
 }
+RISK_STATES = {"NO_HARD_RISK", "HARD_RISK_WATCH", "HARD_RISK_BREACH", "POLICY_AUTHORITY_UNVERIFIED", "DATA_BLOCKED"}
 
 
 def _finite(value: Any) -> bool:
@@ -143,9 +145,11 @@ def build_holding_strategies(
     strategy_version = str(portfolio_state.get("strategy_version") or "UNVERSIONED")
     risk_freeze = bool(holding_risk_result.get("risk_freeze_active"))
     globally_blocked = holding_risk_result.get("state") in {"STATE_MISMATCH", "DATA_INCOMPLETE"}
-    cash_value = portfolio_state.get("available_cash_usd")
-    cash_verified = broker.get("cash_verified") is True and _finite(cash_value)
-    available_cash = float(cash_value) if cash_verified else None
+    cash_gate = evaluate_cash_status(portfolio_state, reference_session=market_session,
+        maximum_age_calendar_days=int(alert_policy.get("broker_snapshot_max_age_calendar_days", 4)),
+        required_strategy_version=alert_policy.get("strategy_version"))
+    cash_verified = cash_gate["cash_status"] == "VERIFIED_POSITIVE"
+    available_cash = cash_gate["verified_available_cash_usd"] if cash_verified else None
     records: list[dict[str, Any]] = []
 
     for symbol, shares in sorted(positive.items()):
@@ -180,20 +184,42 @@ def build_holding_strategies(
         invalidation = context.get("invalidation") if research_valid else None
         next_trigger = context.get("next_review_trigger") if research_valid else "VALIDATED_HOLDING_RESEARCH_REFRESH"
         strategy_state = "STRATEGY_REFRESH_REQUIRED"
+        risk_state = "NO_HARD_RISK"
         quantity: int | None = None
         quantity_authority = "none"
         policy_rule_id = tranche_id = trigger_path = None
 
+        rule_audit = hard_risk_rule_audit(alert_policy, symbol)
+        primary_close_status = "VERIFIED" if isinstance(row, dict) and row.get("bar_date") == market_session and _finite(row.get("close")) and row.get("corporate_action_unresolved") is False else "UNAVAILABLE"
+        crosscheck = (row or {}).get("quote_crosscheck") if isinstance(row, dict) else {}
+        crosscheck = crosscheck or {}
+        independent_close_status = "VERIFIED" if crosscheck.get("status") == "verified" and crosscheck.get("independent_of_builder") is True and crosscheck.get("bar_date") == market_session else "PENDING"
+        price_verification_status = "VERIFIED" if primary_close_status == "VERIFIED" and independent_close_status == "VERIFIED" else ("PRIMARY_VERIFIED_INDEPENDENT_PENDING" if primary_close_status == "VERIFIED" else "DATA_BLOCKED")
+
         if hard is not None:
-            strategy_state = "EXIT_REVIEW"
             risk = "HARD_RISK"
-            primary_reason = "The approved maximum-loss review boundary was breached on the validated completed close."
+            action = rule_audit.get("action_on_breach")
+            authority = rule_audit.get("policy_authority_status")
+            if authority == "VERIFIED" and action == "exit_review":
+                risk_state, strategy_state = "HARD_RISK_BREACH", "EXIT_REVIEW"
+                primary_reason = "A provenance-verified maximum-loss boundary was breached and its approved action maps to exit review."
+            elif authority == "VERIFIED" and action == "reduction_review":
+                risk_state, strategy_state = "HARD_RISK_BREACH", "REDUCTION_REVIEW"
+                primary_reason = "A provenance-verified maximum-loss boundary was breached and its approved action maps to reduction review."
+            else:
+                risk_state, strategy_state = "POLICY_AUTHORITY_UNVERIFIED", "STRATEGY_REFRESH_REQUIRED"
+                primary_reason = "The completed close reached the configured maximum-loss boundary, but action authority is incomplete; strategy refresh and human reconciliation are required."
             remaining = []
-            reduce_conditions = ["HUMAN_REVIEW_OF_APPROVED_HARD_RISK_EVENT"]
+            if authority != "VERIFIED":
+                remaining.append("HARD_RISK_POLICY_ACTION_AUTHORITY_RECONCILIATION")
+            if independent_close_status != "VERIFIED":
+                remaining.append("INDEPENDENT_COMPLETED_CLOSE")
+            reduce_conditions = ["HUMAN_REVIEW_OF_HARD_RISK_EVIDENCE"]
             next_trigger = "IMMEDIATE_HUMAN_REVIEW_BEFORE_NEXT_SESSION"
             claim_ids = list(dict.fromkeys(claim_ids + [str(hard.get("event_key"))]))
         elif globally_blocked:
             strategy_state = "DATA_BLOCKED"
+            risk_state = "DATA_BLOCKED"
             primary_reason = "The deterministic holding-risk engine rejected the canonical state or held-position data."
             remaining = ["RESTORE_VALIDATED_HOLDING_RISK_INPUTS"]
             next_trigger = "NEXT_VALIDATED_COMPLETED_SESSION"
@@ -245,12 +271,16 @@ def build_holding_strategies(
 
         if strategy_state not in STRATEGY_STATES:
             raise ValueError(f"{symbol}: invalid strategy state {strategy_state}")
+        if risk_state not in RISK_STATES:
+            raise ValueError(f"{symbol}: invalid holding risk state {risk_state}")
         # Current operational policy detects add setups only as watch/review context;
         # it does not authorize an exact add risk budget or quantity.  Research
         # context is intentionally unable to upgrade this deterministic gate.
         add_policy_approved = False
         execution = _execution_state(strategy_state, cash_verified=cash_verified, available_cash=available_cash,
             event_effect=event_effect, risk_freeze=risk_freeze, add_policy_approved=add_policy_approved)
+        if hard is not None and strategy_state == "STRATEGY_REFRESH_REQUIRED":
+            execution = "HUMAN_REVIEW_REQUIRED"
         if strategy_state == "ADD_REVIEW" and execution == "CASH_BLOCKED" and "VERIFIED_AVAILABLE_CASH" not in remaining:
             remaining.append("VERIFIED_AVAILABLE_CASH")
         if strategy_state == "ADD_REVIEW" and not add_policy_approved and "EXISTING_ADD_POLICY_APPROVAL" not in remaining:
@@ -261,17 +291,25 @@ def build_holding_strategies(
         average_cost = float(costs[symbol]) if _finite(costs.get(symbol)) else None
         market_value = round(shares * float(row["close"]), 8) if row_valid else None
         record = {
-            "schema_version": "2.3", "ticker": symbol, "holding_verified": True,
+            "schema_version": "2.4", "run_phase": "POST_MARKET", "ticker": symbol, "holding_verified": True,
             "current_shares": shares, "average_cost_usd": average_cost, "market_value_usd": market_value,
             "analysis_cutoff": analysis_cutoff, "market_session": market_session,
             "strategy_state": strategy_state, "execution_state": execution,
             "thesis_status": thesis, "valuation_status": valuation, "technical_status": technical,
-            "event_risk_status": event_status, "risk_status": risk, "portfolio_fit_status": portfolio_fit,
+            "event_risk_status": event_status, "risk_status": risk, "holding_risk_state": risk_state,
+            "portfolio_fit_status": portfolio_fit,
             "primary_reason": primary_reason, "claim_ids": [item for item in claim_ids if item and item != "None"],
             "strongest_counter_case": strongest_counter, "remaining_conditions": list(dict.fromkeys(remaining)),
             "add_conditions": list(dict.fromkeys(add_conditions)), "reduce_conditions": list(dict.fromkeys(reduce_conditions)),
             "invalidation": invalidation, "next_review_trigger": str(next_trigger or "NEXT_COMPLETED_US_SESSION"),
-            "quantity": quantity, "quantity_authority": quantity_authority, "policy_rule_id": policy_rule_id,
+            "quantity": quantity, "quantity_authority": quantity_authority,
+            "policy_rule_id": policy_rule_id or rule_audit.get("rule_id"),
+            "policy_approval_status": rule_audit.get("approval_status", "UNVERIFIED"),
+            "policy_authority_status": rule_audit.get("policy_authority_status", "UNVERIFIED"),
+            "action_on_breach": rule_audit.get("action_on_breach"),
+            "primary_close_status": primary_close_status,
+            "independent_close_status": independent_close_status,
+            "price_verification_status": price_verification_status,
             "tranche_id": tranche_id, "trigger_path": trigger_path,
             "research_packet_hash": context.get("research_packet_hash") if research_valid else None,
             "snapshot_hash": snapshot_hash, "event_snapshot_hash": event_hash,
@@ -318,7 +356,7 @@ def main() -> int:
     errors = [error for record in records for error in validate_instance(record, schema)]
     if errors:
         raise SystemExit("holding strategy schema validation failed: " + "; ".join(errors))
-    write_json(args.output, {"schema_version": "2.3", "analysis_cutoff": args.analysis_cutoff,
+    write_json(args.output, {"schema_version": "2.4", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
         "market_session": args.market_session, "holding_strategies": records, "order_authority": False})
     print(json.dumps({"status": "PASS", "holdings": len(records), "order_authority": False}, indent=2))
     return 0

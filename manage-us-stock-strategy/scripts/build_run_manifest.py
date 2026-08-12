@@ -72,6 +72,7 @@ def build_manifest(args: argparse.Namespace) -> dict:
     diff_hash = _working_tree_hash(repo, git_status, git_diff) if git_dirty and git_diff != "UNAVAILABLE" else None
     return {
         "schema_version": "1.0",
+        "run_phase": getattr(args, "run_phase", "POST_MARKET"),
         "run_id": args.run_id,
         "analysis_id": args.analysis_id,
         "run_type": args.run_type,
@@ -119,6 +120,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--run-phase", choices=["POST_MARKET", "PRE_OPEN", "HISTORICAL", "VALIDATION"], default="POST_MARKET")
     parser.add_argument("--analysis-id", required=True)
     parser.add_argument("--run-type", required=True, choices=["HIGH_CONSEQUENCE_ANALYSIS", "TACTICAL_SHORTLIST", "HISTORICAL_EVALUATION", "LIVE_SHADOW_REVIEW", "VALIDATION_TEST"])
     parser.add_argument("--generated-at", default=datetime.now(timezone.utc).isoformat())

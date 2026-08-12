@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-13-preopen-delta-refresh-v1",
+  "scope": "preopen_delta_refresh",
+  "timezone": "America/New_York",
+  "local_time": "08:45",
+  "official_upcoming_session_required": true,
+  "post_market_baseline_required": true,
+  "premarket_price_is_indicative": true,
+  "completed_session_technical_authority": false,
+  "hard_risk_breach_authority": false,
+  "quantity_authority": false,
+  "order_authority": false,
+  "human_approval_required": true,
+  "gap_policy": {
+    "default_effect": "CONTEXT_ONLY",
+    "approved_gap_rules": {}
+  },
+  "liquidity_policy": {
+    "default_effect": "CONTEXT_ONLY",
+    "approved_liquidity_rules": {}
+  },
+  "overnight_research": {
+    "authoritative_sources_required": true,
+    "full_universe_refresh_prohibited": true,
+    "material_event_refresh_only": true
+  },
+  "dedup": {
+    "run_phase_required": true,
+    "unchanged_post_market_ready_is_not_urgent": true
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: manage-us-stock-strategy
-description: Evidence-based, role-separated research with deterministic policy validation, technical risk planning, portfolio construction, options-positioning analysis, and post-market alert monitoring for U.S.-listed stocks and ETFs. Use when Codex is asked to analyze or compare securities, validate an investment report, form or challenge a strategy with multiple analyst roles, design or review a portfolio, calculate a technical trade plan, inspect an option chain, maintain stock-strategy state, or run recurring buy/sell timing alerts without placing orders.
+description: Evidence-based, role-separated research with deterministic policy validation, technical risk planning, portfolio construction, options-positioning analysis, post-market strategy building, and pre-open risk refresh for U.S.-listed stocks and ETFs. Use when Codex is asked to analyze or compare securities, validate an investment report, form or challenge a strategy with multiple analyst roles, design or review a portfolio, calculate a technical trade plan, inspect an option chain, maintain stock-strategy state, or run recurring buy/sell timing alerts without placing orders.
 ---
 
 # Manage U.S. Stock Strategy
@@ -52,6 +52,16 @@ Load only the references needed for the current task:
   is required, also route through research policy, technical strategy, event
   risk, multi-agent research, and decision orchestration. Keep strategy state,
   execution eligibility, and funding source separate.
+- For a pre-open review, premarket refresh, overnight strategy change, gap
+  validation, before-open portfolio review, or cash refresh before the open,
+  read [preopen-risk-refresh.md](references/preopen-risk-refresh.md),
+  [alert-automation.md](references/alert-automation.md),
+  [holding-strategy-orchestration.md](references/holding-strategy-orchestration.md),
+  [capital-redeployment.md](references/capital-redeployment.md),
+  [event-risk.md](references/event-risk.md), and
+  [data-provider-resilience.md](references/data-provider-resilience.md). When a
+  material official overnight event requires research, also use the research,
+  multi-agent, decision-orchestration, and scoring-calibration references.
 - For a morning tactical scan, best new-buy candidate request, or opportunity
   monitoring across the approved seven-symbol research universe, also read
   [tactical-opportunity-radar.md](references/tactical-opportunity-radar.md) and

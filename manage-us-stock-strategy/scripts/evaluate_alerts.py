@@ -23,6 +23,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
+from portfolio_policy_gates import hard_risk_rule_audit
 from timing_engine import (
     evaluate_holding_timing,
     timing_anchor_errors,
@@ -767,6 +768,18 @@ def evaluate_leveraged_mode(
         hard_boundary = exact_loss_boundary(average_cost, maximum_loss)
         return_from_cost = close / average_cost - 1
         breached = close <= hard_boundary
+        rule_audit = hard_risk_rule_audit(policy, symbol)
+        crosscheck = row.get("quote_crosscheck") or {}
+        independent_status = "VERIFIED" if (
+            crosscheck.get("status") == "verified"
+            and crosscheck.get("independent_of_builder") is True
+            and crosscheck.get("bar_date") == session_date
+        ) else "PENDING"
+        risk_state = (
+            "POLICY_AUTHORITY_UNVERIFIED"
+            if breached and rule_audit.get("policy_authority_status") != "VERIFIED"
+            else ("HARD_RISK_BREACH" if breached else "NO_HARD_RISK")
+        )
         if breached:
             hard_breached_symbols.add(symbol)
         event_key = policy_event_key(
@@ -796,6 +809,13 @@ def evaluate_leveraged_mode(
                 "default_direction": rule.get("default_direction"),
                 "horizons": list(rule.get("horizons") or []),
                 "breached": breached,
+                "holding_risk_state": risk_state,
+                "policy_rule_id": rule_audit.get("rule_id"),
+                "policy_approval_status": rule_audit.get("approval_status"),
+                "policy_authority_status": rule_audit.get("policy_authority_status"),
+                "action_on_breach": rule_audit.get("action_on_breach"),
+                "primary_close_status": "VERIFIED",
+                "independent_close_status": independent_status,
                 "grade": "D" if breached else "E",
                 "event_key": event_key,
                 "delivery_id": None,

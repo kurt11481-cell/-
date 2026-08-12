@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "provider-incident.schema.json",
+  "title": "Aggregated Provider Incident",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_phase", "completed_session", "event_type", "affected_tickers", "provider", "failure_type", "last_success", "retry_after", "next_review_trigger", "event_key", "delivery_id", "notify", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.4"},
+    "run_phase": {"const": "POST_MARKET"},
+    "completed_session": {"type": "string", "format": "date"},
+    "event_type": {"const": "GLOBAL_INDEPENDENT_CLOSE_OUTAGE"},
+    "affected_tickers": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "provider": {"type": ["string", "null"]},
+    "failure_type": {"type": "string", "minLength": 1},
+    "last_success": {"type": ["string", "null"]},
+    "retry_after": {"type": ["string", "null"]},
+    "next_review_trigger": {"type": "string", "minLength": 1},
+    "event_key": {"type": "string", "minLength": 1},
+    "delivery_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "notify": {"type": "boolean"},
+    "order_authority": {"const": false}
+  }
+}

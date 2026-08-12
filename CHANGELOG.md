@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.4 - Dual-Phase Portfolio Strategy and Pre-Open Refresh
+
+- Added authoritative POST_MARKET strategy builds and bounded PRE_OPEN delta
+  refreshes with immutable baseline and phase-specific manifests.
+- Added provider-agnostic independent-close adapter, one-shot preflight,
+  global/ticker failure scoping, and aggregated provider incidents.
+- Added explicit hard-risk rule provenance and separated holding Risk State from
+  Strategy State; unsupported breach-to-action mappings now fail closed.
+- Added strict cash freshness/completeness gates, correct zero-cash
+  `NO_FUNDED_ACTION`, projected/unsettled-proceeds exclusion, and held-ticker
+  capital-use deduplication.
+- Added premarket/event/baseline/runtime/policy schemas, pre-open authority tests,
+  and automation delivery lifecycle state.
+- Added two Codex-only automation prompts. No Windows scheduler, brokerage order,
+  inferred fill, quantity, leverage authority, or short authority was added.
+- Repaired the legacy mixed raw/normalized deployment hashes, synchronized the
+  installed Skill, and added a fail-closed deterministic deployment validator.
+
 ## v2.3 - Portfolio Strategy Orchestrator
 
 - Added a read-only combined holding-strategy, tactical-opportunity, and capital-
