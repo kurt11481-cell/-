@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "integrated-shadow-report.schema.json",
+  "title": "Integrated Live and Shadow Holding Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "generated_at", "market_session", "current_live_holding_strategy", "shadow_compiled_holding_strategy", "price_evidence", "broker_snapshot", "shadow_acceptance", "beginner_summary", "quantity", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "mode": {"const": "SHADOW_ONLY"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "market_session": {"type": ["string", "null"], "format": "date"},
+    "current_live_holding_strategy": {"type": "array", "items": {"type": "object"}},
+    "shadow_compiled_holding_strategy": {"type": "array", "items": {"type": "object"}},
+    "price_evidence": {"type": "object"},
+    "broker_snapshot": {"type": "object"},
+    "shadow_acceptance": {"type": "object"},
+    "beginner_summary": {"type": "object"},
+    "quantity": {"type": ["integer", "null"], "minimum": 1},
+    "order_authority": {"const": false}
+  }
+}

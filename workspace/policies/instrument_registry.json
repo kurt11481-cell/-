@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "registry_version": "2026-08-13-selective-evidence-v2.5",
+  "registry_version": "2026-08-13-integrated-shadow-v2.6",
   "status": "canonical_research_registry_no_order_authority",
   "canonical_authority": true,
   "authority": {
@@ -13,6 +13,7 @@
   "instruments": {
     "MVLL": {
       "instrument_type": "leveraged_etf",
+      "research_instrument_type": "SINGLE_STOCK_LEVERAGED_ETF",
       "identity_status": "verified_by_existing_active_policy",
       "leverage_factor": 2.0,
       "leverage_factor_status": "verified_by_existing_active_policy",
@@ -31,6 +32,7 @@
     },
     "SOXL": {
       "instrument_type": "leveraged_etf",
+      "research_instrument_type": "SECTOR_LEVERAGED_ETF",
       "identity_status": "verified_by_existing_active_policy",
       "leverage_factor": 3.0,
       "leverage_factor_status": "verified_by_existing_active_policy",
@@ -76,10 +78,12 @@
     },
     "NBIS": {
       "instrument_type": "stock",
+      "research_instrument_type": "ISSUER_EQUITY",
       "identity_status": "verified_by_existing_active_policy",
       "leverage_factor": 1.0,
       "leverage_factor_status": "verified",
       "confirmation_proxy": null,
+      "confirmation_mode": "NOT_APPLICABLE",
       "watchlist_approved": true,
       "new_buy_instrument_approved": false,
       "short_sale_approved": false,

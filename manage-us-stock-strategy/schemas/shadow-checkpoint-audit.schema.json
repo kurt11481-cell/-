@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadow-checkpoint-audit.schema.json",
+  "title": "Integrated Shadow Checkpoint Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "checkpoint", "generated_at", "valid_sessions", "baseline_coverage", "independent_price_coverage", "critical_violations", "promotion_eligible", "explicit_user_approval_required", "audit_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "checkpoint": {"enum": [5, 20, 60]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "valid_sessions": {"type": "integer", "minimum": 0},
+    "baseline_coverage": {"type": "object"},
+    "independent_price_coverage": {"type": "integer", "minimum": 0},
+    "critical_violations": {"type": "array", "items": {"type": "string"}},
+    "promotion_eligible": {"type": "boolean"},
+    "explicit_user_approval_required": {"const": true},
+    "audit_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

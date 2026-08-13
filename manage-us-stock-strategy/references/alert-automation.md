@@ -1,5 +1,18 @@
 # Post-Market Alert Automation
 
+## v2.6 integrated Shadow recorder
+
+The post-market task may generate immutable holding-research overlays, compiled
+Shadow contexts, a selective Web-evidence queue, and an integrated Shadow
+attempt after the ordinary read-only report. These artifacts cannot alter the
+live conclusion, execution state, quantity, policy, or portfolio state.
+
+Record every scheduled success or failure where possible. Only an actual
+delivered scheduled run from committed `main` that passes the cohort policy may
+advance `valid_shadow_sessions`. Configuration, manual smoke, fixtures, replay,
+and pre-open runs are excluded. Run-phase and cohort identifiers remain part of
+deduplication.
+
 ## Safety objective
 
 Generate a read-only, next-session trade-review alert after a completed U.S. regular session. Never place, schedule, or report a brokerage order as executed.

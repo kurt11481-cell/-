@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the deterministic v2.5 selective completed-close verification queue."""
+"""Build the deterministic v2.6 selective completed-close verification queue."""
 
 from __future__ import annotations
 
@@ -51,13 +51,19 @@ def build_queue(*, completed_session: str, market_snapshot: dict[str, Any],
             and existing.get("bar_date") == completed_session
         ):
             continue
-        queue.append({"ticker": ticker, "completed_session": completed_session,
-                      "primary_close": float(row["close"]), "price_basis": primary["primary_price_basis"],
-                      "currency": row.get("currency", "USD"), "primary_exchange": row.get("exchange"),
-                      "reason": reasons[ticker], "decision_boundaries": boundaries.get(ticker, []),
-                      "request_id": request_id(ticker, completed_session, reasons[ticker]),
-                      "requested_at": requested_at, "order_authority": False})
-    return {"schema_version": "2.5", "completed_session": completed_session,
+        item_id = request_id(ticker, completed_session, reasons[ticker])
+        queue.append({"queue_item_id": item_id, "request_id": item_id, "ticker": ticker,
+                      "canonical_identity": row.get("security_name") or ticker,
+                      "primary_exchange": row.get("exchange"), "completed_session": completed_session,
+                      "primary_close": float(row["close"]), "primary_price_basis": primary["primary_price_basis"],
+                      "price_basis": primary["primary_price_basis"], "currency": row.get("currency", "USD"),
+                      "queue_reason": reasons[ticker], "reason": reasons[ticker],
+                      "decision_boundaries": boundaries.get(ticker, []),
+                      "opportunity_or_strategy_state": reasons[ticker],
+                      "current_execution_state": "VERIFICATION_PENDING", "quantity": None,
+                      "created_at": requested_at, "requested_at": requested_at, "order_authority": False})
+    return {"schema_version": "2.6", "completed_session": completed_session,
             "crosscheck_requirement": "REQUIRED" if queue else "NOT_REQUIRED",
             "capability_status": "PENDING" if queue else "NOT_REQUIRED",
+            "web_acquisition_status": "PENDING" if queue else "NOT_REQUIRED",
             "global_failure": None, "queue": queue, "order_authority": False}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.6",
+  "policy_version": "2026-08-13-integrated-shadow-acceptance-v1",
+  "mode": "COHORT_BASED_SHADOW_ONLY",
+  "target_valid_sessions": 20,
+  "checkpoints": [5, 20, 60],
+  "counted_attempt_type": "SCHEDULED_POST_MARKET",
+  "counted_run_phase": "POST_MARKET",
+  "counted_automation_name": "Morning Portfolio Strategy",
+  "required_delivery_status": "DELIVERED",
+  "manual_smoke_counts": false,
+  "unit_test_counts": false,
+  "preopen_counts": false,
+  "historical_backfill_allowed": false,
+  "duplicate_session_counts": false,
+  "promotion_automatic": false,
+  "promotion_requires_explicit_user_approval": true,
+  "required_baseline_tickers": ["NBIS", "MVLL", "SOXL"],
+  "minimum_overlay_sessions_per_ticker_for_promotion": 5,
+  "semantic_inputs": ["holding-research-baseline.schema.json", "compiled-holding-research-context.schema.json", "raw-web-close-evidence.schema.json", "holding_research.py", "web_close_evidence.py", "price_evidence.py", "build_price_crosscheck_queue.py", "shadow_acceptance.py", "holding_research_baseline_policy.json", "web_completed_close_evidence_policy.json", "shadow_acceptance_policy.json", "approved_alert_policy_semantics", "leveraged_confirmation_semantics"],
+  "nonsemantic_inputs": ["baseline_content", "ko-KR.json"],
+  "order_authority": false
+}

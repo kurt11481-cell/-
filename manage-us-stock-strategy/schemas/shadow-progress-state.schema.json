@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadow-progress-state.schema.json",
+  "title": "Integrated Shadow Acceptance Progress",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "semantic_fingerprint", "started_at", "observed_attempts", "valid_shadow_sessions", "excluded_attempts", "critical_violations", "counted_sessions", "baseline_overlay_sessions", "independent_price_covered_sessions", "missing_expected_sessions", "last_attempt_hash", "checkpoint_status", "promotion_status", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "semantic_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "observed_attempts": {"type": "integer", "minimum": 0},
+    "valid_shadow_sessions": {"type": "integer", "minimum": 0},
+    "excluded_attempts": {"type": "integer", "minimum": 0},
+    "critical_violations": {"type": "array", "items": {"type": "string"}},
+    "counted_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
+    "baseline_overlay_sessions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "independent_price_covered_sessions": {"type": "integer", "minimum": 0},
+    "missing_expected_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
+    "last_attempt_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "checkpoint_status": {"enum": ["FIRST_VALID_SESSION_PENDING", "TRACKING", "CHECKPOINT_5_REVIEW_REQUIRED", "CHECKPOINT_20_REVIEW_REQUIRED", "CHECKPOINT_60_REVIEW_REQUIRED"]},
+    "promotion_status": {"const": "EXPLICIT_USER_APPROVAL_REQUIRED"},
+    "order_authority": {"const": false}
+  }
+}

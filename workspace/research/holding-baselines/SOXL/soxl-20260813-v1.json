@@ -1,0 +1,144 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "soxl-20260813-v1",
+  "baseline_version": 1,
+  "ticker": "SOXL",
+  "baseline_type": "SECTOR_LEVERAGED_ETF",
+  "analysis_cutoff": "2026-08-13T06:20:00Z",
+  "evidence_cutoff": "2026-08-13T06:20:00Z",
+  "content_status": "PARTIAL",
+  "thesis_status": "CONTESTED",
+  "valuation_applicability": "NOT_APPLICABLE_TO_PRODUCT",
+  "valuation_status": "NOT_APPLICABLE",
+  "valuation_basis": "SEMICONDUCTOR_SECTOR_REGIME",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "SOXL supplies daily 3x exposure to a concentrated semiconductor index while current primary issuer evidence supports strong AI-compute, networking, custom-silicon, and optical demand; daily leverage and an incompletely verified broader cycle make the thesis contested rather than a company-style valuation case.",
+  "strongest_counter_case": "Customer AI CAPEX slowing, HBM or logic supply expansion, foundry or packaging bottlenecks, earnings-estimate peaks, export controls, or sector multiple compression can reverse the underlying sector while daily compounding and volatility magnify SOXL drawdowns.",
+  "invalidation_conditions": [
+    "Official sector constituents broadly report weakening AI infrastructure demand, guidance, or customer CAPEX.",
+    "SOXL sponsor disclosures change the daily objective, benchmark, continued listing, or operating structure.",
+    "Current SOXL direct close, SOXX direction proxy, technical regime, or deterministic policy evidence fails validation."
+  ],
+  "next_research_triggers": [
+    "Next official earnings cycle for leading compute, memory, foundry, equipment, networking, and packaging constituents.",
+    "Any SOXL prospectus supplement, split, benchmark, derivative, or liquidity change.",
+    "Completion of the missing primary-source HBM, foundry, advanced-packaging, and customer-CAPEX sector packet."
+  ],
+  "claims": [
+    {
+      "claim_id": "soxl-c1",
+      "claim_type": "PRODUCT_OBJECTIVE_AND_PATH_DEPENDENCE",
+      "evidence_ids": [
+        "soxl-e1"
+      ],
+      "normalized_claim": "SOXL targets 300% of its semiconductor benchmark's daily result and should not be expected to provide three times the benchmark's cumulative multi-day return."
+    },
+    {
+      "claim_id": "soxl-c2",
+      "claim_type": "SECTOR_CONCENTRATION_AND_LIQUIDITY",
+      "evidence_ids": [
+        "soxl-e1"
+      ],
+      "normalized_claim": "The benchmark is concentrated in large U.S.-listed semiconductor and equipment companies, and the sponsor publishes substantial trading volume while warning that leverage, derivatives, compounding, volatility and concentration increase risk."
+    },
+    {
+      "claim_id": "soxl-c3",
+      "claim_type": "AI_CAPEX_AND_COMPUTE_DEMAND",
+      "evidence_ids": [
+        "soxl-e2"
+      ],
+      "normalized_claim": "NVIDIA's official results report strong data-center growth and continuing customer investment in accelerated-computing infrastructure."
+    },
+    {
+      "claim_id": "soxl-c4",
+      "claim_type": "ASIC_NETWORKING_AND_OPTICAL_DEMAND",
+      "evidence_ids": [
+        "soxl-e3"
+      ],
+      "normalized_claim": "MRVL's official results report demand across custom XPU, Ethernet switching, and optical interconnect solutions."
+    },
+    {
+      "claim_id": "soxl-c5",
+      "claim_type": "SECTOR_PACKET_LIMITATION_AND_POLICY_OWNERSHIP",
+      "evidence_ids": [
+        "soxl-e1",
+        "soxl-e2",
+        "soxl-e3"
+      ],
+      "normalized_claim": "The current packet does not yet provide complete primary-source HBM, foundry, advanced-packaging, supply-expansion, and customer-CAPEX coverage; SOXX is direction-only, and SOXL direct-close, hard-risk, timing-slot and rearm authority remain in current policy and overlay."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "soxl-e1",
+      "source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+      "source_type": "SPONSOR_PRIMARY",
+      "published_at": "2026-08-11T20:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-08-11T20:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "SOXL daily 300% objective, multi-day warning, fees, volume, index composition, leverage, derivatives, compounding, volatility and concentration risks",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-e2",
+      "source_url": "https://investor.nvidia.com/financial-info/financial-reports/default.aspx?ItemId=81dd4a27-2071-40be-ad8f-6538983e1993",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-05-20T20:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-20T20:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "NVIDIA Q1 FY2027 revenue and data-center growth as primary evidence of accelerated-compute demand",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-e3",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001835632-26-000014/q127_8kx522026ex-991.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL AI-related bookings, custom XPU, switching and optical-interconnect demand",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "soxl-c1",
+    "soxl-c2",
+    "soxl-c3",
+    "soxl-c4",
+    "soxl-c5"
+  ],
+  "evidence_ids": [
+    "soxl-e1",
+    "soxl-e2",
+    "soxl-e3"
+  ],
+  "linked_components": [
+    {
+      "ticker": "SOXX",
+      "role": "SECTOR_DIRECTION_PROXY",
+      "confirmation_mode": "DIRECTION_ONLY",
+      "product_close_substitution": false,
+      "expected_return_multiple_prohibited": true
+    }
+  ],
+  "technical_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; current SOXL completed-session technical state is overlay-owned.",
+  "portfolio_fit_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; current hard-risk, timing slots, rearm, holdings, and cash remain outside the baseline.",
+  "research_packet_hash": "b341f566b7bcdf85d779f370f2770a0286637d606c09084d7973991b8eba2860",
+  "baseline_hash": "9291815f1322493baff8224209f2a1278961a1812f534077939c55591cce629b",
+  "supersedes_baseline_id": null,
+  "validation_status": "VALIDATED_SHADOW",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false,
+  "activated_at": "2026-08-13T06:30:00Z"
+}

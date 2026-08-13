@@ -28,6 +28,48 @@ candidate or mutate runtime state.
 
 ## Required workflow
 
+### v2.6 integrated Shadow extension
+
+Run the ordinary v2.5 read-only post-market workflow first. Then, without
+changing its live conclusion or any portfolio/policy fact:
+
+1. Load the active immutable NBIS, MVLL/MRVL, and SOXL/sector holding-research
+   baselines and validate their local hashes and point-in-time evidence.
+2. Build current completed-session overlays from the already validated
+   canonical snapshots; never reuse historical baseline technical or portfolio
+   fields.
+3. Compile Shadow holding contexts deterministically. Preserve live and Shadow
+   strategy states separately.
+4. Build the selective decision-changing completed-close queue. Use Codex Web
+   only when the queue is non-empty, open the original final page, reject
+   snippets and Yahoo-origin evidence, and keep unknown routes
+   `SOURCE_ROUTE_PENDING_REVIEW`.
+5. Validate any raw Web evidence and compare only through deterministic code.
+   Shadow `MATCH` or `CONFLICT` cannot upgrade live execution, create quantity,
+   or mutate state.
+6. Keep MVLL product close separate from MRVL and use MRVL only under
+   `DAILY_MULTIPLE`; keep SOXL product close separate from SOXX and use SOXX
+   `DIRECTION_ONLY`.
+7. Evaluate the existing broker-snapshot request and render the beginner Korean
+   summary without exposing account identifiers or treating broker display
+   prices as market evidence.
+8. Capture the portfolio hash before and after all work.
+9. Record a v2.6 integrated Shadow attempt for both scheduled success and
+   scheduled failure where possible, classify it, update the append-only cohort
+   progress atomically, and generate a due checkpoint.
+
+Only an actual delivered `Morning Portfolio Strategy` scheduled run from
+committed `main` may count. Configuration, manual smoke, unit tests, pre-open,
+historical backfill, unverified delivery, dirty worktrees, hash mismatch, or a
+critical Shadow violation must be logged but excluded. Do not import any prior
+v2.5 session into the new cohort. Do not claim delivery verification or advance
+the 20-session count merely because this prompt was configured.
+
+If Shadow observability fails, preserve the ordinary read-only report, record
+`SHADOW_OBSERVABILITY_FAILURE` where possible, keep promotion blocked, and do
+not mutate portfolio or policy. Pre-open remains separately governed and must
+not be configured or upgraded by this prompt.
+
 1. Determine the latest completed U.S. regular session in
    `America/New_York`. Verify trading-day status, holidays, and early-close status
    from an official exchange or regulator calendar. Record the direct source,

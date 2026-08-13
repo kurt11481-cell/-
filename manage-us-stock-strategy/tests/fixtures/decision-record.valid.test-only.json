@@ -4,7 +4,7 @@
   "created_at_utc": "2026-08-11T12:00:00+00:00",
   "test_only": true,
   "symbol": "NBIS",
-  "instrument_registry_version": "2026-08-13-selective-evidence-v2.5",
+  "instrument_registry_version": "2026-08-13-integrated-shadow-v2.6",
   "tactical_universe_version": "2026-08-12-tactical-radar-v2.2",
   "portfolio_state_revision": null,
   "policy_version": "tradingagents-v2-test",

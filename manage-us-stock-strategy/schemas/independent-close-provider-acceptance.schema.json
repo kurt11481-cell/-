@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "independent-close-provider-acceptance.schema.json",
+  "title": "Disabled Independent Close Provider Acceptance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "provider_state", "independent_from_yahoo", "completed_session_semantics", "price_basis_semantics", "currency", "source_timestamp_supported", "exchange_session_mapping", "corporate_action_behavior", "rate_limits", "authentication_status", "licensing_status", "failure_behavior", "circuit_breaker", "historical_availability", "sample_comparisons", "shadow_session_results", "user_approval_reference", "enabled", "independent_crosscheck_eligible", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "provider": {"type": "string", "minLength": 1},
+    "provider_state": {"enum": ["DISCOVERED", "DOCUMENTATION_REVIEW", "CREDENTIALS_NOT_CONFIGURED", "SHADOW_ACCEPTANCE_PENDING", "SHADOW_ACCEPTANCE_FAILED", "USER_APPROVAL_PENDING", "APPROVED_DISABLED", "ENABLED"]},
+    "independent_from_yahoo": {"type": "boolean"},
+    "completed_session_semantics": {"type": "string"},
+    "price_basis_semantics": {"type": "string"},
+    "currency": {"type": "string"},
+    "source_timestamp_supported": {"type": "boolean"},
+    "exchange_session_mapping": {"type": "string"},
+    "corporate_action_behavior": {"type": "string"},
+    "rate_limits": {"type": "string"},
+    "authentication_status": {"type": "string"},
+    "licensing_status": {"type": "string"},
+    "failure_behavior": {"type": "string"},
+    "circuit_breaker": {"type": "string"},
+    "historical_availability": {"type": "string"},
+    "sample_comparisons": {"type": "array", "items": {"type": "object"}},
+    "shadow_session_results": {"type": "array", "items": {"type": "object"}},
+    "user_approval_reference": {"type": ["string", "null"]},
+    "enabled": {"type": "boolean"},
+    "independent_crosscheck_eligible": {"type": "boolean"},
+    "order_authority": {"const": false}
+  }
+}

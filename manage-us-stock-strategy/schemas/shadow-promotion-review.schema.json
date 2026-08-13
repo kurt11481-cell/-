@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadow-promotion-review.schema.json",
+  "title": "Non-Activating Shadow Promotion Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "checkpoint_audit_hash", "review_status", "automatic_promotion", "user_approval_reference", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "cohort_id": {"type": "string"},
+    "checkpoint_audit_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "review_status": {"enum": ["NOT_ELIGIBLE", "USER_APPROVAL_PENDING", "USER_APPROVED", "REJECTED"]},
+    "automatic_promotion": {"const": false},
+    "user_approval_reference": {"type": ["string", "null"]},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "2.6",
+  "policy_version": "2026-08-13-selective-codex-web-shadow-v1",
+  "mode": "SHADOW_ONLY",
+  "acquisition_method": "CODEX_WEB",
+  "promotion_authority": "NONE",
+  "live_execution_upgrade_allowed": false,
+  "accepted_source_types": ["OFFICIAL_EXCHANGE", "OFFICIAL_MARKET_OPERATOR", "OFFICIAL_CLOSING_AUCTION", "ISSUER_IR_HISTORICAL_PRICE", "ETF_SPONSOR_HISTORICAL_PRICE", "APPROVED_NON_YAHOO_MARKET_DATA"],
+  "rejected_source_types": ["YAHOO_ORIGIN", "SEARCH_SNIPPET", "QUOTE_CARD", "NEWS_ARTICLE_PRICE", "SOCIAL", "BLOG", "UNKNOWN_SOURCE"],
+  "eligible_price_bases": ["RAW_REGULAR_SESSION_CLOSE"],
+  "conditional_price_bases": ["CONSOLIDATED_REGULAR_SESSION_CLOSE", "OFFICIAL_LISTING_MARKET_CLOSE"],
+  "inconclusive_price_bases": ["ADJUSTED_CLOSE", "UNKNOWN"],
+  "rejected_price_bases": ["INTRADAY_PRICE", "PREMARKET_PRICE", "AFTER_HOURS_PRICE"],
+  "approved_direct_close_tolerance": {"absolute_usd_floor": 0.05, "relative_fraction": 0.001, "formula": "max(absolute_usd_floor, relative_fraction * primary_close)"},
+  "approved_routes": [],
+  "unknown_route_status": "SOURCE_ROUTE_PENDING_REVIEW",
+  "quantity_authority": "none",
+  "order_authority": false
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadow-session-record.schema.json",
+  "title": "Counted Integrated Shadow Session Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "completed_session", "attempt_id", "attempt_hash", "git_commit", "run_manifest_hash", "report_hash", "baseline_coverage", "independent_price_coverage", "live_strategy_hash", "shadow_strategy_hash", "artifact_references", "portfolio_state_unchanged", "quantity_authority", "order_authority", "session_record_hash"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "completed_session": {"type": "string", "format": "date"},
+    "attempt_id": {"type": "string", "minLength": 1},
+    "attempt_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "git_commit": {"type": "string", "minLength": 7},
+    "run_manifest_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "baseline_coverage": {"type": "object"},
+    "independent_price_coverage": {"type": "object"},
+    "live_strategy_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "shadow_strategy_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact_references": {"type": "object"},
+    "portfolio_state_unchanged": {"const": true},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "session_record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

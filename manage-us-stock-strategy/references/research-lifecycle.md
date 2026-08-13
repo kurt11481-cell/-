@@ -1,5 +1,15 @@
 # Investment Research Lifecycle
 
+## Slow holding-baseline refresh
+
+For verified positive holdings, publish an immutable point-in-time baseline in
+Shadow only after evidence, counter-thesis, invalidation, risk-controller,
+point-in-time, and local-hash gates pass. Refreshes create a new version and
+atomically replace only the active index pointer. Incomplete direct/underlying
+valuation or unverified fundamental risk must remain
+`STRATEGY_REFRESH_REQUIRED`; research incompleteness cannot silently become
+`HOLD`.
+
 ## Purpose
 
 Use this workflow to make investment reasoning repeatable and auditable without

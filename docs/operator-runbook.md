@@ -1,5 +1,24 @@
 # v2 Operator Runbook
 
+## v2.6 integrated Shadow operation
+
+1. Run the ordinary v2.5 post-market read-only workflow from committed `main`.
+2. Validate the active NBIS, MVLL, and SOXL slow baselines.
+3. Build current overlays from the same canonical completed-session data and
+   compile Shadow contexts. Never reuse baseline technical/portfolio fields.
+4. Browse only a non-empty selective close queue. Unknown/stale routes remain
+   pending; snippets and Yahoo-origin evidence are rejected.
+5. Keep live and Shadow results side by side. Shadow never creates execution,
+   quantity, policy, portfolio, or order changes.
+6. Render the beginner Korean summary and broker snapshot request using the
+   existing v2.5 confirmation boundary.
+7. Record every scheduled attempt. Count only an actual delivered scheduled
+   post-market run that satisfies the cohort policy. Manual smoke never counts.
+
+At 5, 20, and 60 valid sessions, create an audit checkpoint. Never promote
+automatically. A 20-session pass still requires independent-price coverage,
+promotion review, and explicit user approval.
+
 ## Operating Rule
 
 Use the system for research and review candidates only. A valid result may be

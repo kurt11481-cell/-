@@ -1,5 +1,19 @@
 # Codex Automation Setup: v2.4 Dual Phase
 
+## v2.6 Morning integrated Shadow extension
+
+The existing `Morning Portfolio Strategy` task must continue using committed
+`main` and now also follow
+`stock-strategy-system/AUTOMATION_PROMPT_EN.md` for baseline validation,
+current overlay compilation, selective Codex Web acquisition, broker/UI output,
+and append-only Shadow recording. Update the existing task; do not create a
+duplicate or install an OS scheduler.
+
+Lifecycle remains `FIRST_RUN_PENDING` until a genuine scheduled output is
+delivered. Configuration and manual smoke do not advance the v2.6 `0/20`
+cohort. Pre-open remains `NOT_CONFIGURED` until its existing prerequisites and
+a valid v2.6 post-market baseline pass.
+
 Use Codex Scheduled Tasks/heartbeat automations only. No Windows Task
 Scheduler, service, startup script, cron workaround, or background daemon is
 permitted.

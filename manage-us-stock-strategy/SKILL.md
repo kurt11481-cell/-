@@ -43,6 +43,23 @@ Load only the references needed for the current task:
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
 - For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
+- For a held-position thesis baseline, slow research refresh, or integrated
+  holding-strategy comparison, also read
+  [holding-research-baseline.md](references/holding-research-baseline.md).
+  Validate and activate each ticker independently in Shadow, then build a fresh
+  completed-session overlay before compiling. Never copy current portfolio,
+  broker, price, technical, or hard-risk facts into the slow baseline.
+- For selective Codex Web completed-close evidence, read
+  [web-completed-close-evidence.md](references/web-completed-close-evidence.md).
+  Browse only queued decision-changing cases, open the original final page,
+  hash extracted text locally, and keep unknown routes and every Web result
+  Shadow-only. For structured provider onboarding, additionally read
+  [independent-close-provider-onboarding.md](references/independent-close-provider-onboarding.md).
+- For integrated Shadow progress, checkpoint, delivery eligibility, or
+  promotion review, read
+  [shadow-operational-acceptance.md](references/shadow-operational-acceptance.md).
+  Count only real delivered post-market scheduled runs from committed `main`;
+  manual smoke, configuration, fixtures, pre-open, and backfill never count.
 - For a broker screenshot, portfolio screenshot, holdings/cash reconciliation,
   or snapshot request, read [broker-snapshot-reconciliation.md](references/broker-snapshot-reconciliation.md).
   Treat upload and extraction as untrusted; only an explicitly confirmed,
