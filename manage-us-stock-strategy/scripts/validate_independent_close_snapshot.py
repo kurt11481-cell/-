@@ -16,6 +16,10 @@ def validate_snapshot(snapshot: dict[str, Any], schema: Path) -> list[str]:
     if errors:
         return errors
     seen: set[str] = set()
+    if snapshot.get("capability_status") == "NOT_REQUIRED":
+        if snapshot.get("crosscheck_requirement") != "NOT_REQUIRED" or snapshot.get("records") or snapshot.get("global_failure") is not None:
+            errors.append("NOT_REQUIRED snapshot must have an empty record set and no outage")
+        return errors
     for index, item in enumerate(snapshot.get("records", [])):
         if item.get("validation_status") != "VALIDATED":
             continue
@@ -27,6 +31,12 @@ def validate_snapshot(snapshot: dict[str, Any], schema: Path) -> list[str]:
             errors.append(f"records[{index}]: source is not independent from primary builder")
         if item.get("completed_session") != snapshot.get("completed_session"):
             errors.append(f"records[{index}]: completed-session mismatch")
+        if item.get("crosscheck_status") == "VERIFIED" and (
+            item.get("evidence_validation_status") != "VALIDATED"
+            or item.get("comparison_status") != "MATCH"
+            or item.get("tolerance_result") == "FAIL"
+        ):
+            errors.append(f"records[{index}]: VERIFIED requires validated evidence and a passing comparison")
     if snapshot.get("capability_status") == "UNAVAILABLE" and snapshot.get("global_failure") != "GLOBAL_INDEPENDENT_CLOSE_OUTAGE":
         errors.append("unavailable independent-close capability must expose one global outage")
     if snapshot.get("capability_status") == "PARTIAL" and not snapshot.get("missing_tickers"):

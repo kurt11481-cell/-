@@ -25,12 +25,20 @@ Keep two independent state machines:
 
 - opportunity quality: `READY`, `NEAR_TRIGGER`, `WATCH`, `NOT_READY`,
   `DATA_BLOCKED`;
-- execution eligibility: `ELIGIBLE_FOR_REVIEW`, `WATCH_ONLY`, `NOT_APPROVED`,
-  `CASH_BLOCKED`, `PORTFOLIO_BLOCKED`, `DATA_BLOCKED`.
+- execution eligibility: `ELIGIBLE_FOR_REVIEW`, `VERIFICATION_PENDING`,
+  `WATCH_ONLY`, `NOT_APPROVED`, `CASH_BLOCKED`, `PORTFOLIO_BLOCKED`,
+  `DATA_BLOCKED`.
 
 Cash, portfolio permission, or new-buy approval cannot alter the opportunity
 quality label. They constrain only execution review. Quantity stays `null`; no
 order is placed or scheduled.
+
+The primary yfinance row may establish `PRIMARY_VALIDATED` opportunity quality
+after deterministic validation. Only `READY`, deterministic material
+`NEAR_TRIGGER`, and approved decision-boundary cases enter the independent
+close queue. Missing queued evidence leaves `READY` visible but changes
+execution to `VERIFICATION_PENDING`. A true direct conflict blocks that ticker;
+an empty queue is `NOT_REQUIRED` and must not generate an outage.
 
 ## Required disposition
 

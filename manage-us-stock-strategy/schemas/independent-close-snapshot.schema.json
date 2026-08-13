@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "independent-close-snapshot.schema.json",
-  "title": "Independent Completed-Close Snapshot",
+  "title": "Selective Independent Completed-Close Snapshot",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "generated_at", "completed_session", "primary_provider", "capability_status", "global_failure", "provider_health", "records", "missing_tickers", "order_authority"],
+  "required": ["schema_version", "generated_at", "completed_session", "primary_provider", "crosscheck_requirement", "capability_status", "global_failure", "provider_health", "records", "missing_tickers", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.4"},
+    "schema_version": {"const": "2.5"},
     "generated_at": {"type": "string", "format": "date-time"},
     "completed_session": {"type": "string", "format": "date"},
     "primary_provider": {"type": "string", "minLength": 1},
-    "capability_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "crosscheck_requirement": {"enum": ["NOT_REQUIRED", "REQUIRED"]},
+    "capability_status": {"enum": ["NOT_REQUIRED", "AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
     "global_failure": {"type": ["string", "null"]},
     "provider_health": {"type": "object"},
     "records": {
@@ -18,19 +19,24 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["ticker", "completed_session", "close", "currency", "provider", "source_identifier", "retrieved_at", "source_timestamp", "independent_of_primary_builder", "validation_status", "tolerance_result"],
+        "required": ["ticker", "completed_session", "close", "currency", "provider", "source_identifier", "source_url", "source_type", "price_basis", "retrieved_at", "source_timestamp", "acquisition_method", "independent_of_primary_builder", "validation_status", "evidence_validation_status", "comparison_status", "crosscheck_status", "tolerance_result", "decision_boundary_flip", "absolute_difference", "relative_difference"],
         "properties": {
-          "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
-          "completed_session": {"type": "string", "format": "date"},
-          "close": {"type": "number", "minimum": 0},
-          "currency": {"type": "string", "minLength": 1},
-          "provider": {"type": "string", "minLength": 1},
-          "source_identifier": {"type": "string", "minLength": 1},
-          "retrieved_at": {"type": "string", "format": "date-time"},
-          "source_timestamp": {"type": ["string", "null"], "format": "date-time"},
+          "ticker": {"type": "string"}, "completed_session": {"type": "string", "format": "date"},
+          "close": {"type": "number", "minimum": 0}, "currency": {"type": "string"},
+          "provider": {"type": "string"}, "source_identifier": {"type": "string"},
+          "source_url": {"type": "string"}, "source_type": {"type": "string"},
+          "price_basis": {"type": "string"}, "retrieved_at": {"type": "string", "format": "date-time"},
+          "source_timestamp": {"type": ["string", "null"]},
+          "acquisition_method": {"enum": ["CODEX_WEB", "STRUCTURED_API"]},
           "independent_of_primary_builder": {"type": "boolean"},
           "validation_status": {"enum": ["VALIDATED", "REJECTED"]},
-          "tolerance_result": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]}
+          "evidence_validation_status": {"enum": ["PENDING", "VALIDATED", "REJECTED"]},
+          "comparison_status": {"enum": ["NOT_EVALUATED", "MATCH", "PRICE_BASIS_MISMATCH", "SESSION_MISMATCH", "CURRENCY_MISMATCH", "IDENTITY_MISMATCH", "DECISION_BOUNDARY_FLIP", "CONFLICT"]},
+          "crosscheck_status": {"enum": ["PENDING", "VERIFIED", "UNAVAILABLE", "INCONCLUSIVE", "CONFLICT"]},
+          "tolerance_result": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]},
+          "decision_boundary_flip": {"type": "boolean"},
+          "absolute_difference": {"type": ["number", "null"], "minimum": 0},
+          "relative_difference": {"type": ["number", "null"], "minimum": 0}
         }
       }
     },

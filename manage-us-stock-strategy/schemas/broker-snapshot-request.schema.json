@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "broker-snapshot-request.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "snapshot_request_status", "severity", "reason_codes", "required_scope", "required_fields", "execution_effect", "event_key", "delivery_id", "notify", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"},
+    "snapshot_request_status": {"enum": ["NOT_REQUIRED", "RECOMMENDED", "REQUIRED", "RECEIVED", "PARSING", "USER_CONFIRMATION_REQUIRED", "REUPLOAD_REQUIRED", "VERIFIED", "DECLINED", "EXPIRED"]},
+    "severity": {"enum": ["NONE", "INFO", "WARNING", "BLOCKING"]},
+    "reason_codes": {"type": "array", "items": {"type": "object"}, "uniqueItems": true},
+    "required_scope": {"type": ["string", "null"]}, "required_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "execution_effect": {"enum": ["NONE", "CASH_BLOCKED", "PORTFOLIO_BLOCKED", "HUMAN_REVIEW_REQUIRED"]},
+    "event_key": {"type": ["string", "null"]}, "delivery_id": {"type": ["string", "null"]},
+    "notify": {"type": "boolean"}, "order_authority": {"const": false}
+  }
+}

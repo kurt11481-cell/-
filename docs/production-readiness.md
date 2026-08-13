@@ -1,5 +1,22 @@
 # v2.1 Production Readiness
 
+## v2.5 Shadow Addendum — 2026-08-13
+
+**SYSTEM STATUS: READY_FOR_SHADOW_USE**
+
+Selective price evidence no longer blocks ordinary primary-validated research.
+Decision-changing candidates retain their opportunity/strategy state while
+independent evidence is pending, but execution remains blocked and quantity is
+null. Direct conflicts remain ticker-local. No live provider was silently
+activated.
+
+Broker screenshot support is limited to untrusted ingestion, structured
+reconciliation, explicit user confirmation, and atomic audited application.
+The automated acceptance used a sanitized fixture; no raw account screenshot
+was committed or visually parsed. Live scheduled tasks and live runtime were not
+modified. This addendum does not claim delivery verification or automated
+trading readiness.
+
 ## v2.4 Dual-Phase Addendum — 2026-08-13
 
 **SYSTEM SAFETY: READY_FOR_HUMAN_REVIEW_USE**

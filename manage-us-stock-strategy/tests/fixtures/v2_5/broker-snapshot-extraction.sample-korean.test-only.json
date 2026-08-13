@@ -1,0 +1,26 @@
+{
+  "schema_version": "2.5",
+  "bundle_id": "BS-20260813-TEST001",
+  "authority_state": "EXTRACTED_PENDING_USER_CONFIRMATION",
+  "scope": "HOLDINGS_ONLY",
+  "captured_local_time": "10:01",
+  "captured_date": null,
+  "capture_date_status": "USER_CONFIRMATION_REQUIRED",
+  "account_id_masked": "****5546",
+  "account_scope_complete": false,
+  "holdings_complete_status": "USER_CONFIRMATION_REQUIRED",
+  "cash_status": "NOT_VISIBLE",
+  "available_cash": null,
+  "cash_classification": "UNKNOWN",
+  "position_currency": "USD_CANDIDATE",
+  "position_currency_status": "USER_CONFIRMATION_REQUIRED",
+  "positions": [
+    {"ticker": "SOXL", "quantity": 75, "average_cost": 123.3251, "purchase_amount": 9249.3862, "valuation_amount": 10759.5, "broker_display_price": 143.46, "raw_broker_label": "미국 반도체 3배 디렉시온 ETF"},
+    {"ticker": "MVLL", "quantity": 396, "average_cost": 41.7791, "purchase_amount": 16544.5524, "valuation_amount": 10775.16, "broker_display_price": 27.21, "raw_broker_label": "마벨 테크놀로지 데일리 2배 롱"},
+    {"ticker": "NBIS", "quantity": 15, "average_cost": 215.0, "purchase_amount": 3225.0, "valuation_amount": 3803.85, "broker_display_price": 253.59, "raw_broker_label": "네비우스 그룹"}
+  ],
+  "account_summary_krw": {"purchase_amount": 41170617, "valuation_amount": 35949011, "unrealized_pnl": -5275577, "unrealized_return_fraction": -0.1281, "realized_pnl": 0},
+  "sensitive_login_or_otp_visible": false,
+  "extractor": "TEST_FIXTURE",
+  "order_authority": false
+}

@@ -22,7 +22,8 @@ def _positive_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
 
 
-def _market_integrity(market: dict[str, Any], row: dict[str, Any] | None, market_session: str | None) -> list[str]:
+def _market_integrity(market: dict[str, Any], row: dict[str, Any] | None, market_session: str | None,
+                      *, require_independent_crosscheck: bool = False) -> list[str]:
     reasons: list[str] = []
     session = market.get("session") or {}
     if (
@@ -46,13 +47,14 @@ def _market_integrity(market: dict[str, Any], row: dict[str, Any] | None, market
     indicator = row.get("indicator_validation") or {}
     if indicator.get("status") != "passed" or indicator.get("errors") != []:
         reasons.append("deterministic indicator validation did not pass")
-    crosscheck = row.get("quote_crosscheck") or {}
-    if (
-        crosscheck.get("status") != "verified"
-        or crosscheck.get("independent_of_builder") is not True
-        or crosscheck.get("bar_date") != market_session
-    ):
-        reasons.append("independent completed-close cross-check did not pass")
+    if require_independent_crosscheck:
+        crosscheck = row.get("quote_crosscheck") or {}
+        if (
+            crosscheck.get("status") != "verified"
+            or crosscheck.get("independent_of_builder") is not True
+            or crosscheck.get("bar_date") != market_session
+        ):
+            reasons.append("independent completed-close cross-check did not pass")
     return reasons
 
 

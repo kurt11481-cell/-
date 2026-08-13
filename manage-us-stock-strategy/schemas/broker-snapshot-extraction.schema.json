@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "broker-snapshot-extraction.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "bundle_id", "authority_state", "scope", "captured_local_time", "captured_date", "capture_date_status", "account_id_masked", "account_scope_complete", "holdings_complete_status", "cash_status", "available_cash", "cash_classification", "position_currency", "position_currency_status", "positions", "account_summary_krw", "sensitive_login_or_otp_visible", "extractor", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"}, "bundle_id": {"type": "string"},
+    "authority_state": {"const": "EXTRACTED_PENDING_USER_CONFIRMATION"},
+    "scope": {"enum": ["FULL_PORTFOLIO", "HOLDINGS_ONLY", "CASH_ONLY", "POSITION_ONLY"]},
+    "captured_local_time": {"type": ["string", "null"]}, "captured_date": {"type": ["string", "null"]},
+    "capture_date_status": {"enum": ["VERIFIED", "USER_CONFIRMATION_REQUIRED", "UNAVAILABLE"]},
+    "account_id_masked": {"type": "string", "pattern": "^\\*{4}[0-9]{4}$"},
+    "account_scope_complete": {"type": "boolean"},
+    "holdings_complete_status": {"enum": ["VERIFIED", "USER_CONFIRMATION_REQUIRED", "NOT_APPLICABLE"]},
+    "cash_status": {"enum": ["VERIFIED_AVAILABLE", "USER_CONFIRMATION_REQUIRED", "NOT_VISIBLE", "NOT_APPLICABLE"]},
+    "available_cash": {"type": ["number", "null"], "minimum": 0},
+    "cash_classification": {"enum": ["AVAILABLE_SETTLED", "MARGIN_BUYING_POWER", "UNSETTLED_D_PLUS_1", "UNSETTLED_D_PLUS_2", "UNKNOWN", "NOT_APPLICABLE"]},
+    "position_currency": {"type": ["string", "null"]},
+    "position_currency_status": {"enum": ["VERIFIED", "USER_CONFIRMATION_REQUIRED", "NOT_APPLICABLE"]},
+    "positions": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["ticker", "quantity", "average_cost", "purchase_amount", "valuation_amount", "broker_display_price", "raw_broker_label"],
+      "properties": {
+        "ticker": {"type": "string"}, "quantity": {"type": "integer", "minimum": 0},
+        "average_cost": {"type": ["number", "null"], "minimum": 0},
+        "purchase_amount": {"type": ["number", "null"], "minimum": 0},
+        "valuation_amount": {"type": ["number", "null"], "minimum": 0},
+        "broker_display_price": {"type": ["number", "null"], "minimum": 0},
+        "raw_broker_label": {"type": "string"}
+      }}},
+    "account_summary_krw": {"type": ["object", "null"]},
+    "sensitive_login_or_otp_visible": {"type": "boolean"},
+    "extractor": {"enum": ["CODEX_MULTIMODAL_STRUCTURED_EXTRACTION", "TEST_FIXTURE", "CONFIGURED_OCR_ADAPTER"]},
+    "order_authority": {"const": false}
+  }
+}

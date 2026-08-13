@@ -74,6 +74,12 @@ and separately:
 
 `semiconductor-cluster leverage = 3*abs(SOXL weight) + 2*abs(MVLL weight)`
 
+These are portfolio exposure coefficients, not evidence that SOXL must return
+exactly three times SOXX on any observed day. Use `SOXL -> SOXX` for sector
+direction context only. Use `MVLL -> MRVL` as a supplemental daily-multiple
+diagnostic, never as a substitute close and never with an unstated live
+tolerance.
+
 Include even a de-minimis position in the arithmetic, though policy may suppress
 its recurring alerts. Use verified current market values and total account
 equity; do not use cost basis as portfolio weight. A free-form LLM may explain

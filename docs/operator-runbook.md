@@ -102,6 +102,30 @@ strategic portfolio, or let LLM consensus override the deterministic gate.
 not create purchasing power. A hard-risk threshold with unverified action
 authority requires policy reconciliation, not automatic exit mapping.
 
+## M. v2.5 Selective Price Evidence
+
+1. Validate primary completed-session OHLCV and local technical calculations.
+2. Build provisional opportunity and holding strategy states.
+3. Queue independent close evidence only for decision-changing candidates.
+4. Treat an empty queue as `NOT_REQUIRED`; do not call it a provider outage.
+5. Preserve READY as `READY / VERIFICATION_PENDING` when queued evidence is
+   unavailable. Keep quantity null.
+6. Reject search snippets and Yahoo-origin web pages as independent evidence.
+7. Keep direct conflicts ticker-local and never average raw/adjusted prices.
+
+## N. Broker Snapshot Reconciliation
+
+1. Ingest supported screenshots as one untrusted bundle. Never commit raw
+   images or expose login, OTP, name, or full account number.
+2. Validate structured extraction and choose the narrowest scope: full
+   portfolio, holdings only, cash only, or one position.
+3. Show a proposal and all unresolved fields to the user. Upload or extraction
+   does not update state.
+4. Apply only after explicit confirmation of proposal ID, bundle ID, state
+   revision, and portfolio hash. The apply is atomic and audited.
+5. Do not infer fills, tranche state, settlement, cash, or an order. Broker
+   display price is never completed-close evidence.
+
 ## L. v2.4 Pre-Open Delta Refresh
 
 1. Verify the upcoming official session and latest post-market baseline.

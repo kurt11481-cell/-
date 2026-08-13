@@ -33,7 +33,8 @@ Every verified positive holding receives exactly one strategy state:
 Strategy state is separate from execution eligibility:
 
 `ELIGIBLE_FOR_REVIEW`, `HUMAN_REVIEW_REQUIRED`, `WATCH_ONLY`, `CASH_BLOCKED`,
-`POLICY_BLOCKED`, `PORTFOLIO_BLOCKED`, `DATA_BLOCKED`, or `NOT_APPLICABLE`.
+`POLICY_BLOCKED`, `PORTFOLIO_BLOCKED`, `VERIFICATION_PENDING`, `DATA_BLOCKED`,
+or `NOT_APPLICABLE`.
 
 Cash and approval constraints may downgrade execution eligibility, but they must
 not erase a valid strategy state. A zero-cash `ADD_REVIEW` remains visible as
@@ -87,3 +88,13 @@ Expose primary-close, independent-close, policy-approval, rule-ID,
 average-cost, execution, and quantity authority independently. Premarket quotes
 may create only `PREMARKET_RISK_WATCH`; they cannot create a completed-session
 hard-risk breach.
+
+## v2.5 selective price evidence
+
+Routine `HOLD` and `ADD_ON_WATCH` do not require daily independent acquisition.
+`ADD_REVIEW`, `REDUCTION_REVIEW`, `EXIT_REVIEW`, and hard-risk boundaries enter
+the queue. A primary completed-close warning survives independent evidence that
+is pending or conflicting. Report `primary_close_status`,
+`independent_close_status`, `policy_authority_status`, and
+`action_on_breach_authority` separately. Without verified action authority,
+never convert the warning into an automatic exit/reduction or quantity.

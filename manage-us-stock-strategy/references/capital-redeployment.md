@@ -34,6 +34,11 @@ portfolio state, or assume execution. After explicit fill confirmation or a
 verified read-only broker snapshot, rebuild the entire review from the new
 canonical state; do not promote the old projection to cash.
 
+A user-uploaded broker image is not a verified snapshot by itself. Route it
+through [broker-snapshot-reconciliation.md](broker-snapshot-reconciliation.md)
+and use only an explicitly confirmed, atomically applied state. Broker display
+prices are excluded from market value and hard-risk calculations.
+
 ## Candidate pool and comparison
 
 New-position candidates come only from the exact active tactical universe:

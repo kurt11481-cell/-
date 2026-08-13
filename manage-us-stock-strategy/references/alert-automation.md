@@ -85,7 +85,7 @@ quantity, order, or fill. Exceeding either exact cap is `STATE_MISMATCH/F`.
 
 When `holding_timing_rules.status=approved_review_only`, evaluate the active EMA
 sub-engine only after raw-close hard risk. Require the standalone technical
-validator, independent completed-close cross-check, recent timing window, and
+validator, selective decision-changing completed-close cross-check, recent timing window, and
 the configured SOXL/SOXX or MVLL/MRVL confirmation pair. A technical validation
 failure disables the EMA candidate but must not hide a valid raw-close hard-risk
 event. Emit at most one unlocked tranche per symbol and cap it at grade `B`.
@@ -127,8 +127,9 @@ Use adjusted series for momentum/indicators and raw prices for executable bands.
 For timing rules, preserve at least 25 recent completed normalized OHLCV bars so
 the validator can independently recompute consecutive EMA closes, recent tests,
 reclaims, breakout acceptance, failed higher highs, and rejection flags. Reject
-unadjusted early-close relative volume. Cross-check the completed close against
-an independent timestamped source and enforce the tolerance in active policy.
+unadjusted early-close relative volume. For a decision-changing result,
+cross-check the completed close against an independent timestamped source and
+enforce the tolerance in active policy.
 
 Missing verified available cash is side-specific. It cannot produce an `A` buy. When a stage is a linked net basket, downgrade the entire basket to `B` until cash and funding mechanics are verified; otherwise an independent sell may remain eligible. Never count unfilled sale proceeds or an SGOV funding leg as settled cash.
 
@@ -136,8 +137,8 @@ When verified available cash is zero, every new-buy symbol is watch-only and non
 
 Apply the versioned evidence-validation policy on every run. Verify the official
 calendar, official issuer identity for each positive holding, same-session
-completed OHLCV, raw-versus-adjusted price basis, independent close
-cross-check from a non-Yahoo source, indicator formula recomputation, and
+completed OHLCV, raw-versus-adjusted price basis, the selective independent
+close queue for decision-changing candidates, indicator formula recomputation, and
 provenance ledger. Missing
 technical evidence disables timing without hiding a valid raw-close hard-risk
 event. Missing or contradictory held raw OHLCV is `DATA_INCOMPLETE/F`.

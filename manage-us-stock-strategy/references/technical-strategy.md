@@ -17,9 +17,9 @@ Use verified OHLCV data with the exchange timezone and the last completed bar. U
 Treat yfinance as an unofficial collection layer, not an authoritative signal
 source. Keep `auto_adjust=False`, `prepost=False`, and `threads=False`; request
 symbols sequentially with at least one second between external calls. Compute
-all technical indicators locally, record formula and provider versions, and
-cross-check the completed raw close with a timestamped source independent of
-Yahoo Finance.
+all technical indicators locally and record formula and provider versions.
+Use the selective independent-close queue in [yfinance-data.md](yfinance-data.md)
+for decision-changing cases; routine hold/watch rows remain primary-validated.
 
 If the user provides only a screenshot, report only values that are legible. Do not reconstruct exact indicators from pixels.
 

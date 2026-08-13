@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web-close-evidence.schema.json",
+  "title": "Codex Web Acquired Close Evidence",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["ticker", "reported_session", "reported_close", "currency", "price_basis", "provider", "source_url", "source_domain", "source_type", "retrieved_at", "acquisition_method", "content_hash", "security_identity_explicit", "regular_session_close_explicit", "is_search_result_snippet", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string"},
+    "reported_session": {"type": "string", "format": "date"},
+    "reported_close": {"type": "number", "minimum": 0},
+    "currency": {"type": "string"},
+    "price_basis": {"type": "string"},
+    "provider": {"type": "string"},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_domain": {"type": "string"},
+    "source_type": {"type": "string"},
+    "source_timestamp": {"type": ["string", "null"]},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "acquisition_method": {"const": "CODEX_WEB"},
+    "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "extractor_confidence": {"type": ["number", "null"]},
+    "raw_evidence_note": {"type": ["string", "null"]},
+    "security_identity_explicit": {"type": "boolean"},
+    "regular_session_close_explicit": {"type": "boolean"},
+    "is_search_result_snippet": {"type": "boolean"},
+    "source_origin": {"type": ["string", "null"]},
+    "order_authority": {"const": false}
+  }
+}

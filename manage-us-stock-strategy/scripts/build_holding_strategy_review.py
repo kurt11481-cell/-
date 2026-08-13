@@ -12,8 +12,11 @@ import json
 import math
 from pathlib import Path
 from typing import Any
+from datetime import date
 
 from portfolio_policy_gates import evaluate_cash_status, hard_risk_rule_audit
+from price_evidence import evidence_status
+from resolve_leveraged_quote import evaluate_leveraged_confirmation
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
 
@@ -58,7 +61,6 @@ def _event_status(events: dict[str, Any], symbol: str) -> tuple[str, str]:
 def _valid_market_row(row: Any, market_session: str | None) -> bool:
     if not isinstance(row, dict) or not market_session:
         return False
-    crosscheck = row.get("quote_crosscheck") or {}
     indicator = row.get("indicator_validation") or {}
     return bool(
         row.get("bar_date") == market_session
@@ -67,9 +69,6 @@ def _valid_market_row(row: Any, market_session: str | None) -> bool:
         and row.get("corporate_action_unresolved") is False
         and indicator.get("status") == "passed"
         and indicator.get("errors") == []
-        and crosscheck.get("status") == "verified"
-        and crosscheck.get("independent_of_builder") is True
-        and crosscheck.get("bar_date") == market_session
     )
 
 
@@ -150,6 +149,13 @@ def build_holding_strategies(
         required_strategy_version=alert_policy.get("strategy_version"))
     cash_verified = cash_gate["cash_status"] == "VERIFIED_POSITIVE"
     available_cash = cash_gate["verified_available_cash_usd"] if cash_verified else None
+    broker_as_of = broker.get("as_of")
+    try:
+        holdings_fresh = bool(market_session and broker_as_of and
+                              abs((date.fromisoformat(market_session) - date.fromisoformat(broker_as_of)).days)
+                              <= int(alert_policy.get("broker_snapshot_max_age_calendar_days", 4)))
+    except (TypeError, ValueError):
+        holdings_fresh = False
     records: list[dict[str, Any]] = []
 
     for symbol, shares in sorted(positive.items()):
@@ -191,10 +197,9 @@ def build_holding_strategies(
 
         rule_audit = hard_risk_rule_audit(alert_policy, symbol)
         primary_close_status = "VERIFIED" if isinstance(row, dict) and row.get("bar_date") == market_session and _finite(row.get("close")) and row.get("corporate_action_unresolved") is False else "UNAVAILABLE"
-        crosscheck = (row or {}).get("quote_crosscheck") if isinstance(row, dict) else {}
-        crosscheck = crosscheck or {}
-        independent_close_status = "VERIFIED" if crosscheck.get("status") == "verified" and crosscheck.get("independent_of_builder") is True and crosscheck.get("bar_date") == market_session else "PENDING"
-        price_verification_status = "VERIFIED" if primary_close_status == "VERIFIED" and independent_close_status == "VERIFIED" else ("PRIMARY_VERIFIED_INDEPENDENT_PENDING" if primary_close_status == "VERIFIED" else "DATA_BLOCKED")
+        price_evidence = evidence_status(row, market_session)
+        independent_close_status = price_evidence["crosscheck_status"]
+        price_verification_status = price_evidence["effective_price_status"]
 
         if hard is not None:
             risk = "HARD_RISK"
@@ -246,7 +251,7 @@ def build_holding_strategies(
         elif not row_valid:
             strategy_state = "DATA_BLOCKED"
             technical = "UNAVAILABLE"
-            primary_reason = "Validated completed-session price, indicators, and independent close cross-check are unavailable."
+            primary_reason = "Primary completed-session price or technical evidence is unavailable."
             remaining = ["VALIDATED_COMPLETED_SESSION_MARKET_DATA"]
             next_trigger = "NEXT_VALIDATED_COMPLETED_SESSION"
         elif not research_valid:
@@ -288,10 +293,63 @@ def build_holding_strategies(
         if event_effect == "EVENT_DATA_INCOMPLETE" and "EVENT_DATA_INCOMPLETE" not in remaining:
             remaining.append("EVENT_DATA_INCOMPLETE")
 
+        reason = None
+        if hard is not None:
+            reason = "HARD_RISK_BOUNDARY"
+        elif strategy_state in {"ADD_REVIEW", "REDUCTION_REVIEW", "EXIT_REVIEW"}:
+            reason = strategy_state
+        price_evidence = evidence_status(row, market_session, reason)
+        independent_close_status = price_evidence["crosscheck_status"]
+        price_verification_status = price_evidence["effective_price_status"]
+        verification_required = price_evidence["crosscheck_requirement"] == "REQUIRED"
+        price_conflict = independent_close_status == "CONFLICT"
+        if price_conflict and hard is None:
+            strategy_state, execution = "DATA_BLOCKED", "DATA_BLOCKED"
+            quantity, quantity_authority = None, "none"
+            primary_reason = "Independent completed-close evidence conflicts with the primary completed-session close."
+            if "PRICE_CONFLICT" not in remaining:
+                remaining.insert(0, "PRICE_CONFLICT")
+        elif verification_required and independent_close_status != "VERIFIED" and hard is None:
+            execution = "VERIFICATION_PENDING"
+            quantity, quantity_authority = None, "none"
+            if "INDEPENDENT_COMPLETED_CLOSE" not in remaining:
+                remaining.append("INDEPENDENT_COMPLETED_CLOSE")
+
+        threshold_authority = "VERIFIED" if rule_audit.get("approval_status") == "VERIFIED_USER_APPROVAL" else "UNVERIFIED"
+        breach_observation = "PRIMARY_BREACH_OBSERVED" if hard is not None else "NO_PRIMARY_BREACH"
+        independent_confirmation = independent_close_status if hard is not None else "NOT_REQUIRED"
+        breach_action_authority = "VERIFIED" if rule_audit.get("policy_authority_status") == "VERIFIED" else "UNVERIFIED"
+        if hard is not None and price_conflict:
+            risk_state = "HARD_RISK_WATCH"
+            strategy_state, execution = "STRATEGY_REFRESH_REQUIRED", "HUMAN_REVIEW_REQUIRED"
+            quantity, quantity_authority = None, "none"
+            primary_reason = "The primary close indicates a hard-risk breach, but independent price evidence conflicts; human review is required."
+        elif hard is not None and independent_close_status != "VERIFIED":
+            risk_state = "HARD_RISK_WATCH"
+            strategy_state, execution = "STRATEGY_REFRESH_REQUIRED", "HUMAN_REVIEW_REQUIRED"
+            quantity, quantity_authority = None, "none"
+
+        profile = instrument
+        leveraged_confirmation: dict[str, Any] = {"status": "NOT_APPLICABLE", "product_close_substitution": False}
+        proxy_symbol = profile.get("confirmation_proxy")
+        if proxy_symbol and isinstance(market_rows.get(proxy_symbol), dict):
+            leveraged_confirmation = evaluate_leveraged_confirmation(row or {}, market_rows[proxy_symbol], profile=profile)
+        if strategy_state == "ADD_REVIEW" and leveraged_confirmation.get("status") == "DIVERGED":
+            strategy_state, execution = "ADD_ON_WATCH", "WATCH_ONLY"
+            quantity, quantity_authority = None, "none"
+            if "LEVERAGED_CONFIRMATION_ALIGNMENT" not in remaining:
+                remaining.append("LEVERAGED_CONFIRMATION_ALIGNMENT")
+        if not holdings_fresh and strategy_state in {"ADD_REVIEW", "REDUCTION_REVIEW", "EXIT_REVIEW"}:
+            quantity, quantity_authority = None, "none"
+            if hard is None:
+                execution = "PORTFOLIO_BLOCKED"
+            if "BROKER_SNAPSHOT_REQUIRED" not in remaining:
+                remaining.append("BROKER_SNAPSHOT_REQUIRED")
+
         average_cost = float(costs[symbol]) if _finite(costs.get(symbol)) else None
         market_value = round(shares * float(row["close"]), 8) if row_valid else None
         record = {
-            "schema_version": "2.4", "run_phase": "POST_MARKET", "ticker": symbol, "holding_verified": True,
+            "schema_version": "2.5", "run_phase": "POST_MARKET", "ticker": symbol, "holding_verified": True,
             "current_shares": shares, "average_cost_usd": average_cost, "market_value_usd": market_value,
             "analysis_cutoff": analysis_cutoff, "market_session": market_session,
             "strategy_state": strategy_state, "execution_state": execution,
@@ -310,6 +368,19 @@ def build_holding_strategies(
             "primary_close_status": primary_close_status,
             "independent_close_status": independent_close_status,
             "price_verification_status": price_verification_status,
+            "crosscheck_requirement": price_evidence["crosscheck_requirement"],
+            "crosscheck_status": price_evidence["crosscheck_status"],
+            "crosscheck_method": price_evidence["crosscheck_method"],
+            "effective_price_status": price_evidence["effective_price_status"],
+            "execution_constraints": [item for item in ("INDEPENDENT_COMPLETED_CLOSE" if verification_required and independent_close_status != "VERIFIED" else None,
+                                                          "PRICE_CONFLICT" if price_conflict else None) if item],
+            "threshold_authority_status": threshold_authority,
+            "breach_observation_status": breach_observation,
+            "independent_confirmation_status": independent_confirmation,
+            "breach_action_authority_status": breach_action_authority,
+            "leveraged_confirmation": leveraged_confirmation,
+            "display_action_code": "RISK_REVIEW" if hard is not None else ({"HOLD": "HOLD_NO_ACTION", "ADD_ON_WATCH": "ADD_WAIT", "ADD_REVIEW": "ADD_REVIEW", "REDUCTION_REVIEW": "REDUCE_REVIEW", "EXIT_REVIEW": "EXIT_REVIEW", "STRATEGY_REFRESH_REQUIRED": "STRATEGY_REVIEW", "DATA_BLOCKED": "DATA_ISSUE"}[strategy_state]),
+            "primary_reason_code": "HARD_RISK_REVIEW" if hard is not None else f"STRATEGY_{strategy_state}",
             "tranche_id": tranche_id, "trigger_path": trigger_path,
             "research_packet_hash": context.get("research_packet_hash") if research_valid else None,
             "snapshot_hash": snapshot_hash, "event_snapshot_hash": event_hash,
@@ -356,7 +427,7 @@ def main() -> int:
     errors = [error for record in records for error in validate_instance(record, schema)]
     if errors:
         raise SystemExit("holding strategy schema validation failed: " + "; ".join(errors))
-    write_json(args.output, {"schema_version": "2.4", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
+    write_json(args.output, {"schema_version": "2.5", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
         "market_session": args.market_session, "holding_strategies": records, "order_authority": False})
     print(json.dumps({"status": "PASS", "holdings": len(records), "order_authority": False}, indent=2))
     return 0

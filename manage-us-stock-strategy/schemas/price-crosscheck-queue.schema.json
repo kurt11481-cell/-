@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "price-crosscheck-queue.schema.json",
+  "title": "Selective Price Crosscheck Queue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "completed_session", "crosscheck_requirement", "capability_status", "global_failure", "queue", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"},
+    "completed_session": {"type": "string", "format": "date"},
+    "crosscheck_requirement": {"enum": ["NOT_REQUIRED", "REQUIRED"]},
+    "capability_status": {"enum": ["NOT_REQUIRED", "PENDING", "AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "global_failure": {"type": ["string", "null"]},
+    "queue": {"type": "array", "items": {"type": "object"}, "uniqueItems": true},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,5 +1,6 @@
 {
   "locale": "ko-KR",
+  "version": "2.5",
   "messages": {
     "alert_present": "오늘 매매 검토 알림 있음",
     "alert_none": "오늘 매매 검토 알림 없음",
@@ -27,7 +28,45 @@
     "funding_status_label": "자금 상태",
     "preferred_use_label": "우선 자금 용도",
     "alternative_use_label": "대안 자금 용도",
-    "keep_cash_label": "현금 유지 선택지"
+    "keep_cash_label": "현금 유지 선택지",
+    "action_hold_no_action": "그대로 보유",
+    "action_add_wait": "추가매수는 아직 기다리기",
+    "action_add_review": "추가매수 검토 가능",
+    "action_add_price_check": "추가매수 조건은 보이지만 가격 확인 중",
+    "action_reduce_review": "일부 줄이기 검토",
+    "action_exit_review": "보유 종료 검토",
+    "action_risk_review": "손실경계 확인 필요",
+    "action_strategy_review": "전략 다시 확인",
+    "action_data_issue": "데이터 문제로 판단 보류",
+    "action_broker_snapshot_required": "포트폴리오 화면 업데이트 필요",
+    "action_broker_confirmation_required": "읽은 계좌 내용을 확인해 주세요",
+    "price_primary_validated": "기본 가격 확인 완료",
+    "price_independent_verified": "중요 가격 교차확인 완료",
+    "price_verification_pending": "중요 가격 교차확인 중",
+    "price_conflict": "가격 자료가 서로 달라 확인 필요",
+    "summary_data_issue": "중요 데이터 문제로 판단을 보류합니다.",
+    "summary_verification_pending": "조건은 보이지만 중요 가격을 추가 확인하고 있습니다.",
+    "summary_broker_snapshot_required": "현재 계좌 현황을 확인할 수 있는 화면이 필요합니다.",
+    "broker_snapshot_upload_required": "포트폴리오 화면 업데이트 필요",
+    "broker_snapshot_upload_recommended": "포트폴리오 화면 업데이트 권장",
+    "broker_snapshot_received": "포트폴리오 화면을 받았습니다",
+    "broker_snapshot_parsing": "계좌 내용을 확인하고 있습니다",
+    "broker_snapshot_confirmation_required": "읽은 계좌 내용을 확인해 주세요",
+    "broker_snapshot_reupload_required": "화면이 불완전해 다시 캡처가 필요합니다",
+    "broker_snapshot_verified": "포트폴리오 현황 확인 완료",
+    "broker_snapshot_privacy_notice": "계좌번호, 이름, 로그인 정보와 인증번호는 가려 주세요.",
+    "broker_snapshot_execution_blocked": "계좌 확인이 끝날 때까지 매매 실행 검토는 차단됩니다."
+    ,"generic_review_reason": "추가 확인이 필요합니다."
+    ,"generic_price_review": "가격 확인 상태를 점검해 주세요."
+    ,"what_changes_decision": "다음 검증된 정규장 데이터, 중요 가격 교차확인 또는 사용자 확인 계좌 현황에서 판단이 바뀔 수 있습니다."
+  },
+  "action_code_keys": {
+    "HOLD_NO_ACTION": "action_hold_no_action", "ADD_WAIT": "action_add_wait",
+    "ADD_REVIEW": "action_add_review", "ADD_PRICE_CHECK": "action_add_price_check",
+    "REDUCE_REVIEW": "action_reduce_review", "EXIT_REVIEW": "action_exit_review",
+    "RISK_REVIEW": "action_risk_review", "STRATEGY_REVIEW": "action_strategy_review",
+    "DATA_ISSUE": "action_data_issue", "BROKER_SNAPSHOT_REQUIRED": "action_broker_snapshot_required",
+    "BROKER_CONFIRMATION_REQUIRED": "action_broker_confirmation_required"
   },
   "reason_translations": {
     "The approved maximum-loss review boundary was breached on the validated completed close.": "검증된 정규장 종가가 승인된 최대손실 검토 경계를 하회했습니다.",

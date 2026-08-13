@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "registry_version": "2026-08-12-tactical-radar-v2.2",
+  "registry_version": "2026-08-13-selective-evidence-v2.5",
   "status": "canonical_research_registry_no_order_authority",
   "canonical_authority": true,
   "authority": {
@@ -17,6 +17,10 @@
       "leverage_factor": 2.0,
       "leverage_factor_status": "verified_by_existing_active_policy",
       "confirmation_proxy": "MRVL",
+      "confirmation_role": "DIRECT_UNDERLYING",
+      "confirmation_mode": "DAILY_MULTIPLE",
+      "daily_target_multiple": 2.0,
+      "tracking_tolerance_authority": "SHADOW_ONLY_UNLESS_POLICY_SUPPLIED",
       "watchlist_approved": true,
       "new_buy_instrument_approved": false,
       "short_sale_approved": false,
@@ -31,6 +35,9 @@
       "leverage_factor": 3.0,
       "leverage_factor_status": "verified_by_existing_active_policy",
       "confirmation_proxy": "SOXX",
+      "confirmation_role": "SECTOR_DIRECTION_PROXY",
+      "confirmation_mode": "DIRECTION_ONLY",
+      "daily_target_multiple": 3.0,
       "watchlist_approved": true,
       "new_buy_instrument_approved": false,
       "short_sale_approved": false,

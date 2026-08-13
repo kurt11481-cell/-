@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "price-evidence.schema.json",
+  "title": "Selective Completed-Close Price Evidence",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["primary_status", "primary_session", "primary_price_basis", "primary_provider", "crosscheck_requirement", "crosscheck_reason", "crosscheck_status", "crosscheck_method", "evidence_validation_status", "comparison_status", "effective_price_status"],
+  "properties": {
+    "primary_status": {"enum": ["VALIDATED", "INVALID", "STALE", "UNAVAILABLE"]},
+    "primary_session": {"type": ["string", "null"]},
+    "primary_price_basis": {"type": ["string", "null"]},
+    "primary_provider": {"type": ["string", "null"]},
+    "crosscheck_requirement": {"enum": ["NOT_REQUIRED", "REQUIRED"]},
+    "crosscheck_reason": {"enum": [null, "READY", "MATERIAL_NEAR_TRIGGER", "ADD_REVIEW", "REDUCTION_REVIEW", "EXIT_REVIEW", "HARD_RISK_BOUNDARY", "DECISION_BOUNDARY_PROXIMITY", "CANARY_AUDIT"]},
+    "crosscheck_status": {"enum": ["NOT_REQUIRED", "PENDING", "VERIFIED", "UNAVAILABLE", "INCONCLUSIVE", "CONFLICT"]},
+    "crosscheck_method": {"enum": ["NONE", "CODEX_WEB", "STRUCTURED_API"]},
+    "evidence_validation_status": {"enum": ["NOT_REQUIRED", "PENDING", "VALIDATED", "REJECTED"]},
+    "comparison_status": {"enum": ["NOT_EVALUATED", "MATCH", "PRICE_BASIS_MISMATCH", "SESSION_MISMATCH", "CURRENCY_MISMATCH", "IDENTITY_MISMATCH", "DECISION_BOUNDARY_FLIP", "CONFLICT"]},
+    "effective_price_status": {"enum": ["PRIMARY_VALIDATED", "INDEPENDENT_VERIFIED", "PRICE_CONFLICT", "DATA_BLOCKED"]}
+  }
+}

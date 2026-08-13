@@ -29,17 +29,21 @@ Normalize accepted records to symbol, field, value, units, exchange session,
 timestamp, provider, retrieval time, raw/adjusted basis, quality status, and
 source identifier.
 
-## v2.4 completed-close preflight
+## v2.5 selective completed-close acquisition
 
-Run `scripts/provider_preflight.py` once before a post-market scan. The
+Run `scripts/provider_preflight.py` once before a post-market scan. Build the
+provisional holding and opportunity states first, then create one selective
+price-verification queue. The
 `INDEPENDENT_COMPLETED_CLOSE` capability must be enabled, Yahoo-independent,
 session compatible, timestamped, and explicitly eligible in the capability
 registry. `build_independent_close_snapshot.py` is provider-agnostic; it does
 not select or silently activate a vendor. A second Yahoo endpoint never counts
 as independent.
 
-When no approved provider is healthy, return one global
-`GLOBAL_INDEPENDENT_CLOSE_OUTAGE`, suppress per-ticker retries, keep affected
-rows visible as data blocked, and report `DATA_PROVIDER_BLOCKED`. A symbol-level
-missing record or mismatch blocks only that ticker when common infrastructure
-and the official session remain valid.
+Web acquisition is recorded as `CODEX_WEB`, but the provider and source type
+must identify the actual page/domain. Search snippets and Yahoo-origin pages are
+not independent evidence. When the queue is empty, return `NOT_REQUIRED` and do
+not create an outage. When queued evidence is unavailable, aggregate one global
+provider incident while preserving each candidate as `VERIFICATION_PENDING`;
+do not erase a valid `READY` state. A validated symbol-level conflict blocks
+only that ticker.

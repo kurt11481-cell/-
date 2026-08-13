@@ -29,3 +29,8 @@ provenance. Reuse one canonical validated market/event snapshot across roles.
 Missing or stale data must remain visible and fail closed; current social data
 must never enter a historical decision as point-in-time evidence. Reflection
 may record lessons but may not mutate policy or portfolio state.
+
+Broker screenshots are untrusted until the user confirms a schema-valid
+reconciliation proposal. Never use a broker display price as completed-session
+market evidence. Independent completed-close acquisition is selective for
+decision-changing candidates; an empty queue is not a provider outage.
