@@ -62,7 +62,40 @@ def validate_snapshot_semantics(snapshot: dict[str, Any]) -> list[str]:
                 errors.append(prefix + "series session mismatch")
             if series.get("order_authority") is not False:
                 errors.append(prefix + "series order_authority must be false")
-            for bar_index, bar in enumerate(series.get("bars", [])):
+            bars = series.get("bars", [])
+            sessions = [str(bar.get("session")) for bar in bars]
+            if sessions != sorted(sessions):
+                errors.append(prefix + f"{expected} bars must be chronological")
+            if len(sessions) != len(set(sessions)):
+                errors.append(prefix + f"{expected} bars contain duplicate sessions")
+            if any(bar_session > str(session) for bar_session in sessions):
+                errors.append(prefix + f"{expected} bars contain a future session")
+            if series.get("history_bar_count") != len(bars):
+                errors.append(prefix + f"{expected} history count mismatch")
+            if bars and _finite(series.get("completed_close")):
+                if not math.isclose(
+                    float(series["completed_close"]), float(bars[-1].get("close")),
+                    rel_tol=0.0, abs_tol=1e-12,
+                ):
+                    errors.append(prefix + f"{expected} completed close mismatch")
+            minimum = series.get("minimum_history_bars")
+            expected_history = "SUFFICIENT" if isinstance(minimum, int) and len(bars) >= minimum else "INSUFFICIENT_HISTORY"
+            if series.get("history_status") != expected_history:
+                errors.append(prefix + f"{expected} history status mismatch")
+            pagination = series.get("pagination")
+            if isinstance(pagination, dict):
+                if pagination.get("distinct_session_count") != len(bars):
+                    errors.append(prefix + f"{expected} pagination count mismatch")
+                if pagination.get("minimum_history_bars") != minimum:
+                    errors.append(prefix + f"{expected} pagination minimum mismatch")
+                if pagination.get("status") != expected_history:
+                    errors.append(prefix + f"{expected} pagination status mismatch")
+                pages = pagination.get("pages", [])
+                if pagination.get("pages_fetched") != len(pages):
+                    errors.append(prefix + f"{expected} pagination page count mismatch")
+                if len(pages) > int(pagination.get("maximum_pages", 0)):
+                    errors.append(prefix + f"{expected} pagination exceeded the bounded page limit")
+            for bar_index, bar in enumerate(bars):
                 values = [bar.get(name) for name in ("open", "high", "low", "close", "volume")]
                 if not all(_finite(value) for value in values):
                     errors.append(prefix + f"bar {bar_index} has non-finite OHLCV")

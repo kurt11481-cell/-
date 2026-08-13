@@ -14,6 +14,15 @@
   "unit_test_counts": false,
   "preopen_counts": false,
   "historical_backfill_allowed": false,
+  "single_session_lock": {
+    "schema_version": "1.0",
+    "acquisition": "ATOMIC_EXCLUSIVE_CREATE",
+    "stale_recovery_enabled": true,
+    "stale_lock_ttl_seconds": 1800,
+    "stale_recovery_requires_proven_dead_same_host_process": true,
+    "uncertain_liveness_behavior": "FAIL_CLOSED_PRESERVE",
+    "foreign_lock_mutation_prohibited": true
+  },
   "duplicate_session_counts": false,
   "promotion_automatic": false,
   "promotion_requires_explicit_user_approval": true,

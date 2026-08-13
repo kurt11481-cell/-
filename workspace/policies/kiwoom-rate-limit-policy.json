@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "policy_version": "2026-08-13-kiwoom-rate-limit-v1",
+  "schema_version": "1.1",
+  "policy_version": "2026-08-14-kiwoom-history-pagination-v2",
   "provider": "KIWOOM_REST",
   "external_python_relative_path": ".venv\\Scripts\\python.exe",
   "minimum_request_interval_seconds": 0.25,
@@ -14,5 +14,16 @@
   "retry_storm_prohibited": true,
   "ip_rotation_prohibited": true,
   "silent_stale_fallback_prohibited": true,
+  "history_policy": {
+    "technical_policy_reference": "2026-08-05-ema-timing-v4",
+    "technical_formula_reference": "2026-08-05-ema-atr-v2",
+    "minimum_history_bars": 252,
+    "replay_history_buffer_bars": 32,
+    "maximum_pages": 10,
+    "no_progress_page_limit": 1,
+    "official_continuation_contract": "KiwoomClient.fetch_page(cont_yn,next_key)",
+    "future_bar_policy": "REJECT",
+    "conflicting_duplicate_policy": "REJECT"
+  },
   "order_authority": false
 }

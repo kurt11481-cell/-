@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import tempfile
+import time
+import uuid
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +35,135 @@ SEMANTIC_DEFAULTS = (
     "workspace/policies/shadow_acceptance_policy.json",
 )
 ROUTE_REGISTRY_PATH = "workspace/policies/web_completed_close_route_registry.json"
+
+
+class SingleSessionLockCollision(FileExistsError):
+    """Raised when another or unprovable owner already holds the session lock."""
+
+
+def _pid_is_alive(pid: int) -> bool | None:
+    """Return True/False when process liveness is provable, otherwise None."""
+    if pid <= 0:
+        return None
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return None
+    return True
+
+
+def _lock_timestamp(value: Any) -> float | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.timestamp()
+
+
+def acquire_owned_lock(
+    lock_path: Path,
+    *,
+    purpose: str,
+    target_resource: str,
+    stale_ttl_seconds: float | None = None,
+    stale_recovery_enabled: bool = False,
+    now: str | None = None,
+    owner_token: str | None = None,
+    pid: int | None = None,
+    hostname: str | None = None,
+    process_alive: Any = _pid_is_alive,
+) -> dict[str, Any]:
+    """Acquire an exclusive JSON lock without ever deleting an unowned lock."""
+    created_at = now or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    metadata = {
+        "schema_version": "1.0",
+        "owner_token": owner_token or uuid.uuid4().hex,
+        "pid": int(pid if pid is not None else os.getpid()),
+        "process_start_time": None,
+        "hostname": hostname or socket.gethostname(),
+        "created_at": created_at,
+        "purpose": purpose,
+        "target_resource": target_resource,
+    }
+    payload = (json.dumps(metadata, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def exclusive_create() -> None:
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        try:
+            os.write(descriptor, payload)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+
+    try:
+        exclusive_create()
+    except FileExistsError as collision:
+        original = lock_path.read_bytes()
+        existing: dict[str, Any] | None = None
+        try:
+            parsed = json.loads(original.decode("utf-8"))
+            existing = parsed if isinstance(parsed, dict) else None
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            existing = None
+        can_recover = False
+        if stale_recovery_enabled and stale_ttl_seconds is not None and existing:
+            created = _lock_timestamp(existing.get("created_at"))
+            current = _lock_timestamp(created_at)
+            same_host = existing.get("hostname") == metadata["hostname"]
+            existing_pid = existing.get("pid")
+            liveness = process_alive(existing_pid) if isinstance(existing_pid, int) else None
+            can_recover = bool(
+                created is not None and current is not None
+                and current - created >= float(stale_ttl_seconds)
+                and same_host and liveness is False
+            )
+        if not can_recover:
+            raise SingleSessionLockCollision("SINGLE_SESSION_LOCK_COLLISION") from collision
+        # Re-read before the atomic quarantine so a changed owner is never displaced.
+        if not lock_path.exists() or lock_path.read_bytes() != original:
+            raise SingleSessionLockCollision("SINGLE_SESSION_LOCK_COLLISION") from collision
+        quarantine = lock_path.with_name(
+            f"{lock_path.name}.stale.{canonical_hash(existing)[:16]}"
+        )
+        if quarantine.exists():
+            raise SingleSessionLockCollision("SINGLE_SESSION_LOCK_COLLISION") from collision
+        os.replace(lock_path, quarantine)
+        try:
+            exclusive_create()
+        except Exception:
+            # Restore the proven-stale lock if acquisition unexpectedly fails.
+            if not lock_path.exists() and quarantine.exists():
+                os.replace(quarantine, lock_path)
+            raise
+    return {
+        "acquired": True,
+        "owner_token": metadata["owner_token"],
+        "lock_path": lock_path,
+        "metadata": metadata,
+    }
+
+
+def release_owned_lock(lock: dict[str, Any] | None) -> bool:
+    """Release only the lock acquired by this exact owner token."""
+    if not lock or lock.get("acquired") is not True:
+        return False
+    path = Path(lock["lock_path"])
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(existing, dict) or existing.get("owner_token") != lock.get("owner_token"):
+        return False
+    path.unlink()
+    lock["acquired"] = False
+    return True
 
 
 def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -> str:
@@ -345,15 +477,21 @@ def _atomic_write(path: Path, value: dict[str, Any]) -> None:
 
 def record_attempt(raw: dict[str, Any], *, progress_path: Path, attempts_root: Path,
                    fingerprint: str, now: str | None = None,
-                   sessions_root: Path | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+                   sessions_root: Path | None = None,
+                   lock_policy: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     lock_path = progress_path.with_suffix(progress_path.suffix + ".lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = None
+    policy = lock_policy or {}
+    lock = acquire_owned_lock(
+        lock_path,
+        purpose="shadow_acceptance_single_session",
+        target_resource=str(progress_path),
+        stale_ttl_seconds=policy.get("stale_lock_ttl_seconds"),
+        stale_recovery_enabled=policy.get("stale_recovery_enabled") is True,
+        now=now,
+    )
     try:
-        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.close(descriptor)
-        descriptor = None
         if progress_path.exists():
             progress = json.loads(progress_path.read_text(encoding="utf-8"))
             if progress.get("semantic_fingerprint") != fingerprint:
@@ -375,7 +513,4 @@ def record_attempt(raw: dict[str, Any], *, progress_path: Path, attempts_root: P
         _atomic_write(progress_path, updated)
         return attempt, updated
     finally:
-        if descriptor is not None:
-            os.close(descriptor)
-        if lock_path.exists():
-            lock_path.unlink()
+        release_owned_lock(lock)

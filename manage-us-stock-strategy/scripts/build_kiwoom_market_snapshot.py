@@ -33,8 +33,12 @@ def _number(value: Any) -> float | None:
     return result if math.isfinite(result) else None
 
 
-def normalize_series(rows: Any, *, ticker: str, completed_session: str, price_basis: str) -> dict[str, Any]:
-    normalized: list[dict[str, Any]] = []
+def normalize_series(
+    rows: Any, *, ticker: str, completed_session: str, price_basis: str,
+    minimum_history_bars: int = 1, pagination: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    by_session: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
     for row in rows if isinstance(rows, list) else []:
         if not isinstance(row, dict):
             continue
@@ -51,11 +55,33 @@ def normalize_series(rows: Any, *, ticker: str, completed_session: str, price_ba
         }
         if any(value is None for value in values.values()):
             continue
-        normalized.append({"session": session, **values})
-    normalized.sort(key=lambda item: item["session"])
+        candidate = {"session": session, **values}
+        if session > completed_session:
+            errors.append(f"FUTURE_BAR_REJECTED:{session}")
+            continue
+        if (
+            float(candidate["open"]) <= 0 or float(candidate["high"]) <= 0
+            or float(candidate["low"]) <= 0 or float(candidate["close"]) <= 0
+            or float(candidate["volume"]) < 0
+            or float(candidate["high"]) < max(float(candidate["open"]), float(candidate["low"]), float(candidate["close"]))
+            or float(candidate["low"]) > min(float(candidate["open"]), float(candidate["high"]), float(candidate["close"]))
+        ):
+            errors.append(f"INVALID_OHLCV:{session}")
+            continue
+        existing = by_session.get(session)
+        if existing is not None and existing != candidate:
+            errors.append(f"CONFLICTING_DUPLICATE_BAR:{session}")
+            continue
+        by_session[session] = candidate
+    normalized = sorted(by_session.values(), key=lambda item: item["session"])
     matching = [item for item in normalized if item["session"] == completed_session]
     completed_close = matching[-1]["close"] if matching else None
-    status = "PASS" if matching else "DATA_BLOCKED"
+    history_sufficient = len(normalized) >= int(minimum_history_bars)
+    if not matching:
+        errors.append("COMPLETED_SESSION_MISSING")
+    if not history_sufficient:
+        errors.append("INSUFFICIENT_HISTORY")
+    status = "PASS" if not errors else "DATA_BLOCKED"
     return {
         "ticker": ticker,
         "price_basis": price_basis,
@@ -63,6 +89,11 @@ def normalize_series(rows: Any, *, ticker: str, completed_session: str, price_ba
         "completed_session": completed_session,
         "completed_close": completed_close,
         "bars": normalized,
+        "history_bar_count": len(normalized),
+        "minimum_history_bars": int(minimum_history_bars),
+        "history_status": "SUFFICIENT" if history_sufficient else "INSUFFICIENT_HISTORY",
+        "validation_errors": list(dict.fromkeys(errors)),
+        "pagination": pagination,
         "status": status,
         "order_authority": False,
     }
@@ -70,7 +101,7 @@ def normalize_series(rows: Any, *, ticker: str, completed_session: str, price_ba
 
 def blocked_ticker_result(
     ticker: str, *, completed_session: str, generated_at: str,
-    reason: str, runtime_commit: str = "",
+    reason: str, runtime_commit: str = "", minimum_history_bars: int = 1,
 ) -> dict[str, Any]:
     return {
         "ticker": ticker,
@@ -80,8 +111,8 @@ def blocked_ticker_result(
             runtime_commit=runtime_commit, verified_at=generated_at, api_available=False,
         ),
         "stock_info_status": "NOT_EVALUATED",
-        "raw": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="RAW"),
-        "adjusted": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED"),
+        "raw": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="RAW", minimum_history_bars=minimum_history_bars),
+        "adjusted": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED", minimum_history_bars=minimum_history_bars),
         "failure_reason": reason,
         "order_authority": False,
     }
@@ -101,6 +132,7 @@ def _bridge_data(call: BridgeCall, request: dict[str, Any]) -> tuple[list[dict[s
 def build_snapshot(
     tickers: list[str], *, completed_session: str, bridge_call: BridgeCall,
     generated_at: str, portfolio_state_hash: str, preflight_status: str = "NOT_RUN",
+    minimum_history_bars: int = 1,
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     results: list[dict[str, Any]] = []
@@ -112,6 +144,7 @@ def build_snapshot(
             results.append(blocked_ticker_result(
                 ticker, completed_session=completed_session, generated_at=generated_at,
                 reason="GLOBAL_KIWOOM_CIRCUIT_OPEN", runtime_commit=commit_hint,
+                minimum_history_bars=minimum_history_bars,
             ))
             continue
         try:
@@ -121,6 +154,7 @@ def build_snapshot(
                     ticker, completed_session=completed_session, generated_at=generated_at,
                     reason=str(stock_response.get("bridge_status") or "KIWOOM_API_UNAVAILABLE"),
                     runtime_commit=str(stock_response.get("runtime_commit") or ""),
+                    minimum_history_bars=minimum_history_bars,
                 ))
                 provider_health = update_provider_health(provider_health, _failure_type(stock_response), generated_at)
                 continue
@@ -132,6 +166,7 @@ def build_snapshot(
                         ticker, completed_session=completed_session, generated_at=generated_at,
                         reason=str(exchange_response.get("bridge_status") or "KIWOOM_API_UNAVAILABLE"),
                         runtime_commit=str(exchange_response.get("runtime_commit") or ""),
+                        minimum_history_bars=minimum_history_bars,
                     ))
                     provider_health = update_provider_health(provider_health, _failure_type(exchange_response), generated_at)
                     continue
@@ -148,8 +183,8 @@ def build_snapshot(
                 results.append({
                     "ticker": ticker, "status": "DATA_BLOCKED", "identity": identity,
                     "stock_info_status": "NOT_EVALUATED",
-                    "raw": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="RAW"),
-                    "adjusted": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED"),
+                    "raw": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="RAW", minimum_history_bars=minimum_history_bars),
+                    "adjusted": normalize_series([], ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED", minimum_history_bars=minimum_history_bars),
                     "failure_reason": identity["mapping_status"], "order_authority": False,
                 })
                 provider_health = update_provider_health(provider_health, "EMPTY_RESPONSE", generated_at)
@@ -171,8 +206,14 @@ def build_snapshot(
             runtime_commits.update(
                 str(item.get("runtime_commit")) for item in (info_response, raw_response, adjusted_response) if item.get("runtime_commit")
             )
-            raw = normalize_series(raw_rows, ticker=ticker, completed_session=completed_session, price_basis="RAW")
-            adjusted = normalize_series(adjusted_rows, ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED")
+            raw = normalize_series(
+                raw_rows, ticker=ticker, completed_session=completed_session, price_basis="RAW",
+                minimum_history_bars=minimum_history_bars, pagination=raw_response.get("pagination"),
+            )
+            adjusted = normalize_series(
+                adjusted_rows, ticker=ticker, completed_session=completed_session, price_basis="ADJUSTED",
+                minimum_history_bars=minimum_history_bars, pagination=adjusted_response.get("pagination"),
+            )
             passed = info_ok and raw["status"] == "PASS" and adjusted["status"] == "PASS"
             results.append({
                 "ticker": ticker,
@@ -192,7 +233,7 @@ def build_snapshot(
         except Exception as exc:
             results.append(blocked_ticker_result(
                 ticker, completed_session=completed_session, generated_at=generated_at,
-                reason=type(exc).__name__,
+                reason=type(exc).__name__, minimum_history_bars=minimum_history_bars,
             ))
             provider_health = update_provider_health(provider_health, "EMPTY_RESPONSE", generated_at)
     pass_count = sum(item["status"] == "PASS" for item in results)
@@ -222,7 +263,7 @@ def build_snapshot(
 
 def build_preflight_blocked_snapshot(
     tickers: list[str], *, completed_session: str, generated_at: str,
-    portfolio_state_hash: str, preflight: dict[str, Any],
+    portfolio_state_hash: str, preflight: dict[str, Any], minimum_history_bars: int = 1,
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     return {
@@ -237,6 +278,7 @@ def build_preflight_blocked_snapshot(
             ticker, completed_session=completed_session, generated_at=generated_at,
             reason="GLOBAL_KIWOOM_PREFLIGHT_FAILED",
             runtime_commit=str(preflight.get("official_runtime_commit") or ""),
+            minimum_history_bars=minimum_history_bars,
         ) for ticker in symbols],
         "portfolio_state_hash": portfolio_state_hash,
         "operational_shadow_session_increment": 0, "order_authority": False,
@@ -246,6 +288,7 @@ def build_preflight_blocked_snapshot(
 def build_snapshot_with_batch(
     tickers: list[str], *, completed_session: str, batch_bridge_call: BatchBridgeCall,
     generated_at: str, portfolio_state_hash: str, preflight_status: str,
+    minimum_history_bars: int = 1,
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     requests: list[dict[str, Any]] = []
@@ -282,7 +325,7 @@ def build_snapshot_with_batch(
     return build_snapshot(
         symbols, completed_session=completed_session, bridge_call=replay,
         generated_at=generated_at, portfolio_state_hash=portfolio_state_hash,
-        preflight_status=preflight_status,
+        preflight_status=preflight_status, minimum_history_bars=minimum_history_bars,
     )
 
 
@@ -321,6 +364,7 @@ def main() -> int:
         return invoke_bridge_batch(requests, runtime=args.runtime, policy=rate_policy)
 
     portfolio_hash = file_hash(args.portfolio_state)
+    minimum_history_bars = int((rate_policy.get("history_policy") or {}).get("minimum_history_bars", 252))
     preflight = run_preflight(
         runtime=args.runtime, readonly_policy=readonly_policy, rate_policy=rate_policy,
         generated_at=args.generated_at, bridge_call=call,
@@ -329,12 +373,13 @@ def main() -> int:
         snapshot = build_snapshot_with_batch(
             args.ticker, completed_session=args.completed_session, batch_bridge_call=call_batch,
             generated_at=args.generated_at, portfolio_state_hash=portfolio_hash,
-            preflight_status="PASS",
+            preflight_status="PASS", minimum_history_bars=minimum_history_bars,
         )
     else:
         snapshot = build_preflight_blocked_snapshot(
             args.ticker, completed_session=args.completed_session, generated_at=args.generated_at,
             portfolio_state_hash=portfolio_hash, preflight=preflight,
+            minimum_history_bars=minimum_history_bars,
         )
     errors = validate_instance(snapshot, args.schema) + validate_snapshot_semantics(snapshot)
     if errors:

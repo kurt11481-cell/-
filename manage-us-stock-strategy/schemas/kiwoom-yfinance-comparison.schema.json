@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "kiwoom-yfinance-comparison.schema.json",
-  "title": "Kiwoom and yfinance Raw Close Comparison",
+  "title": "Kiwoom and yfinance Raw, Adjusted, and Technical Comparison",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "generated_at", "completed_session", "primary_session_status", "primary_provider", "shadow_provider", "shadow_provider_state", "comparison_status", "results", "provider_promotion", "operational_shadow_session_increment", "order_authority"],
+  "required": ["schema_version", "generated_at", "completed_session", "primary_session_status", "primary_provider", "shadow_provider", "shadow_provider_state", "comparison_status", "market_data_provider_replay_status", "full_strategy_context_replay_status", "results", "provider_promotion", "operational_shadow_session_increment", "order_authority"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "generated_at": {"type": "string", "format": "date-time"},
@@ -14,17 +14,31 @@
     "shadow_provider": {"const": "KIWOOM_REST"},
     "shadow_provider_state": {"const": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"},
     "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]},
+    "market_data_provider_replay_status": {"enum": ["PASS", "PARTIAL", "FAIL"]},
+    "full_strategy_context_replay_status": {"enum": ["COMPLETE", "PARTIAL_EXPECTED_NO_ARCHIVE", "UNAVAILABLE", "INVALID"]},
     "results": {
       "type": "array",
       "items": {
         "type": "object", "additionalProperties": false,
-        "required": ["ticker", "completed_session", "kiwoom_raw_close", "yfinance_raw_close", "absolute_difference", "relative_difference", "tolerance_usd", "decision_boundary_flip", "comparison_status", "reason"],
+        "required": ["ticker", "completed_session", "kiwoom_raw_close", "yfinance_raw_close", "absolute_difference", "relative_difference", "tolerance_usd", "decision_boundary_flip", "comparison_status", "raw_comparison_status", "reason", "adjustment_basis_status", "adjusted_comparison_status", "technical_indicator_shadow_status", "technical_decision_flip", "adjusted_common_session_count", "adjusted_comparison_reason_codes"],
         "properties": {
-          "ticker": {"type": "string"}, "completed_session": {"type": "string", "format": "date"},
-          "kiwoom_raw_close": {"type": ["number", "null"]}, "yfinance_raw_close": {"type": ["number", "null"]},
-          "absolute_difference": {"type": ["number", "null"]}, "relative_difference": {"type": ["number", "null"]},
-          "tolerance_usd": {"type": ["number", "null"]}, "decision_boundary_flip": {"type": "boolean"},
-          "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]}, "reason": {"type": "string"}
+          "ticker": {"type": "string"},
+          "completed_session": {"type": "string", "format": "date"},
+          "kiwoom_raw_close": {"type": ["number", "null"]},
+          "yfinance_raw_close": {"type": ["number", "null"]},
+          "absolute_difference": {"type": ["number", "null"]},
+          "relative_difference": {"type": ["number", "null"]},
+          "tolerance_usd": {"type": ["number", "null"]},
+          "decision_boundary_flip": {"type": "boolean"},
+          "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]},
+          "raw_comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]},
+          "reason": {"type": "string"},
+          "adjustment_basis_status": {"enum": ["COMPATIBLE", "INCOMPATIBLE", "UNKNOWN"]},
+          "adjusted_comparison_status": {"enum": ["NOT_EVALUATED", "MATCH", "INCONCLUSIVE", "CONFLICT", "INSUFFICIENT_HISTORY"]},
+          "technical_indicator_shadow_status": {"enum": ["NOT_EVALUATED", "MATCH", "INCONCLUSIVE", "CONFLICT"]},
+          "technical_decision_flip": {"type": "boolean"},
+          "adjusted_common_session_count": {"type": "integer", "minimum": 0},
+          "adjusted_comparison_reason_codes": {"type": "array", "items": {"type": "string"}}
         }
       }
     },
