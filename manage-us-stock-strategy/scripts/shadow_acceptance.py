@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from validation_common import canonical_hash, file_hash
+from validate_skill_deployment import normalized_text_sha256
 
 
 REQUIRED_BASELINE_TICKERS = ("NBIS", "MVLL", "SOXL")
@@ -28,10 +29,18 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/build_price_crosscheck_queue.py",
     "manage-us-stock-strategy/scripts/build_new_buy_strategy_draft.py",
     "manage-us-stock-strategy/scripts/build_new_buy_approval_proposal.py",
+    "manage-us-stock-strategy/scripts/session_aware_market_data.py",
+    "manage-us-stock-strategy/scripts/run_kiwoom_session_aware_validation.py",
+    "manage-us-stock-strategy/scripts/build_kiwoom_session_observation.py",
+    "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py",
     "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
     "workspace/policies/holding_research_baseline_policy.json",
     "workspace/policies/web_completed_close_evidence_policy.json",
+    "workspace/policies/kiwoom-readonly-policy.json",
+    "workspace/policies/kiwoom-session-aware-priority-policy.json",
+    "workspace/policies/source_capabilities.json",
     "workspace/policies/shadow_acceptance_policy.json",
 )
 ROUTE_REGISTRY_PATH = "workspace/policies/web_completed_close_route_registry.json"
@@ -170,7 +179,9 @@ def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -
     payload: dict[str, str | None] = {}
     for relative in sorted(paths):
         path = root / relative
-        payload[relative.replace("\\", "/")] = file_hash(path) if path.is_file() else None
+        payload[relative.replace("\\", "/")] = (
+            normalized_text_sha256(path).lower() if path.is_file() else None
+        )
     alert_path = root / "stock-strategy-system/alert_policy.json"
     registry_path = root / "workspace/policies/instrument_registry.json"
     route_registry_path = root / ROUTE_REGISTRY_PATH

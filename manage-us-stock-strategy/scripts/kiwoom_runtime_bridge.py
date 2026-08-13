@@ -24,6 +24,7 @@ ALLOWED_OPERATIONS = {
     "stock_lookup",
     "etf_etn_list",
     "daily_chart",
+    "market_quote",
 }
 BLOCKED_TERMS = {"order", "modify", "cancel", "credit", "forex", "fx_order", "account_mutation"}
 RUNTIME_APIS = {
@@ -32,12 +33,19 @@ RUNTIME_APIS = {
     "stock_lookup": ("usa10100", "/api/us/stkinfo"),
     "etf_etn_list": ("usa10104", "/api/us/stkinfo"),
     "daily_chart": ("usa06012", "/api/us/chart"),
+    "market_quote": ("usa20100", "/api/us/mrkcond"),
 }
 SAFE_IDENTITY_FIELDS = ("stex_tp", "stk_cd", "stk_nm", "stk_enm", "mkgb", "upgb", "isEtf")
 SAFE_ETF_FIELDS = ("stex_tp", "code", "cate1", "cate2", "etn", "mkgb", "upnm")
 SAFE_CHART_FIELDS = (
     "cur_prc", "pred_pre", "flu_rt", "acc_trde_qty", "acc_trde_prica",
     "open_pric", "high_pric", "low_pric", "dt", "upd_stkpc_tp", "upd_rt",
+)
+SAFE_QUOTE_FIELDS = (
+    "stex_tp", "stk_cd", "stk_nm", "stk_enm", "cur_prc", "pred_pre",
+    "flu_rt", "acc_trde_qty", "base_close_pric", "pre_open_pric",
+    "pre_high_pric", "pre_low_pric", "open_pric", "high_pric", "low_pric",
+    "curr_unit", "trd_susp_tp",
 )
 
 
@@ -406,6 +414,12 @@ def _worker_result(request: dict[str, Any], session: dict[str, Any]) -> dict[str
                 session, ticker=ticker, stex_tp=stex_tp,
                 completed_session=str(request["completed_session"]), price_basis=str(basis),
             )
+        elif operation == "market_quote":
+            body = _request(
+                session, *RUNTIME_APIS[operation],
+                {"stex_tp": stex_tp, "stk_cd": ticker},
+            )
+            data = [{field: body.get(field) for field in SAFE_QUOTE_FIELDS}]
         else:
             raise BridgeError("OPERATION_NOT_ALLOWLISTED")
     result = {
@@ -525,7 +539,12 @@ def sanitize_bridge_response(value: dict[str, Any], request: dict[str, Any]) -> 
     if operation == "oauth_health":
         safe["authenticated"] = value.get("authenticated") is True
         return safe
-    fields = SAFE_CHART_FIELDS if operation == "daily_chart" else SAFE_ETF_FIELDS if operation == "etf_etn_list" else SAFE_IDENTITY_FIELDS
+    fields = (
+        SAFE_CHART_FIELDS if operation == "daily_chart"
+        else SAFE_QUOTE_FIELDS if operation == "market_quote"
+        else SAFE_ETF_FIELDS if operation == "etf_etn_list"
+        else SAFE_IDENTITY_FIELDS
+    )
     data = value.get("data")
     safe["data"] = [
         {field: row.get(field) for field in fields}

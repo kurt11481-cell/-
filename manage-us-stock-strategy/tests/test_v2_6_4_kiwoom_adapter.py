@@ -353,12 +353,15 @@ class KiwoomAdapterTests(unittest.TestCase):
         self.assertEqual(result["comparison_status"], "CONFLICT")
         self.assertTrue(result["results"][0]["decision_boundary_flip"])
 
-    def test_source_registry_keeps_kiwoom_disabled(self) -> None:
+    def test_source_registry_keeps_kiwoom_guarded_scoped_and_read_only(self) -> None:
         registry = json.loads((REPO_ROOT / "workspace" / "policies" / "source_capabilities.json").read_text(encoding="utf-8"))
         errors = validate_registry(registry, SCHEMAS / "source-capability.schema.json")
         self.assertEqual(errors, [])
         kiwoom = next(item for item in registry["providers"] if item["provider"] == "kiwoom_rest")
-        self.assertFalse(kiwoom["enabled"])
+        self.assertTrue(kiwoom["enabled"])
+        self.assertEqual(kiwoom["activation_status"], "ENABLED_GUARDED_SCOPED")
+        self.assertEqual(kiwoom["role"], "OPERATIONAL_PRIMARY_SCOPED")
+        self.assertFalse(kiwoom["order_authority"])
         self.assertFalse(kiwoom["independent_crosscheck_eligible"])
 
     def test_output_cannot_alias_portfolio_state(self) -> None:

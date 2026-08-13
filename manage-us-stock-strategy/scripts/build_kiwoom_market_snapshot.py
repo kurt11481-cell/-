@@ -133,6 +133,8 @@ def build_snapshot(
     tickers: list[str], *, completed_session: str, bridge_call: BridgeCall,
     generated_at: str, portfolio_state_hash: str, preflight_status: str = "NOT_RUN",
     minimum_history_bars: int = 1,
+    provider_state: str = "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
+    primary_provider: str = "yfinance",
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     results: list[dict[str, Any]] = []
@@ -242,8 +244,8 @@ def build_snapshot(
     return {
         "schema_version": "1.0",
         "provider": "KIWOOM_REST",
-        "provider_state": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
-        "primary_provider": "yfinance",
+        "provider_state": provider_state,
+        "primary_provider": primary_provider,
         "generated_at": generated_at,
         "completed_session": completed_session,
         "official_runtime_commit": commit,
@@ -264,11 +266,13 @@ def build_snapshot(
 def build_preflight_blocked_snapshot(
     tickers: list[str], *, completed_session: str, generated_at: str,
     portfolio_state_hash: str, preflight: dict[str, Any], minimum_history_bars: int = 1,
+    provider_state: str = "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
+    primary_provider: str = "yfinance",
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     return {
         "schema_version": "1.0", "provider": "KIWOOM_REST",
-        "provider_state": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED", "primary_provider": "yfinance",
+        "provider_state": provider_state, "primary_provider": primary_provider,
         "generated_at": generated_at, "completed_session": completed_session,
         "official_runtime_commit": preflight.get("official_runtime_commit"),
         "preflight_status": "FAILED",
@@ -289,6 +293,8 @@ def build_snapshot_with_batch(
     tickers: list[str], *, completed_session: str, batch_bridge_call: BatchBridgeCall,
     generated_at: str, portfolio_state_hash: str, preflight_status: str,
     minimum_history_bars: int = 1,
+    provider_state: str = "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
+    primary_provider: str = "yfinance",
 ) -> dict[str, Any]:
     symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker.strip()))
     requests: list[dict[str, Any]] = []
@@ -326,6 +332,7 @@ def build_snapshot_with_batch(
         symbols, completed_session=completed_session, bridge_call=replay,
         generated_at=generated_at, portfolio_state_hash=portfolio_state_hash,
         preflight_status=preflight_status, minimum_history_bars=minimum_history_bars,
+        provider_state=provider_state, primary_provider=primary_provider,
     )
 
 
@@ -365,6 +372,8 @@ def main() -> int:
 
     portfolio_hash = file_hash(args.portfolio_state)
     minimum_history_bars = int((rate_policy.get("history_policy") or {}).get("minimum_history_bars", 252))
+    provider_state = str(readonly_policy.get("provider_state") or "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED")
+    primary_provider = str(readonly_policy.get("market_data_primary") or "yfinance")
     preflight = run_preflight(
         runtime=args.runtime, readonly_policy=readonly_policy, rate_policy=rate_policy,
         generated_at=args.generated_at, bridge_call=call,
@@ -374,12 +383,14 @@ def main() -> int:
             args.ticker, completed_session=args.completed_session, batch_bridge_call=call_batch,
             generated_at=args.generated_at, portfolio_state_hash=portfolio_hash,
             preflight_status="PASS", minimum_history_bars=minimum_history_bars,
+            provider_state=provider_state, primary_provider=primary_provider,
         )
     else:
         snapshot = build_preflight_blocked_snapshot(
             args.ticker, completed_session=args.completed_session, generated_at=args.generated_at,
             portfolio_state_hash=portfolio_hash, preflight=preflight,
             minimum_history_bars=minimum_history_bars,
+            provider_state=provider_state, primary_provider=primary_provider,
         )
     errors = validate_instance(snapshot, args.schema) + validate_snapshot_semantics(snapshot)
     if errors:

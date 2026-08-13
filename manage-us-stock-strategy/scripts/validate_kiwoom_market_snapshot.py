@@ -19,10 +19,15 @@ def _finite(value: Any) -> bool:
 
 def validate_snapshot_semantics(snapshot: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    if snapshot.get("provider_state") != "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED":
-        errors.append("Kiwoom provider authority must remain shadow-not-accepted")
-    if snapshot.get("primary_provider") != "yfinance":
-        errors.append("yfinance must remain Primary")
+    authority_pairs = {
+        "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED": "yfinance",
+        "ENABLED_GUARDED_SCOPED": "KIWOOM_REST_GUARDED_SCOPED",
+    }
+    state = snapshot.get("provider_state")
+    if state not in authority_pairs:
+        errors.append("unsupported Kiwoom provider authority")
+    elif snapshot.get("primary_provider") != authority_pairs[state]:
+        errors.append("provider state and primary provider are inconsistent")
     if snapshot.get("order_authority") is not False:
         errors.append("order_authority must be false")
     if snapshot.get("operational_shadow_session_increment") != 0:

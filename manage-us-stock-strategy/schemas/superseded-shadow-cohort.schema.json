@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "superseded-shadow-cohort.schema.json",
+  "title": "Superseded Operational Shadow Cohort",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_status", "superseded_at", "superseded_by", "reason", "prior_progress", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "cohort_status": {"const": "COHORT_SUPERSEDED"},
+    "superseded_at": {"type": "string", "format": "date-time"},
+    "superseded_by": {"type": "string", "pattern": "^integrated-shadow-[a-f0-9]{16}$"},
+    "reason": {"const": "SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE"},
+    "prior_progress": {"type": "object"},
+    "order_authority": {"const": false}
+  }
+}

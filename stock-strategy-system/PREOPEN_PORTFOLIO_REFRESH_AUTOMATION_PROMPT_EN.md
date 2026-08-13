@@ -19,6 +19,14 @@ completed-session OHLCV; never confirm EMA/ATR/RVOL, breakout, or daily volume;
 never create `HARD_RISK_BREACH`; never upgrade WATCH from price alone. A quote
 below a configured loss boundary is `PREMARKET_RISK_WATCH` only.
 
+Use Kiwoom as the operational primary for broker-observable premarket quotes
+inside the accepted scoped policy. Keep yfinance pre/post data optional and
+diagnostic. Do not compare either source unless ticker, identity, premarket
+session, reported session, quote type, price basis, currency, and timestamps
+are genuinely compatible. A broker mark is not a market last, and an
+extended-session quote is never a completed regular close. Provider
+non-comparability is not a price conflict.
+
 Use approved event/gap/liquidity rules only. With no approved gap rule, report
 `GAP_CONTEXT_ONLY`. Run bounded role-separated research only for a material
 official overnight event, a materially changed counter-case, or an explicit

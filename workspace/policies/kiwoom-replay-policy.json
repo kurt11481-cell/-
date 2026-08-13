@@ -6,7 +6,7 @@
     "required_sessions": 20,
     "required_tickers": 11,
     "minimum_history_bars_source": "workspace/policies/kiwoom-rate-limit-policy.json#history_policy.minimum_history_bars",
-    "raw_comparison_tolerance_source": "stock-strategy-system/alert_policy.json#independent_close_policy.approved_direct_close_tolerance",
+    "raw_comparison_tolerance_source": "workspace/policies/web_completed_close_evidence_policy.json#approved_direct_close_tolerance",
     "raw_price_basis": "UNADJUSTED_COMPLETED_REGULAR_SESSION_OHLCV",
     "technical_formula_version": "2026-08-05-ema-atr-v2"
   },

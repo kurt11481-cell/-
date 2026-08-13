@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-session-observation-snapshot.schema.json",
+  "title": "Kiwoom Session-Aware Broker Quote Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "reported_session", "provider", "provider_role", "data_status", "records", "errors", "operational_session_increment", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "reported_session": {"type": ["string", "null"], "format": "date"},
+    "provider": {"const": "KIWOOM_REST"},
+    "provider_role": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},
+    "data_status": {"enum": ["PASS", "PARTIAL", "DATA_INCOMPLETE"]},
+    "records": {"type": "array", "items": {"$ref": "market-price-observation.schema.json"}},
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ticker", "error"],
+        "properties": {"ticker": {"type": "string"}, "error": {"type": "string"}}
+      }
+    },
+    "operational_session_increment": {"const": 0},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "registry_version": "2026-08-13-source-capabilities-v3",
+  "registry_version": "2026-08-14-source-capabilities-v4",
   "providers": [
     {
       "provider": "yfinance",
@@ -11,11 +11,14 @@
       "authoritative_for": [],
       "independent_crosscheck_eligible": false,
       "rate_limit_notes": "Unofficial Yahoo Finance wrapper; sequential one-ticker requests with at least one-second delay and bounded retry.",
-      "failure_behavior": "FAIL_CLOSED_NO_STALE_SUBSTITUTION",
+      "failure_behavior": "DIAGNOSTIC_SHADOW_OR_SCOPED_PRIMARY_VALIDATED_FALLBACK",
       "fallback_priority": 50,
       "enabled": true,
       "capability_scope": ["COMPLETED_DAILY_OHLCV", "CORPORATE_ACTIONS"],
-      "limitations": ["NOT_OFFICIAL_CALENDAR", "NOT_YAHOO_INDEPENDENT_PRICE_CROSSCHECK", "NO_ARCHIVED_AS_OF_NEWS"]
+      "limitations": ["NOT_OFFICIAL_CALENDAR", "NOT_YAHOO_INDEPENDENT_PRICE_CROSSCHECK", "NO_ARCHIVED_AS_OF_NEWS", "DIAGNOSTIC_SHADOW_WHEN_KIWOOM_SCOPE_AVAILABLE"],
+      "role": "DIAGNOSTIC_SHADOW_WITH_SCOPED_FALLBACK",
+      "activation_status": "ENABLED_DIAGNOSTIC_SHADOW",
+      "order_authority": false
     },
     {
       "provider": "sec_edgar",
@@ -113,14 +116,18 @@
       "live_supported": true,
       "historical_point_in_time_supported": "UNKNOWN",
       "timestamp_quality": "SESSION_DATED",
-      "authoritative_for": [],
+      "authoritative_for": ["KIWOOM_BROKER_ACCOUNT_FACTS", "BROKER_SESSION_OPERATIONAL_QUOTE", "FINALIZED_REGULAR_CLOSE_SCOPED", "ADJUSTED_TECHNICAL_HISTORY_SCOPED"],
       "independent_crosscheck_eligible": false,
       "rate_limit_notes": "Official external runtime is connected only through a strict local read-only JSON bridge with policy-controlled pacing and bounded retry.",
-      "failure_behavior": "DISABLED_FAIL_CLOSED",
-      "fallback_priority": 100,
-      "enabled": false,
-      "capability_scope": ["US_INSTRUMENT_IDENTITY", "COMPLETED_DAILY_OHLCV_SHADOW"],
-      "limitations": ["SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED", "NOT_PRIMARY", "NOT_INDEPENDENT_CLOSE_APPROVED", "NO_ORDER_AUTHORITY"]
+      "failure_behavior": "FAIL_CLOSED_TICKER_LOCAL_WITH_GLOBAL_INCIDENT_AGGREGATION",
+      "fallback_priority": 5,
+      "enabled": true,
+      "capability_scope": ["US_INSTRUMENT_IDENTITY", "BROKER_SESSION_OPERATIONAL_QUOTE", "FINALIZED_COMPLETED_DAILY_OHLCV_SCOPED", "ADJUSTED_TECHNICAL_HISTORY_SCOPED"],
+      "limitations": ["ENABLED_GUARDED_SCOPED", "SAME_DAY_DAILY_BAR_REQUIRES_FINALIZATION", "ACCOUNT_FACTS_REQUIRE_EXPLICIT_USER_OR_VERIFIED_READONLY_SNAPSHOT", "FSLY_TECHNICAL_HISTORY_FALLBACK_TO_YFINANCE", "MVLL_EMA10_RECLAIM_RVOL20_BLOCKED", "NOT_INDEPENDENT_CLOSE_APPROVED", "NO_ORDER_AUTHORITY"],
+      "role": "OPERATIONAL_PRIMARY_SCOPED",
+      "activation_status": "ENABLED_GUARDED_SCOPED",
+      "acceptance_artifact_sha256": "D7C1E1D109997638A2212EC13D55D7507699BFF30CBDA7930D2E5A2131B10D41",
+      "order_authority": false
     },
     {
       "provider": "reddit",

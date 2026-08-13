@@ -28,7 +28,11 @@
           "fallback_priority": {"type": "integer", "minimum": 0},
           "enabled": {"type": "boolean"},
           "capability_scope": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-          "limitations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+          "limitations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "role": {"type": "string", "minLength": 1},
+          "activation_status": {"type": "string", "minLength": 1},
+          "acceptance_artifact_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+          "order_authority": {"const": false}
         }
       }
     },

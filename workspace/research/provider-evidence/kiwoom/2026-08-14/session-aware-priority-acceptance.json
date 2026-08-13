@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "evidence_state": "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACCEPTED_SCOPED",
+  "generated_at": "2026-08-13T23:26:27.179579+00:00",
+  "repository_base_commit": "8904a921526ff1a075edea0fc3150eca86e80653",
+  "implementation_hashes": {
+    "manage-us-stock-strategy/scripts/session_aware_market_data.py": "1A81DEC666C725F2031BD8EE68C27E4A3521D822C3E03B40C528BA62855CB60B",
+    "manage-us-stock-strategy/scripts/run_kiwoom_session_aware_validation.py": "39504D3FC3A59DB38D79CD02492225BE730EF970E689EA212CB31D174DEF9274",
+    "manage-us-stock-strategy/scripts/build_kiwoom_session_observation.py": "CFD1E7B74E9061E2B3B7B996E17DDE6A25C047B67612BB9017F5D2E716EE4897",
+    "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py": "1601DAA6AA2E0BD07E179DF65E3BF7E9BB2878F31E7C5E03E7E7218486A69A28",
+    "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py": "639A73C89B0A643C7AFA644AAF5BE6FB4937BFB34FCEE7491D627B70806F4125",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py": "3B8301253B8CC8533B7849B9DBE219F8F4D7D5095BB11A1C446C0F7C1B33D479",
+    "manage-us-stock-strategy/scripts/kiwoom_provider_preflight.py": "DA821A658722B2EAE95706771DC28C9AE2207C6AB47AE486D24E888BB0DD5267",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_session_aware_acceptance.py": "E9A7962214A8ECCE6C1DF37170226D233C9A5A1D9DA41348B22B292CE12D5AA0"
+  },
+  "official_runtime_commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
+  "latest_official_completed_session": "2026-08-13",
+  "transition_outcome": "KIWOOM_PRIMARY_GUARDED_SCOPED",
+  "source_artifacts": {
+    "five_session_acceptance": {
+      "repository_path": "workspace/outputs/activation/kiwoom-yfinance-five-session/20260813-164437/acceptance_summary.json",
+      "sha256": "A1190694743A8EBDC5984C205EAC376EE79D8513B661E79150F73220625FB5B7"
+    },
+    "candidate_primary_replay": {
+      "repository_path": "workspace/outputs/activation/kiwoom-candidate-primary-replay-hardening/20260814-070450/replay_summary.json",
+      "sha256": "74425DE2A78DA646353CED088D8896FAED487F645BE5C29A888BDC01C02055BF"
+    },
+    "fault_injection": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/fault_injection_results_escalated.json",
+      "sha256": "B0262A855007FA7D1F0ED2EB57AC176B9559D7F1E1F6F41648A8FA8904886327"
+    },
+    "session_aware_validation": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/session_aware_validation.json",
+      "sha256": "B1BEBE3DE90DAF68F15257423F3DD94E9AADB47604DFD9621B2F4B70B01FA1B9"
+    },
+    "finalized_regular_validation": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/finalized_regular_validation_2026-08-12.json",
+      "sha256": "599CD43EC9F66E641FAE902AAF23D1194EBFC5706B6D67900B06D27C0A4F2C39"
+    },
+    "latest_kiwoom_daily_snapshot": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/kiwoom_daily_snapshot.json",
+      "sha256": "A764017031E2186D95EF981E8B6749D3EAA3F00DBDA5A37FF0E5D577DDC129F8"
+    },
+    "latest_yfinance_shadow": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/yfinance_replay_evidence.json",
+      "sha256": "FB292A1B4ECC561B4213A8F88381224413ECB2BA9B13D4EDA6612528C25595C0"
+    },
+    "extended_hours_snapshot": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/kiwoom_extended_hours_snapshot_v2.json",
+      "sha256": "5E1014E202543EE6FFC89D1FAAA484415E16114612ED1796629AD9C1C62D0504"
+    },
+    "active_provider_smoke": {
+      "repository_path": "workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/active_provider_smoke_aapl_2026-08-12.json",
+      "sha256": "9640844FCA1B7EACF68CCB797597E4A5843AAC6190AA1C492EA55A4CB87DFA9B"
+    }
+  },
+  "prior_reclassification": {
+    "session": "2026-08-13",
+    "numeric_difference_cases": 10,
+    "evaluated": 11,
+    "finalization_pending": 11,
+    "true_regular_close_conflicts": 0
+  },
+  "finalized_regular_validation": {
+    "session": "2026-08-12",
+    "evaluated": 11,
+    "matches": 11,
+    "conflicts": 0,
+    "web_resolution_required": false
+  },
+  "latest_regular_validation": {
+    "session": "2026-08-13",
+    "evaluated": 11,
+    "finalization_pending": 11,
+    "true_regular_close_conflicts": 0,
+    "same_day_daily_row_authority": false
+  },
+  "extended_hours_validation": {
+    "market_session_type": "AFTER_HOURS",
+    "records": 9,
+    "ticker_local_failures": ["NBIS", "BE"],
+    "daily_close_overwrite": false,
+    "daily_indicator_authority": false,
+    "hard_risk_authority": false
+  },
+  "scoped_limitations": [
+    "SAME_ET_DATE_KIWOOM_DAILY_ROW_FINALIZATION_PENDING",
+    "FSLY_KIWOOM_HISTORY_BELOW_POLICY_MINIMUM",
+    "MVLL_EMA10_RECLAIM_RVOL20_TECHNICAL_BOUNDARY_CONFLICT",
+    "NBIS_AND_BE_EXTENDED_QUOTE_FIELDS_UNAVAILABLE_IN_LIVE_SAMPLE",
+    "EVENT_REVIEW_PENDING_DOES_NOT_INVALIDATE_MARKET_PROVIDER"
+  ],
+  "provider_authority": {
+    "account_facts": "KIWOOM_AUTHORITATIVE",
+    "broker_quote": "KIWOOM_OPERATIONAL_PRIMARY",
+    "regular_close": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED",
+    "technical_history": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED",
+    "shadow": "YFINANCE_DIAGNOSTIC_SHADOW",
+    "web": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY",
+    "independent_crosscheck_eligible": false
+  },
+  "invariants": {
+    "portfolio_sha256_before": "08B2011CE69BC8DC47FD52F78077C0EB5F4AEE1C472F4E1179881250169D4555",
+    "portfolio_sha256_after": "08B2011CE69BC8DC47FD52F78077C0EB5F4AEE1C472F4E1179881250169D4555",
+    "portfolio_unchanged": true,
+    "quantity_authority": false
+  },
+  "operational_session_increment": 0,
+  "order_authority": false
+}

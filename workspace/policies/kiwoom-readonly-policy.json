@@ -1,21 +1,24 @@
 {
   "schema_version": "1.0",
-  "policy_version": "2026-08-13-kiwoom-readonly-shadow-v1",
+  "policy_version": "2026-08-14-kiwoom-readonly-guarded-scoped-v2",
   "provider": "KIWOOM_REST",
-  "provider_state": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
-  "market_data_primary": "yfinance",
+  "provider_state": "ENABLED_GUARDED_SCOPED",
+  "market_data_primary": "KIWOOM_REST_GUARDED_SCOPED",
+  "independent_shadow": "YFINANCE_DIAGNOSTIC_SHADOW",
+  "conflict_resolution": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY",
   "official_runtime_path": "E:\\사업\\##금동한\\runtime\\Kiwoom-REST-API",
   "official_runtime_remote": "https://github.com/Kiwoom-Securities/Kiwoom-REST-API.git",
   "official_runtime_commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
   "bridge_boundary": "LOCAL_SUBPROCESS_JSON",
   "allowed_request_fields": ["ticker", "operation", "completed_session", "price_basis", "fx_applied"],
-  "allowed_operations": ["oauth_health", "exchange_lookup", "stock_list", "stock_lookup", "etf_etn_list", "daily_chart"],
+  "allowed_operations": ["oauth_health", "exchange_lookup", "stock_list", "stock_lookup", "etf_etn_list", "daily_chart", "market_quote"],
   "allowed_api_targets": [
     "usa10098:/api/us/stkinfo",
     "usa10099:/api/us/stkinfo",
     "usa10100:/api/us/stkinfo",
     "usa10104:/api/us/stkinfo",
-    "usa06012:/api/us/chart"
+    "usa06012:/api/us/chart",
+    "usa20100:/api/us/mrkcond"
   ],
   "blocked_operation_classes": ["ORDER", "ORDER_MODIFY", "ORDER_CANCEL", "CREDIT_ORDER", "FX_ORDER", "ACCOUNT_MUTATION"],
   "blocked_result": "KIWOOM_ORDER_ENDPOINT_BLOCKED",
@@ -32,6 +35,6 @@
   "secret_output_prohibited": true,
   "portfolio_mutation_authority": false,
   "operational_shadow_session_increment": 0,
-  "provider_activation": false,
+  "provider_activation": true,
   "order_authority": false
 }

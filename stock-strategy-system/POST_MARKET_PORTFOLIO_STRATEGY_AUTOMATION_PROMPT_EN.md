@@ -14,10 +14,22 @@ the installed Codex Skill directory. A hash/status mismatch is a global
 `DATA_INCOMPLETE` failure: stop before market collection and do not update
 runtime delivery state as successful.
 
-Use yfinance as the primary full-universe completed-daily collector. Reuse one
-canonical completed-session market snapshot and one event snapshot. Do not
-require Massive credentials, Massive MCP, or another structured provider for
-startup. Do not register Codex Web as a structured market-data provider.
+Apply `workspace/policies/kiwoom-session-aware-priority-policy.json` before
+market collection. Kiwoom is the guarded operational priority only for its
+accepted scope: broker-observable session quotes, finalized Raw regular daily
+closes, and validated Adjusted completed-daily technical history. A same-ET-date
+Kiwoom daily row without a deterministic finalization field is
+`FINALIZATION_PENDING`, not a completed close. Keep yfinance as the independent
+diagnostic Shadow and approved ticker-local fallback. Compare providers only
+after ticker, identity, session type, reported session, quote type, price basis,
+currency, timestamp, stability, and finalization all pass. Non-comparable
+extended-session differences are not conflicts. Use Codex Web only for an
+unresolved comparable finalized regular-close conflict. Never average values.
+
+Reuse one canonical completed-session market snapshot and one event snapshot.
+Do not
+require Massive credentials or Massive MCP for startup. Do not register
+Codex Web as a structured market-data provider.
 
 Build research and new-buy strategy drafts before independent-close
 acquisition. Preserve `READY` and `NEAR_TRIGGER` opportunity quality when
@@ -60,3 +72,8 @@ automation delivery runtime only after schema validation and portfolio hash
 verification. Return the conclusion first in Korean and state the commit,
 policy version, provider status, subsystem statuses, and that no brokerage
 order was placed or scheduled.
+
+Extended-session Kiwoom observations must remain separate from completed daily
+bars. They may add caution or downgrade readiness, but may not confirm daily
+EMA/ATR/RSI/MACD/RVOL, create a completed-session hard-risk breach, upgrade
+WATCH to READY, create quantity, or change portfolio facts.

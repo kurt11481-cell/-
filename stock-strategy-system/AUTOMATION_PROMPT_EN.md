@@ -28,6 +28,25 @@ candidate or mutate runtime state.
 
 ## Required workflow
 
+### Session-aware Kiwoom operational priority
+
+Load `workspace/policies/kiwoom-session-aware-priority-policy.json` through the
+canonical repository. Kiwoom is operationally primary only for the accepted
+guarded scope. yfinance remains the diagnostic Shadow and explicit scoped
+fallback. A same-ET-date Kiwoom daily row without deterministic finalization is
+`FINALIZATION_PENDING`; premarket, after-hours, day-market, overnight, broker
+mark, bid, or ask values are not comparable to a completed regular Raw close.
+Do not calculate conflict tolerance until session, reported date, quote type,
+price basis, timestamp, stability, currency, and finalization gates pass. Only
+a persistent comparable finalized regular-close conflict may invoke an exact
+Codex Web original-source route.
+
+Extended-session observations cannot overwrite the completed daily bar, enter
+daily indicators, confirm hard risk, upgrade WATCH to READY, create quantity,
+or affect order authority. FSLY history fallback and the MVLL
+`EMA10_RECLAIM_RVOL20` conflict remain ticker/decision-class local. Event-data
+incompleteness remains an event/strategy gate, not a market-provider failure.
+
 ### v2.6.3 Massive-free staged new-buy and integrated Shadow extension
 
 Run the ordinary v2.5 read-only post-market workflow first. Then, without

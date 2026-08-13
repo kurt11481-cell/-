@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-aware-price-comparison.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["comparison_status", "reason_code", "absolute_difference", "relative_difference", "tolerance_usd", "decision_boundary_flip", "web_resolution_required"],
+  "properties": {
+    "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_COMPARABLE", "NOT_EVALUATED"]},
+    "reason_code": {"type": "string", "minLength": 1},
+    "absolute_difference": {"type": ["number", "null"]},
+    "relative_difference": {"type": ["number", "null"]},
+    "tolerance_usd": {"type": ["number", "null"]},
+    "decision_boundary_flip": {"type": "boolean"},
+    "web_resolution_required": {"type": "boolean"}
+  }
+}

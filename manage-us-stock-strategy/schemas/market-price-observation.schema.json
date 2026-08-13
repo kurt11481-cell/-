@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "market-price-observation.schema.json",
+  "title": "Session-Aware Market Price Observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "ticker", "provider", "security_identity_status",
+    "market_session_type", "reported_session", "price_basis", "quote_type",
+    "price", "currency", "provider_timestamp", "exchange_timestamp",
+    "source_identifier", "source_field", "session_classification_basis",
+    "bar_finalized", "stable", "comparable_to_regular_close",
+    "indicative_only", "daily_indicator_authority", "hard_risk_authority",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,14}$"},
+    "provider": {"type": "string", "minLength": 1},
+    "security_identity_status": {"enum": ["VERIFIED", "AMBIGUOUS", "NOT_FOUND", "IDENTITY_MISMATCH"]},
+    "market_session_type": {
+      "enum": ["PRE_MARKET", "REGULAR_INTRADAY", "REGULAR_COMPLETED", "AFTER_HOURS", "DAY_MARKET", "OVERNIGHT", "MARKET_CLOSED", "UNKNOWN"]
+    },
+    "reported_session": {"type": ["string", "null"], "format": "date"},
+    "price_basis": {
+      "enum": ["RAW_REGULAR_SESSION_CLOSE", "REGULAR_SESSION_LAST", "PREMARKET_LAST", "AFTER_HOURS_LAST", "DAY_MARKET_LAST", "OVERNIGHT_LAST", "BID", "ASK", "MID", "BROKER_MARK", "UNKNOWN"]
+    },
+    "quote_type": {
+      "enum": ["RAW_REGULAR_SESSION_CLOSE", "REGULAR_SESSION_LAST", "PREMARKET_LAST", "AFTER_HOURS_LAST", "DAY_MARKET_LAST", "OVERNIGHT_LAST", "BID", "ASK", "MID", "BROKER_MARK", "UNKNOWN"]
+    },
+    "price": {"type": ["number", "null"], "minimum": 0},
+    "currency": {"type": "string", "minLength": 1},
+    "provider_timestamp": {"type": "string", "format": "date-time"},
+    "exchange_timestamp": {"type": ["string", "null"], "format": "date-time"},
+    "source_identifier": {"type": "string", "minLength": 1},
+    "source_field": {"type": "string", "minLength": 1},
+    "session_classification_basis": {"type": "string", "minLength": 1},
+    "bar_finalized": {"type": "boolean"},
+    "stable": {"type": "boolean"},
+    "comparable_to_regular_close": {"type": "boolean"},
+    "indicative_only": {"type": "boolean"},
+    "daily_indicator_authority": {"type": "boolean"},
+    "hard_risk_authority": {"type": "boolean"},
+    "order_authority": {"const": false}
+  }
+}
