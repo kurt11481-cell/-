@@ -1,11 +1,11 @@
 {
   "schema_version": "2.6",
-  "cohort_id": "integrated-shadow-8633bb549d3c7d87",
-  "semantic_fingerprint": "8633bb549d3c7d8740c155c4a189a740afcd0ad152d8b64bf2f54c5ad073e213",
-  "started_at": "2026-08-13T06:50:00Z",
-  "observed_attempts": 1,
+  "cohort_id": "integrated-shadow-a5089a59ee826f79",
+  "semantic_fingerprint": "a5089a59ee826f798ce4a70d16835e15c803981f1f74eee0d8420745cdcc7880",
+  "started_at": "2026-08-14T08:22:07+09:00",
+  "observed_attempts": 0,
   "valid_shadow_sessions": 0,
-  "excluded_attempts": 1,
+  "excluded_attempts": 0,
   "critical_violations": [],
   "counted_sessions": [],
   "baseline_overlay_sessions": {
@@ -15,7 +15,7 @@
   },
   "independent_price_covered_sessions": 0,
   "missing_expected_sessions": [],
-  "last_attempt_hash": "f173fe59b43fb3ea1a1674d4580e08aac1e12c47d09a48c647942869f27c03ca",
+  "last_attempt_hash": null,
   "checkpoint_status": "FIRST_VALID_SESSION_PENDING",
   "promotion_status": "EXPLICIT_USER_APPROVAL_REQUIRED",
   "order_authority": false

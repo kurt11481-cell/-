@@ -1,5 +1,16 @@
 # Data Provider Resilience
 
+## Active session-aware market-data authority
+
+The active guarded scope prioritizes Kiwoom for verified broker facts,
+broker-observable session quotes, finalized archived Raw regular closes, and
+validated Adjusted technical history. yfinance remains a diagnostic Shadow and
+explicit ticker-local fallback; it is not an official close source. Apply the
+full session, quote-type, price-basis, timestamp, stability, and finalization
+comparability gate in
+[kiwoom-session-aware-priority.md](kiwoom-session-aware-priority.md) before any
+numerical vendor comparison. Non-comparable values are never price conflicts.
+
 Use one canonical validated snapshot per run. Analysts must not fetch competing
 prices independently.
 

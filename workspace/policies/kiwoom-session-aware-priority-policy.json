@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-kiwoom-session-aware-priority-v1",
+  "transition_status": "KIWOOM_PRIMARY_GUARDED_SCOPED",
+  "account_facts_authority": "KIWOOM_AUTHORITATIVE",
+  "broker_quote_authority": "KIWOOM_OPERATIONAL_PRIMARY",
+  "regular_close_authority": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED",
+  "adjusted_technical_authority": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED",
+  "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW",
+  "conflict_resolution": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY",
+  "session_types": ["PRE_MARKET", "REGULAR_INTRADAY", "REGULAR_COMPLETED", "AFTER_HOURS", "DAY_MARKET", "OVERNIGHT", "MARKET_CLOSED", "UNKNOWN"],
+  "price_and_quote_types": ["RAW_REGULAR_SESSION_CLOSE", "REGULAR_SESSION_LAST", "PREMARKET_LAST", "AFTER_HOURS_LAST", "DAY_MARKET_LAST", "OVERNIGHT_LAST", "BID", "ASK", "MID", "BROKER_MARK", "UNKNOWN"],
+  "comparability_gate": {
+    "same_ticker": true,
+    "same_identity": true,
+    "same_market_session_type": true,
+    "same_reported_session": true,
+    "same_quote_type": true,
+    "compatible_price_basis": true,
+    "usd_required": true,
+    "stable_required": true,
+    "finalized_regular_bar_required": true,
+    "raw_tolerance_source": "workspace/policies/web_completed_close_evidence_policy.json#approved_direct_close_tolerance",
+    "price_averaging_prohibited": true
+  },
+  "extended_hours_authority": {
+    "warnings_allowed": true,
+    "readiness_downgrade_allowed": true,
+    "watch_to_ready_upgrade": false,
+    "completed_hard_risk_breach": false,
+    "daily_indicator_input": false,
+    "daily_close_overwrite": false,
+    "instrument_approval": false,
+    "quantity_authority": false,
+    "order_authority": false
+  },
+  "ticker_scope_rules": {
+    "FSLY": {
+      "technical_history_primary": "YFINANCE_PRIMARY_VALIDATED_FALLBACK",
+      "fallback_reason": "KIWOOM_HISTORY_BELOW_POLICY_MINIMUM",
+      "history_merge_prohibited": true,
+      "minimum_history_reduction_prohibited": true
+    },
+    "MVLL": {
+      "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC",
+      "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"],
+      "fallback_reason": "TICKER_AND_DECISION_CLASS_LOCAL_TECHNICAL_BOUNDARY_CONFLICT"
+    },
+    "EVENT_DATA_INCOMPLETE": {
+      "market_provider_effect": "NONE",
+      "strategy_effect": "EVENT_REVIEW_PENDING"
+    }
+  },
+  "provider_scopes": [
+    {"ticker": "SOXL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "MVLL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"], "fallback_reason": "TICKER_AND_DECISION_CLASS_LOCAL_TECHNICAL_BOUNDARY_CONFLICT", "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "NBIS", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "BE", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "TOST", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "NOW", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "FSLY", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "YFINANCE_PRIMARY_VALIDATED_FALLBACK", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": "KIWOOM_HISTORY_BELOW_POLICY_MINIMUM", "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "SOXX", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "MRVL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "AAPL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false},
+    {"ticker": "IBM", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "592af6fc8d20a41f561a30c10708e43a82fdc70e9af80426cf9516df0391e739", "order_authority": false}
+  ],
+  "acceptance_evidence": {
+    "five_session_acceptance_sha256": "A1190694743A8EBDC5984C205EAC376EE79D8513B661E79150F73220625FB5B7",
+    "fault_injection_sha256": "B0262A855007FA7D1F0ED2EB57AC176B9559D7F1E1F6F41648A8FA8904886327",
+    "prior_replay_sha256": "74425DE2A78DA646353CED088D8896FAED487F645BE5C29A888BDC01C02055BF",
+    "session_aware_acceptance_manifest_sha256": "592AF6FC8D20A41F561A30C10708E43A82FDC70E9AF80426CF9516DF0391E739"
+  },
+  "semantic_cohort_reset_required": true,
+  "portfolio_mutation_authority": false,
+  "quantity_authority": false,
+  "order_authority": false
+}

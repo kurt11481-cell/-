@@ -1,5 +1,15 @@
 # Codex Automation Setup: v2.4 Dual Phase
 
+## v2.6.7 session-aware provider authority
+
+Post-market and pre-open tasks must load the committed session-aware Kiwoom
+priority policy. Kiwoom is the guarded operational priority only in its
+accepted scope; yfinance remains diagnostic Shadow and scoped fallback.
+Extended-session broker marks stay separate from completed daily bars and may
+not confirm indicators or hard risk. A same-day Kiwoom daily row without a
+deterministic finalization field is `FINALIZATION_PENDING`. This policy change
+does not itself prove a scheduled delivery and does not grant order authority.
+
 ## v2.6.3 Massive-free staged new-buy extension
 
 The existing `Morning Portfolio Strategy` task must continue using committed

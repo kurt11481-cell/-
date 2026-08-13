@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-session-aware-acceptance-manifest.schema.json",
+  "title": "Kiwoom Session-Aware Guarded Priority Acceptance Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "evidence_state", "generated_at", "repository_base_commit", "implementation_hashes",
+    "official_runtime_commit", "latest_official_completed_session", "transition_outcome",
+    "source_artifacts", "prior_reclassification", "finalized_regular_validation",
+    "latest_regular_validation", "extended_hours_validation", "scoped_limitations",
+    "provider_authority", "invariants", "operational_session_increment", "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_state": {"const": "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACCEPTED_SCOPED"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "repository_base_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "implementation_hashes": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+    },
+    "official_runtime_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "latest_official_completed_session": {"type": "string", "format": "date"},
+    "transition_outcome": {"const": "KIWOOM_PRIMARY_GUARDED_SCOPED"},
+    "source_artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["repository_path", "sha256"],
+        "properties": {
+          "repository_path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+        }
+      }
+    },
+    "prior_reclassification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session", "numeric_difference_cases", "evaluated", "finalization_pending", "true_regular_close_conflicts"],
+      "properties": {
+        "session": {"type": "string", "format": "date"},
+        "numeric_difference_cases": {"type": "integer", "minimum": 0},
+        "evaluated": {"type": "integer", "minimum": 1},
+        "finalization_pending": {"type": "integer", "minimum": 0},
+        "true_regular_close_conflicts": {"type": "integer", "minimum": 0}
+      }
+    },
+    "finalized_regular_validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session", "evaluated", "matches", "conflicts", "web_resolution_required"],
+      "properties": {
+        "session": {"type": "string", "format": "date"},
+        "evaluated": {"type": "integer", "minimum": 1},
+        "matches": {"type": "integer", "minimum": 0},
+        "conflicts": {"type": "integer", "minimum": 0},
+        "web_resolution_required": {"type": "boolean"}
+      }
+    },
+    "latest_regular_validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session", "evaluated", "finalization_pending", "true_regular_close_conflicts", "same_day_daily_row_authority"],
+      "properties": {
+        "session": {"type": "string", "format": "date"},
+        "evaluated": {"type": "integer", "minimum": 1},
+        "finalization_pending": {"type": "integer", "minimum": 0},
+        "true_regular_close_conflicts": {"type": "integer", "minimum": 0},
+        "same_day_daily_row_authority": {"const": false}
+      }
+    },
+    "extended_hours_validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["market_session_type", "records", "ticker_local_failures", "daily_close_overwrite", "daily_indicator_authority", "hard_risk_authority"],
+      "properties": {
+        "market_session_type": {"enum": ["PRE_MARKET", "AFTER_HOURS", "DAY_MARKET", "OVERNIGHT"]},
+        "records": {"type": "integer", "minimum": 0},
+        "ticker_local_failures": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "daily_close_overwrite": {"const": false},
+        "daily_indicator_authority": {"const": false},
+        "hard_risk_authority": {"const": false}
+      }
+    },
+    "scoped_limitations": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "provider_authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["account_facts", "broker_quote", "regular_close", "technical_history", "shadow", "web", "independent_crosscheck_eligible"],
+      "properties": {
+        "account_facts": {"const": "KIWOOM_AUTHORITATIVE"},
+        "broker_quote": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},
+        "regular_close": {"const": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED"},
+        "technical_history": {"const": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED"},
+        "shadow": {"const": "YFINANCE_DIAGNOSTIC_SHADOW"},
+        "web": {"const": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY"},
+        "independent_crosscheck_eligible": {"const": false}
+      }
+    },
+    "invariants": {
+      "type": "object", "additionalProperties": false,
+      "required": ["portfolio_sha256_before", "portfolio_sha256_after", "portfolio_unchanged", "quantity_authority"],
+      "properties": {
+        "portfolio_sha256_before": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "portfolio_sha256_after": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "portfolio_unchanged": {"const": true},
+        "quantity_authority": {"const": false}
+      }
+    },
+    "operational_session_increment": {"const": 0},
+    "order_authority": {"const": false}
+  }
+}

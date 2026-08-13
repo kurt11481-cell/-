@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-session-aware-priority-policy.schema.json",
+  "title": "Kiwoom Session-Aware Guarded Priority Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_version", "transition_status", "account_facts_authority", "broker_quote_authority", "regular_close_authority", "adjusted_technical_authority", "shadow_provider", "conflict_resolution", "session_types", "price_and_quote_types", "comparability_gate", "extended_hours_authority", "ticker_scope_rules", "provider_scopes", "acceptance_evidence", "semantic_cohort_reset_required", "portfolio_mutation_authority", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "transition_status": {"enum": ["PENDING_SESSION_AWARE_VALIDATION", "KIWOOM_PRIMARY_GUARDED_FULL", "KIWOOM_PRIMARY_GUARDED_SCOPED", "KIWOOM_PRIMARY_TRANSITION_BLOCKED"]},
+    "account_facts_authority": {"const": "KIWOOM_AUTHORITATIVE"},
+    "broker_quote_authority": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},
+    "regular_close_authority": {"const": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED"},
+    "adjusted_technical_authority": {"const": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED"},
+    "shadow_provider": {"const": "YFINANCE_DIAGNOSTIC_SHADOW"},
+    "conflict_resolution": {"const": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY"},
+    "session_types": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "price_and_quote_types": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "comparability_gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["same_ticker", "same_identity", "same_market_session_type", "same_reported_session", "same_quote_type", "compatible_price_basis", "usd_required", "stable_required", "finalized_regular_bar_required", "raw_tolerance_source", "price_averaging_prohibited"],
+      "properties": {
+        "same_ticker": {"const": true}, "same_identity": {"const": true},
+        "same_market_session_type": {"const": true}, "same_reported_session": {"const": true},
+        "same_quote_type": {"const": true}, "compatible_price_basis": {"const": true},
+        "usd_required": {"const": true}, "stable_required": {"const": true},
+        "finalized_regular_bar_required": {"const": true},
+        "raw_tolerance_source": {"type": "string", "minLength": 1},
+        "price_averaging_prohibited": {"const": true}
+      }
+    },
+    "extended_hours_authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["warnings_allowed", "readiness_downgrade_allowed", "watch_to_ready_upgrade", "completed_hard_risk_breach", "daily_indicator_input", "daily_close_overwrite", "instrument_approval", "quantity_authority", "order_authority"],
+      "properties": {
+        "warnings_allowed": {"const": true}, "readiness_downgrade_allowed": {"const": true},
+        "watch_to_ready_upgrade": {"const": false}, "completed_hard_risk_breach": {"const": false},
+        "daily_indicator_input": {"const": false}, "daily_close_overwrite": {"const": false},
+        "instrument_approval": {"const": false}, "quantity_authority": {"const": false},
+        "order_authority": {"const": false}
+      }
+    },
+    "ticker_scope_rules": {"type": "object"},
+    "provider_scopes": {
+      "type": "array", "minItems": 1,
+      "items": {"$ref": "kiwoom-provider-scope.schema.json"}
+    },
+    "acceptance_evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["five_session_acceptance_sha256", "fault_injection_sha256", "prior_replay_sha256", "session_aware_acceptance_manifest_sha256"],
+      "properties": {
+        "five_session_acceptance_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "fault_injection_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "prior_replay_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "session_aware_acceptance_manifest_sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}
+      }
+    },
+    "semantic_cohort_reset_required": {"const": true},
+    "portfolio_mutation_authority": {"const": false},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

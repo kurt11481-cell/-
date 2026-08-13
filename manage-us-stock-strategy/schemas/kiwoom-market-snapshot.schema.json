@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "kiwoom-market-snapshot.schema.json",
-  "title": "Kiwoom Read-Only Shadow Market Snapshot",
+  "title": "Kiwoom Read-Only Guarded Market Snapshot",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "provider", "provider_state", "primary_provider", "generated_at", "completed_session", "official_runtime_commit", "preflight_status", "session_lock", "provider_health", "data_status", "ticker_results", "portfolio_state_hash", "operational_shadow_session_increment", "order_authority"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "provider": {"const": "KIWOOM_REST"},
-    "provider_state": {"const": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"},
-    "primary_provider": {"const": "yfinance"},
+    "provider_state": {"enum": ["SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED", "ENABLED_GUARDED_SCOPED"]},
+    "primary_provider": {"enum": ["yfinance", "KIWOOM_REST_GUARDED_SCOPED"]},
     "generated_at": {"type": "string", "format": "date-time"},
     "completed_session": {"type": "string", "format": "date"},
     "official_runtime_commit": {"type": ["string", "null"]},

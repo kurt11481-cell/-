@@ -82,7 +82,7 @@ def run_preflight(
     return {
         "schema_version": "1.0",
         "provider": "KIWOOM_REST",
-        "provider_state": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED",
+        "provider_state": str(readonly_policy.get("provider_state") or "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"),
         "generated_at": generated_at,
         "official_runtime_path_status": "VERIFIED" if runtime.is_dir() else "UNAVAILABLE",
         "official_runtime_commit": commit,

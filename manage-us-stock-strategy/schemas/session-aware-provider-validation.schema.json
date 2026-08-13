@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-aware-provider-validation.schema.json",
+  "title": "Session-Aware Kiwoom Provider Validation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "generated_at", "prior_session", "latest_completed_session",
+    "provider_transition_status", "prior_reclassification", "latest_validation",
+    "extended_hours_observations", "provider_scopes", "event_gate_status",
+    "new_cohort_required", "operational_session_increment", "quantity_authority",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "prior_session": {"type": "string", "format": "date"},
+    "latest_completed_session": {"type": "string", "format": "date"},
+    "provider_transition_status": {"enum": ["KIWOOM_PRIMARY_GUARDED_FULL", "KIWOOM_PRIMARY_GUARDED_SCOPED", "KIWOOM_PRIMARY_TRANSITION_BLOCKED"]},
+    "prior_reclassification": {"type": "array", "items": {"$ref": "session-aware-validation-row.schema.json"}},
+    "latest_validation": {"type": "array", "items": {"$ref": "session-aware-validation-row.schema.json"}},
+    "extended_hours_observations": {"type": "array", "items": {"$ref": "market-price-observation.schema.json"}},
+    "provider_scopes": {"type": "array", "items": {"$ref": "kiwoom-provider-scope.schema.json"}},
+    "event_gate_status": {"enum": ["CLEAR", "EVENT_REVIEW_PENDING", "EVENT_DATA_COMPLETE"]},
+    "new_cohort_required": {"type": "boolean"},
+    "operational_session_increment": {"const": 0},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

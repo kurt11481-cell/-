@@ -1,5 +1,31 @@
 # v2.1 Production Readiness
 
+## v2.6.7 Session-Aware Kiwoom Priority Addendum — 2026-08-14
+
+**MARKET-DATA STATUS: KIWOOM_PRIMARY_GUARDED_SCOPED**
+
+Kiwoom is operationally prioritized for verified broker facts,
+broker-observable live quotes, finalized archived Raw regular closes, and
+validated Adjusted completed-daily history. yfinance remains a diagnostic
+Shadow and explicit ticker-local fallback. Codex Web remains restricted to
+unresolved comparable finalized regular-close conflicts.
+
+The scope is intentionally not full. A same-ET-date Kiwoom daily row lacks a
+deterministic finalization field and therefore remains `FINALIZATION_PENDING`.
+FSLY has only 170 Kiwoom daily rows versus the policy minimum of 252 and uses a
+complete yfinance technical fallback. MVLL retains a decision-class-local
+`EMA10_RECLAIM_RVOL20` technical boundary conflict. Event incompleteness stays
+visible as `EVENT_REVIEW_PENDING` without invalidating market-provider health.
+
+The prior 2026-08-13 numerical differences were not comparable finalized-close
+conflicts: all 11 Kiwoom same-day rows were unfinalized. The archived
+2026-08-12 regular Raw comparison passed 11/11. The after-hours quote sample
+kept every record indicative and without daily-indicator or hard-risk
+authority; NBIS and BE quote-field failures remained ticker-local.
+
+This provider change starts a new semantic cohort at 0. It adds no order,
+quantity, fill, portfolio mutation, or policy-threshold authority.
+
 ## v2.6.3 Massive-Free New-Buy Addendum — 2026-08-13
 
 **SYSTEM STATUS: READY_FOR_SHADOW_USE / FIRST_VALID_SESSION_PENDING**

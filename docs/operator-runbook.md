@@ -1,5 +1,24 @@
 # v2 Operator Runbook
 
+## v2.6.7 session-aware Kiwoom priority
+
+1. Load `kiwoom-session-aware-priority-policy.json` before market collection.
+2. Treat Kiwoom account facts and broker-session quotes as operationally
+   authoritative for the user's Kiwoom account, without calling them universal
+   consolidated-market truth.
+3. Normalize session, reported date, quote type, price basis, currency,
+   timestamps, stability, and bar finalization before comparing vendors.
+4. Use archived finalized Kiwoom Raw closes for regular-close authority and
+   validated Kiwoom Adjusted completed-daily history for local indicators.
+5. Keep yfinance as diagnostic Shadow and scoped fallback. Invoke Codex Web
+   only for a comparable, finalized, decision-changing regular-close conflict.
+6. Store extended-session broker marks separately. They cannot overwrite daily
+   bars, enter indicators, confirm hard risk, or upgrade WATCH to READY.
+7. Keep FSLY history fallback ticker-local, MVLL RVOL disagreement
+   decision-class-local, and event-data incompleteness outside provider health.
+8. `KIWOOM_PRIMARY_GUARDED_SCOPED` starts a new semantic cohort at zero; do not
+   backfill replay, dry-run, or manual sessions.
+
 ## v2.6 integrated Shadow operation
 
 1. Run the ordinary v2.5 post-market read-only workflow from committed `main`.

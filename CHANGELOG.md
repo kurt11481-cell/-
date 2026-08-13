@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.6.7 - Session-Aware Kiwoom Operational Priority
+
+- Added explicit premarket, regular-intraday, regular-completed, after-hours,
+  day-market, overnight, closed, and unknown session normalization plus price
+  basis, quote type, timestamp, stability, and finalization metadata.
+- Added a comparability gate that classifies session, quote-type, price-basis,
+  timestamp, and finalization mismatches as `NOT_COMPARABLE` rather than false
+  price conflicts. The existing Raw-close tolerance is applied only afterward.
+- Promoted Kiwoom to `KIWOOM_PRIMARY_GUARDED_SCOPED` for broker facts,
+  broker-session quotes, finalized archived Raw closes, and validated Adjusted
+  technical history. yfinance remains diagnostic Shadow and scoped fallback;
+  Codex Web remains finalized regular-close conflict resolution only.
+- Preserved extended-session limits: no daily indicators, hard-risk breach,
+  WATCH-to-READY upgrade, close overwrite, quantity, order, or portfolio
+  mutation.
+- Isolated FSLY's insufficient Kiwoom history, MVLL's RVOL boundary conflict,
+  and event-data incompleteness to their correct ticker/decision/domain scopes.
+- Locked a sanitized session-aware acceptance manifest and reset the semantic
+  operational cohort without backfilling replay or manual validation sessions.
+
 ## v2.6.5 - Kiwoom Replay History and Lock Hardening
 
 - Replaced unsafe replay-lock cleanup with an atomic owner-token lock that

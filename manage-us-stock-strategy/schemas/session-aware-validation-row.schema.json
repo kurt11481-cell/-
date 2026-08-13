@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-aware-validation-row.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "kiwoom_record", "yfinance_record", "comparison", "reclassification", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string"},
+    "kiwoom_record": {"$ref": "market-price-observation.schema.json"},
+    "yfinance_record": {"$ref": "market-price-observation.schema.json"},
+    "comparison": {"$ref": "session-aware-price-comparison.schema.json"},
+    "reclassification": {"enum": ["MATCH", "FALSE_CONFLICT_SESSION_MISMATCH", "FALSE_CONFLICT_PRICE_BASIS_MISMATCH", "FINALIZATION_PENDING", "SESSION_LAG", "BAR_UNSTABLE", "TRUE_REGULAR_CLOSE_CONFLICT", "UNRESOLVED"]},
+    "order_authority": {"const": false}
+  }
+}

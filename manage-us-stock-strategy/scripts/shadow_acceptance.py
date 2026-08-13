@@ -28,10 +28,18 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/build_price_crosscheck_queue.py",
     "manage-us-stock-strategy/scripts/build_new_buy_strategy_draft.py",
     "manage-us-stock-strategy/scripts/build_new_buy_approval_proposal.py",
+    "manage-us-stock-strategy/scripts/session_aware_market_data.py",
+    "manage-us-stock-strategy/scripts/run_kiwoom_session_aware_validation.py",
+    "manage-us-stock-strategy/scripts/build_kiwoom_session_observation.py",
+    "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py",
     "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
     "workspace/policies/holding_research_baseline_policy.json",
     "workspace/policies/web_completed_close_evidence_policy.json",
+    "workspace/policies/kiwoom-readonly-policy.json",
+    "workspace/policies/kiwoom-session-aware-priority-policy.json",
+    "workspace/policies/source_capabilities.json",
     "workspace/policies/shadow_acceptance_policy.json",
 )
 ROUTE_REGISTRY_PATH = "workspace/policies/web_completed_close_route_registry.json"
