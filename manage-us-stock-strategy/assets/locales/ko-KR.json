@@ -1,6 +1,6 @@
 {
   "locale": "ko-KR",
-  "version": "2.5",
+  "version": "2.6",
   "messages": {
     "alert_present": "오늘 매매 검토 알림 있음",
     "alert_none": "오늘 매매 검토 알림 없음",
@@ -56,6 +56,13 @@
     "broker_snapshot_verified": "포트폴리오 현황 확인 완료",
     "broker_snapshot_privacy_notice": "계좌번호, 이름, 로그인 정보와 인증번호는 가려 주세요.",
     "broker_snapshot_execution_blocked": "계좌 확인이 끝날 때까지 매매 실행 검토는 차단됩니다."
+    ,"shadow_heading": "연구 기준선 시험 결과"
+    ,"shadow_only_notice": "아래 연구 기준선 결과는 시험 중이며 현재 매매 전략을 바꾸지 않습니다."
+    ,"shadow_refresh_required": "기업·상품 연구 자료를 다시 확인해야 합니다."
+    ,"shadow_price_pending": "중요 가격은 독립 원문에서 추가 확인이 필요합니다."
+    ,"shadow_count_label": "유효 Shadow 세션"
+    ,"shadow_first_session_pending": "첫 실제 예약 실행 결과를 기다리고 있습니다."
+    ,"live_strategy_unchanged": "현재 운영 전략은 그대로 유지됩니다."
     ,"generic_review_reason": "추가 확인이 필요합니다."
     ,"generic_price_review": "가격 확인 상태를 점검해 주세요."
     ,"what_changes_decision": "다음 검증된 정규장 데이터, 중요 가격 교차확인 또는 사용자 확인 계좌 현황에서 판단이 바뀔 수 있습니다."

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "holding-research-overlay.schema.json",
+  "title": "Completed-Session Holding Research Overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ticker", "market_session", "primary_price_status", "independent_price_status", "technical_status", "event_risk_status", "hard_risk_observation", "risk_status", "portfolio_fit_status", "cash_status", "broker_snapshot_status", "leveraged_confirmation_status", "active_timing_tranche", "rearm_status", "portfolio_state_revision", "quantity", "quantity_authority", "overlay_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "market_session": {"type": "string", "format": "date"},
+    "primary_price_status": {"enum": ["VALIDATED", "INVALID", "UNAVAILABLE"]},
+    "independent_price_status": {"enum": ["NOT_REQUIRED", "PENDING", "VERIFIED", "UNAVAILABLE", "INCONCLUSIVE", "CONFLICT"]},
+    "technical_status": {"enum": ["READY", "WATCH", "DETERIORATING", "INVALID", "UNAVAILABLE"]},
+    "event_risk_status": {"enum": ["CLEAR", "KNOWN_EVENT", "EVENT_DATA_INCOMPLETE"]},
+    "hard_risk_observation": {"enum": ["NO_PRIMARY_BREACH", "PRIMARY_BREACH_OBSERVED", "DATA_BLOCKED"]},
+    "risk_status": {"enum": ["ACCEPTABLE", "CONSTRAINED", "HARD_RISK", "VETO", "UNVERIFIED"]},
+    "portfolio_fit_status": {"enum": ["FITS", "CONSTRAINED", "BLOCKED", "UNVERIFIED"]},
+    "cash_status": {"enum": ["VERIFIED_POSITIVE", "VERIFIED_ZERO", "UNVERIFIED", "STALE", "STATE_MISMATCH"]},
+    "broker_snapshot_status": {"enum": ["VERIFIED", "UNVERIFIED", "STALE", "CONFLICT", "NOT_REQUIRED"]},
+    "leveraged_confirmation_status": {"enum": ["ALIGNED", "DIVERGED", "UNAVAILABLE", "NOT_APPLICABLE", "INCONCLUSIVE"]},
+    "active_timing_tranche": {"type": ["string", "null"]},
+    "rearm_status": {"type": "string", "minLength": 1},
+    "portfolio_state_revision": {"type": "integer", "minimum": 0},
+    "deterministic_existing_policy": {"type": ["object", "null"]},
+    "quantity": {"type": ["integer", "null"], "minimum": 1},
+    "quantity_authority": {"enum": ["none", "deterministic_existing_policy"]},
+    "overlay_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

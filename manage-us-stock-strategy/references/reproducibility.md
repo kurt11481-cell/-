@@ -1,5 +1,14 @@
 # Reproducibility and Provenance
 
+## v2.6 immutable research and cohort provenance
+
+Record the active baseline ID, baseline hash, research-packet hash, current
+overlay hash, compiler semantic fingerprint, selective evidence queue hash,
+and live/Shadow comparison states. Ordinary baseline content refreshes are
+recorded per session but do not reset the cohort. Validator/compiler/schema or
+activation-policy semantics do reset it. Session-attempt records are append-only
+and hash-chained.
+
 Every high-consequence analysis, shortlist deep analysis, historical evaluation,
 and live shadow review must write a validated `run_manifest.json` without
 secrets.

@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6",
+  "policy_version": "2026-08-13-holding-research-shadow-v1",
+  "mode": "SHADOW_ONLY",
+  "activation_modes": ["SHADOW", "MIGRATION"],
+  "live_read_only_guarded_enabled": false,
+  "required_tickers": ["NBIS", "MVLL", "SOXL"],
+  "activation_order": ["NBIS", "MVLL", "SOXL"],
+  "allowed_research_recommendations": ["MAINTAIN", "REASSESS", "RISK_ESCALATION", "POTENTIAL_ADD_CASE", "POTENTIAL_REDUCTION_CASE"],
+  "compiler_signals": ["NONE", "ADD_CANDIDATE", "REDUCE_CANDIDATE", "EXIT_CANDIDATE"],
+  "baseline_content_hash_resets_cohort": false,
+  "baseline_schema_or_compiler_change_resets_cohort": true,
+  "historical_alert_replay_allowed": false,
+  "portfolio_state_mutation": false,
+  "quantity_authority": "none",
+  "order_authority": false
+}

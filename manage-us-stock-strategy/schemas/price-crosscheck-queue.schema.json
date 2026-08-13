@@ -4,12 +4,13 @@
   "title": "Selective Price Crosscheck Queue",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "completed_session", "crosscheck_requirement", "capability_status", "global_failure", "queue", "order_authority"],
+  "required": ["schema_version", "completed_session", "crosscheck_requirement", "capability_status", "web_acquisition_status", "global_failure", "queue", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.5"},
+    "schema_version": {"const": "2.6"},
     "completed_session": {"type": "string", "format": "date"},
     "crosscheck_requirement": {"enum": ["NOT_REQUIRED", "REQUIRED"]},
     "capability_status": {"enum": ["NOT_REQUIRED", "PENDING", "AVAILABLE", "PARTIAL", "UNAVAILABLE"]},
+    "web_acquisition_status": {"enum": ["NOT_REQUIRED", "PENDING", "AVAILABLE", "UNAVAILABLE"]},
     "global_failure": {"type": ["string", "null"]},
     "queue": {"type": "array", "items": {"type": "object"}, "uniqueItems": true},
     "order_authority": {"const": false}

@@ -1,0 +1,35 @@
+name: Safety CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-safety:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas
+      - name: Prepare canonical installed-Skill mirror
+        shell: pwsh
+        run: |
+          $target = Join-Path $HOME ".codex\skills\manage-us-stock-strategy"
+          New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
+          Copy-Item "manage-us-stock-strategy" $target -Recurse -Force
+      - name: Schema dialect audit
+        run: python manage-us-stock-strategy/scripts/validate_schema_contracts.py
+      - name: Compile deterministic Python
+        run: python -m compileall -q manage-us-stock-strategy/scripts manage-us-stock-strategy/tests
+      - name: Full deterministic regression suite
+        run: python -m unittest discover -s manage-us-stock-strategy/tests -p "test_*.py"
+      - name: Worktree whitespace audit
+        run: git diff --check

@@ -1,0 +1,19 @@
+{
+  "schema_version": "2.6",
+  "policy_version": "2026-08-13-independent-close-onboarding-v1",
+  "mode": "DISABLED_ONBOARDING_FRAMEWORK",
+  "allowed_states": ["DISCOVERED", "DOCUMENTATION_REVIEW", "CREDENTIALS_NOT_CONFIGURED", "SHADOW_ACCEPTANCE_PENDING", "SHADOW_ACCEPTANCE_FAILED", "USER_APPROVAL_PENDING", "APPROVED_DISABLED", "ENABLED"],
+  "placeholder": {
+    "provider": "UNSELECTED_INDEPENDENT_CLOSE_PROVIDER",
+    "provider_state": "DISCOVERED",
+    "enabled": false,
+    "independent_crosscheck_eligible": false,
+    "capability_scope": []
+  },
+  "enablement_requires_acceptance_record": true,
+  "enablement_requires_explicit_user_approval": true,
+  "yahoo_origin_disallowed": true,
+  "source_timestamp_required": true,
+  "credentials_stored_in_repository": false,
+  "order_authority": false
+}

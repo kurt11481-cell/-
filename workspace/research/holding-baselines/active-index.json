@@ -1,0 +1,34 @@
+{
+  "schema_version": "2.6",
+  "mode": "SHADOW",
+  "updated_at": "2026-08-13T06:30:00Z",
+  "active": {
+    "NBIS": {
+      "baseline_id": "nbis-20260813-v1",
+      "baseline_version": 1,
+      "baseline_hash": "4c996507d6b04054f0b9e26748017d354a427b71a07f1004a764312f31af554e",
+      "research_packet_hash": "3132ee5c4866b877bde1ce684ed0a77c3f4e95305f927dbedc321d9d7022afd7",
+      "activated_at": "2026-08-13T06:30:00Z",
+      "baseline_path": "workspace/research/holding-baselines/NBIS/nbis-20260813-v1.json"
+    },
+    "MVLL": {
+      "baseline_id": "mvll-20260813-v1",
+      "baseline_version": 1,
+      "baseline_hash": "472d4701a93219216f1be223ac1f21bb92435a6be8b5aa971a7894122f002fb0",
+      "research_packet_hash": "d55caa198809c45a57d5775855737f76989dbc9630b3a6cb8f7d812e5fc55889",
+      "activated_at": "2026-08-13T06:30:00Z",
+      "baseline_path": "workspace/research/holding-baselines/MVLL/mvll-20260813-v1.json"
+    },
+    "SOXL": {
+      "baseline_id": "soxl-20260813-v1",
+      "baseline_version": 1,
+      "baseline_hash": "9291815f1322493baff8224209f2a1278961a1812f534077939c55591cce629b",
+      "research_packet_hash": "b341f566b7bcdf85d779f370f2770a0286637d606c09084d7973991b8eba2860",
+      "activated_at": "2026-08-13T06:30:00Z",
+      "baseline_path": "workspace/research/holding-baselines/SOXL/soxl-20260813-v1.json"
+    }
+  },
+  "historical_alert_replay_allowed": false,
+  "portfolio_state_mutation": false,
+  "order_authority": false
+}

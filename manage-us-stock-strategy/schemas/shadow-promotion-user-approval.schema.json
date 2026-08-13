@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadow-promotion-user-approval.schema.json",
+  "title": "Explicit Shadow Promotion Approval Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "checkpoint_audit_hash", "approved_at", "approval_reference", "scope", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "cohort_id": {"type": "string"},
+    "checkpoint_audit_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "approved_at": {"type": "string", "format": "date-time"},
+    "approval_reference": {"type": "string", "minLength": 1},
+    "scope": {"const": "HUMAN_REVIEW_ONLY"},
+    "order_authority": {"const": false}
+  }
+}

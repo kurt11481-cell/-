@@ -1,5 +1,21 @@
 # v2.1 Production Readiness
 
+## v2.6 Integrated Shadow Addendum — 2026-08-13
+
+**SYSTEM STATUS: READY_FOR_SHADOW_USE / FIRST_VALID_SESSION_PENDING**
+
+All new holding-baseline, Codex Web, provider-onboarding, compiled-strategy, and
+20-session acceptance features are Shadow-only. The live v2.5 read-only result
+remains authoritative. Three held-ticker baselines are activated, but NBIS and
+MVLL direct/underlying valuation remain explicitly unverified and therefore
+cannot silently produce a baseline-driven hold or add.
+
+No completed-close Web route or structured provider is operationally approved.
+Consequently independent-price operational coverage is pending and final
+decision-review activation remains blocked. Morning task configuration is not
+delivery verification; the v2.6 cohort starts at `0/20`. Pre-open remains
+`NOT_CONFIGURED`.
+
 ## v2.5 Shadow Addendum — 2026-08-13
 
 **SYSTEM STATUS: READY_FOR_SHADOW_USE**

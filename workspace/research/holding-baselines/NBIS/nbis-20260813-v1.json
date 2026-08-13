@@ -1,0 +1,177 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "nbis-20260813-v1",
+  "baseline_version": 1,
+  "ticker": "NBIS",
+  "baseline_type": "ISSUER_EQUITY",
+  "analysis_cutoff": "2026-08-13T06:20:00Z",
+  "evidence_cutoff": "2026-08-13T06:20:00Z",
+  "content_status": "PARTIAL",
+  "thesis_status": "VALID",
+  "valuation_applicability": "DIRECT",
+  "valuation_status": "UNVERIFIED",
+  "valuation_basis": "NBIS_ISSUER",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "Official filings support a rapidly scaling AI-cloud business with contracted power, large customer commitments, and substantial liquidity, while the capital intensity and financing structure remain material constraints.",
+  "strongest_counter_case": "The build-out requires unusually high capital deployment and external financing; customer concentration, accelerator supply, execution delays, dilution, secured debt, and regulatory or geopolitical constraints could impair cash generation before capacity produces durable returns.",
+  "invalidation_conditions": [
+    "Official filings show a material loss, delay, or repricing of core contracted AI-cloud demand.",
+    "Verified liquidity and financing sources no longer cover the disclosed build-out path without materially adverse dilution or solvency risk.",
+    "Official evidence shows that power, site, or accelerator availability cannot support the announced capacity ramp."
+  ],
+  "next_research_triggers": [
+    "Next official earnings release and filed financial statements.",
+    "New official financing, capacity, customer-concentration, or accelerator-supply disclosure.",
+    "A point-in-time issuer valuation packet using a validated completed-session market snapshot."
+  ],
+  "claims": [
+    {
+      "claim_id": "nbis-c1",
+      "claim_type": "BUSINESS_MODEL_AND_GROWTH",
+      "evidence_ids": [
+        "nbis-e1",
+        "nbis-e2"
+      ],
+      "normalized_claim": "Nebius reports AI-cloud revenue expansion and a capital-intensive owned infrastructure build-out supported by contracted power."
+    },
+    {
+      "claim_id": "nbis-c2",
+      "claim_type": "CUSTOMER_AND_CONTRACT_DEVELOPMENT",
+      "evidence_ids": [
+        "nbis-e3"
+      ],
+      "normalized_claim": "An official filing discloses a multi-year infrastructure services framework with Meta and initial orders whose total value may reach approximately $27 billion."
+    },
+    {
+      "claim_id": "nbis-c3",
+      "claim_type": "LIQUIDITY_CASH_FLOW_AND_CAPEX",
+      "evidence_ids": [
+        "nbis-e2",
+        "nbis-e6"
+      ],
+      "normalized_claim": "The Q1 shareholder materials report substantial cash and positive operating cash flow, while later secured project financing shows continuing capital intensity and encumbrance risk."
+    },
+    {
+      "claim_id": "nbis-c4",
+      "claim_type": "FINANCING_AND_DILUTION_RISK",
+      "evidence_ids": [
+        "nbis-e4",
+        "nbis-e5"
+      ],
+      "normalized_claim": "Official filings disclose a pre-funded equity warrant and large convertible-note financing, creating dilution and financing-structure risk alongside liquidity."
+    },
+    {
+      "claim_id": "nbis-c5",
+      "claim_type": "VALUATION_LIMITATION",
+      "evidence_ids": [
+        "nbis-e1",
+        "nbis-e2"
+      ],
+      "normalized_claim": "Issuer operating evidence is available, but this slow baseline does not contain an approved point-in-time market-value packet; direct valuation therefore remains unverified."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "nbis-e1",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926059872/tm2614392d1_ex99-1.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-13T10:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-13T10:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Q1 2026 revenue, year-over-year growth, and Pennsylvania 1.2 GW site disclosure",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-e2",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926059872/tm2614392d1_ex99-2.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-13T10:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-13T10:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Q1 shareholder letter: AI-cloud growth, contracted power, cash, operating cash flow, capacity and GPU-related capital investment",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-e3",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/tm268879d1_6k.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-16T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-03-13T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Meta infrastructure service agreement and initial five-year GPU-capacity orders",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-e4",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/tm268532d1_6k.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-11T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-03-11T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Approximately $2 billion NVIDIA pre-funded warrant private placement and related share count",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-e5",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/tm268409d3_6k.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-18T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-03-17T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Upsized $4 billion convertible senior note offering",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-e6",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/tm2620683d1_6k.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-07-17T20:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-07-10T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Asset-backed facility secured by borrower assets and shares",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "nbis-c1",
+    "nbis-c2",
+    "nbis-c3",
+    "nbis-c4",
+    "nbis-c5"
+  ],
+  "evidence_ids": [
+    "nbis-e1",
+    "nbis-e2",
+    "nbis-e3",
+    "nbis-e4",
+    "nbis-e5",
+    "nbis-e6"
+  ],
+  "linked_components": [],
+  "technical_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; current technical authority belongs to the completed-session overlay.",
+  "portfolio_fit_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; current holdings, cash, cost basis, and hard-risk rules remain outside this baseline.",
+  "research_packet_hash": "3132ee5c4866b877bde1ce684ed0a77c3f4e95305f927dbedc321d9d7022afd7",
+  "baseline_hash": "4c996507d6b04054f0b9e26748017d354a427b71a07f1004a764312f31af554e",
+  "supersedes_baseline_id": null,
+  "validation_status": "VALIDATED_SHADOW",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false,
+  "activated_at": "2026-08-13T06:30:00Z"
+}

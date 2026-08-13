@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "holding-research-index.schema.json",
+  "title": "Active Shadow Holding Research Baseline Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "updated_at", "active", "historical_alert_replay_allowed", "portfolio_state_mutation", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6"},
+    "mode": {"enum": ["SHADOW", "MIGRATION"]},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "active": {"type": "object", "additionalProperties": {"type": "object"}},
+    "historical_alert_replay_allowed": {"const": false},
+    "portfolio_state_mutation": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

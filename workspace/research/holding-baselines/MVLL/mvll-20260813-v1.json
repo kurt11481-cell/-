@@ -1,0 +1,172 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "mvll-20260813-v1",
+  "baseline_version": 1,
+  "ticker": "MVLL",
+  "baseline_type": "SINGLE_STOCK_LEVERAGED_ETF",
+  "analysis_cutoff": "2026-08-13T06:20:00Z",
+  "evidence_cutoff": "2026-08-13T06:20:00Z",
+  "content_status": "PARTIAL",
+  "thesis_status": "VALID",
+  "valuation_applicability": "UNDERLYING_BASED",
+  "valuation_status": "UNVERIFIED",
+  "valuation_basis": "MRVL_ISSUER",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "MVLL provides daily 2x exposure to MRVL, whose official filings show record data-center growth across optical, switching, and custom-XPU solutions; the daily reset and single-stock leverage make product-level path, liquidity, and structural risk decisive.",
+  "strongest_counter_case": "MRVL customer-program concentration, custom-program timing, acquisition integration, competitive pressure, and margin or guidance disappointment could combine with MVLL daily compounding and volatility decay to produce losses materially different from twice MRVL's multi-day return.",
+  "invalidation_conditions": [
+    "Official MRVL filings show material deterioration in data-center demand, custom-XPU programs, optical interconnect, or guidance.",
+    "MVLL sponsor disclosures change the daily objective, underlying, continued listing, or operating structure.",
+    "Current product-close, liquidity, or deterministic policy evidence fails validation in the daily overlay."
+  ],
+  "next_research_triggers": [
+    "Next official MRVL earnings release, 10-Q, and customer-concentration disclosure.",
+    "Any MVLL prospectus supplement, split, liquidation, or material liquidity notice.",
+    "A point-in-time MRVL valuation packet using validated completed-session evidence."
+  ],
+  "claims": [
+    {
+      "claim_id": "mvll-c1",
+      "claim_type": "PRODUCT_OBJECTIVE_AND_PATH_DEPENDENCE",
+      "evidence_ids": [
+        "mvll-e1",
+        "mvll-e2"
+      ],
+      "normalized_claim": "MVLL targets 200% of MRVL's daily percentage change and is not expected to deliver twice MRVL's cumulative return over periods longer than one day."
+    },
+    {
+      "claim_id": "mvll-c2",
+      "claim_type": "UNDERLYING_AI_INFRASTRUCTURE_THESIS",
+      "evidence_ids": [
+        "mvll-e3",
+        "mvll-e5"
+      ],
+      "normalized_claim": "MRVL's official materials identify demand across custom XPU, optical interconnect, Ethernet switching, and broader accelerated-infrastructure connectivity."
+    },
+    {
+      "claim_id": "mvll-c3",
+      "claim_type": "UNDERLYING_FINANCIAL_AND_MARGIN_CONTEXT",
+      "evidence_ids": [
+        "mvll-e3",
+        "mvll-e4"
+      ],
+      "normalized_claim": "MRVL reported record quarterly revenue, data-center concentration, operating cash flow, and material GAAP/non-GAAP margin and acquisition effects."
+    },
+    {
+      "claim_id": "mvll-c4",
+      "claim_type": "CUSTOMER_TIMING_AND_CONCENTRATION_RISK",
+      "evidence_ids": [
+        "mvll-e4"
+      ],
+      "normalized_claim": "MRVL's filed risk disclosures note that custom or semi-custom products may have limited alternative customers, increasing program timing and concentration risk."
+    },
+    {
+      "claim_id": "mvll-c5",
+      "claim_type": "VALUATION_AND_POLICY_OWNERSHIP",
+      "evidence_ids": [
+        "mvll-e2",
+        "mvll-e4"
+      ],
+      "normalized_claim": "MRVL issuer valuation remains unverified in this slow packet; MVLL direct-close requirements, reduction direction, timing slots, and rearm rules remain owned by current deterministic policy and overlay, not the baseline."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "mvll-e1",
+      "source_url": "https://graniteshares.com/etfs/mvll/",
+      "source_type": "SPONSOR_PRIMARY",
+      "published_at": "2025-03-05T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2025-03-05T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MVLL daily 200% MRVL objective, no guarantee, multi-day cumulative-return warning, underlying identity and market-price methodology",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-e2",
+      "source_url": "https://graniteshares.com/media/v3xnwpc2/graniteshares-etf-trust-s-l-single-stock-etfs-prospectus.pdf",
+      "source_type": "SPONSOR_REGULATORY_PRIMARY",
+      "published_at": "2025-10-24T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2025-10-24T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Leveraged single-stock ETF short-term vehicle, daily reset, compounding, volatility, derivatives and structural risks",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-e3",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001835632-26-000014/q127_8kx522026ex-991.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL Q1 FY2027 revenue, margins, cash flow, data-center demand, optical, switching, custom XPU and guidance",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-e4",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001835632-26-000019/mrvl-20260502.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-28T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-05-02T20:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL Form 10-Q financial statements, acquisitions, custom-product customer limitations and risk disclosures",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-e5",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001193125-26-134462/d113606dex991.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-31T12:00:00Z",
+      "retrieved_at": "2026-08-13T06:20:00Z",
+      "effective_at": "2026-03-31T12:00:00Z",
+      "evidence_cutoff": "2026-08-13T06:20:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "NVIDIA and MRVL collaboration across high-speed connectivity, optical interconnect and custom silicon",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "mvll-c1",
+    "mvll-c2",
+    "mvll-c3",
+    "mvll-c4",
+    "mvll-c5"
+  ],
+  "evidence_ids": [
+    "mvll-e1",
+    "mvll-e2",
+    "mvll-e3",
+    "mvll-e4",
+    "mvll-e5"
+  ],
+  "linked_components": [
+    {
+      "ticker": "MRVL",
+      "role": "UNDERLYING_THESIS",
+      "confirmation_mode": "DAILY_MULTIPLE",
+      "product_close_substitution": false,
+      "valuation_applies_to": "MRVL_ISSUER_NOT_MVLL_TARGET_PRICE"
+    }
+  ],
+  "technical_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; direct MVLL product close and current technical state belong to the daily overlay.",
+  "portfolio_fit_view_at_baseline": "HISTORICAL_CONTEXT_ONLY; existing reduction direction, slots, rearm state, holdings, and cash remain outside the baseline.",
+  "research_packet_hash": "d55caa198809c45a57d5775855737f76989dbc9630b3a6cb8f7d812e5fc55889",
+  "baseline_hash": "472d4701a93219216f1be223ac1f21bb92435a6be8b5aa971a7894122f002fb0",
+  "supersedes_baseline_id": null,
+  "validation_status": "VALIDATED_SHADOW",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false,
+  "activated_at": "2026-08-13T06:30:00Z"
+}

@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.6 - Integrated Holding Research and Operational Shadow Acceptance
+
+- Added immutable Shadow research baselines and daily overlays for NBIS,
+  MVLL/MRVL, and SOXL/semiconductor-sector contexts.
+- Added deterministic compilation with explicit valuation, technical,
+  portfolio, hard-risk, and leveraged-product authority separation.
+- Added selective Codex Web completed-close evidence validation and a disabled
+  structured-provider onboarding framework; no Web result can upgrade live
+  execution.
+- Added cohort-based 5/20/60 scheduled Shadow checkpoints, append-only attempt
+  and session records, explicit-user-approval promotion, and manual/backfill
+  exclusion.
+- Preserved v2.5 broker snapshot reconciliation and added beginner Korean Shadow
+  explanations.
+- Added GitHub Actions deterministic safety CI.
+- Did not change strategy version, hard-risk thresholds, timing quantities,
+  rearm rules, portfolio facts, order authority, or Pre-Open activation.
+
 ## v2.5 - Selective Price Evidence and Broker Snapshot Reconciliation
 
 - Separated primary completed-close validity, technical recomputation, and

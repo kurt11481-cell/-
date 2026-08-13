@@ -42,3 +42,12 @@ stock-strategy-system/skill-staging/
 Thumbs.db
 *.swp
 *.tmp
+
+# Local inventory and v2.6 generated Shadow output
+repo_tree.txt
+workspace/outputs/integrated_shadow/
+workspace/outputs/v2_6_integrated_shadow/
+workspace/outputs/price-evidence-route-acceptance/
+workspace/outputs/portfolio-strategy/
+workspace/outputs/v2_5_activation/
+workspace/outputs/v2_5_shadow/

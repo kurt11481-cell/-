@@ -154,7 +154,8 @@ def validate_web_evidence(record: dict[str, Any], *, primary_provider: str = "yf
 
 
 def compare_close(primary: dict[str, Any], independent: dict[str, Any],
-                  decision_boundaries: Iterable[dict[str, Any]] = ()) -> dict[str, Any]:
+                  decision_boundaries: Iterable[dict[str, Any]] = (),
+                  tolerance_policy: dict[str, Any] | None = None) -> dict[str, Any]:
     errors = validate_web_evidence(independent, primary_provider=str(primary.get("primary_provider", "yfinance")))
     if errors:
         return _comparison("REJECTED", "INCONCLUSIVE", "NOT_EVALUATED", errors)
@@ -170,13 +171,15 @@ def compare_close(primary: dict[str, Any], independent: dict[str, Any],
     q = float(independent["reported_close"])
     absolute = abs(p - q)
     relative = absolute / p
-    tolerance = max(0.05, 0.001 * p)
+    tolerance_policy = tolerance_policy or {"absolute_usd_floor": 0.05, "relative_fraction": 0.001}
+    tolerance = max(float(tolerance_policy["absolute_usd_floor"]),
+                    float(tolerance_policy["relative_fraction"]) * p)
     boundary_flip = any(_boundary_result(p, item) != _boundary_result(q, item) for item in decision_boundaries)
     if boundary_flip:
-        return _comparison("VALIDATED", "CONFLICT", "DECISION_BOUNDARY_FLIP", [], absolute, relative, True)
+        return _comparison("VALIDATED", "CONFLICT", "DECISION_BOUNDARY_FLIP", [], absolute, relative, True, tolerance)
     if absolute <= tolerance:
-        return _comparison("VALIDATED", "VERIFIED", "MATCH", [], absolute, relative, False)
-    return _comparison("VALIDATED", "CONFLICT", "CONFLICT", [], absolute, relative, False)
+        return _comparison("VALIDATED", "VERIFIED", "MATCH", [], absolute, relative, False, tolerance)
+    return _comparison("VALIDATED", "CONFLICT", "CONFLICT", [], absolute, relative, False, tolerance)
 
 
 def _boundary_result(price: float, boundary: dict[str, Any]) -> bool:
@@ -187,12 +190,13 @@ def _boundary_result(price: float, boundary: dict[str, Any]) -> bool:
 
 def _comparison(evidence: str, crosscheck: str, comparison: str, errors: list[str],
                 absolute: float | None = None, relative: float | None = None,
-                flip: bool = False) -> dict[str, Any]:
+                flip: bool = False, tolerance: float | None = None) -> dict[str, Any]:
     return {"evidence_validation_status": evidence, "crosscheck_status": crosscheck,
             "comparison_status": comparison, "decision_boundary_flip": flip,
             "absolute_difference": absolute, "relative_difference": relative,
+            "tolerance_usd": tolerance,
             "errors": errors}
 
 
 def request_id(ticker: str, completed_session: str, reason: str) -> str:
-    return hashlib.sha256(f"v2.5:{ticker}:{completed_session}:{reason}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"v2.6:{ticker}:{completed_session}:{reason}".encode("utf-8")).hexdigest()
