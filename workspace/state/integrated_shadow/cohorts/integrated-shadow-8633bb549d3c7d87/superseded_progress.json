@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "cohort_status": "COHORT_SUPERSEDED",
   "superseded_at": "2026-08-14T08:22:07+09:00",
-  "superseded_by": "integrated-shadow-a5089a59ee826f79",
+  "superseded_by": "integrated-shadow-e98eae84fbced316",
   "reason": "SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE",
   "prior_progress": {
     "schema_version": "2.6",

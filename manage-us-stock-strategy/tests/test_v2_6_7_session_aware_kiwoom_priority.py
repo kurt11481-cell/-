@@ -27,6 +27,7 @@ from shadow_acceptance import semantic_fingerprint
 from validation_common import load_json, validate_instance
 from validate_kiwoom_session_aware_acceptance import validate_acceptance
 from validate_kiwoom_market_snapshot import validate_snapshot_semantics
+from validate_skill_deployment import normalized_text_sha256
 
 
 SESSION = "2026-08-13"
@@ -194,7 +195,7 @@ class PriorityAndScopeTests(unittest.TestCase):
         scopes = policy["provider_scopes"]
         self.assertEqual({row["ticker"] for row in scopes}, expected)
         self.assertEqual(len(scopes), len(expected))
-        expected_hash = __import__("hashlib").sha256(manifest_path.read_bytes()).hexdigest()
+        expected_hash = normalized_text_sha256(manifest_path).lower()
         self.assertTrue(all(row["acceptance_artifact_hash"] == expected_hash for row in scopes))
         self.assertTrue(all(row["order_authority"] is False for row in scopes))
         by_ticker = {row["ticker"]: row for row in scopes}

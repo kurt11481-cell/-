@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from validation_common import canonical_hash, file_hash
+from validate_skill_deployment import normalized_text_sha256
 
 
 REQUIRED_BASELINE_TICKERS = ("NBIS", "MVLL", "SOXL")
@@ -178,7 +179,9 @@ def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -
     payload: dict[str, str | None] = {}
     for relative in sorted(paths):
         path = root / relative
-        payload[relative.replace("\\", "/")] = file_hash(path) if path.is_file() else None
+        payload[relative.replace("\\", "/")] = (
+            normalized_text_sha256(path).lower() if path.is_file() else None
+        )
     alert_path = root / "stock-strategy-system/alert_policy.json"
     registry_path = root / "workspace/policies/instrument_registry.json"
     route_registry_path = root / ROUTE_REGISTRY_PATH

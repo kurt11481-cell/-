@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from validation_common import file_hash, load_json, validate_instance
+from validate_skill_deployment import normalized_text_sha256
 from validate_source_capabilities import validate_registry
 
 
@@ -21,7 +22,7 @@ def validate_acceptance(
     errors.extend(validate_instance(priority_policy, priority_schema))
     errors.extend(validate_registry(source_registry, source_schema))
 
-    manifest_sha = file_hash(manifest_path)
+    manifest_sha = normalized_text_sha256(manifest_path).lower()
     policy_sha = (priority_policy.get("acceptance_evidence") or {}).get(
         "session_aware_acceptance_manifest_sha256"
     )
@@ -71,7 +72,7 @@ def validate_acceptance(
             continue
         if not candidate.is_file():
             errors.append(f"implementation file missing: {relative}")
-        elif file_hash(candidate) != str(expected).lower():
+        elif normalized_text_sha256(candidate).lower() != str(expected).lower():
             errors.append(f"implementation hash mismatch: {relative}")
 
     # Source artifacts are operational evidence and may be absent in a fresh

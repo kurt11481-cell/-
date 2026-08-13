@@ -7,11 +7,11 @@
     "manage-us-stock-strategy/scripts/session_aware_market_data.py": "1A81DEC666C725F2031BD8EE68C27E4A3521D822C3E03B40C528BA62855CB60B",
     "manage-us-stock-strategy/scripts/run_kiwoom_session_aware_validation.py": "39504D3FC3A59DB38D79CD02492225BE730EF970E689EA212CB31D174DEF9274",
     "manage-us-stock-strategy/scripts/build_kiwoom_session_observation.py": "CFD1E7B74E9061E2B3B7B996E17DDE6A25C047B67612BB9017F5D2E716EE4897",
-    "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py": "17EBA58FEA2FDE3D4F46CF3DE2765BBD5EA99E501E9650D8BFF7E61F15F561E1",
-    "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py": "1FBE575CAE34CABB9D035E4921AC589A21C6FEB6DEA2F4B97363A96C5A70E2B0",
-    "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py": "546DC415A89BA294EE386EBC22BEE523936BFE7CC0ACE353D57500B39C861434",
-    "manage-us-stock-strategy/scripts/kiwoom_provider_preflight.py": "2BE70B2850619C9A586404DB88B808AA4A28800F18A21F6D77D6CAC041506090",
-    "manage-us-stock-strategy/scripts/validate_kiwoom_session_aware_acceptance.py": "C2F8133823F8B394DD4367A37D965C712C5E6A4565E3404A76CF1C63C2B2E1D9"
+    "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py": "1601DAA6AA2E0BD07E179DF65E3BF7E9BB2878F31E7C5E03E7E7218486A69A28",
+    "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py": "639A73C89B0A643C7AFA644AAF5BE6FB4937BFB34FCEE7491D627B70806F4125",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py": "3B8301253B8CC8533B7849B9DBE219F8F4D7D5095BB11A1C446C0F7C1B33D479",
+    "manage-us-stock-strategy/scripts/kiwoom_provider_preflight.py": "DA821A658722B2EAE95706771DC28C9AE2207C6AB47AE486D24E888BB0DD5267",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_session_aware_acceptance.py": "E9A7962214A8ECCE6C1DF37170226D233C9A5A1D9DA41348B22B292CE12D5AA0"
   },
   "official_runtime_commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
   "latest_official_completed_session": "2026-08-13",
