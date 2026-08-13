@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.6.4 - Kiwoom Read-Only Shadow Adapter
+
+- Added a strict local subprocess JSON boundary to the unchanged official
+  Kiwoom REST runtime; credentials, tokens, account data, and raw environment
+  content never enter strategy artifacts.
+- Added dynamic U.S. instrument resolution, separate raw and adjusted daily
+  series, session locking, provider preflight, policy-paced bounded retry, and
+  deterministic Kiwoom/yfinance raw-close comparison.
+- Added schema validation, atomic output writes, output-alias protection, and
+  offline regressions for order blocking, secret sanitization, ticker-local
+  failure, exchange ambiguity, FX rejection, and portfolio immutability.
+- yfinance remains Primary. Kiwoom remains disabled and
+  `SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED`; no operational Shadow count,
+  provider promotion, quantity, portfolio mutation, or order authority was
+  added.
+
 ## v2.6.3 - Massive-Free New-Buy Research and Staged Web Evidence
 
 - Added research-only external discovery proposals and deterministic unsized

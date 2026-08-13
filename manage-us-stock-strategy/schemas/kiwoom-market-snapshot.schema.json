@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-market-snapshot.schema.json",
+  "title": "Kiwoom Read-Only Shadow Market Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "provider_state", "primary_provider", "generated_at", "completed_session", "official_runtime_commit", "preflight_status", "session_lock", "provider_health", "data_status", "ticker_results", "portfolio_state_hash", "operational_shadow_session_increment", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "provider": {"const": "KIWOOM_REST"},
+    "provider_state": {"const": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"},
+    "primary_provider": {"const": "yfinance"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "completed_session": {"type": "string", "format": "date"},
+    "official_runtime_commit": {"type": ["string", "null"]},
+    "preflight_status": {"enum": ["PASS", "FAILED", "NOT_RUN"]},
+    "session_lock": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "completed_session"],
+      "properties": {"status": {"const": "LOCKED"}, "completed_session": {"type": "string", "format": "date"}}
+    },
+    "provider_health": {
+      "type": "object", "additionalProperties": false,
+      "required": ["last_success", "last_failure", "consecutive_failures", "failure_type", "circuit_state", "retry_after"],
+      "properties": {
+        "last_success": {"type": ["string", "null"]}, "last_failure": {"type": ["string", "null"]},
+        "consecutive_failures": {"type": "integer", "minimum": 0}, "failure_type": {"type": ["string", "null"]},
+        "circuit_state": {"enum": ["HEALTHY", "DEGRADED", "OPEN"]}, "retry_after": {"type": ["string", "null"]}
+      }
+    },
+    "data_status": {"enum": ["PASS", "PARTIAL", "DATA_INCOMPLETE"]},
+    "ticker_results": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ticker", "status", "identity", "stock_info_status", "raw", "adjusted", "failure_reason", "order_authority"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "[A-Z][A-Z0-9.-]{0,14}"},
+          "status": {"enum": ["PASS", "DATA_BLOCKED"]},
+          "identity": {"$ref": "kiwoom-instrument-identity.schema.json"},
+          "stock_info_status": {"enum": ["PASS", "IDENTITY_MISMATCH", "NOT_EVALUATED"]},
+          "raw": {"$ref": "kiwoom-market-series.schema.json"},
+          "adjusted": {"$ref": "kiwoom-market-series.schema.json"},
+          "failure_reason": {"type": ["string", "null"]},
+          "order_authority": {"const": false}
+        }
+      }
+    },
+    "portfolio_state_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "operational_shadow_session_increment": {"const": 0},
+    "order_authority": {"const": false}
+  }
+}

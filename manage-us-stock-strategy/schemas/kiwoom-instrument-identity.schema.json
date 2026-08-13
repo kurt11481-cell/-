@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-instrument-identity.schema.json",
+  "title": "Kiwoom U.S. Instrument Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "mapping_status", "stex_tp", "security_name", "instrument_class", "source_api_id", "verified_at", "official_runtime_commit", "mapping_guessed", "order_authority", "mapping_hash"],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "[A-Z][A-Z0-9.-]{0,14}"},
+    "mapping_status": {"enum": ["VERIFIED", "AMBIGUOUS", "NOT_FOUND", "API_UNAVAILABLE", "IDENTITY_MISMATCH"]},
+    "stex_tp": {"type": ["string", "null"], "enum": ["NA", "ND", "NY", null]},
+    "security_name": {"type": ["string", "null"]},
+    "instrument_class": {"type": ["string", "null"]},
+    "source_api_id": {"type": ["string", "null"]},
+    "verified_at": {"type": "string", "format": "date-time"},
+    "official_runtime_commit": {"type": "string"},
+    "mapping_guessed": {"const": false},
+    "order_authority": {"const": false},
+    "mapping_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  }
+}

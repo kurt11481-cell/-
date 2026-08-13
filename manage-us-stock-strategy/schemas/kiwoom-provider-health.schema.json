@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-provider-health.schema.json",
+  "title": "Kiwoom Read-Only Provider Health",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "provider_state", "generated_at", "official_runtime_path_status", "official_runtime_commit", "expected_runtime_commit", "runtime_commit_status", "official_runtime_remote", "expected_runtime_remote", "runtime_remote_status", "runtime_python_status", "credential_file_status", "oauth_status", "egress_ip_status", "capability_status", "provider_health", "secrets_exposed", "operational_shadow_session_increment", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "provider": {"const": "KIWOOM_REST"},
+    "provider_state": {"const": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "official_runtime_path_status": {"enum": ["VERIFIED", "UNAVAILABLE"]},
+    "official_runtime_commit": {"type": ["string", "null"]},
+    "expected_runtime_commit": {"type": "string", "pattern": "[0-9a-f]{40}"},
+    "runtime_commit_status": {"enum": ["VERIFIED", "MISMATCH", "UNAVAILABLE"]},
+    "official_runtime_remote": {"type": ["string", "null"]},
+    "expected_runtime_remote": {"type": "string", "format": "uri"},
+    "runtime_remote_status": {"enum": ["VERIFIED", "MISMATCH", "UNAVAILABLE"]},
+    "runtime_python_status": {"enum": ["VERIFIED", "UNAVAILABLE"]},
+    "credential_file_status": {"enum": ["PRESENT_NOT_READ", "NOT_FOUND"]},
+    "oauth_status": {"enum": ["AUTHENTICATED", "ACCESS_DENIED"]},
+    "egress_ip_status": {"enum": ["RESOLVED_NOT_REPORTED", "UNAVAILABLE"]},
+    "capability_status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+    "provider_health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["last_success", "last_failure", "consecutive_failures", "failure_type", "circuit_state", "retry_after"],
+      "properties": {
+        "last_success": {"type": ["string", "null"]},
+        "last_failure": {"type": ["string", "null"]},
+        "consecutive_failures": {"type": "integer", "minimum": 0},
+        "failure_type": {"type": ["string", "null"]},
+        "circuit_state": {"enum": ["HEALTHY", "DEGRADED", "OPEN"]},
+        "retry_after": {"type": ["string", "null"]}
+      }
+    },
+    "secrets_exposed": {"const": false},
+    "operational_shadow_session_increment": {"const": 0},
+    "order_authority": {"const": false}
+  }
+}
