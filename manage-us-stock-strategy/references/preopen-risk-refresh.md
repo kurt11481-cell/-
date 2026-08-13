@@ -45,3 +45,9 @@ remaining conditions, and null quantity. Include `run_phase` in dedup keys.
 Aggregate global provider outages and isolate ticker failures. If nothing
 material changed, return `NO_MATERIAL_PREOPEN_CHANGE` rather than repeating the
 full post-market report.
+
+Selective completed-close verification belongs to the immutable post-market
+baseline. Pre-open quotes cannot replace pending completed-close evidence,
+upgrade an opportunity, or create a hard-risk breach. A newly user-confirmed
+broker reconciliation may refresh execution constraints only after the atomic
+portfolio-state apply has completed outside the research run.

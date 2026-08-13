@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.5",
+  "proposal_id": "BRP-e09146f27ddccaac95c5",
+  "bundle_id": "BS-20260813-TEST001",
+  "authority_state": "EXTRACTED_PENDING_USER_CONFIRMATION",
+  "scope": "HOLDINGS_ONLY",
+  "expected_state_revision": 1,
+  "expected_portfolio_hash_before": "cc201c37acdbd2d1abf4ed839600c92f919fb567f76a2d7a4a0b3ea85344b983",
+  "status": "USER_CONFIRMATION_REQUIRED",
+  "proposed_patch": {
+    "holdings": {"SOXL": 75, "MVLL": 396, "NBIS": 15},
+    "average_cost_usd": {"SOXL": 123.3251, "MVLL": 41.7791, "NBIS": 215.0},
+    "position_cost_basis_usd": {"SOXL": 9249.3862, "MVLL": 16544.5524, "NBIS": 3225.0}
+  },
+  "unresolved_fields": [
+    "CAPTURE_DATE_USER_CONFIRMATION",
+    "HOLDINGS_COMPLETENESS_USER_CONFIRMATION",
+    "POSITION_CURRENCY_USER_CONFIRMATION"
+  ],
+  "inferred_fills": false,
+  "quantity_authority": "none",
+  "order_authority": false
+}

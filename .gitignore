@@ -7,6 +7,8 @@
 .env.local
 .env.*.local
 **/.yfinance-cache/
+workspace/private_inputs/broker_snapshots/
+workspace/outputs/v2_5_shadow/broker_raw/
 
 # Unrelated application workspace kept outside this repository's scope
 environment-work-planner/

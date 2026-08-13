@@ -547,9 +547,21 @@ def validate_snapshot(
         if calculation.get("history_sufficient") is not True:
             errors.append(prefix + "builder history sufficiency check did not pass")
 
+    crosscheck_errors = [item for item in errors if "cross-check" in item or "independent close" in item or "leveraged proxy" in item]
+    technical_errors = [item for item in errors if any(token in item for token in (
+        "EMA", "ATR", "RVOL", "RSI", "timing", "indicator", "history sufficiency", "formula"
+    ))]
+    primary_errors = [item for item in errors if item not in crosscheck_errors and item not in technical_errors]
     canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return {
         "status": "verified" if not errors else "rejected",
+        "primary_validation_status": "VALIDATED" if not primary_errors else "INVALID",
+        "technical_validation_status": "VALIDATED" if not technical_errors else "INVALID",
+        "independent_close_status": "VERIFIED" if not crosscheck_errors else "PENDING",
+        "actionable_timing_status": "VERIFIED" if not errors else "BLOCKED",
+        "primary_validation_errors": primary_errors,
+        "technical_validation_errors": technical_errors,
+        "independent_close_errors": crosscheck_errors,
         "schema_version": "1.0",
         "formula_version": formula_version,
         "session_date": session_date,

@@ -1,0 +1,13 @@
+{
+  "schema_version": "2.5",
+  "artifact_mode": "TEST_FIXTURE_ONLY",
+  "source_fixture": "manage-us-stock-strategy/tests/fixtures/v2_5/broker-snapshot-extraction.sample-korean.test-only.json",
+  "source_image_was_visually_parsed": false,
+  "proposal_artifact": "broker-reconciliation-proposal.test-only.json",
+  "status": "USER_CONFIRMATION_REQUIRED",
+  "broker_display_price_is_market_evidence": false,
+  "canonical_portfolio_state_was_used": false,
+  "canonical_portfolio_state_was_mutated": false,
+  "scheduled_task_was_activated": false,
+  "order_authority": false
+}

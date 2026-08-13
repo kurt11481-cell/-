@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coordinate the v2.4 post-market portfolio strategy build.
+"""Coordinate the v2.5 shadow post-market portfolio strategy build.
 
 All inputs are read-only.  Lower-level deterministic modules retain calculation
 authority; this module only coordinates, validates, and reports their outputs.
@@ -17,11 +17,14 @@ from typing import Any
 
 from build_capital_redeployment_plan import build_capital_redeployment_plan
 from build_holding_strategy_review import build_holding_strategies
+from build_price_crosscheck_queue import build_queue as build_price_crosscheck_queue
 from build_post_market_baseline import build_baseline, validate_baseline
 from build_run_manifest import build_manifest
 from evaluate_alerts import evaluate
+from evaluate_broker_snapshot_request import evaluate_broker_snapshot_request
 from portfolio_policy_gates import evaluate_cash_status
 from provider_preflight import preflight
+from render_beginner_portfolio_report import render_beginner_summary
 from run_tactical_opportunity_radar import build_radar
 from validate_registry_consistency import validate_registry_consistency
 from validation_common import canonical_hash, load_json, validate_instance, write_json
@@ -150,6 +153,9 @@ def build_portfolio_strategy_report(
     holding_risk_result: dict[str, Any] | None = None,
     unsettled_or_unconfirmed_proceeds_usd: float | None = None,
     provider_preflight_result: dict[str, Any] | None = None,
+    broker_snapshot_policy: dict[str, Any] | None = None,
+    broker_snapshot_runtime: dict[str, Any] | None = None,
+    locale: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     risk_result = holding_risk_result or evaluate(portfolio_state, alert_policy, market_snapshot, alert_runtime)
     cash_gate = evaluate_cash_status(portfolio_state, reference_session=market_session,
@@ -188,6 +194,9 @@ def build_portfolio_strategy_report(
     holding_status = _holding_data_status(strategies)
     tactical_status = radar.get("data_status", "DATA_INCOMPLETE")
     overall = _overall_data_status(holding_status, tactical_status)
+    crosscheck_queue = build_price_crosscheck_queue(completed_session=market_session or "1970-01-01",
+        market_snapshot=market_snapshot, candidate_dispositions=radar["candidate_dispositions"],
+        holding_strategies=strategies, hard_risk_result=risk_result, requested_at=generated_at)
     hard_risk = any(item.get("hard_risk_active") for item in strategies)
     review_items = [
         {"ticker": item["ticker"], "strategy_state": item["strategy_state"],
@@ -197,9 +206,16 @@ def build_portfolio_strategy_report(
     ]
     deterministic_gate = "HARD_RISK_REVIEW" if hard_risk else ("DATA_BLOCKED" if overall == "DATA_INCOMPLETE" else ("PASS" if review_items else "WAIT"))
     holding_risk_data_status = "DATA_INCOMPLETE" if risk_result.get("state") in {"DATA_INCOMPLETE", "STATE_MISMATCH"} else "VALIDATED"
-    independent_close_status = (provider_preflight_result or {}).get("capability_status") or ("AVAILABLE" if tactical_status == "VALIDATED" else "PARTIAL")
+    independent_close_status = "NOT_REQUIRED" if not crosscheck_queue["queue"] else ((provider_preflight_result or {}).get("capability_status") or "PENDING")
+    broker_snapshot_policy = broker_snapshot_policy or {"policy_version": "2026-08-13-broker-snapshot-v2.5"}
+    snapshot_request, _ = evaluate_broker_snapshot_request(portfolio_state=portfolio_state,
+        cash_gate_result=cash_gate, holding_strategies=strategies, holding_risk_result=risk_result,
+        tactical_radar_result=radar, latest_completed_session=market_session,
+        broker_snapshot_policy=broker_snapshot_policy,
+        unreconciled_user_change_state=portfolio_state.get("unreconciled_holding_changes") or [],
+        runtime=broker_snapshot_runtime, run_phase="POST_MARKET")
     report = {
-        "schema_version": "2.4", "run_phase": "POST_MARKET", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
+        "schema_version": "2.5", "run_phase": "POST_MARKET", "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
         "market_session": market_session, "data_status": overall, "holding_data_status": holding_status,
         "tactical_data_status": tactical_status, "event_data_status": event_snapshot.get("coverage_status", "EVENT_DATA_INCOMPLETE"),
         "holding_risk_data_status": holding_risk_data_status,
@@ -216,6 +232,9 @@ def build_portfolio_strategy_report(
             "execution_purchasing_power_usd": capital["execution_purchasing_power_usd"],
             "funding_status": capital["funding_status"]},
         "capital_redeployment": capital,
+        "price_evidence": crosscheck_queue,
+        "broker_reconciliation": {"status": "NO_ACTIVE_PROPOSAL", "authority_state": "NONE", "order_authority": False},
+        "snapshot_request": snapshot_request,
         "final_portfolio_strategy": {"hard_risk_active": hard_risk, "human_review_items": review_items,
             "preferred_capital_use": capital["preferred_use"], "alternative_capital_use": capital["alternative_use"],
             "keep_cash_option": capital["keep_cash_option"], "human_approval_required": True},
@@ -224,8 +243,10 @@ def build_portfolio_strategy_report(
             "market_snapshot_hash": canonical_hash(market_snapshot), "event_snapshot_hash": canonical_hash(event_snapshot),
             "holding_risk_result_hash": canonical_hash(risk_result), "tactical_radar_hash": canonical_hash(radar),
             "capital_redeployment_hash": canonical_hash(capital)},
+        "beginner_summary": {},
         "deterministic_gate_result": deterministic_gate, "order_authority": False,
     }
+    report["beginner_summary"] = render_beginner_summary(report, locale or {"locale": "ko-KR", "messages": {}, "action_code_keys": {}})
     return report, updated_holding, strategies, capital, updated_radar
 
 
@@ -299,11 +320,11 @@ def main() -> int:
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     canonical_state = (root / "stock-strategy-system" / "portfolio_state.json").resolve()
-    outputs_root = (root / "workspace" / "outputs").resolve()
+    outputs_root = (root / "workspace" / "outputs" / "v2_5_shadow").resolve()
     if args.portfolio_state.resolve() != canonical_state:
         raise SystemExit("--portfolio-state must be the canonical read-only operational state")
     if not _within(args.output_directory, outputs_root):
-        raise SystemExit("--output-directory must be under workspace/outputs")
+        raise SystemExit("--output-directory must be under workspace/outputs/v2_5_shadow for v2.5 shadow use")
     protected = {path.resolve() for path in (args.portfolio_state, args.alert_policy, args.registry, args.universe,
         args.radar_policy, args.market, args.events, args.radar_context, args.holding_context,
         args.alert_runtime, args.radar_runtime, args.holding_runtime)} | {canonical_state}
@@ -329,7 +350,10 @@ def main() -> int:
         holding_runtime=load_json(args.holding_runtime), generated_at=args.generated_at, analysis_cutoff=args.analysis_cutoff,
         market_session=args.market_session, latest_completed_session=args.latest_completed_session,
         unsettled_or_unconfirmed_proceeds_usd=args.unsettled_proceeds_usd,
-        provider_preflight_result=preflight_result)
+        provider_preflight_result=preflight_result,
+        broker_snapshot_policy=load_json(root / "workspace" / "policies" / "broker_snapshot_policy.json"),
+        broker_snapshot_runtime={"schema_version": "2.5", "policy_version": "2026-08-13-broker-snapshot-v2.5", "requests": {}, "deliveries": {}, "order_authority": False},
+        locale=load_json(root / "manage-us-stock-strategy" / "assets" / "locales" / "ko-KR.json"))
     schemas = root / "manage-us-stock-strategy" / "schemas"
     errors = [error for strategy in strategies for error in validate_instance(strategy, schemas / "holding-strategy.schema.json")]
     errors.extend(validate_instance(capital, schemas / "capital-redeployment-plan.schema.json"))
@@ -348,7 +372,7 @@ def main() -> int:
     combined_artifact = artifacts["combined"]
     radar_artifact = artifacts["radar"]
     risk_artifact = artifacts["risk"]
-    write_json(holding_artifact, {"schema_version": "2.4", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
+    write_json(holding_artifact, {"schema_version": "2.5", "run_phase": "POST_MARKET", "analysis_cutoff": args.analysis_cutoff,
         "market_session": args.market_session, "holding_strategies": strategies, "order_authority": False})
     write_json(capital_artifact, capital)
     write_json(radar_artifact, report["tactical_radar_result"])
@@ -363,7 +387,7 @@ def main() -> int:
     manifest_args = argparse.Namespace(repo=root, run_id=f"PORTFOLIO-STRATEGY-{args.market_session}",
         run_phase="POST_MARKET", analysis_id=f"PORTFOLIO-STRATEGY-{args.market_session}", run_type="LIVE_SHADOW_REVIEW",
         generated_at=args.generated_at, analysis_cutoff=args.analysis_cutoff, market_session=args.market_session,
-        skill_version="2.4", strategy_version=str(portfolio.get("strategy_version")),
+        skill_version="2.5-shadow", strategy_version=str(portfolio.get("strategy_version")),
         policy_version=str(alert_policy.get("strategy_version") or alert_policy.get("band_version") or "UNVERSIONED"),
         llm_provider=None, llm_model=None, llm_identifier=None, temperature=None, max_debate_rounds=0, max_risk_rounds=0,
         hash=[["market_snapshot_hash", str(args.market)], ["event_snapshot_hash", str(args.events)],
@@ -392,7 +416,7 @@ def main() -> int:
     if provider_incidents:
         notification = provider_incidents[0]
         incident = {
-            "schema_version": "2.4",
+            "schema_version": "2.5",
             "run_phase": "POST_MARKET",
             "completed_session": args.market_session,
             "event_type": notification["event_type"],

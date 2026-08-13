@@ -49,18 +49,21 @@ Require all of the following before using a technical signal:
    validator independently recalculates signal flags from that window.
    The user-facing validator has no calendar-bypass mode; diagnostics and unit
    fixtures cannot authorize a live review.
-5. For a live portfolio-changing proposal, cross-check the completed close
+5. For a decision-changing live portfolio proposal, cross-check the completed close
    against a second timestamped market-data source independent of both Yahoo
-   Finance and yfinance. Treat a session mismatch or a difference above the
-   approved tolerance as `F` or `Wait`.
+   Finance and yfinance. Queue only `READY`, deterministic material
+   `NEAR_TRIGGER`, holding add/reduce/exit review, hard-risk, or approved
+   decision-boundary cases. Missing evidence is `VERIFICATION_PENDING`; a
+   validated decision-changing conflict is `F` or `Wait` for that ticker.
 6. Record source, observation session, retrieval time, units, price basis,
    formula version, and corporate-action treatment.
 
 When a single-stock leveraged ETF quote source contains conflicting display
 fields, do not replace the ETF with its underlying stock. Resolve a direct raw
 completed ETF close first. The underlying may then corroborate the resolution
-by comparing the ETF's daily return with the approved leverage multiple times
-the underlying daily return. A passing proxy relationship is supporting
+by comparing the ETF's daily behavior with the approved confirmation mode.
+`MVLL -> MRVL` is a supplemental daily-multiple diagnostic; `SOXL -> SOXX` is
+direction-only sector context. A passing proxy relationship is supporting
 evidence only; without the direct ETF close the technical gate remains `Wait/F`.
 
 If yfinance is throttled, times out, or returns an empty frame, use only bounded

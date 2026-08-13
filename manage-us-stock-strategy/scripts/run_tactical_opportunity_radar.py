@@ -14,6 +14,7 @@ from typing import Any
 
 from screen_tactical_candidates import _lane_for, _market_integrity
 from portfolio_policy_gates import evaluate_cash_status
+from price_evidence import crosscheck_required, evidence_status
 from validate_registry_consistency import validate_registry_consistency
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
@@ -218,8 +219,6 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
     global_failures: list[str] = []
     if session_gate == "DATA_INCOMPLETE":
         global_failures.append("OFFICIAL_COMPLETED_SESSION_FAILURE")
-    if provider_preflight.get("capability_status") == "UNAVAILABLE":
-        global_failures.append("GLOBAL_INDEPENDENT_CLOSE_OUTAGE")
     approved = set(((policy.get("technical_authority") or {}).get("approved_condition_ids") or [])) | INTERNAL_CONDITION_IDS
     dispositions: list[dict[str, Any]] = []
     survivors: list[str] = []
@@ -232,8 +231,6 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         candidate = candidates.get(symbol) or {}
         row = market_rows.get(symbol)
         market_errors = _market_integrity(market, row, market_session)
-        if "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" in global_failures and not any("cross-check" in error for error in market_errors):
-            market_errors.append("independent completed-close cross-check provider is globally unavailable")
         if session_gate == "DATA_INCOMPLETE" and "OFFICIAL_SESSION_VERIFICATION" not in [_condition_code(x) for x in market_errors]:
             market_errors.append("official latest-completed-session verification did not pass")
         market_conditions = [_condition_code(error) for error in market_errors]
@@ -267,8 +264,21 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
             technical=technical, event_policy_effect=event_effect, risk_liquidity=risk_liquidity,
             portfolio_fit=portfolio_fit, context_valid=context_valid, condition_rejected=condition_rejected)
         new_buy_approved = candidate.get("new_buy_approved") is True and instrument.get("new_buy_instrument_approved") is True
-        execution = _execution_state(opportunity, registry_valid=registry_valid, new_buy_approved=new_buy_approved,
-            cash_status=cash_status, portfolio_fit=portfolio_fit)
+        material_near_trigger = bool(opportunity == "NEAR_TRIGGER" and context_valid and technical == "READY")
+        crosscheck_reason = crosscheck_required(opportunity_state=opportunity,
+                                                material_near_trigger=material_near_trigger)
+        price_evidence = evidence_status(row, market_session, crosscheck_reason)
+        if price_evidence["crosscheck_status"] == "CONFLICT":
+            opportunity, execution = "DATA_BLOCKED", "DATA_BLOCKED"
+            if "PRICE_CONFLICT" not in remaining:
+                remaining.insert(0, "PRICE_CONFLICT")
+        elif price_evidence["crosscheck_requirement"] == "REQUIRED" and price_evidence["crosscheck_status"] != "VERIFIED":
+            execution = "VERIFICATION_PENDING"
+            if "INDEPENDENT_COMPLETED_CLOSE" not in remaining:
+                remaining.append("INDEPENDENT_COMPLETED_CLOSE")
+        else:
+            execution = _execution_state(opportunity, registry_valid=registry_valid, new_buy_approved=new_buy_approved,
+                cash_status=cash_status, portfolio_fit=portfolio_fit)
         if not registry_valid and "POLICY_REGISTRY_CONSISTENCY" not in remaining:
             remaining.append("POLICY_REGISTRY_CONSISTENCY")
         if not new_buy_approved and "NEW_BUY_INSTRUMENT_APPROVAL" not in remaining:
@@ -294,6 +304,8 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
             "new_buy_approval": new_buy_approved, "primary_blocker": _primary_blocker(opportunity, execution, remaining),
             "remaining_conditions": remaining, "next_review_trigger": next_trigger,
             "evidence_cutoff": analysis_cutoff, "quantity": None, "order_authority": False,
+            "material_near_trigger": material_near_trigger,
+            "price_evidence": price_evidence,
         }
         dispositions.append(disposition)
         if (evidence == "PASS" and identity not in IDENTITY_INCOMPLETE_VALUES and candidate.get("watchlist_approved") is True
@@ -311,7 +323,7 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
             "previous_opportunity_state": previous, "opportunity_state": opportunity, "execution_state": execution,
             "event_key": event_key, "delivery_id": delivery_id, "signal_fingerprint": fingerprint,
             "notify": bool(session_gate == "VALID_SESSION" and urgent and not delivered and not duplicate_session
-                           and "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" not in global_failures),
+                           and not (execution == "VERIFICATION_PENDING" and provider_preflight.get("capability_status") == "UNAVAILABLE")),
             "order_authority": False})
 
     requested = set(context.get("deep_research_requested") or [])
@@ -343,8 +355,13 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
     valid_rows = sum(1 for item in dispositions if item["evidence_status"] == "PASS")
     data_status = "VALIDATED" if valid_rows == len(active) else ("PARTIAL" if valid_rows else "DATA_INCOMPLETE")
     global_notifications: list[dict[str, Any]] = []
-    if "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" in global_failures:
-        affected = [item["ticker"] for item in dispositions if item["evidence_status"] == "FAIL"]
+    queued = [
+        item["ticker"] for item in dispositions
+        if item["price_evidence"]["crosscheck_requirement"] == "REQUIRED"
+        and item["price_evidence"]["crosscheck_status"] != "VERIFIED"
+    ]
+    if queued and provider_preflight.get("capability_status") == "UNAVAILABLE":
+        affected = queued
         incident_key = f"{policy.get('policy_version')}:{run_phase}:GLOBAL:GLOBAL_INDEPENDENT_CLOSE_OUTAGE"
         incident_delivery = hashlib.sha256(f"{incident_key}:{market_session}".encode("utf-8")).hexdigest()
         delivered = incident_delivery in (runtime.get("deliveries") or {})
@@ -360,7 +377,7 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         })
     if session_gate == "NO_NEW_SESSION":
         conclusion = "NO_NEW_SESSION"
-    elif session_gate != "VALID_SESSION" or global_failures:
+    elif session_gate != "VALID_SESSION" or any(item != "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" for item in global_failures):
         conclusion = "DATA_INCOMPLETE"
     elif preferred and preferred_execution == "ELIGIBLE_FOR_REVIEW":
         conclusion = "BUY_REVIEW"
@@ -368,7 +385,7 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         conclusion = "WAIT"
     else:
         conclusion = "NO_TRADE"
-    report = {"schema_version": "2.4", "run_phase": run_phase, "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
+    report = {"schema_version": "2.5", "run_phase": run_phase, "generated_at": generated_at, "analysis_cutoff": analysis_cutoff,
         "market_session": market_session, "session_gate": session_gate, "registry_status": registry_validation.get("status"),
         "data_status": data_status, "event_status": events.get("coverage_status", "EVENT_DATA_INCOMPLETE"),
         "active_universe": active, "candidate_dispositions": dispositions, "screen_survivors": survivors,
@@ -376,6 +393,9 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         "shortlist_below_target_due_to_gates": len(shortlist) < target_minimum, "transitions": transitions,
         "global_failures": list(dict.fromkeys(global_failures)), "global_notifications": global_notifications,
         "provider_health": provider_preflight, "cash_status": cash_status,
+        "price_crosscheck_queue": {"crosscheck_requirement": "REQUIRED" if queued else "NOT_REQUIRED",
+                                     "capability_status": (provider_preflight.get("capability_status", "PENDING") if queued else "NOT_REQUIRED"),
+                                     "queued_tickers": queued, "global_failure": "GLOBAL_INDEPENDENT_CLOSE_OUTAGE" if queued and provider_preflight.get("capability_status") == "UNAVAILABLE" else None},
         "preferred_candidate": preferred, "alternative_candidate": alternative, "final_conclusion": conclusion,
         "quantity": None, "order_authority": False}
 

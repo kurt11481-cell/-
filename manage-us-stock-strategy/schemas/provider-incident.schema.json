@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "run_phase", "completed_session", "event_type", "affected_tickers", "provider", "failure_type", "last_success", "retry_after", "next_review_trigger", "event_key", "delivery_id", "notify", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.4"},
+    "schema_version": {"const": "2.5"},
     "run_phase": {"const": "POST_MARKET"},
     "completed_session": {"type": "string", "format": "date"},
     "event_type": {"const": "GLOBAL_INDEPENDENT_CLOSE_OUTAGE"},

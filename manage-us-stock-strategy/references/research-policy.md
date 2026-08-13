@@ -45,7 +45,7 @@ Before a technical level can support `Buy`, `Take profit`, `Reduce`, or `Stop`:
 1. Build the completed-session snapshot with `scripts/build_market_snapshot.py`.
 2. Verify the expected U.S. regular-session date against an exchange or other primary calendar source and record the source, source type, and verification timestamp.
 3. Run `scripts/validate_technical_snapshot.py` without bypass flags. A rejected result forces `Wait` or `F`; do not quote the rejected indicator as actionable.
-4. Independently cross-check the decision price against a timestamped exchange, broker, or reputable second quote source. The internal validator checks consistency and provenance, not the external truth of Yahoo data.
+4. For a decision-changing price review, independently cross-check the decision price against a timestamped exchange, broker, or reputable second quote source. The internal validator checks consistency and provenance, not the external truth of Yahoo data. Routine hold/watch research does not create a redundant daily request.
 5. Record every cited technical value with ticker, value, units, price basis, bar date, formula version, source, retrieval timestamp, and validator fingerprint.
 6. Run `scripts/validate_research_packet.py` for any portfolio-changing conclusion so cited factual claims resolve to the evidence ledger and pass date/source-tier checks.
 

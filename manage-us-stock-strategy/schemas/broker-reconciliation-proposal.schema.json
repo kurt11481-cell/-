@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "broker-reconciliation-proposal.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "proposal_id", "bundle_id", "authority_state", "scope", "expected_state_revision", "expected_portfolio_hash_before", "status", "proposed_patch", "unresolved_fields", "inferred_fills", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"}, "proposal_id": {"type": "string"}, "bundle_id": {"type": "string"},
+    "authority_state": {"const": "EXTRACTED_PENDING_USER_CONFIRMATION"},
+    "scope": {"enum": ["FULL_PORTFOLIO", "HOLDINGS_ONLY", "CASH_ONLY", "POSITION_ONLY"]},
+    "expected_state_revision": {"type": "integer", "minimum": 0},
+    "expected_portfolio_hash_before": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["USER_CONFIRMATION_REQUIRED", "REUPLOAD_REQUIRED", "REJECTED"]},
+    "proposed_patch": {"type": "object"}, "unresolved_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "inferred_fills": {"const": false}, "quantity_authority": {"const": "none"}, "order_authority": {"const": false}
+  }
+}

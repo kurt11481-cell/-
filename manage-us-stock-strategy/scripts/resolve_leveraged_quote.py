@@ -77,18 +77,11 @@ def leveraged_proxy_check(
         raise QuoteResolutionError("product and proxy bar dates do not match")
     if not math.isfinite(leverage_multiple) or leverage_multiple <= 0:
         raise QuoteResolutionError("leverage multiple must be positive and finite")
-    if (
-        not math.isfinite(maximum_tracking_error_fraction)
-        or maximum_tracking_error_fraction <= 0
-    ):
+    if not math.isfinite(maximum_tracking_error_fraction) or maximum_tracking_error_fraction <= 0:
         raise QuoteResolutionError("tracking-error tolerance must be positive and finite")
 
-    product_return = float(required["product_close"]) / float(
-        required["product_previous_close"]
-    ) - 1.0
-    proxy_return = float(required["proxy_close"]) / float(
-        required["proxy_previous_close"]
-    ) - 1.0
+    product_return = float(required["product_close"]) / float(required["product_previous_close"]) - 1.0
+    proxy_return = float(required["proxy_close"]) / float(required["proxy_previous_close"]) - 1.0
     expected_return = leverage_multiple * proxy_return
     tracking_error = product_return - expected_return
     corroborated = abs(tracking_error) <= maximum_tracking_error_fraction
@@ -107,6 +100,63 @@ def leveraged_proxy_check(
     }
 
 
+def resolve_independent_product_close(product_row: dict[str, Any], *, independent_close: float,
+                                      bar_date: str) -> dict[str, Any]:
+    """Resolve only the direct product close; proxy evidence is deliberately excluded."""
+    if product_row.get("bar_date") != bar_date:
+        raise QuoteResolutionError("direct product close and product bar date do not match")
+    if not finite_positive(product_row.get("close")) or not finite_positive(independent_close):
+        raise QuoteResolutionError("direct and primary product closes must be positive and finite")
+    primary = float(product_row["close"])
+    difference = abs(primary - float(independent_close))
+    tolerance = max(0.05, 0.001 * primary)
+    if difference > tolerance + 1e-12:
+        raise QuoteResolutionError(f"direct independent close differs by {difference:.8f}, above {tolerance:.8f}")
+    return {"status": "verified", "difference_usd": difference, "tolerance_usd": tolerance,
+            "completed_close": float(independent_close)}
+
+
+def evaluate_leveraged_confirmation(product_row: dict[str, Any], proxy_row: dict[str, Any], *,
+                                    profile: dict[str, Any],
+                                    tracking_tolerance_fraction: float | None = None) -> dict[str, Any]:
+    """Evaluate a registry-driven proxy relationship without substituting the product close."""
+    proxy_symbol = profile.get("confirmation_proxy")
+    mode = profile.get("confirmation_mode")
+    role = profile.get("confirmation_role")
+    if not proxy_symbol or mode not in {"DIRECTION_ONLY", "DAILY_MULTIPLE"}:
+        return {"status": "NOT_APPLICABLE", "proxy_symbol": proxy_symbol, "confirmation_mode": mode,
+                "confirmation_role": role, "product_close_substitution": False}
+    if product_row.get("bar_date") != proxy_row.get("bar_date"):
+        return {"status": "UNAVAILABLE", "reason": "SESSION_MISMATCH", "proxy_symbol": proxy_symbol,
+                "confirmation_mode": mode, "confirmation_role": role, "product_close_substitution": False}
+    required = (product_row.get("close"), product_row.get("close_prev"), proxy_row.get("close"), proxy_row.get("close_prev"))
+    if not all(finite_positive(value) for value in required):
+        return {"status": "UNAVAILABLE", "reason": "RETURN_INPUT_UNAVAILABLE", "proxy_symbol": proxy_symbol,
+                "confirmation_mode": mode, "confirmation_role": role, "product_close_substitution": False}
+    product_return = float(product_row["close"]) / float(product_row["close_prev"]) - 1.0
+    proxy_return = float(proxy_row["close"]) / float(proxy_row["close_prev"]) - 1.0
+    common = {"proxy_symbol": proxy_symbol, "confirmation_mode": mode, "confirmation_role": role,
+              "daily_target_multiple": profile.get("daily_target_multiple"),
+              "product_return_fraction": product_return, "proxy_return_fraction": proxy_return,
+              "product_close_substitution": False}
+    if mode == "DIRECTION_ONLY":
+        aligned = product_return == 0 or proxy_return == 0 or (product_return > 0) == (proxy_return > 0)
+        return {**common, "status": "ALIGNED" if aligned else "DIVERGED",
+                "exact_multiple_comparison_performed": False}
+    multiple = profile.get("daily_target_multiple")
+    if not isinstance(multiple, (int, float)) or not math.isfinite(float(multiple)) or float(multiple) <= 0:
+        return {**common, "status": "UNAVAILABLE", "reason": "DAILY_TARGET_MULTIPLE_UNVERIFIED"}
+    expected = float(multiple) * proxy_return
+    tracking = product_return - expected
+    if tracking_tolerance_fraction is None:
+        return {**common, "status": "SHADOW_ONLY", "expected_product_return_fraction": expected,
+                "tracking_difference_fraction": tracking, "tolerance_authority": "SHADOW_ONLY_UNAPPROVED"}
+    if not math.isfinite(tracking_tolerance_fraction) or tracking_tolerance_fraction <= 0:
+        raise QuoteResolutionError("policy-supplied tracking tolerance must be positive and finite")
+    return {**common, "status": "ALIGNED" if abs(tracking) <= tracking_tolerance_fraction else "DIVERGED",
+            "expected_product_return_fraction": expected, "tracking_difference_fraction": tracking,
+            "maximum_tracking_error_fraction": tracking_tolerance_fraction,
+            "tolerance_authority": "POLICY_SUPPLIED"}
 def resolve(
     snapshot: dict[str, Any],
     *,
@@ -118,7 +168,7 @@ def resolve(
     bar_date: str,
     proxy_symbol: str | None = None,
     leverage_multiple: float | None = None,
-    maximum_tracking_error_fraction: float = 0.01,
+    maximum_tracking_error_fraction: float | None = None,
     conflict_note: str | None = None,
 ) -> dict[str, Any]:
     symbols = snapshot.get("symbols")
@@ -139,14 +189,10 @@ def resolve(
             "independent source field must be raw_completed_regular_session_close"
         )
 
-    builder_close = float(row["close"])
-    direct_close = float(independent_close)
-    difference = abs(builder_close - direct_close)
-    tolerance = max(0.05, 0.001 * builder_close)
-    if difference > tolerance + 1e-12:
-        raise QuoteResolutionError(
-            f"direct independent close differs by {difference:.8f}, above {tolerance:.8f}"
-        )
+    direct_result = resolve_independent_product_close(row, independent_close=independent_close, bar_date=bar_date)
+    direct_close = direct_result["completed_close"]
+    difference = direct_result["difference_usd"]
+    tolerance = direct_result["tolerance_usd"]
 
     proxy_check = None
     if proxy_symbol is not None or leverage_multiple is not None:
@@ -155,17 +201,25 @@ def resolve(
         proxy_row = symbols.get(proxy_symbol)
         if not isinstance(proxy_row, dict):
             raise QuoteResolutionError(f"snapshot is missing proxy symbol {proxy_symbol}")
-        proxy_check = leveraged_proxy_check(
-            row,
-            proxy_row,
-            proxy_symbol=proxy_symbol,
-            leverage_multiple=float(leverage_multiple),
-            maximum_tracking_error_fraction=maximum_tracking_error_fraction,
-        )
-        if proxy_check["status"] != "corroborated":
-            raise QuoteResolutionError(
-                "direct close passed but the leveraged proxy relationship is outside tolerance"
-            )
+        profile = {"confirmation_proxy": proxy_symbol, "confirmation_role": "DIRECT_UNDERLYING",
+                   "confirmation_mode": "DAILY_MULTIPLE", "daily_target_multiple": leverage_multiple}
+        proxy_check = evaluate_leveraged_confirmation(row, proxy_row, profile=profile,
+                                                      tracking_tolerance_fraction=maximum_tracking_error_fraction)
+        if maximum_tracking_error_fraction is not None and proxy_check["status"] == "DIVERGED":
+            raise QuoteResolutionError("direct close passed but the leveraged proxy relationship is outside policy tolerance")
+        if maximum_tracking_error_fraction is not None:
+            # Preserve the v2.4 validator envelope while the canonical v2.5
+            # evaluator remains registry-driven and separately callable.
+            proxy_check = {
+                **proxy_check,
+                "status": "corroborated" if proxy_check["status"] == "ALIGNED" else "outside_tolerance",
+                "role": "supplemental_integrity_check_not_a_quote_substitute",
+                "bar_date": row.get("bar_date"),
+                "leverage_multiple": float(leverage_multiple),
+                "tracking_error_fraction": proxy_check.get("tracking_difference_fraction"),
+                "maximum_tracking_error_fraction": maximum_tracking_error_fraction,
+                "required_for_resolution": True,
+            }
 
     row["quote_crosscheck"] = {
         "status": "verified",
@@ -203,7 +257,7 @@ def main() -> int:
     )
     parser.add_argument("--proxy-symbol")
     parser.add_argument("--leverage-multiple", type=float)
-    parser.add_argument("--maximum-tracking-error-fraction", type=float, default=0.01)
+    parser.add_argument("--maximum-tracking-error-fraction", type=float)
     parser.add_argument("--conflict-note")
     args = parser.parse_args()
     try:

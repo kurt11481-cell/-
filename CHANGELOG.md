@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.5 - Selective Price Evidence and Broker Snapshot Reconciliation
+
+- Separated primary completed-close validity, technical recomputation, and
+  selective independent evidence for decision-changing candidates.
+- Preserved READY opportunity quality as `VERIFICATION_PENDING` when a queued
+  independent close is unavailable; empty queues no longer create outages.
+- Added ticker-local price-conflict handling, web-evidence provenance checks,
+  decision-boundary comparison, and explicit SOXL/MVLL confirmation modes.
+- Added beginner-friendly Korean portfolio rendering with deterministic
+  priority and an explicit no-order notice.
+- Added privacy-safe broker snapshot ingestion, extraction validation,
+  reconciliation proposals, explicit-confirmation atomic apply, narrow snapshot
+  requests, and shadow-only runtime migration.
+- No strategy rule, broker order, inferred fill, quantity authority, scheduled
+  task, or live portfolio/runtime mutation was added.
+
 ## v2.4 - Dual-Phase Portfolio Strategy and Pre-Open Refresh
 
 - Added authoritative POST_MARKET strategy builds and bounded PRE_OPEN delta

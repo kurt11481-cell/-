@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "v2-5-shadow-runtime.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_version", "migrated_at", "migration_mode", "source_metadata", "namespaces", "delivery_replay_allowed", "portfolio_state_mutation", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"},
+    "policy_version": {"type": "string"},
+    "migrated_at": {"type": "string"},
+    "migration_mode": {"const": "SHADOW_ONLY"},
+    "source_metadata": {"type": "object"},
+    "namespaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trade_review", "holding_review", "price_verification", "broker_snapshot_request", "confirmation_required"],
+      "properties": {
+        "trade_review": {"type": "object", "required": ["deliveries"], "properties": {"deliveries": {"type": "object"}}},
+        "holding_review": {"type": "object", "required": ["deliveries"], "properties": {"deliveries": {"type": "object"}}},
+        "price_verification": {"type": "object", "required": ["deliveries"], "properties": {"deliveries": {"type": "object"}}},
+        "broker_snapshot_request": {"type": "object", "required": ["deliveries"], "properties": {"deliveries": {"type": "object"}}},
+        "confirmation_required": {"type": "object", "required": ["deliveries"], "properties": {"deliveries": {"type": "object"}}}
+      }
+    },
+    "delivery_replay_allowed": {"const": false},
+    "portfolio_state_mutation": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

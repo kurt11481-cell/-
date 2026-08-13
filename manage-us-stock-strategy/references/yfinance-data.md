@@ -3,7 +3,7 @@
 Use yfinance only as an unofficial raw market-data collector. It does not own
 the technical rules, determine the official completed session, validate an
 instrument's identity, or provide the independent close cross-check required by
-the live timing policy.
+the selective decision-changing evidence policy.
 
 ## Collection settings
 
@@ -51,9 +51,24 @@ On HTTP 429, an empty response, timeout, or apparent throttling:
 Increasing the delay above one second is allowed. Reducing it below one second
 for live collection is not allowed.
 
-## Independent validation
+## Selective independent validation
 
-Before a technical signal can enter the live evaluator:
+Every completed-session row must first pass primary OHLCV, session, corporate-
+action, price-basis, and locally recomputed technical validation. A passing
+yfinance row is `PRIMARY_VALIDATED`; it is never labeled official or
+independently verified.
+
+Request an independent completed close only for a decision-changing review:
+
+- `READY` and deterministic material `NEAR_TRIGGER` candidates;
+- `ADD_REVIEW`, `REDUCTION_REVIEW`, or `EXIT_REVIEW` holdings;
+- a hard-risk or approved decision boundary; or
+- an explicitly configured shadow canary.
+
+Routine `HOLD`, `WATCH`, `NOT_READY`, and `ADD_ON_WATCH` rows do not require a
+daily independent request. An empty verification queue is `NOT_REQUIRED`, not a
+provider outage. Before a decision-changing signal can become execution-
+eligible:
 
 - verify the U.S. trading day and early-close status from an official exchange
   or regulator calendar;
@@ -62,16 +77,19 @@ Before a technical signal can enter the live evaluator:
 - run `scripts/validate_technical_snapshot.py` and require verified indicator
   recomputation and provenance; and
 - reject a session mismatch or a close difference outside the active policy
-  tolerance.
+  tolerance `max(USD 0.05, 0.1% of the primary close)`.
+
+A `READY` opportunity with missing independent evidence remains visible as
+`READY / VERIFICATION_PENDING` with `quantity=null`. A validated direct conflict
+blocks only that ticker. Raw-versus-adjusted basis mismatch is `INCONCLUSIVE`,
+not an averaged price and not an automatic conflict.
 
 Another Yahoo page, yfinance `Ticker.history`, or the legacy Yahoo chart
 endpoint is not an independent cross-check for a yfinance download because the
 underlying source is the same.
 
-For a single-stock leveraged ETF, its underlying stock may be used only as a
-supplemental integrity check. Compare the ETF's observed close-to-close return
-with the stated daily multiple of the underlying return and record tracking
-error. This relationship can identify an implausible adjusted or stale quote,
-but it cannot replace a direct, same-session completed close for the ETF. Use
-`scripts/resolve_leveraged_quote.py` only after a direct independent ETF close
-has been identified and its raw-close field meaning is explicit.
+For a single-stock leveraged ETF, its underlying may be a supplemental daily-
+multiple diagnostic only; it cannot substitute for the product close. `MVLL ->
+MRVL` uses `DAILY_MULTIPLE` context. `SOXL -> SOXX` is a sector-direction proxy,
+not an exact 3x relationship. No hidden live tracking-error tolerance is
+authorized.

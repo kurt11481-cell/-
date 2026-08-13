@@ -27,6 +27,14 @@ def build_snapshot(
     generated_at: str,
     provider_health: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if not required_tickers:
+        return {
+            "schema_version": "2.5", "generated_at": generated_at,
+            "completed_session": completed_session, "primary_provider": primary_provider,
+            "crosscheck_requirement": "NOT_REQUIRED", "capability_status": "NOT_REQUIRED",
+            "global_failure": None, "provider_health": {"capability_status": "NOT_REQUIRED"},
+            "records": [], "missing_tickers": [], "order_authority": False,
+        }
     check = preflight(registry, provider_health, capability="INDEPENDENT_COMPLETED_CLOSE")
     providers = {item.get("provider"): item for item in registry.get("providers", [])}
     normalized: list[dict[str, Any]] = []
@@ -51,6 +59,16 @@ def build_snapshot(
         item["validation_status"] = "VALIDATED" if valid else "REJECTED"
         item.setdefault("source_timestamp", None)
         item.setdefault("tolerance_result", "NOT_EVALUATED")
+        item.setdefault("source_url", item.get("source_identifier"))
+        item.setdefault("source_type", "STRUCTURED_INDEPENDENT_CLOSE")
+        item.setdefault("price_basis", "raw_completed_regular_session_close")
+        item.setdefault("acquisition_method", "STRUCTURED_API")
+        item.setdefault("evidence_validation_status", "VALIDATED" if valid else "REJECTED")
+        item.setdefault("comparison_status", "NOT_EVALUATED")
+        item.setdefault("crosscheck_status", "PENDING" if valid else "INCONCLUSIVE")
+        item.setdefault("decision_boundary_flip", False)
+        item.setdefault("absolute_difference", None)
+        item.setdefault("relative_difference", None)
         normalized.append(item)
         if valid:
             validated.add(str(item["ticker"]))
@@ -68,10 +86,11 @@ def build_snapshot(
         capability_status = "AVAILABLE"
         global_failure = None
     return {
-        "schema_version": "2.4",
+        "schema_version": "2.5",
         "generated_at": generated_at,
         "completed_session": completed_session,
         "primary_provider": primary_provider,
+        "crosscheck_requirement": "REQUIRED",
         "capability_status": capability_status,
         "global_failure": global_failure,
         "provider_health": check,

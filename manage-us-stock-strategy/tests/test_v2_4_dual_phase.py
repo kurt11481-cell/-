@@ -183,19 +183,23 @@ class V24DualPhaseTests(unittest.TestCase):
             self.radar_context(), self.portfolio(0, holdings={"NBIS": 15}), self.runtime(), self.radar_policy,
             generated_at="2026-08-12T00:45:00+00:00", analysis_cutoff="2026-08-12T00:44:00+00:00",
             market_session="2026-08-11", latest_completed_session="2026-08-11")
-        self.assertEqual(report["data_status"], "PARTIAL")
+        self.assertEqual(report["data_status"], "VALIDATED")
         self.assertEqual(report["preferred_candidate"], "NOW")
         self.assertEqual(report["final_conclusion"], "WAIT")
-        self.assertEqual(next(item for item in report["candidate_dispositions"] if item["ticker"] == "TOST")["opportunity_state"], "DATA_BLOCKED")
+        self.assertEqual(next(item for item in report["candidate_dispositions"] if item["ticker"] == "TOST")["opportunity_state"], "WATCH")
 
     def test_provider_wide_outage_is_one_global_incident(self):
         outage = {"capability_status": "UNAVAILABLE", "global_failure": "NO_APPROVED_HEALTHY_PROVIDER"}
-        report, _ = build_radar(self.universe, self.registry, self.registry_validation, self.market({"NOW"}), self.events(),
+        market = self.market({"NOW"})
+        for row in market["symbols"].values():
+            row["quote_crosscheck"] = {"status": "unavailable", "independent_of_builder": False, "bar_date": "2026-08-11"}
+        report, _ = build_radar(self.universe, self.registry, self.registry_validation, market, self.events(),
             self.radar_context(), self.portfolio(0), self.runtime(), self.radar_policy,
             generated_at="2026-08-12T00:45:00+00:00", analysis_cutoff="2026-08-12T00:44:00+00:00",
             market_session="2026-08-11", latest_completed_session="2026-08-11", provider_preflight=outage)
-        self.assertEqual(report["final_conclusion"], "DATA_INCOMPLETE")
-        self.assertEqual(report["global_failures"], ["GLOBAL_INDEPENDENT_CLOSE_OUTAGE"])
+        self.assertEqual(report["final_conclusion"], "WAIT")
+        self.assertEqual(report["global_failures"], [])
+        self.assertEqual(next(item for item in report["candidate_dispositions"] if item["ticker"] == "NOW")["execution_state"], "VERIFICATION_PENDING")
         self.assertEqual(len(report["global_notifications"]), 1)
         self.assertTrue(report["global_notifications"][0]["notify"])
         self.assertFalse(any(event["notify"] for event in report["transitions"]))

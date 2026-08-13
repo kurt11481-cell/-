@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-13-broker-snapshot-v2.5",
+  "scope": "broker_snapshot_reconciliation_and_request",
+  "supported_extensions": [".png", ".jpeg", ".jpg", ".webp"],
+  "authority_states": ["UNTRUSTED_USER_SUPPLIED_EVIDENCE", "EXTRACTED_PENDING_USER_CONFIRMATION", "VERIFIED_USER_CONFIRMED_BROKER_SNAPSHOT"],
+  "supported_scopes": ["FULL_PORTFOLIO", "HOLDINGS_ONLY", "CASH_ONLY", "POSITION_ONLY"],
+  "request_states": ["NOT_REQUIRED", "RECOMMENDED", "REQUIRED", "RECEIVED", "PARSING", "USER_CONFIRMATION_REQUIRED", "REUPLOAD_REQUIRED", "VERIFIED", "DECLINED", "EXPIRED"],
+  "confirmation_reminder_sessions": 3,
+  "raw_images_must_remain_git_ignored": true,
+  "broker_display_price_is_market_evidence": false,
+  "fill_inference_prohibited": true,
+  "portfolio_mutation_requires_atomic_confirmed_apply": true,
+  "order_authority": false
+}

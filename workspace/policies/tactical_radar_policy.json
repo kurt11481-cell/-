@@ -4,7 +4,7 @@
   "scope": "tactical_candidate_radar",
   "schedule": {"timezone": "Asia/Seoul", "days": ["TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"], "local_time": "07:45", "official_session_gate_required": true, "stale_catchup_prohibited": true},
   "opportunity_states": ["READY", "NEAR_TRIGGER", "WATCH", "NOT_READY", "DATA_BLOCKED"],
-  "execution_states": ["ELIGIBLE_FOR_REVIEW", "WATCH_ONLY", "NOT_APPROVED", "CASH_BLOCKED", "PORTFOLIO_BLOCKED", "DATA_BLOCKED"],
+  "execution_states": ["ELIGIBLE_FOR_REVIEW", "VERIFICATION_PENDING", "WATCH_ONLY", "NOT_APPROVED", "CASH_BLOCKED", "PORTFOLIO_BLOCKED", "DATA_BLOCKED"],
   "transition_events": ["NEW_READY", "NEW_NEAR_TRIGGER", "OPPORTUNITY_UPGRADE", "OPPORTUNITY_DOWNGRADE", "DATA_BLOCKED", "NO_MATERIAL_CHANGE"],
   "deep_research": {"maximum_candidates": 5, "target_minimum": 3, "run_only_for": ["READY", "NEAR_TRIGGER", "OPPORTUNITY_UPGRADE", "MATERIAL_CHANGE", "USER_REQUEST"], "force_minimum_prohibited": true},
   "technical_authority": {"use_existing_approved_conditions_only": true, "new_numeric_thresholds_prohibited": true, "approved_condition_ids": ["EMA10_RECLAIM_CONFIRMED", "EMA20_RECLAIM_CONFIRMED", "BREAKOUT_ACCEPTANCE_CONFIRMED", "PULLBACK_CONFIRMATION", "EVENT_CLEARANCE", "VALUATION_REFRESH", "EVIDENCE_REFRESH", "THESIS_RESEARCH", "INDEPENDENT_COMPLETED_CLOSE", "PORTFOLIO_REVIEW", "NEXT_COMPLETED_US_SESSION"]},

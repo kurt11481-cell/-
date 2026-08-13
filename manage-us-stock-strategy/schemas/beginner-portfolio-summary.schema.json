@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "beginner-portfolio-summary.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "locale", "display_action_code", "display_action", "display_urgency", "why", "price_verification", "what_changes_decision", "no_order_notice", "items", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.5"}, "locale": {"const": "ko-KR"},
+    "display_action_code": {"type": "string"}, "display_action": {"type": "string"},
+    "display_urgency": {"enum": ["URGENT", "REVIEW", "WAIT", "NONE"]},
+    "why": {"type": "string"}, "price_verification": {"type": "string"},
+    "what_changes_decision": {"type": "string"}, "no_order_notice": {"type": "string"},
+    "items": {"type": "array", "items": {"type": "object"}}, "order_authority": {"const": false}
+  }
+}

@@ -33,7 +33,7 @@ Load only the references needed for the current task:
   a live shadow review, read [event-risk.md](references/event-risk.md) and keep
   missing event coverage visible as `EVENT_DATA_INCOMPLETE`.
 - For semiconductor and AI-infrastructure companies, also read [semiconductor-infrastructure.md](references/semiconductor-infrastructure.md).
-- For chart-based entries, exits, risk levels, trade plans, or any new-buy strategy, read [technical-strategy.md](references/technical-strategy.md). When collecting completed-session OHLCV, also read [yfinance-data.md](references/yfinance-data.md) and use `scripts/build_market_snapshot.py`. yfinance is an unofficial raw-data collector only; calculate indicators locally and retain the independent completed-close check.
+- For chart-based entries, exits, risk levels, trade plans, or any new-buy strategy, read [technical-strategy.md](references/technical-strategy.md). When collecting completed-session OHLCV, also read [yfinance-data.md](references/yfinance-data.md) and use `scripts/build_market_snapshot.py`. yfinance is an unofficial raw-data collector only; calculate indicators locally and apply the selective decision-changing completed-close evidence queue.
 - For actual buy, take-profit, staged-reduction, stop, or 10/20-EMA timing, also read [trade-timing-validation.md](references/trade-timing-validation.md). Run `scripts/validate_technical_snapshot.py` after the official-session fields are verified. Treat a rejected technical snapshot as `Wait` or `F`, never as a trade signal.
 - For an explicit `{TICKER} options` request, its Korean-language equivalent, or a supplied option snapshot, read [options-methodology.md](references/options-methodology.md) and use `scripts/option_analyzer.py` when a live chain can be collected.
 - For strategic allocation, momentum rotation, backtests, or ETF selection, read [portfolio-policy.md](references/portfolio-policy.md).
@@ -43,6 +43,12 @@ Load only the references needed for the current task:
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
 - For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
+- For a broker screenshot, portfolio screenshot, holdings/cash reconciliation,
+  or snapshot request, read [broker-snapshot-reconciliation.md](references/broker-snapshot-reconciliation.md).
+  Treat upload and extraction as untrusted; only an explicitly confirmed,
+  schema-valid proposal with matching revision, bundle, and portfolio hash may
+  atomically update portfolio state. Broker display prices are never market
+  evidence.
 - For portfolio strategy, what to do with current holdings, hold/add/reduce/exit
   review, capital redeployment, use-of-proceeds, or a combined morning portfolio
   review, read [holding-strategy-orchestration.md](references/holding-strategy-orchestration.md),
