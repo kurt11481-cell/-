@@ -40,6 +40,18 @@ close queue. Missing queued evidence leaves `READY` visible but changes
 execution to `VERIFICATION_PENDING`. A true direct conflict blocks that ticker;
 an empty queue is `NOT_REQUIRED` and must not generate an outage.
 
+For new buys, build an unsized deterministic strategy draft before Web
+acquisition. The gate order is identity, evidence, thesis, valuation,
+completed-session technicals, event risk, risk/liquidity, portfolio fit,
+independent close, exact instrument approval, approved entry rule, approved
+maximum-loss rule, approved risk budget, verified cash, exact staged
+entitlement, and final human approval. An earlier missing gate cannot be
+repaired by a later technical signal. Price verification changes only the price
+gate. Quantity remains `null` and `order_authority=false`.
+
+External discovery creates a proposal only. It cannot edit the active universe,
+watchlist approval, new-buy approval, leverage permission, or risk policy.
+
 ## Required disposition
 
 Return for all seven candidates:

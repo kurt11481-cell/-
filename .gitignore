@@ -9,6 +9,12 @@
 **/.yfinance-cache/
 workspace/private_inputs/broker_snapshots/
 workspace/outputs/v2_5_shadow/broker_raw/
+workspace/private_inputs/web_captures/
+workspace/outputs/web-captures/
+workspace/outputs/new-buy-drafts/
+workspace/outputs/staged-promotion/
+workspace/outputs/yfinance-smoke/
+*.log
 
 # Unrelated application workspace kept outside this repository's scope
 environment-work-planner/

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "staged-promotion-audit.schema.json",
+  "title": "Coverage-Weighted Staged Promotion Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "cohort_id", "checkpoint", "generated_at", "valid_sessions", "promotion_model", "promotion_scope_model", "promotion_scope", "requirements", "promotion_state", "promotion_eligible", "automatic_promotion", "explicit_user_approval_required", "audit_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.3"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "checkpoint": {"enum": [1, 5, 10, 20, 60]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "valid_sessions": {"type": "integer", "minimum": 0},
+    "promotion_model": {"const": "COVERAGE_WEIGHTED_STAGED"},
+    "promotion_scope_model": {"const": "TICKER_DECISION_CLASS_SOURCE_ROUTE"},
+    "promotion_scope": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["ticker", "decision_class", "source_route_id", "research_packet_hash", "baseline_hash"],
+      "properties": {
+        "ticker": {"type": "string"},
+        "decision_class": {"type": "string"},
+        "source_route_id": {"type": "string"},
+        "research_packet_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "baseline_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "requirements": {"type": "object", "additionalProperties": {"type": "boolean"}},
+    "promotion_state": {"enum": ["LIVE_READ_ONLY_DELIVERY_VERIFIED", "LIMITED_HUMAN_REVIEW_PENDING_APPROVAL", "GUARDED_HUMAN_REVIEW_PENDING_APPROVAL", "MATURE_GUARDED_REVIEW_PENDING_APPROVAL", "LONG_HORIZON_EVALUATION_REQUIRED", "NOT_ELIGIBLE"]},
+    "promotion_eligible": {"type": "boolean"},
+    "automatic_promotion": {"const": false},
+    "explicit_user_approval_required": {"const": true},
+    "audit_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

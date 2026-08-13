@@ -1,7 +1,22 @@
 # Cohort-Based Shadow Operational Acceptance
 
-The 20-session process measures scheduled post-market delivery and safety. It
-is not a counter that a manual smoke test or historical replay may advance.
+The coverage-weighted 1/5/10/20/60-session process measures scheduled
+post-market delivery and safety. It is not a counter that a manual smoke test,
+manual Run Now, historical replay, route-acceptance replay, or pre-open run may
+advance.
+
+Stage 1 verifies live read-only scheduled delivery. Stage 5 may only generate a
+limited exact-scope approval proposal after replay, fault injection, broker
+workflow, accepted-route, evidence, MATCH, research/baseline, and overlay gates
+pass. Stage 10 adds queue coverage, correct unavailable/inconclusive handling,
+ticker-local isolation, route health, and leveraged product/proxy separation.
+Stage 20 is a maturity review. Stage 60 is append-only long-horizon evaluation.
+No stage automatically mutates policy or authority.
+
+The promotion scope is exactly `ticker + decision_class + source_route_id` and
+also retains research/baseline hashes. Approval for one scope never extends to
+another ticker, decision class, or route. Opportunity, price-evidence,
+new-buy-approval, execution, and promotion states remain separate.
 
 ## Eligible session
 

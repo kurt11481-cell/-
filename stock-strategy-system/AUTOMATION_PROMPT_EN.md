@@ -28,7 +28,7 @@ candidate or mutate runtime state.
 
 ## Required workflow
 
-### v2.6 integrated Shadow extension
+### v2.6.3 Massive-free staged new-buy and integrated Shadow extension
 
 Run the ordinary v2.5 read-only post-market workflow first. Then, without
 changing its live conclusion or any portfolio/policy fact:
@@ -40,23 +40,42 @@ changing its live conclusion or any portfolio/policy fact:
    fields.
 3. Compile Shadow holding contexts deterministically. Preserve live and Shadow
    strategy states separately.
-4. Build the selective decision-changing completed-close queue. Use Codex Web
-   only when the queue is non-empty, open the original final page, reject
-   snippets and Yahoo-origin evidence, and keep unknown routes
-   `SOURCE_ROUTE_PENDING_REVIEW`.
-5. Validate any raw Web evidence and compare only through deterministic code.
+4. Build discovery/onboarding proposals and deterministic unsized new-buy
+   strategy drafts before independent price acquisition. Discovery does not
+   edit the active universe, watchlist approval, new-buy approval, leverage
+   permission, risk budget, maximum-loss rule, cash, or quantity.
+5. Build the selective decision-changing completed-close queue. An empty queue
+   is `NOT_REQUIRED` and performs no Web acquisition. When non-empty, use Codex
+   Web only through an exact route in
+   `workspace/policies/web_completed_close_route_registry.json`; open the
+   original final page, reject snippets and Yahoo-origin evidence, and keep
+   unknown or unaccepted routes `SOURCE_ROUTE_PENDING_REVIEW`.
+6. Validate any raw Web evidence and compare only through deterministic code.
    Shadow `MATCH` or `CONFLICT` cannot upgrade live execution, create quantity,
    or mutate state.
-6. Keep MVLL product close separate from MRVL and use MRVL only under
+7. Keep MVLL product close separate from MRVL and use MRVL only under
    `DAILY_MULTIPLE`; keep SOXL product close separate from SOXX and use SOXX
    `DIRECTION_ONLY`.
-7. Evaluate the existing broker-snapshot request and render the beginner Korean
+8. Evaluate the existing broker-snapshot request and render the beginner Korean
    summary without exposing account identifiers or treating broker display
    prices as market evidence.
-8. Capture the portfolio hash before and after all work.
-9. Record a v2.6 integrated Shadow attempt for both scheduled success and
+9. Capture the portfolio hash before and after all work.
+10. Record a v2.6.3 integrated Shadow attempt for both scheduled success and
    scheduled failure where possible, classify it, update the append-only cohort
    progress atomically, and generate a due checkpoint.
+
+Do not require `MASSIVE_API_KEY`, Massive MCP, Massive OAuth, or a structured
+independent provider at startup. Codex Web is an acquisition method, not a
+provider-capability record. Missing Massive configuration is never a global
+failure. Web unavailability preserves `READY`/`NEAR_TRIGGER` research quality,
+leaves execution `VERIFICATION_PENDING`, and is ticker-local unless the common
+session or primary snapshot failed.
+
+Apply the 1/5/10/20/60 promotion model only to an exact
+`ticker + decision_class + source_route_id` scope. Route acceptance replays do
+not count as operational Shadow sessions. No stage auto-promotes. A Web MATCH
+changes only price evidence and cannot approve the instrument, entry rule,
+maximum-loss rule, risk budget, cash, quantity, or order.
 
 Only an actual delivered `Morning Portfolio Strategy` scheduled run from
 committed `main` may count. Configuration, manual smoke, unit tests, pre-open,
@@ -106,19 +125,24 @@ not be configured or upgraded by this prompt.
    `calendar_source`, `calendar_verified_at_utc`,
    `expected_us_session_date`, `is_trading_day=true`, and the verified boolean
    `is_early_close`.
-5. For every symbol used in an EMA or watch setup, verify the completed close
-   against a second timestamped source independent of Yahoo Finance and
-   yfinance. The legacy Yahoo chart endpoint, another Yahoo page, or
-   `Ticker.history` is not an independent source for this purpose.
+5. For every deterministic selective queue item, attempt to verify the
+   completed close against an exact registered, accepted, timestamped original
+   source independent of Yahoo Finance and yfinance. Do not request independent
+   evidence for an empty queue or ordinary HOLD. The legacy Yahoo chart
+   endpoint, another Yahoo page, or `Ticker.history` is not an independent
+   source for this purpose.
    Add `quote_crosscheck` to the transient symbol row with:
    `status=verified`, `independent_of_builder=true`, source, direct URL,
    `bar_date`, `completed_close`, `verified_at_utc`, `difference_usd`, and
-   `tolerance_usd`. Reject the technical signal if the absolute difference is
-   greater than `max(USD 0.05, 0.10% of the builder close)`.
+   `tolerance_usd`. Reject only the queued decision-changing technical or
+   execution review if the absolute difference is greater than
+   `max(USD 0.05, 0.10% of the builder close)`.
    If yfinance is throttled, times out, or returns an empty frame, use only the
    builder's bounded backoff. Never parallelize retries, rotate IP addresses,
    or silently substitute stale bars. Missing held-symbol OHLCV is grade `F`;
-   a missing watch-only symbol disables only that watch item.
+   a missing watch-only symbol disables only that watch item. A missing or
+   pending registered Web route preserves the opportunity label and leaves
+   execution `VERIFICATION_PENDING`; it does not become `NO_TRADE`.
 6. Run `validate_technical_snapshot.py` for each holding/proxy pair and each
    watch symbol. The evaluator repeats this validation internally. A rejected
    technical check disables only EMA/watch timing; it must not hide a valid raw-

@@ -89,7 +89,8 @@ def valid_web_evidence(ticker: str = "MVLL", close: float = 100.02) -> dict[str,
     from web_close_evidence import extracted_text_sha256
 
     text = f"{ticker} regular session close on 2026-08-12 was {close} USD"
-    return {"schema_version": "2.6", "queue_item_id": queue_item(ticker)["queue_item_id"], "ticker": ticker,
+    return {"schema_version": "2.6.3", "queue_item_id": queue_item(ticker)["queue_item_id"],
+            "source_route_id": "LEGACY_EXAMPLE_ROUTE", "ticker": ticker,
             "security_name": ticker, "reported_session": "2026-08-12", "reported_close": close,
             "currency": "USD", "price_basis": "RAW_REGULAR_SESSION_CLOSE", "provider": "Example Exchange",
             "source_url": f"https://exchange.example/{ticker.lower()}/history",

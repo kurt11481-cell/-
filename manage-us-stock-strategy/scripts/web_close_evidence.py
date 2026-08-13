@@ -38,7 +38,7 @@ def _credential_leak(url: str) -> bool:
     return any(key.lower() in SECRET_QUERY_KEYS for key, _ in parse_qsl(parsed.query, keep_blank_values=True))
 
 
-def _approved_route(record: dict[str, Any], policy: dict[str, Any]) -> bool:
+def _legacy_approved_route(record: dict[str, Any], policy: dict[str, Any]) -> bool:
     final_url = str(record.get("final_source_url") or "")
     domain = _domain(final_url)
     for route in policy.get("approved_routes") or []:
@@ -52,12 +52,55 @@ def _approved_route(record: dict[str, Any], policy: dict[str, Any]) -> bool:
     return False
 
 
+def _registered_route(record: dict[str, Any], route_registry: dict[str, Any] | None) -> tuple[dict[str, Any] | None, list[str]]:
+    """Resolve an exact route without allowing domain-wide authority leakage."""
+    if route_registry is None:
+        return None, []
+    route_id = record.get("source_route_id")
+    matches = [route for route in route_registry.get("routes", []) if route.get("route_id") == route_id]
+    if len(matches) != 1:
+        return None, ["SOURCE_ROUTE_UNKNOWN"]
+    route = matches[0]
+    failures: list[str] = []
+    final_url = str(record.get("final_source_url") or "")
+    if record.get("ticker") not in (route.get("ticker_scope") or []):
+        failures.append("SOURCE_ROUTE_TICKER_SCOPE_MISMATCH")
+    if _domain(final_url) != route.get("source_domain"):
+        failures.append("SOURCE_ROUTE_DOMAIN_MISMATCH")
+    if record.get("source_type") != route.get("source_type"):
+        failures.append("SOURCE_ROUTE_TYPE_MISMATCH")
+    if record.get("price_basis") != route.get("price_basis"):
+        failures.append("SOURCE_ROUTE_PRICE_BASIS_MISMATCH")
+    if record.get("source_field_label") != route.get("source_field_label"):
+        failures.append("SOURCE_ROUTE_FIELD_MISMATCH")
+    template = str(route.get("source_url_template") or "")
+    if template and not final_url.startswith(template):
+        failures.append("SOURCE_ROUTE_URL_MISMATCH")
+    return route, failures
+
+
+def _route_status(record: dict[str, Any], policy: dict[str, Any],
+                  route_registry: dict[str, Any] | None) -> tuple[str, list[str]]:
+    route, failures = _registered_route(record, route_registry)
+    if failures:
+        return "SOURCE_ROUTE_PENDING_REVIEW", failures
+    if route is not None:
+        status = str(route.get("route_status") or "SOURCE_ROUTE_PENDING_REVIEW")
+        if status in {"SUSPENDED", "BROKEN"}:
+            return status, [f"SOURCE_ROUTE_{status}"]
+        return status, []
+    return ("SHADOW_APPROVED", []) if _legacy_approved_route(record, policy) else (
+        "SOURCE_ROUTE_PENDING_REVIEW", ["SOURCE_ROUTE_PENDING_REVIEW"]
+    )
+
+
 def validate_raw_web_evidence(record: dict[str, Any], queue_item: dict[str, Any],
-                              policy: dict[str, Any], *, analysis_cutoff: str | None = None) -> dict[str, Any]:
+                              policy: dict[str, Any], *, analysis_cutoff: str | None = None,
+                              route_registry: dict[str, Any] | None = None) -> dict[str, Any]:
     errors: list[str] = []
     inconclusive: list[str] = []
     required = (
-        "queue_item_id", "ticker", "security_name", "reported_session", "reported_close", "currency",
+        "queue_item_id", "source_route_id", "ticker", "security_name", "reported_session", "reported_close", "currency",
         "price_basis", "provider", "source_url", "final_source_url", "source_domain", "source_type",
         "source_title", "source_field_label", "retrieved_at", "source_timestamp", "acquisition_method",
         "is_search_snippet", "is_yahoo_origin", "security_identity_match_claim",
@@ -97,14 +140,18 @@ def validate_raw_web_evidence(record: dict[str, Any], queue_item: dict[str, Any]
         errors.append("YAHOO_ORIGIN_NOT_INDEPENDENT")
     if record.get("source_type") in (policy.get("rejected_source_types") or []):
         errors.append("SOURCE_TYPE_REJECTED")
-    if not _approved_route(record, policy):
-        inconclusive.append("SOURCE_ROUTE_PENDING_REVIEW")
+    route_status, route_reasons = _route_status(record, policy, route_registry)
+    if route_status not in {"SHADOW_APPROVED", "GUARDED_APPROVED"}:
+        inconclusive.extend(route_reasons or ["SOURCE_ROUTE_PENDING_REVIEW"])
     basis = record.get("price_basis")
     if basis in (policy.get("rejected_price_bases") or []):
         errors.append("PRICE_BASIS_REJECTED")
-    elif basis in (policy.get("inconclusive_price_bases") or []) or basis in (policy.get("conditional_price_bases") or []):
+    elif basis in (policy.get("inconclusive_price_bases") or []):
         inconclusive.append("PRICE_BASIS_INCONCLUSIVE")
-    elif basis not in (policy.get("eligible_price_bases") or []):
+    elif basis in (policy.get("conditional_price_bases") or []) and route_status not in {"SHADOW_APPROVED", "GUARDED_APPROVED"}:
+        inconclusive.append("PRICE_BASIS_INCONCLUSIVE")
+    elif (basis not in (policy.get("eligible_price_bases") or [])
+          and basis not in (policy.get("conditional_price_bases") or [])):
         inconclusive.append("PRICE_BASIS_UNKNOWN")
     close = record.get("reported_close")
     if not isinstance(close, (int, float)) or isinstance(close, bool) or not isfinite(float(close)) or float(close) <= 0:
@@ -127,7 +174,7 @@ def validate_raw_web_evidence(record: dict[str, Any], queue_item: dict[str, Any]
     return {
         "evidence_validation_status": status,
         "computed_extracted_text_sha256": expected_hash,
-        "source_route_status": "SHADOW_APPROVED" if _approved_route(record, policy) else "SOURCE_ROUTE_PENDING_REVIEW",
+        "source_route_status": route_status,
         "errors": list(dict.fromkeys(errors)), "inconclusive_reasons": list(dict.fromkeys(inconclusive)),
         "comparison_status": "NOT_EVALUATED", "order_authority": False,
     }
@@ -140,8 +187,11 @@ def _primary_basis_to_v26(value: str) -> str:
 def resolve_shadow_close(queue_item: dict[str, Any], record: dict[str, Any], policy: dict[str, Any],
                          *, current_live_crosscheck_status: str = "PENDING",
                          current_execution_state: str = "VERIFICATION_PENDING",
-                         analysis_cutoff: str | None = None) -> dict[str, Any]:
-    validation = validate_raw_web_evidence(record, queue_item, policy, analysis_cutoff=analysis_cutoff)
+                         analysis_cutoff: str | None = None,
+                         route_registry: dict[str, Any] | None = None) -> dict[str, Any]:
+    validation = validate_raw_web_evidence(
+        record, queue_item, policy, analysis_cutoff=analysis_cutoff, route_registry=route_registry
+    )
     result = {
         **validation, "queue_item_id": queue_item.get("queue_item_id") or queue_item.get("request_id"),
         "ticker": queue_item.get("ticker"), "live_crosscheck_status": current_live_crosscheck_status,
@@ -156,10 +206,19 @@ def resolve_shadow_close(queue_item: dict[str, Any], record: dict[str, Any], pol
         "primary_price_basis": _primary_basis_to_v26(queue_item.get("primary_price_basis") or queue_item.get("price_basis")),
         "currency": queue_item.get("currency", "USD"), "primary_provider": "yfinance",
     }
+    reported_basis = record["price_basis"]
+    comparison_basis = (
+        "RAW_REGULAR_SESSION_CLOSE"
+        if validation["source_route_status"] in {"SHADOW_APPROVED", "GUARDED_APPROVED"}
+        and reported_basis in (policy.get("conditional_price_bases") or [])
+        else reported_basis
+    )
     independent = {
+        "source_route_id": record["source_route_id"],
         "ticker": record["ticker"], "reported_session": record["reported_session"],
         "reported_close": record["reported_close"], "currency": record["currency"],
-        "price_basis": record["price_basis"], "provider": record["provider"],
+        "price_basis": comparison_basis, "reported_price_basis": reported_basis,
+        "provider": record["provider"],
         "source_url": record["final_source_url"], "source_domain": record["source_domain"],
         "source_type": record["source_type"], "source_timestamp": record["source_timestamp"],
         "retrieved_at": record["retrieved_at"], "acquisition_method": "CODEX_WEB",
@@ -170,6 +229,8 @@ def resolve_shadow_close(queue_item: dict[str, Any], record: dict[str, Any], pol
                                policy.get("approved_direct_close_tolerance"))
     shadow_status = comparison["comparison_status"]
     result.update(comparison)
+    result["reported_price_basis"] = reported_basis
+    result["comparison_price_basis"] = comparison_basis
     result["live_crosscheck_status"] = current_live_crosscheck_status
     result["shadow_crosscheck_status"] = shadow_status
     result["shadow_only"] = True

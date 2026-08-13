@@ -23,11 +23,15 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/web_close_evidence.py",
     "manage-us-stock-strategy/scripts/price_evidence.py",
     "manage-us-stock-strategy/scripts/build_price_crosscheck_queue.py",
+    "manage-us-stock-strategy/scripts/build_new_buy_strategy_draft.py",
+    "manage-us-stock-strategy/scripts/build_new_buy_approval_proposal.py",
+    "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
     "workspace/policies/holding_research_baseline_policy.json",
     "workspace/policies/web_completed_close_evidence_policy.json",
     "workspace/policies/shadow_acceptance_policy.json",
 )
+ROUTE_REGISTRY_PATH = "workspace/policies/web_completed_close_route_registry.json"
 
 
 def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -> str:
@@ -37,6 +41,7 @@ def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -
         payload[relative.replace("\\", "/")] = file_hash(path) if path.is_file() else None
     alert_path = root / "stock-strategy-system/alert_policy.json"
     registry_path = root / "workspace/policies/instrument_registry.json"
+    route_registry_path = root / ROUTE_REGISTRY_PATH
     if alert_path.is_file():
         alert = json.loads(alert_path.read_text(encoding="utf-8"))
         payload["approved_alert_policy_semantics"] = canonical_hash({
@@ -56,6 +61,17 @@ def semantic_fingerprint(root: Path, paths: Iterable[str] = SEMANTIC_DEFAULTS) -
                 "confirmation_proxy": (instruments.get(ticker) or {}).get("confirmation_proxy"),
             }
             for ticker in ("MVLL", "SOXL")
+        })
+    if route_registry_path.is_file():
+        route_registry = json.loads(route_registry_path.read_text(encoding="utf-8"))
+        stable_fields = (
+            "route_id", "ticker_scope", "exchange_scope", "instrument_class_scope", "source_type",
+            "source_domain", "source_url_template", "price_basis", "source_field_label", "currency",
+            "authentication_requirement", "route_fingerprint",
+        )
+        payload["web_route_semantics"] = canonical_hash({
+            "registry_version": route_registry.get("registry_version"),
+            "routes": [{key: route.get(key) for key in stable_fields} for route in route_registry.get("routes", [])],
         })
     return canonical_hash(payload)
 
@@ -209,10 +225,12 @@ def apply_attempt(progress: dict[str, Any], attempt: dict[str, Any]) -> dict[str
         updated["checkpoint_status"] = "CHECKPOINT_60_REVIEW_REQUIRED"
     elif count >= 20:
         updated["checkpoint_status"] = "CHECKPOINT_20_REVIEW_REQUIRED"
+    elif count >= 10:
+        updated["checkpoint_status"] = "CHECKPOINT_10_REVIEW_REQUIRED"
     elif count >= 5:
         updated["checkpoint_status"] = "CHECKPOINT_5_REVIEW_REQUIRED"
     elif count > 0:
-        updated["checkpoint_status"] = "TRACKING"
+        updated["checkpoint_status"] = "CHECKPOINT_1_REVIEW_REQUIRED"
     else:
         updated["checkpoint_status"] = "FIRST_VALID_SESSION_PENDING"
     updated["promotion_status"] = "EXPLICIT_USER_APPROVAL_REQUIRED"
@@ -255,7 +273,7 @@ def validate_hash_chain(attempts: list[dict[str, Any]]) -> bool:
 
 
 def checkpoint_audit(progress: dict[str, Any], checkpoint: int, generated_at: str) -> dict[str, Any]:
-    if checkpoint not in {5, 20, 60}:
+    if checkpoint not in {1, 5, 10, 20, 60}:
         raise ValueError("unsupported checkpoint")
     baseline_coverage = {
         ticker: progress.get("baseline_overlay_sessions", {}).get(ticker, 0)
@@ -275,6 +293,11 @@ def checkpoint_audit(progress: dict[str, Any], checkpoint: int, generated_at: st
         "independent_price_coverage": progress.get("independent_price_covered_sessions", 0),
         "critical_violations": progress.get("critical_violations", []),
         "promotion_eligible": eligible, "explicit_user_approval_required": True,
+        "promotion_state": (
+            "LIVE_READ_ONLY_DELIVERY_VERIFIED" if checkpoint == 1 and progress.get("valid_shadow_sessions", 0) >= 1
+            else "NOT_ELIGIBLE"
+        ),
+        "promotion_scope": None,
         "order_authority": False,
     }
     value["audit_hash"] = canonical_hash(value)
