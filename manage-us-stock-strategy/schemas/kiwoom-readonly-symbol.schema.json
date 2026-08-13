@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-readonly-symbol.schema.json",
+  "title": "Sanitized Kiwoom Accepted Symbol",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticker",
+    "kiwoom_exchange_code",
+    "kiwoom_exchange_name",
+    "instrument_class",
+    "mapping_source_api_id",
+    "mapping_status",
+    "identity_ticker",
+    "identity_name",
+    "identity_is_etf",
+    "stock_info_status",
+    "raw_daily",
+    "adjusted_daily",
+    "result"
+  ],
+  "properties": {
+    "ticker": {"enum": ["AAPL", "MVLL", "NBIS", "IBM", "SOXL"]},
+    "kiwoom_exchange_code": {"enum": ["ND", "NY"]},
+    "kiwoom_exchange_name": {"enum": ["NASDAQ", "NYSE"]},
+    "instrument_class": {"enum": ["STOCK_OR_OTHER", "ETF"]},
+    "mapping_source_api_id": {"const": "usa10099"},
+    "mapping_status": {"const": "VERIFIED"},
+    "identity_ticker": {"type": "string", "minLength": 1},
+    "identity_name": {"type": "string", "minLength": 1},
+    "identity_is_etf": {"enum": ["Y", "N"]},
+    "stock_info_status": {"const": "PASS"},
+    "raw_daily": {"$ref": "kiwoom-readonly-ohlcv.schema.json"},
+    "adjusted_daily": {"$ref": "kiwoom-readonly-ohlcv.schema.json"},
+    "result": {"const": "PASS"}
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-market-series.schema.json",
+  "title": "Kiwoom Read-Only Daily Series",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticker", "price_basis", "fx_applied", "completed_session", "completed_close", "bars", "status", "order_authority"],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "[A-Z][A-Z0-9.-]{0,14}"},
+    "price_basis": {"enum": ["RAW", "ADJUSTED"]},
+    "fx_applied": {"const": false},
+    "completed_session": {"type": "string", "format": "date"},
+    "completed_close": {"type": ["number", "null"]},
+    "bars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["session", "open", "high", "low", "close", "volume"],
+        "properties": {
+          "session": {"type": "string", "format": "date"},
+          "open": {"type": "number"},
+          "high": {"type": "number"},
+          "low": {"type": "number"},
+          "close": {"type": "number"},
+          "volume": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "status": {"enum": ["PASS", "DATA_BLOCKED"]},
+    "order_authority": {"const": false}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-13-kiwoom-rate-limit-v1",
+  "provider": "KIWOOM_REST",
+  "external_python_relative_path": ".venv\\Scripts\\python.exe",
+  "minimum_request_interval_seconds": 0.25,
+  "request_timeout_seconds": 30,
+  "maximum_attempts": 2,
+  "retry_backoff_seconds": [1.0],
+  "retryable_failure_types": ["TIMEOUT", "EMPTY_RESPONSE", "SCHEMA_MISMATCH"],
+  "immediate_open_failure_types": ["HTTP_429", "AUTHENTICATION_FAILURE"],
+  "circuit_states": ["HEALTHY", "DEGRADED", "OPEN"],
+  "open_after_consecutive_failures": 3,
+  "retry_storm_prohibited": true,
+  "ip_rotation_prohibited": true,
+  "silent_stale_fallback_prohibited": true,
+  "order_authority": false
+}

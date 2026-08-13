@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-readonly-acceptance-manifest.schema.json",
+  "title": "Kiwoom Read-Only Acceptance Evidence Lock Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_state",
+    "locked_at",
+    "original_artifact",
+    "official_runtime",
+    "fixture",
+    "validation",
+    "provider_authority",
+    "portfolio_immutability",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_state": {"const": "KIWOOM_READONLY_ACCEPTANCE_EVIDENCE_LOCKED"},
+    "locked_at": {"type": "string", "format": "date-time"},
+    "original_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["external_path", "sha256", "exists", "sanitized_scan_status"],
+      "properties": {
+        "external_path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "exists": {"const": true},
+        "sanitized_scan_status": {"const": "PASS"}
+      }
+    },
+    "official_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["remote", "commit", "source_clean"],
+      "properties": {
+        "remote": {"const": "https://github.com/Kiwoom-Securities/Kiwoom-REST-API.git"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_clean": {"const": true}
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_path", "sha256", "schema", "schema_validation_status"],
+      "properties": {
+        "repository_path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "schema": {"type": "string", "minLength": 1},
+        "schema_validation_status": {"const": "PASS"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_symbols", "actual_symbols", "five_symbol_result", "soxl_mapping", "raw_adjusted_separated", "mapping_guessed"],
+      "properties": {
+        "expected_symbols": {"type": "array", "items": {"type": "string"}, "minItems": 5, "uniqueItems": true},
+        "actual_symbols": {"type": "array", "items": {"type": "string"}, "minItems": 5, "uniqueItems": true},
+        "five_symbol_result": {"const": "PASS"},
+        "soxl_mapping": {"const": "VERIFIED_NY_ETF_USA10099"},
+        "raw_adjusted_separated": {"const": true},
+        "mapping_guessed": {"const": false}
+      }
+    },
+    "provider_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_provider_unchanged", "kiwoom_primary", "kiwoom_shadow_operationally_accepted", "independent_crosscheck_eligible", "policy_modified", "operational_shadow_session_increment"],
+      "properties": {
+        "primary_provider_unchanged": {"const": true},
+        "kiwoom_primary": {"const": false},
+        "kiwoom_shadow_operationally_accepted": {"const": false},
+        "independent_crosscheck_eligible": {"const": false},
+        "policy_modified": {"const": false},
+        "operational_shadow_session_increment": {"const": 0}
+      }
+    },
+    "portfolio_immutability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256_before", "sha256_after", "unchanged"],
+      "properties": {
+        "sha256_before": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "sha256_after": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "unchanged": {"const": true}
+      }
+    },
+    "order_authority": {"const": false}
+  }
+}

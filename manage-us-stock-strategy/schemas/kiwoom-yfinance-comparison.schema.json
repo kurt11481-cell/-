@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-yfinance-comparison.schema.json",
+  "title": "Kiwoom and yfinance Raw Close Comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "completed_session", "primary_session_status", "primary_provider", "shadow_provider", "shadow_provider_state", "comparison_status", "results", "provider_promotion", "operational_shadow_session_increment", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "completed_session": {"type": "string", "format": "date"},
+    "primary_session_status": {"enum": ["MATCH", "MISMATCH"]},
+    "primary_provider": {"const": "yfinance"},
+    "shadow_provider": {"const": "KIWOOM_REST"},
+    "shadow_provider_state": {"const": "SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED"},
+    "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ticker", "completed_session", "kiwoom_raw_close", "yfinance_raw_close", "absolute_difference", "relative_difference", "tolerance_usd", "decision_boundary_flip", "comparison_status", "reason"],
+        "properties": {
+          "ticker": {"type": "string"}, "completed_session": {"type": "string", "format": "date"},
+          "kiwoom_raw_close": {"type": ["number", "null"]}, "yfinance_raw_close": {"type": ["number", "null"]},
+          "absolute_difference": {"type": ["number", "null"]}, "relative_difference": {"type": ["number", "null"]},
+          "tolerance_usd": {"type": ["number", "null"]}, "decision_boundary_flip": {"type": "boolean"},
+          "comparison_status": {"enum": ["MATCH", "CONFLICT", "NOT_EVALUATED"]}, "reason": {"type": "string"}
+        }
+      }
+    },
+    "provider_promotion": {"const": false},
+    "operational_shadow_session_increment": {"const": 0},
+    "order_authority": {"const": false}
+  }
+}

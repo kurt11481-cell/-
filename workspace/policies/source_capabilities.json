@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "registry_version": "2026-08-13-source-capabilities-v2",
+  "registry_version": "2026-08-13-source-capabilities-v3",
   "providers": [
     {
       "provider": "yfinance",
@@ -106,6 +106,21 @@
       "enabled": false,
       "capability_scope": ["INDEPENDENT_COMPLETED_CLOSE"],
       "limitations": ["PROVIDER_NOT_CONFIGURED", "NOT_OPERATIONALLY_VALIDATED"]
+    },
+    {
+      "provider": "kiwoom_rest",
+      "source_type": "market_data",
+      "live_supported": true,
+      "historical_point_in_time_supported": "UNKNOWN",
+      "timestamp_quality": "SESSION_DATED",
+      "authoritative_for": [],
+      "independent_crosscheck_eligible": false,
+      "rate_limit_notes": "Official external runtime is connected only through a strict local read-only JSON bridge with policy-controlled pacing and bounded retry.",
+      "failure_behavior": "DISABLED_FAIL_CLOSED",
+      "fallback_priority": 100,
+      "enabled": false,
+      "capability_scope": ["US_INSTRUMENT_IDENTITY", "COMPLETED_DAILY_OHLCV_SHADOW"],
+      "limitations": ["SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED", "NOT_PRIMARY", "NOT_INDEPENDENT_CLOSE_APPROVED", "NO_ORDER_AUTHORITY"]
     },
     {
       "provider": "reddit",

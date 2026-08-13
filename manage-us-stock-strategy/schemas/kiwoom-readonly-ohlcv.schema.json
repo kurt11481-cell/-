@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-readonly-ohlcv.schema.json",
+  "title": "Sanitized Kiwoom OHLCV Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session", "price_basis", "open", "high", "low", "close", "volume", "fx_applied", "status"],
+  "properties": {
+    "session": {"type": "string", "format": "date"},
+    "price_basis": {"enum": ["RAW", "ADJUSTED"]},
+    "open": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "high": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "low": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "close": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "volume": {"type": "string", "pattern": "^[0-9]+$"},
+    "fx_applied": {"const": false},
+    "status": {"const": "PASS"}
+  }
+}

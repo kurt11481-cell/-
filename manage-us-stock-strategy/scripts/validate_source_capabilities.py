@@ -23,6 +23,14 @@ def validate_registry(registry: dict[str, Any], schema: Path) -> list[str]:
         errors.append("yfinance cannot be an independent Yahoo-free cross-check")
     if "TRADING_CALENDAR" in yfinance.get("authoritative_for", []):
         errors.append("yfinance cannot be authoritative for the exchange calendar")
+    kiwoom = by_name.get("kiwoom_rest") or {}
+    if kiwoom:
+        if kiwoom.get("enabled") is not False:
+            errors.append("Kiwoom must remain disabled until operational Shadow acceptance")
+        if kiwoom.get("independent_crosscheck_eligible") is not False:
+            errors.append("Kiwoom is not yet an approved independent close cross-check")
+        if kiwoom.get("authoritative_for"):
+            errors.append("Kiwoom cannot become authoritative from adapter implementation")
     for social in ("reddit", "stocktwits"):
         item = by_name.get(social)
         if item and item.get("historical_point_in_time_supported") is not False:
