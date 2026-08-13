@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "candidate-discovery-proposal.schema.json",
+  "title": "Research-Only Candidate Discovery Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ticker", "legal_issuer_name", "security_class", "exchange", "currency", "instrument_type", "leveraged_status", "identity_status", "discovery_state", "watchlist_approved", "active_universe_approved", "new_buy_instrument_approved", "remaining_conditions", "quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.3"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "legal_issuer_name": {"type": "string", "minLength": 1},
+    "security_class": {"type": "string", "minLength": 1},
+    "exchange": {"type": "string", "minLength": 1},
+    "currency": {"const": "USD"},
+    "instrument_type": {"enum": ["stock", "spot_etf", "leveraged_etf", "inverse_product", "adr", "other"]},
+    "leveraged_status": {"enum": ["LEVERAGED", "NOT_LEVERAGED", "UNVERIFIED"]},
+    "identity_status": {"enum": ["VERIFIED", "PENDING", "REJECTED"]},
+    "discovery_state": {"enum": ["DISCOVERED_RESEARCH_ONLY", "IDENTITY_VERIFICATION_PENDING", "LIGHT_SCREEN_PASSED", "DEEP_RESEARCH_PENDING", "STRATEGY_DRAFT_READY", "USER_WATCHLIST_APPROVAL_REQUIRED", "REJECTED"]},
+    "watchlist_approved": {"const": false},
+    "active_universe_approved": {"const": false},
+    "new_buy_instrument_approved": {"const": false},
+    "remaining_conditions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}

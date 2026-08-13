@@ -1,5 +1,21 @@
 # v2.1 Production Readiness
 
+## v2.6.3 Massive-Free New-Buy Addendum — 2026-08-13
+
+**SYSTEM STATUS: READY_FOR_SHADOW_USE / FIRST_VALID_SESSION_PENDING**
+
+Research-only discovery and unsized new-buy strategy drafting now continue
+without Massive or an independent completed-close provider. Selective Codex Web
+acquisition is exact-route, ticker-local, original-page only, and separately
+validated. All seeded routes are pending five-session acceptance, so Web price
+evidence cannot currently unlock a guarded human-review scope.
+
+The 1/5/10/20/60 model is implemented with no automatic promotion. Stage 1
+still requires a genuine delivered scheduled post-market run from committed
+main; manual smoke and tests do not count. Pre-open remains governed by its
+existing baseline prerequisites. The system remains human-review only and has
+no order or quantity authority.
+
 ## v2.6 Integrated Shadow Addendum — 2026-08-13
 
 **SYSTEM STATUS: READY_FOR_SHADOW_USE / FIRST_VALID_SESSION_PENDING**

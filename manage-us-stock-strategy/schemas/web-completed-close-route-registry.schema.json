@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web-completed-close-route-registry.schema.json",
+  "title": "Codex Web Completed-Close Route Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "acquisition_method", "route_acceptance_sessions_required", "suspend_after_consecutive_failures", "routes", "automatic_promotion_allowed", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.3"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "acquisition_method": {"const": "CODEX_WEB"},
+    "route_acceptance_sessions_required": {"const": 5},
+    "suspend_after_consecutive_failures": {"type": "integer", "minimum": 1},
+    "automatic_promotion_allowed": {"const": false},
+    "order_authority": {"const": false},
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["route_id", "ticker_scope", "exchange_scope", "instrument_class_scope", "source_type", "source_domain", "source_url_template", "price_basis", "source_field_label", "currency", "authentication_requirement", "route_status", "accepted_sessions", "last_success", "last_failure", "consecutive_failures", "route_fingerprint", "notes", "order_authority"],
+        "properties": {
+          "route_id": {"type": "string", "pattern": "^[A-Z0-9_:-]+$"},
+          "ticker_scope": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+          "exchange_scope": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+          "instrument_class_scope": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+          "source_type": {"enum": ["OFFICIAL_EXCHANGE_NOCP", "OFFICIAL_LISTING_MARKET_CLOSE", "OFFICIAL_CLOSING_AUCTION", "ISSUER_IR_HISTORICAL_PRICE", "ETF_SPONSOR_MARKET_CLOSE", "INDEPENDENT_NON_YAHOO_MARKET_PAGE"]},
+          "source_domain": {"type": "string", "minLength": 1},
+          "source_url_template": {"type": "string", "format": "uri"},
+          "price_basis": {"enum": ["RAW_REGULAR_SESSION_CLOSE", "CONSOLIDATED_REGULAR_SESSION_CLOSE", "OFFICIAL_LISTING_MARKET_CLOSE", "OFFICIAL_CLOSING_AUCTION_PRICE", "ETF_SPONSOR_MARKET_CLOSE", "ISSUER_IR_REPORTED_CLOSE", "UNKNOWN"]},
+          "source_field_label": {"type": "string", "minLength": 1},
+          "currency": {"const": "USD"},
+          "authentication_requirement": {"enum": ["NONE", "FREE_ACCOUNT_MANUAL", "UNSUPPORTED_FOR_AUTOMATION"]},
+          "route_status": {"enum": ["SOURCE_ROUTE_PENDING_REVIEW", "SHADOW_APPROVED", "GUARDED_APPROVED", "SUSPENDED", "BROKEN"]},
+          "accepted_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
+          "last_success": {"type": ["string", "null"], "format": "date-time"},
+          "last_failure": {"type": ["string", "null"], "format": "date-time"},
+          "consecutive_failures": {"type": "integer", "minimum": 0},
+          "route_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "notes": {"type": "string"},
+          "order_authority": {"const": false}
+        }
+      }
+    }
+  }
+}

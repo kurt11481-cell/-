@@ -8,7 +8,9 @@
   "properties": {
     "schema_version": {"const": "2.6"},
     "cohort_id": {"type": "string", "minLength": 1},
-    "checkpoint": {"enum": [5, 20, 60]},
+    "checkpoint": {"enum": [1, 5, 10, 20, 60]},
+    "promotion_state": {"enum": ["LIVE_READ_ONLY_DELIVERY_VERIFIED", "LIMITED_HUMAN_REVIEW_PENDING_APPROVAL", "GUARDED_HUMAN_REVIEW_PENDING_APPROVAL", "MATURE_GUARDED_REVIEW_PENDING_APPROVAL", "LONG_HORIZON_EVALUATION_REQUIRED", "NOT_ELIGIBLE"]},
+    "promotion_scope": {"type": ["object", "null"]},
     "generated_at": {"type": "string", "format": "date-time"},
     "valid_sessions": {"type": "integer", "minimum": 0},
     "baseline_coverage": {"type": "object"},

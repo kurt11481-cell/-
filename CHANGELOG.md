@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.6.3 - Massive-Free New-Buy Research and Staged Web Evidence
+
+- Added research-only external discovery proposals and deterministic unsized
+  new-buy strategy/approval drafts.
+- Added an exact ticker/source/field Web route registry, five-session route
+  acceptance, route fingerprints, and route suspension after repeated failure.
+- Preserved READY/NEAR_TRIGGER opportunity quality while independent evidence
+  is pending; Web MATCH changes only price evidence.
+- Added exact-scope 1/5/10/20/60 promotion audits with explicit user approval
+  and no automatic promotion.
+- Added Korean beginner messages, Massive-free automation instructions, CI
+  hygiene scans, and 70 focused offline regression tests.
+- Did not change strategy version, hard-risk thresholds, timing quantities,
+  EMA rearm, portfolio facts, new-buy approval, quantity, or order authority.
+
 ## v2.6 - Integrated Holding Research and Operational Shadow Acceptance
 
 - Added immutable Shadow research baselines and daily overlays for NBIS,

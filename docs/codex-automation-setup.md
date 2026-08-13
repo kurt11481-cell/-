@@ -1,18 +1,21 @@
 # Codex Automation Setup: v2.4 Dual Phase
 
-## v2.6 Morning integrated Shadow extension
+## v2.6.3 Massive-free staged new-buy extension
 
 The existing `Morning Portfolio Strategy` task must continue using committed
 `main` and now also follow
 `stock-strategy-system/AUTOMATION_PROMPT_EN.md` for baseline validation,
-current overlay compilation, selective Codex Web acquisition, broker/UI output,
-and append-only Shadow recording. Update the existing task; do not create a
-duplicate or install an OS scheduler.
+current overlay compilation, research-only candidate discovery, unsized new-buy
+drafting, exact-route selective Codex Web acquisition, broker/UI output, and
+append-only Shadow recording. It requires no Massive credential, MCP, OAuth, or
+subscription. Update the existing task; do not create a duplicate or install an
+OS scheduler.
 
 Lifecycle remains `FIRST_RUN_PENDING` until a genuine scheduled output is
-delivered. Configuration and manual smoke do not advance the v2.6 `0/20`
-cohort. Pre-open remains `NOT_CONFIGURED` until its existing prerequisites and
-a valid v2.6 post-market baseline pass.
+delivered. Configuration and manual smoke do not advance the v2.6.3
+1/5/10/20/60 cohort. Exact route acceptance may use historical sessions but
+also does not advance operational Shadow. Pre-open remains `NOT_CONFIGURED`
+until its existing prerequisites and a valid post-market baseline pass.
 
 Use Codex Scheduled Tasks/heartbeat automations only. No Windows Task
 Scheduler, service, startup script, cron workaround, or background daemon is
@@ -25,7 +28,7 @@ permitted.
 - Workspace: `E:\사업\##금동한\코덱스저장소`
 - Source: committed `main`
 - Prompt:
-  `stock-strategy-system/POST_MARKET_PORTFOLIO_STRATEGY_AUTOMATION_PROMPT_EN.md`
+  `stock-strategy-system/AUTOMATION_PROMPT_EN.md`
 - Codex automation ID: `automation`
 - Configuration status: `FIRST_RUN_PENDING`
 - Delivery status: not yet verified

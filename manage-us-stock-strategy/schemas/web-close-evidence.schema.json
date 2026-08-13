@@ -4,8 +4,9 @@
   "title": "Codex Web Acquired Close Evidence",
   "type": "object",
   "additionalProperties": true,
-  "required": ["ticker", "reported_session", "reported_close", "currency", "price_basis", "provider", "source_url", "source_domain", "source_type", "retrieved_at", "acquisition_method", "content_hash", "security_identity_explicit", "regular_session_close_explicit", "is_search_result_snippet", "order_authority"],
+  "required": ["source_route_id", "ticker", "reported_session", "reported_close", "currency", "price_basis", "provider", "source_url", "source_domain", "source_type", "retrieved_at", "acquisition_method", "content_hash", "security_identity_explicit", "regular_session_close_explicit", "is_search_result_snippet", "order_authority"],
   "properties": {
+    "source_route_id": {"type": "string"},
     "ticker": {"type": "string"},
     "reported_session": {"type": "string", "format": "date"},
     "reported_close": {"type": "number", "minimum": 0},

@@ -31,5 +31,22 @@ jobs:
         run: python -m compileall -q manage-us-stock-strategy/scripts manage-us-stock-strategy/tests
       - name: Full deterministic regression suite
         run: python -m unittest discover -s manage-us-stock-strategy/tests -p "test_*.py"
+      - name: v2.6.3 Massive-free Web and new-buy regression
+        run: python -m unittest manage-us-stock-strategy.tests.test_v2_6_3_free_web_new_buy
+      - name: Forbidden tracked artifact audit
+        shell: pwsh
+        run: |
+          $tracked = git ls-files
+          $forbidden = $tracked | Where-Object {
+            $_ -match '(^|/)(repo_tree\.txt|\.env($|\.)|workspace/private_inputs/broker_snapshots/|workspace/private_inputs/web_captures/)' -or
+            $_ -match '\.(png|jpg|jpeg|gif|bmp|webp)$'
+          }
+          if ($forbidden) { $forbidden; throw "Forbidden artifact is tracked." }
+      - name: Credential assignment audit
+        shell: pwsh
+        run: |
+          $files = git ls-files | Where-Object { Test-Path -LiteralPath $_ }
+          $hits = $files | Select-String -Pattern '(?i)(MASSIVE_API_KEY|OPENAI_API_KEY|access_token|oauth_token)\s*[:=]\s*["''][A-Za-z0-9_-]{12,}'
+          if ($hits) { $hits | ForEach-Object { "$($_.Path):$($_.LineNumber)" }; throw "Potential credential assignment found." }
       - name: Worktree whitespace audit
         run: git diff --check

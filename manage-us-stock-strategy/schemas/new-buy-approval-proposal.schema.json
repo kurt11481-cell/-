@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "new-buy-approval-proposal.schema.json",
+  "title": "Guarded New-Buy Approval Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ticker", "strategy_draft_hash", "opportunity_state", "price_evidence_status", "entry_rule_status", "maximum_loss_rule_status", "risk_budget_status", "cash_status", "requested_approvals", "promotion_scope", "proposal_status", "explicit_user_approval_required", "quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.3"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "strategy_draft_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "opportunity_state": {"type": "string"},
+    "price_evidence_status": {"type": "string"},
+    "entry_rule_status": {"type": "string"},
+    "maximum_loss_rule_status": {"type": "string"},
+    "risk_budget_status": {"type": "string"},
+    "cash_status": {"type": "string"},
+    "requested_approvals": {"type": "array", "items": {"enum": ["WATCHLIST", "ACTIVE_UNIVERSE", "NEW_BUY_INSTRUMENT", "ENTRY_RULE", "MAXIMUM_LOSS_RULE", "RISK_BUDGET", "STAGED_PROMOTION_SCOPE", "FINAL_HUMAN_REVIEW"]}, "uniqueItems": true},
+    "promotion_scope": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["ticker", "decision_class", "source_route_id"],
+      "properties": {
+        "ticker": {"type": "string"},
+        "decision_class": {"type": "string"},
+        "source_route_id": {"type": ["string", "null"]}
+      }
+    },
+    "proposal_status": {"enum": ["NOT_READY", "USER_APPROVAL_REQUIRED", "HUMAN_REVIEW_ELIGIBLE_GUARDED"]},
+    "explicit_user_approval_required": {"const": true},
+    "quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}
