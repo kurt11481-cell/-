@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -16,6 +18,45 @@ SPEC.loader.exec_module(MODULE)
 
 
 class MarketSnapshotBuilderTests(unittest.TestCase):
+    def test_unicode_certifi_path_is_mirrored_without_disabling_tls(self) -> None:
+        with tempfile.TemporaryDirectory(dir=SCRIPT.parents[2]) as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "사용자" / "cacert.pem"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"test-ca-bundle")
+            public_root = root / "public"
+            environment: dict[str, str] = {}
+            with patch.object(MODULE, "_path_is_ascii", side_effect=[False, True]):
+                result = MODULE.configure_yfinance_ca_bundle(
+                    certifi_path=source,
+                    public_root=public_root,
+                    environment=environment,
+                    platform_name="win32",
+                )
+
+            copied = public_root / "Codex" / "certifi" / "cacert.pem"
+            self.assertEqual(copied.read_bytes(), source.read_bytes())
+            self.assertEqual(environment["REQUESTS_CA_BUNDLE"], str(copied))
+            self.assertEqual(environment["CURL_CA_BUNDLE"], str(copied))
+            self.assertTrue(result["tls_verification"])
+            self.assertEqual(
+                result["strategy"],
+                "unicode_certifi_mirrored_to_ascii_public_path",
+            )
+
+    def test_existing_ascii_ca_bundle_is_respected(self) -> None:
+        with tempfile.TemporaryDirectory(dir=SCRIPT.parents[2]) as temporary_directory:
+            bundle = Path(temporary_directory) / "cacert.pem"
+            bundle.write_bytes(b"existing-ca-bundle")
+            environment = {"CURL_CA_BUNDLE": str(bundle)}
+            with patch.object(MODULE, "_path_is_ascii", return_value=True):
+                result = MODULE.configure_yfinance_ca_bundle(
+                    environment=environment,
+                    platform_name="win32",
+                )
+            self.assertEqual(result["strategy"], "existing_ascii_ca_bundle")
+            self.assertTrue(result["tls_verification"])
+
     def test_request_pacer_enforces_one_second_between_requests(self) -> None:
         now = [100.0]
         sleeps: list[float] = []
