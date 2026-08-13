@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-readonly-acceptance-fixture.schema.json",
+  "title": "Sanitized Kiwoom Read-Only Acceptance Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_type",
+    "provider",
+    "runtime_commit",
+    "completed_session",
+    "mapping_guessed",
+    "symbols",
+    "expected_final_status",
+    "operational_shadow_session_increment",
+    "provider_activation",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "fixture_type": {"const": "SANITIZED_DETERMINISTIC_PROVIDER_ACCEPTANCE"},
+    "provider": {"const": "KIWOOM_REST"},
+    "runtime_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "completed_session": {"type": "string", "format": "date"},
+    "mapping_guessed": {"const": false},
+    "symbols": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {"$ref": "kiwoom-readonly-symbol.schema.json"}
+    },
+    "expected_final_status": {"const": "KIWOOM_READONLY_ACCEPTANCE_FULL_PASS"},
+    "operational_shadow_session_increment": {"const": 0},
+    "provider_activation": {"const": false},
+    "order_authority": {"const": false}
+  }
+}
