@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-kiwoom-candidate-primary-replay-v1",
+  "mode": "REPLAY_VALIDATION_ONLY",
+  "market_data_provider_replay": {
+    "required_sessions": 20,
+    "required_tickers": 11,
+    "minimum_history_bars_source": "workspace/policies/kiwoom-rate-limit-policy.json#history_policy.minimum_history_bars",
+    "raw_comparison_tolerance_source": "stock-strategy-system/alert_policy.json#independent_close_policy.approved_direct_close_tolerance",
+    "raw_price_basis": "UNADJUSTED_COMPLETED_REGULAR_SESSION_OHLCV",
+    "technical_formula_version": "2026-08-05-ema-atr-v2"
+  },
+  "adjustment_basis_policy": {
+    "kiwoom_semantics": "OFFICIAL_UPD_STKPC_TP_1_ADJUSTMENT_APPLIED",
+    "yfinance_semantics": "YAHOO_ADJ_CLOSE_CORPORATE_ACTION_AWARE",
+    "default_basis_status": "INCOMPATIBLE",
+    "numeric_cross_vendor_adjusted_match_authority": false,
+    "technical_validation_mode": "LOCAL_NORMALIZED_TECHNICAL_DECISION_EQUIVALENCE",
+    "technical_validation_authorized_for_transition_readiness": true,
+    "unknown_basis_blocks_readiness": true,
+    "same_basis_conflict_blocks_readiness": true,
+    "technical_decision_flip_blocks_readiness": true,
+    "price_averaging_prohibited": true
+  },
+  "full_strategy_context_replay": {
+    "missing_archive_status": "PARTIAL_EXPECTED_NO_ARCHIVE",
+    "historical_backfill_prohibited": true,
+    "current_portfolio_facts_on_prior_session_prohibited": true,
+    "current_live_context_still_required": true
+  },
+  "forward_point_in_time_capture": {
+    "append_only": true,
+    "hash_chain_required": true,
+    "prior_session_backfill_prohibited": true,
+    "raw_broker_screenshot_prohibited": true,
+    "account_number_prohibited": true,
+    "credential_prohibited": true
+  },
+  "operational_shadow_session_increment": 0,
+  "provider_authority_change": false,
+  "order_authority": false
+}

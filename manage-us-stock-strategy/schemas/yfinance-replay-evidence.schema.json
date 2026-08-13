@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yfinance-replay-evidence.schema.json",
+  "title": "yfinance Replay Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "analysis_cutoff", "completed_session", "provider", "provider_role", "provider_version", "tls_provenance", "request_contract", "records", "errors", "independent_verified", "official_close_verified", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "completed_session": {"type": "string", "format": "date"},
+    "provider": {"const": "yfinance"},
+    "provider_role": {"const": "PRIMARY_VALIDATED_NOT_OFFICIAL"},
+    "provider_version": {"type": ["string", "null"]},
+    "tls_provenance": {"type": "object"},
+    "request_contract": {"type": "object"},
+    "records": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ticker", "completed_session", "bars", "corporate_actions", "request_contract", "status", "order_authority"],
+        "properties": {
+          "ticker": {"type": "string"}, "completed_session": {"type": "string", "format": "date"},
+          "bars": {"type": "array", "items": {"type": "object"}},
+          "corporate_actions": {"type": "array", "items": {"type": "object"}},
+          "request_contract": {"type": "object"}, "status": {"const": "PRIMARY_VALIDATED"},
+          "order_authority": {"const": false}
+        }
+      }
+    },
+    "errors": {"type": "array", "items": {"type": "object"}},
+    "independent_verified": {"const": false},
+    "official_close_verified": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

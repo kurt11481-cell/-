@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.6.5 - Kiwoom Replay History and Lock Hardening
+
+- Replaced unsafe replay-lock cleanup with an atomic owner-token lock that
+  preserves foreign and uncertain locks and quarantines only proven-dead stale
+  locks after the versioned TTL.
+- Added policy-bounded official Kiwoom daily-chart pagination, 252-bar history
+  sufficiency, conflicting-duplicate and future-bar rejection, and sanitized
+  page provenance.
+- Added local Kiwoom technical validation plus separate Raw, adjustment-basis,
+  Adjusted, indicator-shadow, and technical-decision-flip comparisons.
+- Separated market-data provider replay from unavailable historical strategy
+  context and added forward-only append-only point-in-time context capture.
+- Added a 31-case fault harness and current-session dry-run support. Replay and
+  dry-run outputs cannot deliver alerts, count operational sessions, mutate the
+  portfolio, or change provider authority.
+- yfinance remains Primary; Kiwoom remains
+  `SHADOW_NOT_YET_OPERATIONALLY_ACCEPTED`; `order_authority=false`.
+
 ## v2.6.4 - Kiwoom Read-Only Shadow Adapter
 
 - Added a strict local subprocess JSON boundary to the unchanged official

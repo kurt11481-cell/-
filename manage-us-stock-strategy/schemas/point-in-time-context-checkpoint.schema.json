@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "point-in-time-context-checkpoint.schema.json",
+  "title": "Forward-Only Point-in-Time Context Checkpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "market_session", "analysis_cutoff", "created_at", "portfolio_context_checkpoint", "event_risk_bundle", "active_research_baseline_index", "policy_and_registry_snapshot", "source_artifact_hashes", "previous_record_hash", "record_hash", "historical_backfill", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "market_session": {"type": "string", "format": "date"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "portfolio_context_checkpoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["portfolio_state_revision", "portfolio_hash"],
+      "properties": {
+        "portfolio_state_revision": {"type": "integer", "minimum": 0},
+        "portfolio_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+      }
+    },
+    "event_risk_bundle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_cutoff", "bundle_hash"],
+      "properties": {
+        "evidence_cutoff": {"type": "string", "format": "date-time"},
+        "bundle_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"}
+      }
+    },
+    "active_research_baseline_index": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["baseline_id", "baseline_hash"],
+        "properties": {
+          "baseline_id": {"type": "string"},
+          "baseline_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+        }
+      }
+    },
+    "policy_and_registry_snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy_hashes", "registry_hash"],
+      "properties": {
+        "policy_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "[0-9a-f]{64}"}},
+        "registry_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+      }
+    },
+    "source_artifact_hashes": {"type": "object", "additionalProperties": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"}},
+    "previous_record_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+    "record_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "historical_backfill": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

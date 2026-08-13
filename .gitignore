@@ -15,6 +15,7 @@ workspace/outputs/new-buy-drafts/
 workspace/outputs/staged-promotion/
 workspace/outputs/yfinance-smoke/
 workspace/outputs/activation/
+workspace/state/point_in_time_context/
 *.log
 
 # Unrelated application workspace kept outside this repository's scope

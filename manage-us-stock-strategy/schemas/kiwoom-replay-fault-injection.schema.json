@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-replay-fault-injection.schema.json",
+  "title": "Kiwoom Replay Fault Injection Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "fault_status", "detected", "total", "undetected", "cases", "live_state_mutated", "operational_session_increment", "provider_authority_changed", "order_authority", "input_hashes", "result_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "fault_status": {"enum": ["FAULT_INJECTION_PASS", "FAULT_INJECTION_PARTIAL"]},
+    "detected": {"type": "integer", "minimum": 0},
+    "total": {"const": 31},
+    "undetected": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "cases": {
+      "type": "array", "minItems": 31,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["case", "expected", "detected", "observed"],
+        "properties": {
+          "case": {"type": "string"}, "expected": {"type": "string"},
+          "detected": {"type": "boolean"}, "observed": {}
+        }
+      }
+    },
+    "live_state_mutated": {"const": false},
+    "operational_session_increment": {"const": 0},
+    "provider_authority_changed": {"const": false},
+    "order_authority": {"const": false},
+    "input_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "result_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

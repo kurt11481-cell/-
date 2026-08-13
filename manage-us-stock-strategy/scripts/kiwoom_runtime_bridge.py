@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -179,6 +180,129 @@ def _request(session: dict[str, Any], api_id: str, path: str, body: dict[str, An
     raise last_error
 
 
+def _fetch_page(
+    session: dict[str, Any], api_id: str, path: str, body: dict[str, Any],
+    *, cont_yn: str | None, next_key: str | None,
+) -> Any:
+    """Fetch one official continuation page with the existing bounded retry policy."""
+    if blocked_api_target(api_id, path):
+        raise BridgeError("KIWOOM_ORDER_ENDPOINT_BLOCKED", "AUTHENTICATION_FAILURE")
+    attempts = int(session["maximum_attempts"])
+    last_error: Exception = BridgeError("KIWOOM_API_UNAVAILABLE", "EMPTY_RESPONSE")
+    for attempt in range(attempts):
+        try:
+            session["pacer"]()
+            response = session["client"].fetch_page(
+                api_id=api_id,
+                path=path,
+                body=body,
+                cont_yn=cont_yn,
+                next_key=next_key,
+            )
+            payload = getattr(response, "body", None)
+            if not isinstance(payload, dict):
+                raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
+            if not _return_code_ok(payload):
+                raise BridgeError("KIWOOM_API_UNAVAILABLE", "EMPTY_RESPONSE")
+            return response
+        except Exception as exc:
+            last_error = exc
+            failure = _exception_failure(exc)
+            if failure in session["immediate_open_failure_types"]:
+                raise
+            if failure not in session["retryable_failure_types"] or attempt + 1 >= attempts:
+                raise
+            time.sleep(float(session["retry_backoff_seconds"]))
+    raise last_error
+
+
+def _continuation(response: Any) -> tuple[str | None, str | None]:
+    value = getattr(response, "continuation", None)
+    if isinstance(value, dict):
+        return value.get("cont_yn"), value.get("next_key")
+    return getattr(value, "cont_yn", None), getattr(value, "next_key", None)
+
+
+def _daily_chart_pages(
+    session: dict[str, Any], *, ticker: str, stex_tp: str,
+    completed_session: str, price_basis: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Read bounded official usa06012 continuation pages without guessing fields."""
+    api_id, path = RUNTIME_APIS["daily_chart"]
+    body = {
+        "stex_tp": stex_tp,
+        "stk_cd": ticker,
+        "strt_dt": completed_session.replace("-", ""),
+        "upd_stkpc_tp": "0" if price_basis == "RAW" else "1",
+        "exrt_appl_tp": "0",
+    }
+    minimum = int(session["minimum_history_bars"])
+    target = minimum + int(session["history_buffer_bars"])
+    maximum_pages = int(session["maximum_history_pages"])
+    no_progress_limit = int(session["no_progress_page_limit"])
+    rows: list[dict[str, Any]] = []
+    distinct_dates: set[str] = set()
+    provenance: list[dict[str, Any]] = []
+    cont_yn: str | None = None
+    next_key: str | None = None
+    no_progress = 0
+    exhausted = False
+    for page_index in range(1, maximum_pages + 1):
+        response = _fetch_page(
+            session, api_id, path, body, cont_yn=cont_yn, next_key=next_key,
+        )
+        payload = response.body
+        page_rows = payload.get("result_list")
+        if not isinstance(page_rows, list):
+            raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
+        safe_rows = [
+            {field: row.get(field) for field in SAFE_CHART_FIELDS}
+            for row in page_rows if isinstance(row, dict)
+        ]
+        page_dates = {
+            str(row.get("dt")) for row in safe_rows
+            if re.fullmatch(r"\d{8}", str(row.get("dt", "")))
+        }
+        new_dates = page_dates - distinct_dates
+        no_progress = no_progress + 1 if not new_dates else 0
+        if no_progress >= no_progress_limit:
+            raise BridgeError("KIWOOM_PAGINATION_NO_PROGRESS")
+        rows.extend(safe_rows)
+        distinct_dates.update(page_dates)
+        next_cont_yn, next_next_key = _continuation(response)
+        state_payload = json.dumps(
+            {"cont_yn": next_cont_yn, "next_key": next_next_key},
+            sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")
+        provenance.append({
+            "page_index": page_index,
+            "api_id": api_id,
+            "row_count": len(safe_rows),
+            "first_session": min(page_dates) if page_dates else None,
+            "last_session": max(page_dates) if page_dates else None,
+            "continuation_state_hash": hashlib.sha256(state_payload).hexdigest(),
+            "retrieved_at": utc_now(),
+        })
+        if len(distinct_dates) >= target:
+            break
+        if next_cont_yn != "Y":
+            exhausted = True
+            break
+        cont_yn, next_key = next_cont_yn, next_next_key
+    pagination = {
+        "api_id": api_id,
+        "minimum_history_bars": minimum,
+        "target_history_bars": target,
+        "maximum_pages": maximum_pages,
+        "pages_fetched": len(provenance),
+        "distinct_session_count": len(distinct_dates),
+        "provider_exhausted": exhausted,
+        "status": "SUFFICIENT" if len(distinct_dates) >= minimum else "INSUFFICIENT_HISTORY",
+        "pages": provenance,
+    }
+    return rows, pagination
+
+
 def _stock_universe(session: dict[str, Any]) -> list[dict[str, Any]]:
     if session.get("stock_universe") is None:
         body = _request(session, "usa10099", "/api/us/stkinfo", {"stex_tp": "%"})
@@ -208,7 +332,9 @@ def _resolve_identity(session: dict[str, Any], ticker: str) -> dict[str, Any]:
 def _runtime_session(
     runtime: Path, minimum_interval_seconds: float, maximum_attempts: int,
     retry_backoff_seconds: float, retryable_failure_types: set[str],
-    immediate_open_failure_types: set[str],
+    immediate_open_failure_types: set[str], minimum_history_bars: int,
+    history_buffer_bars: int, maximum_history_pages: int,
+    no_progress_page_limit: int,
 ) -> dict[str, Any]:
     from kiwoom import get_auth, get_client
 
@@ -232,6 +358,10 @@ def _runtime_session(
         "retry_backoff_seconds": max(0.0, retry_backoff_seconds),
         "retryable_failure_types": retryable_failure_types,
         "immediate_open_failure_types": immediate_open_failure_types,
+        "minimum_history_bars": max(1, minimum_history_bars),
+        "history_buffer_bars": max(0, history_buffer_bars),
+        "maximum_history_pages": max(1, maximum_history_pages),
+        "no_progress_page_limit": max(1, no_progress_page_limit),
     }
 
 
@@ -248,6 +378,7 @@ def _worker_result(request: dict[str, Any], session: dict[str, Any]) -> dict[str
             "order_authority": False,
         }
     ticker = str(request["ticker"])
+    pagination: dict[str, Any] | None = None
     if operation == "exchange_lookup":
         body = _request(session, *RUNTIME_APIS[operation], {"stk_cd": ticker})
         data = _exact_rows(_safe_universe(body, "list", SAFE_IDENTITY_FIELDS), ticker, "stk_cd")
@@ -271,20 +402,13 @@ def _worker_result(request: dict[str, Any], session: dict[str, Any]) -> dict[str
             data = [{field: body.get(field) for field in SAFE_IDENTITY_FIELDS}]
         elif operation == "daily_chart":
             basis = request["price_basis"]
-            body = _request(session, *RUNTIME_APIS[operation], {
-                "stex_tp": stex_tp,
-                "stk_cd": ticker,
-                "strt_dt": str(request["completed_session"]).replace("-", ""),
-                "upd_stkpc_tp": "0" if basis == "RAW" else "1",
-                "exrt_appl_tp": "0",
-            })
-            rows = body.get("result_list")
-            if not isinstance(rows, list):
-                raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
-            data = [{field: row.get(field) for field in SAFE_CHART_FIELDS} for row in rows if isinstance(row, dict)]
+            data, pagination = _daily_chart_pages(
+                session, ticker=ticker, stex_tp=stex_tp,
+                completed_session=str(request["completed_session"]), price_basis=str(basis),
+            )
         else:
             raise BridgeError("OPERATION_NOT_ALLOWLISTED")
-    return {
+    result = {
         "bridge_status": "PASS",
         "operation": operation,
         "ticker": ticker,
@@ -293,6 +417,9 @@ def _worker_result(request: dict[str, Any], session: dict[str, Any]) -> dict[str
         "retrieved_at": utc_now(),
         "order_authority": False,
     }
+    if pagination is not None:
+        result["pagination"] = pagination
+    return result
 
 
 def external_worker(
@@ -300,6 +427,10 @@ def external_worker(
     maximum_attempts: int = 1, retry_backoff_seconds: float = 1.0,
     retryable_failure_types: set[str] | None = None,
     immediate_open_failure_types: set[str] | None = None,
+    minimum_history_bars: int = 252,
+    history_buffer_bars: int = 32,
+    maximum_history_pages: int = 10,
+    no_progress_page_limit: int = 1,
 ) -> dict[str, Any]:
     try:
         raw = json.loads(stdin_text)
@@ -310,6 +441,8 @@ def external_worker(
             runtime, minimum_interval_seconds, maximum_attempts, retry_backoff_seconds,
             retryable_failure_types or {"TIMEOUT", "EMPTY_RESPONSE", "SCHEMA_MISMATCH"},
             immediate_open_failure_types or {"HTTP_429", "AUTHENTICATION_FAILURE"},
+            minimum_history_bars, history_buffer_bars, maximum_history_pages,
+            no_progress_page_limit,
         )
         results: list[dict[str, Any]] = []
         for request in requests:
@@ -398,7 +531,34 @@ def sanitize_bridge_response(value: dict[str, Any], request: dict[str, Any]) -> 
         {field: row.get(field) for field in fields}
         for row in data if isinstance(row, dict)
     ] if isinstance(data, list) else []
+    if operation == "daily_chart" and isinstance(value.get("pagination"), dict):
+        pagination = value["pagination"]
+        pages = pagination.get("pages") if isinstance(pagination.get("pages"), list) else []
+        safe["pagination"] = {
+            key: pagination.get(key)
+            for key in (
+                "api_id", "minimum_history_bars", "target_history_bars", "maximum_pages",
+                "pages_fetched", "distinct_session_count", "provider_exhausted", "status",
+            )
+        }
+        safe["pagination"]["pages"] = [
+            {key: page.get(key) for key in (
+                "page_index", "api_id", "row_count", "first_session", "last_session",
+                "continuation_state_hash", "retrieved_at",
+            )}
+            for page in pages if isinstance(page, dict)
+        ]
     return safe
+
+
+def _history_cli_args(policy: dict[str, Any]) -> list[str]:
+    history = policy.get("history_policy") or {}
+    return [
+        "--minimum-history-bars", str(history.get("minimum_history_bars", 252)),
+        "--history-buffer-bars", str(history.get("replay_history_buffer_bars", 32)),
+        "--maximum-history-pages", str(history.get("maximum_pages", 10)),
+        "--no-progress-page-limit", str(history.get("no_progress_page_limit", 1)),
+    ]
 
 
 def invoke_bridge(
@@ -422,7 +582,8 @@ def invoke_bridge(
                  "--maximum-attempts", "1",
                  "--retry-backoff-seconds", str((policy.get("retry_backoff_seconds") or [1.0])[0]),
                  "--retryable-failure-types", ",".join(policy.get("retryable_failure_types", [])),
-                 "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", []))],
+                 "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", [])),
+                 *_history_cli_args(policy)],
                 input=json.dumps(sanitized, separators=(",", ":")),
                 cwd=str(runtime), capture_output=True, text=True, encoding="utf-8",
                 timeout=timeout, check=False,
@@ -459,7 +620,8 @@ def invoke_bridge_batch(
              "--maximum-attempts", str(policy.get("maximum_attempts", 1)),
              "--retry-backoff-seconds", str((policy.get("retry_backoff_seconds") or [1.0])[0]),
              "--retryable-failure-types", ",".join(policy.get("retryable_failure_types", [])),
-             "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", []))],
+             "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", [])),
+             *_history_cli_args(policy)],
             input=json.dumps(sanitized, separators=(",", ":")), cwd=str(runtime),
             capture_output=True, text=True, encoding="utf-8",
             timeout=int(policy["request_timeout_seconds"]) * max(1, len(sanitized)), check=False,
@@ -484,6 +646,10 @@ def main() -> int:
     parser.add_argument("--retry-backoff-seconds", type=float, default=1.0)
     parser.add_argument("--retryable-failure-types", default="TIMEOUT,EMPTY_RESPONSE,SCHEMA_MISMATCH")
     parser.add_argument("--immediate-open-failure-types", default="HTTP_429,AUTHENTICATION_FAILURE")
+    parser.add_argument("--minimum-history-bars", type=int, default=252)
+    parser.add_argument("--history-buffer-bars", type=int, default=32)
+    parser.add_argument("--maximum-history-pages", type=int, default=10)
+    parser.add_argument("--no-progress-page-limit", type=int, default=1)
     args = parser.parse_args()
     if not args.external_worker:
         raise SystemExit("external worker mode is required")
@@ -492,6 +658,8 @@ def main() -> int:
         max(1, args.maximum_attempts), max(0.0, args.retry_backoff_seconds),
         {item for item in args.retryable_failure_types.split(",") if item},
         {item for item in args.immediate_open_failure_types.split(",") if item},
+        max(1, args.minimum_history_bars), max(0, args.history_buffer_bars),
+        max(1, args.maximum_history_pages), max(1, args.no_progress_page_limit),
     )
     print(json.dumps(result, ensure_ascii=True, separators=(",", ":")))
     return 0 if result.get("bridge_status") == "PASS" else 2

@@ -4,7 +4,7 @@
   "title": "Kiwoom Read-Only Daily Series",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ticker", "price_basis", "fx_applied", "completed_session", "completed_close", "bars", "status", "order_authority"],
+  "required": ["ticker", "price_basis", "fx_applied", "completed_session", "completed_close", "bars", "history_bar_count", "minimum_history_bars", "history_status", "validation_errors", "pagination", "status", "order_authority"],
   "properties": {
     "ticker": {"type": "string", "pattern": "[A-Z][A-Z0-9.-]{0,14}"},
     "price_basis": {"enum": ["RAW", "ADJUSTED"]},
@@ -24,6 +24,41 @@
           "low": {"type": "number"},
           "close": {"type": "number"},
           "volume": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "history_bar_count": {"type": "integer", "minimum": 0},
+    "minimum_history_bars": {"type": "integer", "minimum": 1},
+    "history_status": {"enum": ["SUFFICIENT", "INSUFFICIENT_HISTORY"]},
+    "validation_errors": {"type": "array", "items": {"type": "string"}},
+    "pagination": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["api_id", "minimum_history_bars", "target_history_bars", "maximum_pages", "pages_fetched", "distinct_session_count", "provider_exhausted", "status", "pages"],
+      "properties": {
+        "api_id": {"const": "usa06012"},
+        "minimum_history_bars": {"type": "integer", "minimum": 1},
+        "target_history_bars": {"type": "integer", "minimum": 1},
+        "maximum_pages": {"type": "integer", "minimum": 1},
+        "pages_fetched": {"type": "integer", "minimum": 1},
+        "distinct_session_count": {"type": "integer", "minimum": 0},
+        "provider_exhausted": {"type": "boolean"},
+        "status": {"enum": ["SUFFICIENT", "INSUFFICIENT_HISTORY"]},
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["page_index", "api_id", "row_count", "first_session", "last_session", "continuation_state_hash", "retrieved_at"],
+            "properties": {
+              "page_index": {"type": "integer", "minimum": 1},
+              "api_id": {"const": "usa06012"},
+              "row_count": {"type": "integer", "minimum": 0},
+              "first_session": {"type": ["string", "null"]},
+              "last_session": {"type": ["string", "null"]},
+              "continuation_state_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+              "retrieved_at": {"type": "string", "format": "date-time"}
+            }
+          }
         }
       }
     },
