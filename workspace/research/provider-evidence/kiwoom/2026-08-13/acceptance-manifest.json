@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "evidence_state": "KIWOOM_READONLY_ACCEPTANCE_EVIDENCE_LOCKED",
+  "locked_at": "2026-08-13T14:39:13.0139745Z",
+  "original_artifact": {
+    "external_path": "E:\\사업\\##금동한\\runtime\\Kiwoom-REST-API\\outputs\\acceptance\\20260813-230418\\kiwoom_exchange_mapping_acceptance.json",
+    "sha256": "AE14137E720AB614BD39A1563C799FFE78443D1E1A68CBCA8FBEECAFDB2C334D",
+    "exists": true,
+    "sanitized_scan_status": "PASS"
+  },
+  "official_runtime": {
+    "remote": "https://github.com/Kiwoom-Securities/Kiwoom-REST-API.git",
+    "commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
+    "source_clean": true
+  },
+  "fixture": {
+    "repository_path": "manage-us-stock-strategy/tests/fixtures/kiwoom/kiwoom-readonly-acceptance-20260813.sanitized.json",
+    "sha256": "0F233800851AE7AF378CED639D166A0D541E53BEF25F661BE942F66B2B478BDE",
+    "schema": "manage-us-stock-strategy/schemas/kiwoom-readonly-acceptance-fixture.schema.json",
+    "schema_validation_status": "PASS"
+  },
+  "validation": {
+    "expected_symbols": ["AAPL", "MVLL", "NBIS", "IBM", "SOXL"],
+    "actual_symbols": ["AAPL", "MVLL", "NBIS", "IBM", "SOXL"],
+    "five_symbol_result": "PASS",
+    "soxl_mapping": "VERIFIED_NY_ETF_USA10099",
+    "raw_adjusted_separated": true,
+    "mapping_guessed": false
+  },
+  "provider_authority": {
+    "primary_provider_unchanged": true,
+    "kiwoom_primary": false,
+    "kiwoom_shadow_operationally_accepted": false,
+    "independent_crosscheck_eligible": false,
+    "policy_modified": false,
+    "operational_shadow_session_increment": 0
+  },
+  "portfolio_immutability": {
+    "sha256_before": "08B2011CE69BC8DC47FD52F78077C0EB5F4AEE1C472F4E1179881250169D4555",
+    "sha256_after": "08B2011CE69BC8DC47FD52F78077C0EB5F4AEE1C472F4E1179881250169D4555",
+    "unchanged": true
+  },
+  "order_authority": false
+}
