@@ -9,8 +9,10 @@ the snapshot as actionable.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import os
 import re
 import sys
 import time as time_module
@@ -43,10 +45,108 @@ INDICATOR_TOLERANCE = 1e-8
 DEFAULT_MARKET_DATA_PROVIDER = "yfinance"
 DEFAULT_REQUEST_DELAY_SECONDS = 1.0
 DEFAULT_YFINANCE_CACHE_DIRECTORY_NAME = ".yfinance-cache"
+DEFAULT_WINDOWS_PUBLIC_DIRECTORY = Path(r"C:\Users\Public")
 
 
 class SnapshotError(RuntimeError):
     pass
+
+
+def _path_is_ascii(path: Path) -> bool:
+    try:
+        str(path).encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
+def configure_yfinance_ca_bundle(
+    *,
+    certifi_path: Path | None = None,
+    public_root: Path | None = None,
+    environment: dict[str, str] | None = None,
+    platform_name: str | None = None,
+) -> dict[str, Any]:
+    """Keep TLS verification usable when libcurl cannot open a Unicode CA path.
+
+    Some Windows curl builds reject an otherwise valid ``certifi`` file when
+    its absolute path contains non-ASCII user-profile characters.  Never
+    disable verification.  Mirror the identical CA bundle to the ASCII-only
+    Public profile and point curl/requests at that copy before yfinance creates
+    its HTTP session.
+    """
+
+    platform_value = platform_name or sys.platform
+    if platform_value != "win32":
+        return {
+            "status": "not_required",
+            "strategy": "platform_default_ca_bundle",
+            "tls_verification": True,
+        }
+
+    env = os.environ if environment is None else environment
+    configured_path = env.get("REQUESTS_CA_BUNDLE") or env.get("CURL_CA_BUNDLE")
+    if configured_path:
+        configured = Path(configured_path)
+        if configured.is_file() and _path_is_ascii(configured):
+            return {
+                "status": "configured",
+                "strategy": "existing_ascii_ca_bundle",
+                "tls_verification": True,
+            }
+
+    if certifi_path is None:
+        try:
+            import certifi
+        except ImportError as exc:
+            raise SnapshotError("certifi is required for verified yfinance TLS") from exc
+        source = Path(certifi.where())
+    else:
+        source = Path(certifi_path)
+    if not source.is_file():
+        raise SnapshotError("certifi CA bundle is missing")
+    if _path_is_ascii(source):
+        return {
+            "status": "not_required",
+            "strategy": "certifi_ascii_path",
+            "tls_verification": True,
+        }
+
+    root = Path(
+        public_root
+        or env.get("PUBLIC")
+        or DEFAULT_WINDOWS_PUBLIC_DIRECTORY
+    )
+    if not _path_is_ascii(root):
+        raise SnapshotError("no ASCII-only Windows Public path is available")
+    target = root / "Codex" / "certifi" / "cacert.pem"
+    try:
+        source_bytes = source.read_bytes()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.is_file() or target.read_bytes() != source_bytes:
+            temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+            try:
+                temporary.write_bytes(source_bytes)
+                os.replace(temporary, target)
+            finally:
+                if temporary.exists():
+                    temporary.unlink()
+    except OSError as exc:
+        raise SnapshotError(
+            "unable to materialize an ASCII-only verified CA bundle"
+        ) from exc
+
+    ca_hash = hashlib.sha256(source_bytes).hexdigest()
+    if hashlib.sha256(target.read_bytes()).hexdigest() != ca_hash:
+        raise SnapshotError("ASCII CA bundle hash verification failed")
+    env["REQUESTS_CA_BUNDLE"] = str(target)
+    env["CURL_CA_BUNDLE"] = str(target)
+    return {
+        "status": "configured",
+        "strategy": "unicode_certifi_mirrored_to_ascii_public_path",
+        "tls_verification": True,
+        "ca_bundle_sha256": ca_hash,
+    }
 
 
 class RequestPacer:
@@ -1028,6 +1128,7 @@ def build_snapshot(
     *,
     provider: str = DEFAULT_MARKET_DATA_PROVIDER,
     request_delay_seconds: float = DEFAULT_REQUEST_DELAY_SECONDS,
+    yfinance_tls_provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     session = urllib.request.build_opener()
     pacer = RequestPacer(request_delay_seconds)
@@ -1095,6 +1196,21 @@ def build_snapshot(
             "prepost": False,
             "auto_adjust": False,
             "repair": False,
+            "tls_verification": (
+                (yfinance_tls_provenance or {}).get("tls_verification")
+                if provider == "yfinance"
+                else None
+            ),
+            "tls_ca_bundle_strategy": (
+                (yfinance_tls_provenance or {}).get("strategy")
+                if provider == "yfinance"
+                else None
+            ),
+            "tls_ca_bundle_sha256": (
+                (yfinance_tls_provenance or {}).get("ca_bundle_sha256")
+                if provider == "yfinance"
+                else None
+            ),
             "independent_completed_close_crosscheck_required": True,
         },
         "indicator_provenance": {
@@ -1210,6 +1326,11 @@ def main() -> int:
         if yf is None:
             print("yfinance is not installed", file=sys.stderr)
             return 2
+        try:
+            yfinance_tls_provenance = configure_yfinance_ca_bundle()
+        except SnapshotError as exc:
+            print(f"Unable to configure verified yfinance TLS: {exc}", file=sys.stderr)
+            return 2
         cache_directory = (
             args.yfinance_cache_dir
             if args.yfinance_cache_dir is not None
@@ -1221,11 +1342,14 @@ def main() -> int:
         except Exception as exc:
             print(f"Unable to configure yfinance cache: {exc}", file=sys.stderr)
             return 2
+    else:
+        yfinance_tls_provenance = None
     snapshot = build_snapshot(
         state,
         tickers,
         provider=args.provider,
         request_delay_seconds=args.request_delay_seconds,
+        yfinance_tls_provenance=yfinance_tls_provenance,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
