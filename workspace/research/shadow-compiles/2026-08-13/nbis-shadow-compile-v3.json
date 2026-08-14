@@ -1,0 +1,48 @@
+{
+  "schema_version": "2.6.12",
+  "mode": "NON_AUTHORITATIVE_SHADOW",
+  "ticker": "NBIS",
+  "candidate_baseline_id": "nbis-20260814-v3",
+  "candidate_baseline_hash": "4f081273361b660c826cd371e8f11e0d7d1fba24fe1cce790af17af933494a9a",
+  "valuation_snapshot_id": "nbis-20260813-valuation-v3",
+  "valuation_snapshot_hash": "8448cb98975c588c44e7c7ddfcf5c3b47cdcb9d2b94aed5f8b8df1cb32e8b758",
+  "event_link_id": "nbis-20260814-v3--NBIS--nbis-event-review-20260814-v3",
+  "event_link_hash": "401faa6e876b4272435e089a01537ca08ac3f622cfe314dd31bf9cec5bd3b3af",
+  "overlay_hash": "56eff7bace549a37c37103cb044bbe90dcdd9198cefe579a2015567994a9f43f",
+  "portfolio_state_revision": 13,
+  "portfolio_state_hash": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "policy_hash": "feaef6debcb42fb90c45af7d5ad0a22d840eee8df1e301947a0eecac8bc18423",
+  "provider_scope_hash": "483fba06fdefcf9e368d6637454e12f89e483f05c911f177a85587a7d22f4ba8",
+  "thesis_status": "CONTESTED",
+  "valuation_evidence_status": "PRICE_EVIDENCE_CONFLICT",
+  "valuation_judgement_status": "UNVERIFIED",
+  "technical_status": "READY",
+  "event_status": "CONTEXT_ONLY",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "strategy_signal": "NONE",
+  "primary_reason": "Recognized revenue and contracted capacity support the AI-infrastructure thesis, but valuation must remain scenario-based because financing, dilution, customer advances and build-out execution materially affect enterprise value.",
+  "strongest_counter_case": "Customer concentration, advance-funded operating cash flow, capital intensity, convertible settlement uncertainty and authorized dilution can overwhelm growth if capacity deployment or utilization slips.",
+  "invalidation": [
+    "Recognized revenue growth fails to convert contracted capacity into service revenue on disclosed deployment schedules.",
+    "Liquidity plus verified financing no longer covers committed data-center, GPU, power and lease obligations.",
+    "Material dilution or convertible settlement occurs outside the validated scenario envelope.",
+    "A current official event invalidates the customer-demand or capacity-delivery thesis."
+  ],
+  "next_review_trigger": [
+    "NEXT_OFFICIAL_EARNINGS_OR_GUIDANCE",
+    "NEW_FINANCING_OR_ATM_DISCLOSURE",
+    "AGM_RESULT_AND_SUBSEQUENT_BOARD_ACTION",
+    "MATERIAL_CUSTOMER_OR_CAPACITY_UPDATE"
+  ],
+  "remaining_conditions": [
+    "VALUATION_EVIDENCE_NOT_VALIDATED"
+  ],
+  "shadow_compile_status": "PENDING",
+  "live_strategy_state": "DATA_BLOCKED",
+  "shadow_strategy_state": "STRATEGY_REFRESH_REQUIRED",
+  "blocked_decision_classes": [],
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

@@ -1,0 +1,277 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "nbis-20260814-v3",
+  "baseline_version": 3,
+  "ticker": "NBIS",
+  "baseline_type": "ISSUER_EQUITY",
+  "analysis_cutoff": "2026-08-14T10:19:15Z",
+  "evidence_cutoff": "2026-08-14T10:19:15Z",
+  "content_status": "COMPLETE",
+  "thesis_status": "CONTESTED",
+  "valuation_applicability": "DIRECT",
+  "valuation_status": "UNVERIFIED",
+  "valuation_basis": "NBIS_ISSUER",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "Recognized revenue and contracted capacity support the AI-infrastructure thesis, but valuation must remain scenario-based because financing, dilution, customer advances and build-out execution materially affect enterprise value.",
+  "strongest_counter_case": "Customer concentration, advance-funded operating cash flow, capital intensity, convertible settlement uncertainty and authorized dilution can overwhelm growth if capacity deployment or utilization slips.",
+  "invalidation_conditions": [
+    "Recognized revenue growth fails to convert contracted capacity into service revenue on disclosed deployment schedules.",
+    "Liquidity plus verified financing no longer covers committed data-center, GPU, power and lease obligations.",
+    "Material dilution or convertible settlement occurs outside the validated scenario envelope.",
+    "A current official event invalidates the customer-demand or capacity-delivery thesis."
+  ],
+  "next_research_triggers": [
+    "NEXT_OFFICIAL_EARNINGS_OR_GUIDANCE",
+    "NEW_FINANCING_OR_ATM_DISCLOSURE",
+    "AGM_RESULT_AND_SUBSEQUENT_BOARD_ACTION",
+    "MATERIAL_CUSTOMER_OR_CAPACITY_UPDATE"
+  ],
+  "claims": [
+    {
+      "claim_id": "nbis-v2-c1",
+      "claim_type": "REVENUE_CONTRACTED_CAPACITY_AND_DEMAND",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2",
+        "nbis-v2-e3"
+      ],
+      "normalized_claim": "Nebius reported Q2 2026 revenue of $582.3 million, AI-cloud revenue of $574.9 million, more than $40 billion of customer commitments, four landmark deals with an average value above $1 billion, and a target of 5 GW of contracted power by year-end 2026."
+    },
+    {
+      "claim_id": "nbis-v2-c2",
+      "claim_type": "CAPEX_OPERATING_CASH_FLOW_AND_FREE_CASH_FLOW",
+      "evidence_ids": [
+        "nbis-v2-e1"
+      ],
+      "normalized_claim": "For Q2 2026 Nebius reported $2.2461 billion of operating cash flow and $5.6574 billion of capital expenditures; the arithmetic operating-cash-flow-minus-capex proxy is negative $3.4113 billion and is a local calculation rather than a company-reported free-cash-flow metric."
+    },
+    {
+      "claim_id": "nbis-v2-c3",
+      "claim_type": "LIQUIDITY_AND_CONTRACT_LIABILITIES",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2"
+      ],
+      "normalized_claim": "At June 30, 2026 Nebius reported $8.0421 billion of cash and cash equivalents, $1.0560 billion of restricted cash, approximately $8.5 billion of noncurrent debt, and approximately $6.0 billion of current and noncurrent deferred revenue, so headline cash must be assessed together with debt, restrictions, and prepaid delivery obligations."
+    },
+    {
+      "claim_id": "nbis-v2-c4",
+      "claim_type": "FINANCING_AND_DILUTION",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e4",
+        "nbis-v2-e5",
+        "nbis-v2-e6"
+      ],
+      "normalized_claim": "Nebius disclosed large financing inflows from convertibles, a pre-funded warrant, treasury-share sales and its at-the-market program; during Q2 it sold 12.7 million Class A shares for approximately $2.8 billion gross and retained capacity to sell a further 12.3 million shares under the program."
+    },
+    {
+      "claim_id": "nbis-v2-c5",
+      "claim_type": "CUSTOMER_CONCENTRATION_GPU_POWER_AND_BUILD_CONSTRAINTS",
+      "evidence_ids": [
+        "nbis-v2-e2",
+        "nbis-v2-e3"
+      ],
+      "normalized_claim": "Large individual contracts, the disclosed Meta framework, a small number of landmark deals, Vera Rubin deployment, power delivery, and data-center construction create material customer and execution concentration; exact customer revenue shares were not disclosed in the reviewed primary sources."
+    },
+    {
+      "claim_id": "nbis-v2-c6",
+      "claim_type": "DIRECT_VALUATION_LIMITATION",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2"
+      ],
+      "normalized_claim": "The issuer operating packet is refreshed, but this slow baseline intentionally excludes current market price and does not contain a separately validated point-in-time enterprise-value or diluted-share valuation packet; direct valuation remains unverified."
+    },
+    {
+      "claim_id": "nbis-v3-price-claim",
+      "claim": "The 2026-08-13 completed regular-session close is USD 255.04; Kiwoom USD 255.84 is an after-hours broker mark and is not comparable.",
+      "evidence_ids": [
+        "nbis-v3-price"
+      ]
+    },
+    {
+      "claim_id": "nbis-v3-capital-claim",
+      "claim": "Capital structure is modeled as legal, economic basic, settlement-specific and known gross stress cases without asserting an exact fully diluted count.",
+      "evidence_ids": [
+        "nbis-v3-q2"
+      ]
+    },
+    {
+      "claim_id": "nbis-v3-event-claim",
+      "claim": "Required NBIS events were reviewed; they remain contextual monitoring items under current policy rather than invented automatic trade thresholds.",
+      "evidence_ids": [
+        "nbis-v3-q2",
+        "nbis-v3-agm"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "nbis-v2-e1",
+      "source_url": "https://assets.nebius.com/assets/dfe7a7f3-771e-4653-94e8-8f86bf126b1d/PR.pdf?cache-buster=2026-08-12T11:58:03.516Z",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-08-12T11:58:03Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-06-30T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Nebius Q2 2026 revenue, income statement, cash flow, capex, liquidity, debt, deferred revenue, equity issuance and financing",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e2",
+      "source_url": "https://assets.nebius.com/assets/4462517b-ce83-41f2-96ed-f2ac1bc06a05/SHLQ226%20%281%29.pdf?cache-buster=2026-08-12T11:57:07.944Z",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-08-12T11:57:07Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-08-12T11:57:07Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Nebius Q2 shareholder letter covering customer commitments, landmark deals, prepayments, contracted power, Vera Rubin systems and build-out constraints",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e3",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/0001104659-26-027886.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-16T10:18:17Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-13T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Meta infrastructure-services framework and initial five-year GPU-capacity orders",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e4",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/0001104659-26-026163.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-11T12:15:28Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-11T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Approximately $2 billion NVIDIA pre-funded warrant private placement and related share issuance mechanics",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e5",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/0001104659-26-029863.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-18T11:14:51Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-17T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Upsized convertible senior-note offering",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e6",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/0001104659-26-084452.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-07-17T13:29:13Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-07-10T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Secured project financing and collateral structure",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v3-price",
+      "source_url": "https://nebius.com/stock-data",
+      "source_type": "ISSUER_IR_ORIGINAL_ROUTE",
+      "published_at": "2026-08-13T20:00:00Z",
+      "retrieved_at": "2026-08-14T10:19:15Z",
+      "effective_at": "2026-08-13T20:00:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "NBIS 2026-08-13 completed regular close USD 255.04",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v3-q2",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094844/nbis-20260812xex99d2.htm",
+      "source_type": "SEC",
+      "published_at": "2026-08-12T20:01:08Z",
+      "retrieved_at": "2026-08-14T10:19:15Z",
+      "effective_at": "2026-06-30T23:59:59Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Q2 financials, capital structure, dilution, cash flow, commitments",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v3-agm",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926087080/tm2621374d1_ex99-1.htm",
+      "source_type": "SEC",
+      "published_at": "2026-07-27T20:01:28Z",
+      "retrieved_at": "2026-08-14T10:19:15Z",
+      "effective_at": "2026-08-25T23:59:59Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Scheduled 2026 AGM proposals; authorization is not immediate issuance",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "nbis-v2-c1",
+    "nbis-v2-c2",
+    "nbis-v2-c3",
+    "nbis-v2-c4",
+    "nbis-v2-c5",
+    "nbis-v2-c6",
+    "nbis-v3-price-claim",
+    "nbis-v3-capital-claim",
+    "nbis-v3-event-claim"
+  ],
+  "evidence_ids": [
+    "nbis-v2-e1",
+    "nbis-v2-e2",
+    "nbis-v2-e3",
+    "nbis-v2-e4",
+    "nbis-v2-e5",
+    "nbis-v2-e6",
+    "nbis-v3-price",
+    "nbis-v3-q2",
+    "nbis-v3-agm"
+  ],
+  "linked_components": [
+    {
+      "component_type": "PRICE_EVIDENCE",
+      "path": "workspace/research/nbis-shadow-activation/2026-08-13/v3/nbis-price-evidence-v3.json",
+      "file_hash": "42db03541e2238542852009710808f63f3630b59654abdefdbaa5de83ca7c7d9",
+      "product_close_substitution": false
+    },
+    {
+      "component_type": "CAPITAL_STRUCTURE",
+      "path": "workspace/research/nbis-shadow-activation/2026-08-13/v3/nbis-capital-structure-v3.json",
+      "file_hash": "711758e6df6b78c15eee816d3d9fbca5efe0986a9b8c180b51f6ba0642b0e1bb",
+      "product_close_substitution": false
+    },
+    {
+      "component_type": "VALUATION_SNAPSHOT",
+      "path": "workspace/research/valuation-snapshots/2026-08-13/nbis-valuation-snapshot-v3.json",
+      "file_hash": "37a1dcda3f84efe9567b1f956a3ec6375085d4c54139f1eecde6407e33c18539",
+      "product_close_substitution": false
+    },
+    {
+      "component_type": "EVENT_REVIEW",
+      "path": "workspace/research/nbis-shadow-activation/2026-08-13/v3/nbis-event-review-bundle-v3.json",
+      "file_hash": "5bd997855c1b13a570c8efb0e4bb020504d075e3471ab13332c893f1a93fe630",
+      "product_close_substitution": false
+    }
+  ],
+  "research_packet_hash": "f17bc75b2327018f4c31b7d97d34395c9623f5eab26d3093e4f2df990d0aafa8",
+  "baseline_hash": "4f081273361b660c826cd371e8f11e0d7d1fba24fe1cce790af17af933494a9a",
+  "supersedes_baseline_id": "nbis-20260814-v2",
+  "validation_status": "DRAFT",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false,
+  "technical_view_at_baseline": null,
+  "portfolio_fit_view_at_baseline": null
+}

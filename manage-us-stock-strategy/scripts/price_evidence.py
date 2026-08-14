@@ -43,11 +43,20 @@ def primary_validation(row: Any, completed_session: str | None) -> dict[str, Any
     if row.get("corporate_action_unresolved") is not False:
         errors.append("PRIMARY_CORPORATE_ACTION_UNRESOLVED")
     status = "VALIDATED" if not errors else ("UNAVAILABLE" if "PRIMARY_RECORD_UNAVAILABLE" in errors else "INVALID")
+    provider = str(row.get("provider") or row.get("source_provider") or "yfinance")
+    provider_role = str(row.get("provider_role") or "")
+    kiwoom_primary = provider.upper() in {"KIWOOM", "KIWOOM_REST"} or provider_role in {
+        "KIWOOM_OPERATIONAL_PRIMARY",
+        "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED",
+        "OPERATIONAL_EXECUTION_PRIMARY",
+    }
     return {
         "primary_status": status,
         "primary_session": completed_session,
         "primary_price_basis": row.get("raw_close_price_basis", "raw_completed_regular_session_close"),
-        "primary_provider": row.get("provider", "yfinance"),
+        "primary_provider": provider,
+        "primary_provider_role": provider_role or ("KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED" if kiwoom_primary else "DIAGNOSTIC_SHADOW"),
+        "kiwoom_canonical_primary": kiwoom_primary,
         "errors": errors,
     }
 
@@ -96,10 +105,15 @@ def evidence_status(row: Any, completed_session: str | None, reason: str | None 
     if not required:
         cross_status = "NOT_REQUIRED"
     effective = "DATA_BLOCKED"
+    divergence_blocking = False
     if primary["primary_status"] == "VALIDATED":
-        effective = "INDEPENDENT_VERIFIED" if cross_status == "VERIFIED" else "PRIMARY_VALIDATED"
-    if cross_status == "CONFLICT":
+        if primary["kiwoom_canonical_primary"]:
+            effective = "KIWOOM_CANONICAL_COMPLETED_CLOSE"
+        else:
+            effective = "INDEPENDENT_VERIFIED" if cross_status == "VERIFIED" else "PRIMARY_VALIDATED"
+    if cross_status == "CONFLICT" and not primary["kiwoom_canonical_primary"]:
         effective = "PRICE_CONFLICT"
+        divergence_blocking = True
     if primary["primary_status"] != "VALIDATED":
         effective = "DATA_BLOCKED"
     return {
@@ -111,6 +125,13 @@ def evidence_status(row: Any, completed_session: str | None, reason: str | None 
         "crosscheck_method": cross.get("acquisition_method", "NONE" if not required else "CODEX_WEB"),
         "evidence_validation_status": cross.get("evidence_validation_status", "NOT_REQUIRED" if not required else ("VALIDATED" if cross_status == "VERIFIED" else "PENDING")),
         "comparison_status": cross.get("comparison_status", "MATCH" if cross_status == "VERIFIED" else "NOT_EVALUATED"),
+        "cross_provider_diagnostic_status": (
+            "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE"
+            if primary["kiwoom_canonical_primary"] and cross_status == "CONFLICT"
+            else ("DIAGNOSTIC_MATCH" if primary["kiwoom_canonical_primary"] and cross_status == "VERIFIED" else "NOT_EVALUATED")
+        ),
+        "divergence_blocking": divergence_blocking,
+        "provider_price_averaged": False,
         "effective_price_status": effective,
     }
 

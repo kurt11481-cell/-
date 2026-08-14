@@ -21,7 +21,7 @@
     "policy_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "provider_scope_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "thesis_status": {"enum": ["VALID", "CONTESTED", "INVALIDATED", "STALE", "UNVERIFIED"]},
-    "valuation_evidence_status": {"enum": ["UNVERIFIED", "PARTIAL", "SCENARIO_VALIDATED", "PRICE_EVIDENCE_CONFLICT", "STALE", "INVALID", "NOT_APPLICABLE"]},
+    "valuation_evidence_status": {"enum": ["UNVERIFIED", "PARTIAL", "SCENARIO_VALIDATED", "DIRECT_SCENARIO_VALIDATED", "PRICE_EVIDENCE_CONFLICT", "STALE", "INVALID", "NOT_APPLICABLE"]},
     "valuation_judgement_status": {"enum": ["ATTRACTIVE", "FAIR", "STRETCHED", "UNCLASSIFIED", "UNVERIFIED", "NOT_APPLICABLE"]},
     "technical_status": {"enum": ["READY", "WATCH", "DETERIORATING", "INVALID", "UNAVAILABLE"]},
     "event_status": {"enum": ["CLEAR", "CONTEXT_ONLY", "EVENT_REVIEW_PENDING", "WAIT_REQUIRED", "INVALID"]},

@@ -1,13 +1,37 @@
 {
-  "schema_version": "1.0",
-  "policy_version": "2026-08-14-kiwoom-session-aware-priority-v1",
+  "schema_version": "1.1",
+  "policy_version": "2026-08-14-kiwoom-execution-primary-v2",
   "transition_status": "KIWOOM_PRIMARY_GUARDED_SCOPED",
   "account_facts_authority": "KIWOOM_AUTHORITATIVE",
   "broker_quote_authority": "KIWOOM_OPERATIONAL_PRIMARY",
   "regular_close_authority": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED",
+  "canonical_price_authority": "KIWOOM_SELF_INTEGRITY_VALIDATED",
+  "activation_price_authority": "KIWOOM_SELF_INTEGRITY_VALIDATED",
+  "valuation_price_authority": "KIWOOM_SELF_INTEGRITY_VALIDATED",
+  "technical_execution_reference_authority": "KIWOOM_OPERATIONAL_PRIMARY",
   "adjusted_technical_authority": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED",
   "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW",
+  "external_reference_role": "EXTERNAL_DIAGNOSTIC_REFERENCE",
   "conflict_resolution": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY",
+  "cross_provider_divergence_policy": {
+    "status": "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE",
+    "blocking": false,
+    "kiwoom_override_allowed": false,
+    "price_averaging_allowed": false
+  },
+  "kiwoom_self_integrity_gate": {
+    "ticker_identity_required": true,
+    "security_identity_required": true,
+    "usd_required": true,
+    "positive_price_required": true,
+    "timestamp_required": true,
+    "freshness_required": true,
+    "api_success_required": true,
+    "known_price_semantics_required": true,
+    "known_market_phase_required": true,
+    "corporate_action_ambiguity_allowed": false,
+    "scale_error_allowed": false
+  },
   "session_types": ["PRE_MARKET", "REGULAR_INTRADAY", "REGULAR_COMPLETED", "AFTER_HOURS", "DAY_MARKET", "OVERNIGHT", "MARKET_CLOSED", "UNKNOWN"],
   "price_and_quote_types": ["RAW_REGULAR_SESSION_CLOSE", "REGULAR_SESSION_LAST", "PREMARKET_LAST", "AFTER_HOURS_LAST", "DAY_MARKET_LAST", "OVERNIGHT_LAST", "BID", "ASK", "MID", "BROKER_MARK", "UNKNOWN"],
   "comparability_gate": {
@@ -43,8 +67,12 @@
     },
     "MVLL": {
       "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC",
-      "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"],
-      "fallback_reason": "TICKER_AND_DECISION_CLASS_LOCAL_TECHNICAL_BOUNDARY_CONFLICT"
+      "volume_primary": "KIWOOM_VALID_SCOPED",
+      "volume_decision_class": "RVOL20",
+      "volume_acceptance_artifact_hash": "ab1e99660f5b19a0dd8d8d5c4471d5f84b9285b6d8dabd76fb7006acab86027f",
+      "blocked_decision_classes": [],
+      "technical_condition_status": "RVOL20_NOT_MET",
+      "fallback_reason": null
     },
     "EVENT_DATA_INCOMPLETE": {
       "market_provider_effect": "NONE",
@@ -53,7 +81,7 @@
   },
   "provider_scopes": [
     {"ticker": "SOXL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},
-    {"ticker": "MVLL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"], "fallback_reason": "TICKER_AND_DECISION_CLASS_LOCAL_TECHNICAL_BOUNDARY_CONFLICT", "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},
+    {"ticker": "MVLL", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "volume_primary": "KIWOOM_VALID_SCOPED", "volume_decision_class": "RVOL20", "volume_acceptance_artifact_hash": "ab1e99660f5b19a0dd8d8d5c4471d5f84b9285b6d8dabd76fb7006acab86027f", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-14T13:48:12.0562388Z", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},
     {"ticker": "NBIS", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},
     {"ticker": "BE", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},
     {"ticker": "TOST", "identity_provider": "KIWOOM_REST", "regular_close_primary": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "extended_hours_primary": "KIWOOM_OPERATIONAL_PRIMARY", "technical_history_primary": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC", "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW", "blocked_decision_classes": [], "fallback_reason": null, "effective_from": "2026-08-13T23:26:27.179579+00:00", "acceptance_artifact_hash": "d7c1e1d109997638a2212ec13d55d7507699bff30cbda7930d2e5a2131b10d41", "order_authority": false},

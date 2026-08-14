@@ -90,12 +90,12 @@ class V268FinalizedPostMarketAutomationTests(unittest.TestCase):
         self.assertIn("PROVIDER_SCOPE_MANIFEST_HASH_MISMATCH",
                       validate_scoped_provider_limits(self.scope, bad_hash))
 
-    def test_auto_07_mvll_decision_class_remains_blocked(self):
+    def test_auto_07_mvll_provider_block_is_cleared_but_condition_remains_unmet(self):
         evidence = valid_scheduled_attempt()["finalization_evidence"]
         self.assertEqual(validate_scoped_provider_limits(self.scope, evidence), [])
         broken = copy.deepcopy(evidence)
-        broken["critical_bars"]["MVLL"]["blocked_decision_classes"] = []
-        self.assertIn("MVLL_DECISION_CLASS_NOT_ISOLATED", validate_scoped_provider_limits(self.scope, broken))
+        broken["critical_bars"]["MVLL"]["technical_condition_status"] = "MET"
+        self.assertIn("MVLL_TECHNICAL_CONDITION_NOT_APPLIED", validate_scoped_provider_limits(self.scope, broken))
 
     def test_auto_08_event_incomplete_does_not_change_provider_readiness(self):
         value = event_and_provider_readiness("KIWOOM_PRIMARY_GUARDED_SCOPED_READY", "EVENT_DATA_INCOMPLETE")

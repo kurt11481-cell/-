@@ -1,0 +1,221 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "mvll-20260814-v3",
+  "baseline_version": 3,
+  "ticker": "MVLL",
+  "baseline_type": "SINGLE_STOCK_LEVERAGED_ETF",
+  "analysis_cutoff": "2026-08-14T11:51:13.057460Z",
+  "evidence_cutoff": "2026-08-14T11:51:13.057460Z",
+  "content_status": "COMPLETE",
+  "thesis_status": "VALID",
+  "valuation_applicability": "UNDERLYING_BASED",
+  "valuation_status": "UNCLASSIFIED",
+  "valuation_basis": "MRVL_ISSUER",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "MVLL is a daily-reset 2x MRVL product. Direct MVLL price authority is Kiwoom, while the MRVL issuer scenario packet now covers verified base and known gross-stress capitalization, official Q2 revenue guidance, liquidity, Series A conversion, customer warrant, and Celestial earnout. The valuation judgement remains UNCLASSIFIED and cannot authorize an add.",
+  "strongest_counter_case": "MRVL derived 74% of fiscal 2026 revenue from data center and 82% of revenue from its ten largest distributor and direct customers, while custom designs can require six months to three years before commercial shipments. Customer program delay, insourcing, competition, margin disappointment or AI-CAPEX deceleration could therefore combine with MVLL volatility decay and daily compounding to produce losses materially different from twice MRVL's multi-day return.",
+  "invalidation_conditions": [
+    "Official MRVL filings show material deterioration in custom-XPU programs, optical interconnect, switching demand, margins, cash flow, or guidance.",
+    "Official evidence shows a material loss or delay of a concentrated customer program or a durable competitive displacement in custom silicon or connectivity.",
+    "MVLL sponsor disclosures change the daily objective, underlying, continued listing, or operating structure.",
+    "A validated point-in-time MRVL valuation packet shows an unsupported issuer valuation under conservative growth and margin assumptions."
+  ],
+  "next_research_triggers": [
+    "MRVL's officially scheduled Q2 FY2027 earnings release and subsequent 10-Q.",
+    "MRVL's officially scheduled October 2026 investor day and any customer-program timing update.",
+    "A point-in-time MRVL issuer valuation packet using validated completed-session evidence.",
+    "Any MVLL prospectus supplement, split, liquidation, benchmark, derivative, or liquidity notice.",
+    "Rebuild MRVL scenario valuation after the next 10-Q or material capital-structure filing.",
+    "Keep EMA10_RECLAIM_RVOL20 blocked until the deterministic RVOL boundary conflict is resolved."
+  ],
+  "claims": [
+    {
+      "claim_id": "mvll-v2-c1",
+      "claim_type": "PRODUCT_OBJECTIVE_AND_PATH_DEPENDENCE",
+      "evidence_ids": [
+        "mvll-v2-e1"
+      ],
+      "normalized_claim": "MVLL targets 200% of MRVL's daily percentage change; for periods longer than one day daily rebalancing, compounding and volatility can cause losses even when MRVL is flat or rises."
+    },
+    {
+      "claim_id": "mvll-v2-c2",
+      "claim_type": "UNDERLYING_REVENUE_MARGINS_AND_CASH_FLOW",
+      "evidence_ids": [
+        "mvll-v2-e2",
+        "mvll-v2-e3"
+      ],
+      "normalized_claim": "MRVL reported Q1 FY2027 revenue of $2.418 billion, GAAP and non-GAAP gross margins of 52.1% and 58.9%, operating cash flow of $638.8 million, and Q2 revenue guidance of $2.7 billion plus or minus 5%."
+    },
+    {
+      "claim_id": "mvll-v2-c3",
+      "claim_type": "CUSTOM_ASIC_PROGRAM_SCHEDULES",
+      "evidence_ids": [
+        "mvll-v2-e2",
+        "mvll-v2-e4"
+      ],
+      "normalized_claim": "MRVL reported strong custom-XPU demand and disclosed 5 nm execution, 3 nm progression and 2 nm platform development, but its 10-K states that commercial shipments can begin six months to three years after product selection and customer-specific production schedules remain concentrated and uncertain."
+    },
+    {
+      "claim_id": "mvll-v2-c4",
+      "claim_type": "NETWORKING_OPTICAL_AND_COMPETITION",
+      "evidence_ids": [
+        "mvll-v2-e2",
+        "mvll-v2-e4"
+      ],
+      "normalized_claim": "Current primary evidence supports bookings across 800G and 1.6T optics, 51.2T Ethernet switching, NPO/CPO, DCI and custom-XPU attach, while MRVL also discloses intense competition, customer insourcing and design-win execution risk."
+    },
+    {
+      "claim_id": "mvll-v2-c5",
+      "claim_type": "CUSTOMER_AND_END_MARKET_CONCENTRATION",
+      "evidence_ids": [
+        "mvll-v2-e4"
+      ],
+      "normalized_claim": "MRVL's fiscal 2026 10-K reports data-center revenue at 74% of total revenue, its ten largest customers at 82%, one direct customer at 14%, and one distributor at 37%, creating material end-market and customer concentration."
+    },
+    {
+      "claim_id": "mvll-v2-c6",
+      "claim_type": "UNDERLYING_VALUATION_AND_PRODUCT_BOUNDARY",
+      "evidence_ids": [
+        "mvll-v2-e1",
+        "mvll-v2-e2",
+        "mvll-v2-e4"
+      ],
+      "normalized_claim": "MRVL issuer valuation remains unverified without a separate point-in-time market-value packet; it is not an MVLL target price, MRVL multiplied by two is not an MVLL close, and current MVLL technical decisions remain overlay-owned."
+    },
+    {
+      "claim_id": "mvll-v2-c7",
+      "claim_type": "CAPITAL_STRUCTURE",
+      "normalized_claim": "MRVL known gross stress includes 21.778 million Series A conversion shares, up to 24.4 million Celestial earnout shares, up to 4.2 million customer-warrant shares, and up to $233 million Celestial cash consideration; no price multiple is applied to MVLL.",
+      "evidence_ids": [
+        "mvll-v2-e5"
+      ]
+    },
+    {
+      "claim_id": "mvll-v2-c8",
+      "claim_type": "VALUATION",
+      "normalized_claim": "MRVL scenario evidence uses Kiwoom Raw close and official Q2 revenue guidance; valuation judgement remains UNCLASSIFIED and is not an MVLL target price or add authority.",
+      "evidence_ids": [
+        "mvll-v2-e5",
+        "mvll-v2-e6"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "mvll-v2-e1",
+      "source_url": "https://graniteshares.com/etfs/mvll/",
+      "source_type": "SPONSOR_PRIMARY",
+      "published_at": "2025-03-05T12:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2025-03-05T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MVLL daily 200% objective, daily reset, compounding, volatility, derivatives, counterparty, liquidity and concentration risks",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-v2-e2",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL Q1 FY2027 revenue, margins, cash flow, guidance, custom XPU, switching, optical interconnect and bookings",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-v2-e3",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001835632-26-000019/mrvl-20260502.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-05-28T12:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-05-02T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL Q1 FY2027 financial statements, acquisition effects, cash-flow details and current risk disclosures",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-v2-e4",
+      "source_url": "https://investor.marvell.com/sec-filings/all-sec-filings/content/0001835632-26-000011/mrvl-20260131.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-11T21:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-01-31T21:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL fiscal 2026 data-center mix, customer concentration, custom ASIC process roadmap and schedule risk, networking and optical portfolio, competition and AI-CAPEX risk",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-v2-e5",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm",
+      "source_type": "SEC_FILING",
+      "published_at": "2026-05-28T00:00:00Z",
+      "retrieved_at": "2026-08-14T11:51:13.057460Z",
+      "effective_at": "2026-05-02T20:00:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "capital_structure_and_contingent_consideration",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "mvll-v2-e6",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-05-27T20:05:00Z",
+      "retrieved_at": "2026-08-14T11:51:13.057460Z",
+      "effective_at": "2026-05-27T20:05:00Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "q1_results_and_q2_guidance",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "mvll-v2-c1",
+    "mvll-v2-c2",
+    "mvll-v2-c3",
+    "mvll-v2-c4",
+    "mvll-v2-c5",
+    "mvll-v2-c6",
+    "mvll-v2-c7",
+    "mvll-v2-c8"
+  ],
+  "evidence_ids": [
+    "mvll-v2-e1",
+    "mvll-v2-e2",
+    "mvll-v2-e3",
+    "mvll-v2-e4",
+    "mvll-v2-e5",
+    "mvll-v2-e6"
+  ],
+  "linked_components": [
+    {
+      "ticker": "MRVL",
+      "role": "UNDERLYING_THESIS",
+      "confirmation_mode": "DAILY_MULTIPLE",
+      "product_close_substitution": false,
+      "valuation_applies_to": "MRVL_ISSUER_NOT_MVLL_TARGET_PRICE"
+    },
+    {
+      "ticker": "MVLL",
+      "role": "DIRECT_PRODUCT_PRICE",
+      "confirmation_mode": "DIRECT",
+      "product_close_substitution": false,
+      "valuation_applies_to": "NOT_APPLICABLE_TO_PRODUCT"
+    }
+  ],
+  "research_packet_hash": "f7e563644599fc7b367b1e696198fd82c7719c5bc97a35876504c1820bc90746",
+  "baseline_hash": "1a78c2f4eb1351d35d69df1a631cc01e7566b16df8183002b54d2317ec33a233",
+  "supersedes_baseline_id": "mvll-20260814-v2",
+  "validation_status": "VALIDATED_SHADOW",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false,
+  "supersedes_baseline_hash": "fecb44c6615f13466bb2a2285f89d6a50170eee1cda72d0fe15daed4efe89823"
+}

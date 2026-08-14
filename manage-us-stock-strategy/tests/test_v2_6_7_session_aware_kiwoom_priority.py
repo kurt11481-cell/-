@@ -200,7 +200,10 @@ class PriorityAndScopeTests(unittest.TestCase):
         self.assertTrue(all(row["order_authority"] is False for row in scopes))
         by_ticker = {row["ticker"]: row for row in scopes}
         self.assertEqual(by_ticker["FSLY"]["technical_history_primary"], "YFINANCE_PRIMARY_VALIDATED_FALLBACK")
-        self.assertEqual(by_ticker["MVLL"]["blocked_decision_classes"], ["EMA10_RECLAIM_RVOL20"])
+        self.assertEqual(by_ticker["MVLL"]["blocked_decision_classes"], [])
+        self.assertEqual(by_ticker["MVLL"]["volume_primary"], "KIWOOM_VALID_SCOPED")
+        self.assertEqual(by_ticker["MVLL"]["volume_decision_class"], "RVOL20")
+        self.assertRegex(by_ticker["MVLL"]["volume_acceptance_artifact_hash"], r"^[a-f0-9]{64}$")
 
 
 class InvariantAndContractTests(unittest.TestCase):

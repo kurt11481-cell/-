@@ -268,11 +268,14 @@ def build_radar(universe: dict[str, Any], registry: dict[str, Any], registry_val
         crosscheck_reason = crosscheck_required(opportunity_state=opportunity,
                                                 material_near_trigger=material_near_trigger)
         price_evidence = evidence_status(row, market_session, crosscheck_reason)
-        if price_evidence["crosscheck_status"] == "CONFLICT":
+        if price_evidence.get("divergence_blocking") is True:
             opportunity, execution = "DATA_BLOCKED", "DATA_BLOCKED"
             if "PRICE_CONFLICT" not in remaining:
                 remaining.insert(0, "PRICE_CONFLICT")
-        elif price_evidence["crosscheck_requirement"] == "REQUIRED" and price_evidence["crosscheck_status"] != "VERIFIED":
+        elif (price_evidence["crosscheck_requirement"] == "REQUIRED"
+              and price_evidence["crosscheck_status"] != "VERIFIED"
+              and not (price_evidence.get("kiwoom_canonical_primary") is True
+                       and price_evidence["crosscheck_status"] == "CONFLICT")):
             execution = "VERIFICATION_PENDING"
             if "INDEPENDENT_COMPLETED_CLOSE" not in remaining:
                 remaining.append("INDEPENDENT_COMPLETED_CLOSE")

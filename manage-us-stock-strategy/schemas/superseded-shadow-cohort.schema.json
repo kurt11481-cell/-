@@ -10,7 +10,7 @@
     "cohort_status": {"const": "COHORT_SUPERSEDED"},
     "superseded_at": {"type": "string", "format": "date-time"},
     "superseded_by": {"type": "string", "pattern": "^integrated-shadow-[a-f0-9]{16}$"},
-    "reason": {"enum": ["SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE", "FINALIZED_POSTMARKET_COUNTING_SEMANTICS_CHANGE", "HOLDING_BASELINE_SEMANTIC_CHANGE"]},
+    "reason": {"enum": ["SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE", "FINALIZED_POSTMARKET_COUNTING_SEMANTICS_CHANGE", "HOLDING_BASELINE_SEMANTIC_CHANGE", "GLOBAL_AUTHORITY_VOLUME_AND_DUAL_RUN_SEMANTICS_CHANGE"]},
     "prior_progress": {"type": "object"},
     "order_authority": {"const": false}
   }

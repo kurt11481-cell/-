@@ -52,11 +52,15 @@ policy supplies exact authority. `order_authority` is always false.
 
 Issuer-equity and underlying-issuer research uses an immutable valuation
 snapshot. Its price input must be a finalized Kiwoom Raw regular-session close;
-yfinance remains a same-ticker, same-session diagnostic Shadow. An unresolved
-Raw-close conflict sets `PRICE_EVIDENCE_CONFLICT` and prevents valuation
-judgement and baseline activation. Basic, base-diluted, and stress-diluted share
-bases remain separate, as do unrestricted cash, restricted cash, debt,
-convertibles, preferred claims, and locally calculated OCF-minus-CAPEX proxies.
+yfinance remains a same-ticker, same-session diagnostic Shadow. A difference
+between an internally valid Kiwoom price and yfinance or issuer/Web reference
+is non-blocking diagnostic divergence. It cannot override Kiwoom and the values
+must not be averaged. Only a Kiwoom self-integrity failure—such as stale data,
+wrong identity, unknown semantics/session, API failure, scale/currency error or
+corporate-action ambiguity—prevents valuation judgement and baseline
+activation. Basic, base-diluted, and stress-diluted share bases remain separate,
+as do unrestricted cash, restricted cash, debt, convertibles, preferred claims,
+and locally calculated OCF-minus-CAPEX proxies.
 
 Each candidate baseline links by hash to the current event bundle. Product and
 underlying links remain separate (`SOXL != SOXX`, `MVLL != MRVL`). A stale or

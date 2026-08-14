@@ -1,9 +1,9 @@
 {
-  "valuation_snapshot_id": "NBIS-valuation-2026-08-13-v1",
+  "valuation_snapshot_id": "NBIS-valuation-2026-08-13-v2",
   "ticker": "NBIS",
   "issuer_name": "Nebius Group N.V.",
   "entity_role": "DIRECT_ISSUER",
-  "analysis_cutoff": "2026-08-14T05:12:45.898410+00:00",
+  "analysis_cutoff": "2026-08-14T09:27:03.7915806Z",
   "market_session": "2026-08-13",
   "price": {
     "provider": "KIWOOM_REST",
@@ -23,41 +23,41 @@
     "share_count_as_of": "2026-06-30",
     "basic_shares": {"value": 271.855218, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
     "diluted_shares_base": {"value": 292.921154, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "SCENARIO"},
-    "diluted_shares_stress": {"value": 327.206929, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e5", "verification_status": "SCENARIO"},
-    "share_class_breakdown": {"class_a_millions": 238.400165, "class_b_millions": 33.455053, "conversion_basis": "Class B conversion observed 1:1; full current economic-rights review remains required"},
+    "diluted_shares_stress": {"value": 383.583156, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e7", "verification_status": "SCENARIO_KNOWN_QUANTIFIABLE_OVERHANG_FLOOR"},
+    "share_class_breakdown": {"class_a_millions": 238.400165, "class_b_millions": 33.455053, "economic_rights": "EQUAL_PER_SHARE_DISTRIBUTIONS_AND_LIQUIDATION", "voting_rights": "CLASS_A_ONE_VOTE_CLASS_B_TEN_VOTES", "conversion_basis": "Each Class B converts one-for-one into one Class A plus one technical Class C share under Dutch law", "source_evidence_id": "nbis-v2-e8"},
     "preferred_equity": {"value": 0.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
-    "convertible_instruments": {"principal_usd_millions": 4000.0, "initial_conversion_share_exposure_millions": 21.985775, "evidence_id": "nbis-v2-e5"},
+    "convertible_instruments": {"principal_amount_outstanding_usd_millions": 10041.8, "carrying_amount_usd_millions": 8499.0, "q2_if_converted_incremental_share_exposure_millions": 65.416804, "settlement_mode": "CASH_SHARES_OR_COMBINATION_AT_COMPANY_ELECTION", "make_whole_incremental_shares": null, "evidence_id": "nbis-v2-e7"},
     "warrants": {"prefunded_warrant_shares_millions": 21.065936, "exercise_price_usd": 0.0001, "evidence_id": "nbis-v2-e4"},
-    "ATM_capacity": {"remaining_share_capacity_millions": 12.3, "evidence_id": "nbis-v2-e1"},
-    "stock_compensation": {"value": null, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "UNRESOLVED"},
-    "other_dilution": {"value": null, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "UNRESOLVED"}
+    "ATM_capacity": {"remaining_share_capacity_millions": 12.270507, "evidence_id": "nbis-v2-e9"},
+    "stock_compensation": {"value": 12.974691, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e10", "verification_status": "VERIFIED_KNOWN_OPTIONS_PLUS_UNVESTED_RSUS_SCENARIO", "components": {"options_outstanding_millions": 6.7406, "unvested_rsus_millions": 6.234091, "unamortized_compensation_usd_millions": 352.1}},
+    "other_dilution": {"value": null, "currency": null, "unit": "SHARES_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e11", "verification_status": "DISCLOSED_BUT_NOT_EXACTLY_QUANTIFIABLE", "components": {"eigen_unvested_participating_shares_millions": 2.743655, "eigen_treatment": "ALREADY_LEGAL_SHARES_AND_NOT_ADDED_AGAIN_TO_OUTSTANDING_SHARE_COUNT", "tavily_earnout_usd_millions": 67.3, "tavily_settlement": "CASH_OR_CLASS_A_SHARES_AT_COMPANY_ELECTION", "make_whole_conversion_increment": null, "ordinary_warrants_other_than_prefunded": "NOT_SEPARATELY_DISCLOSED_IN_Q2_FILING"}}
   },
   "balance_sheet": {
     "cash": {"value": 8042.1, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
     "restricted_cash": {"value": 1056.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
-    "debt": {"value": 8500.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "ROUNDED_DISCLOSURE"},
-    "secured_financing": {"value": 4500.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-07-10", "source_evidence_id": "nbis-v2-e6", "verification_status": "VERIFIED"},
+    "debt": {"value": 8545.7, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e7", "verification_status": "VERIFIED_CURRENT_PLUS_NONCURRENT_CARRYING_AMOUNT"},
+    "secured_financing": {"value": 775.0, "currency": "USD", "unit": "USD_MILLIONS_FACILITY_CAPACITY", "as_of": "2026-07-10", "source_evidence_id": "nbis-v2-e6", "verification_status": "VERIFIED_FACILITY_CAPACITY_DRAW_STATUS_NOT_ASSUMED"},
     "preferred_claims": {"value": 0.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
     "other_claims": {"value": 0.0, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "SCENARIO_ASSUMPTION"}
   },
   "operating_metrics": {
-    "revenue_ltm": {"value": null, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "NOT_EVALUATED"},
+    "revenue_ltm": {"value": 1355.1, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e12", "verification_status": "LOCAL_FY2025_MINUS_H1_2025_PLUS_H1_2026"},
     "annualized_revenue_run_rate": {"value": 2329.2, "currency": "USD", "unit": "USD_MILLIONS_PER_YEAR", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "LOCAL_Q2_REVENUE_TIMES_FOUR"},
     "gross_profit_ltm": {"value": null, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "NOT_EVALUATED"},
-    "operating_cash_flow": {"value": 2246.1, "currency": "USD", "unit": "USD_MILLIONS_Q2", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
-    "capital_expenditure": {"value": 5657.4, "currency": "USD", "unit": "USD_MILLIONS_Q2", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
-    "local_ocf_minus_capex_proxy": {"value": -3411.3, "currency": "USD", "unit": "USD_MILLIONS_Q2", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "LOCAL_CALCULATION_NOT_REPORTED_FCF"},
+    "operating_cash_flow": {"value": 4504.1, "currency": "USD", "unit": "USD_MILLIONS_SIX_MONTHS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
+    "capital_expenditure": {"value": 8130.3, "currency": "USD", "unit": "USD_MILLIONS_SIX_MONTHS_PROPERTY_EQUIPMENT_AND_INTANGIBLES", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
+    "local_ocf_minus_capex_proxy": {"value": -3626.2, "currency": "USD", "unit": "USD_MILLIONS_SIX_MONTHS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "LOCAL_CALCULATION_NOT_COMPANY_REPORTED_FCF"},
     "reported_free_cash_flow": {"value": null, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "NOT_REPORTED"},
-    "deferred_revenue": {"value": 6000.0, "currency": "USD", "unit": "USD_MILLIONS_APPROXIMATE", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "ROUNDED_DISCLOSURE"},
-    "customer_prepayments": {"value": null, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e2", "verification_status": "NOT_SEPARATELY_QUANTIFIED"}
+    "deferred_revenue": {"value": 5975.2, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e1", "verification_status": "VERIFIED"},
+    "customer_prepayments": {"value": null, "currency": "USD", "unit": "USD_MILLIONS", "as_of": "2026-06-30", "source_evidence_id": "nbis-v2-e2", "verification_status": "INCLUDED_IN_DEFERRED_REVENUE_NOT_SEPARATELY_QUANTIFIED_NOT_RECOGNIZED_REVENUE"}
   },
-  "stress_debt": 4500.0,
+  "stress_debt": 9320.7,
   "stress_preferred_claims": 0.0,
   "base_assumption_ids": ["PREFUNDED_WARRANT_ECONOMIC_SHARE_EQUIVALENT"],
-  "stress_assumption_ids": ["PREFUNDED_WARRANT", "CONVERTIBLE_INITIAL_RATE", "ATM_REMAINING_CAPACITY", "CONVERTIBLE_DEBT_REMOVED_ON_CONVERSION"],
-  "required_missing_inputs": ["SAME_SESSION_PRICE_CONFLICT", "CURRENT_COMPLETE_CLASS_B_ECONOMIC_RIGHTS", "CURRENT_STOCK_COMPENSATION_OVERHANG", "OTHER_POTENTIAL_DILUTION"],
-  "claim_ids": ["nbis-v2-c2", "nbis-v2-c3", "nbis-v2-c4", "nbis-v2-c6"],
-  "evidence_ids": ["nbis-v2-e1", "nbis-v2-e4", "nbis-v2-e5", "nbis-v2-e6"],
+  "stress_assumption_ids": ["PREFUNDED_WARRANT", "Q2_IF_CONVERTED_INCREMENTAL_SHARES", "OUTSTANDING_OPTIONS", "UNVESTED_RSUS", "ATM_REMAINING_CAPACITY", "SECURED_FACILITY_FULL_DRAW_STRESS_ONLY", "NO_DOUBLE_COUNT_EIGEN_ISSUED_UNVESTED_SHARES", "UNQUANTIFIED_TAVILY_AND_MAKE_WHOLE_EXCLUDED"],
+  "required_missing_inputs": ["SAME_SESSION_PRICE_CONFLICT", "UNQUANTIFIED_TAVILY_SHARE_SETTLEMENT_AND_CONVERTIBLE_MAKE_WHOLE_INCREMENT"],
+  "claim_ids": ["nbis-v2-c2", "nbis-v2-c3", "nbis-v2-c4", "nbis-v2-c6", "nbis-v2-c7", "nbis-v2-c8", "nbis-v2-c9", "nbis-v2-c10", "nbis-v2-c11", "nbis-v2-c12"],
+  "evidence_ids": ["nbis-v2-e1", "nbis-v2-e4", "nbis-v2-e6", "nbis-v2-e7", "nbis-v2-e8", "nbis-v2-e9", "nbis-v2-e10", "nbis-v2-e11", "nbis-v2-e12"],
   "staleness_triggers": ["NEXT_EARNINGS", "MATERIAL_FINANCING", "ATM_USAGE", "CONVERTIBLE_ISSUANCE_OR_CONVERSION", "WARRANT_EXERCISE", "MATERIAL_CUSTOMER_CONTRACT_CHANGE", "MATERIAL_CAPEX_REVISION", "MATERIAL_LIQUIDITY_CHANGE", "SHARE_CLASS_OR_CAPITAL_STRUCTURE_CHANGE"],
-  "valuation_judgement_status": "UNVERIFIED"
+  "valuation_judgement_status": "UNCLASSIFIED"
 }

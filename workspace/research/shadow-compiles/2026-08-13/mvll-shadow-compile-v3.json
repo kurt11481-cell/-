@@ -1,0 +1,50 @@
+{
+  "schema_version": "2.6.12",
+  "mode": "NON_AUTHORITATIVE_SHADOW",
+  "ticker": "MVLL",
+  "candidate_baseline_id": "mvll-20260814-v3",
+  "candidate_baseline_hash": "1a78c2f4eb1351d35d69df1a631cc01e7566b16df8183002b54d2317ec33a233",
+  "valuation_snapshot_id": "mrvl-valuation-20260813-v3",
+  "valuation_snapshot_hash": "78fcc1c3c8cc505a787d049bed2755cdd7e2ad10f843795fea4db9e8eb39dbd7",
+  "event_link_id": "mvll-20260814-v3--MVLL--mvll-mrvl-event-review-20260814-v3",
+  "event_link_hash": "1bf48aa7c3a7d79dbe78f11e6993e2947a8c11c08789e9d8f92dea8e99b92fea",
+  "overlay_hash": "a6bf03961047f1395219c66ed23aaf35948a0d2f5b32474ba498409aee057104",
+  "portfolio_state_revision": 13,
+  "portfolio_state_hash": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "policy_hash": "feaef6debcb42fb90c45af7d5ad0a22d840eee8df1e301947a0eecac8bc18423",
+  "provider_scope_hash": "9fa1ca809f6ae7e4b12fedb147c44347dcfe301cebe66d93fd5c2c8d3f008a35",
+  "thesis_status": "VALID",
+  "valuation_evidence_status": "SCENARIO_VALIDATED",
+  "valuation_judgement_status": "UNCLASSIFIED",
+  "technical_status": "WATCH",
+  "event_status": "CONTEXT_ONLY",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "strategy_signal": "REDUCE_CANDIDATE",
+  "primary_reason": "MVLL is a daily-reset 2x MRVL product. Direct MVLL price authority is Kiwoom, while the MRVL issuer scenario packet now covers verified base and known gross-stress capitalization, official Q2 revenue guidance, liquidity, Series A conversion, customer warrant, and Celestial earnout. The valuation judgement remains UNCLASSIFIED and cannot authorize an add.",
+  "strongest_counter_case": "MRVL derived 74% of fiscal 2026 revenue from data center and 82% of revenue from its ten largest distributor and direct customers, while custom designs can require six months to three years before commercial shipments. Customer program delay, insourcing, competition, margin disappointment or AI-CAPEX deceleration could therefore combine with MVLL volatility decay and daily compounding to produce losses materially different from twice MRVL's multi-day return.",
+  "invalidation": [
+    "Official MRVL filings show material deterioration in custom-XPU programs, optical interconnect, switching demand, margins, cash flow, or guidance.",
+    "Official evidence shows a material loss or delay of a concentrated customer program or a durable competitive displacement in custom silicon or connectivity.",
+    "MVLL sponsor disclosures change the daily objective, underlying, continued listing, or operating structure.",
+    "A validated point-in-time MRVL valuation packet shows an unsupported issuer valuation under conservative growth and margin assumptions."
+  ],
+  "next_review_trigger": [
+    "MRVL's officially scheduled Q2 FY2027 earnings release and subsequent 10-Q.",
+    "MRVL's officially scheduled October 2026 investor day and any customer-program timing update.",
+    "A point-in-time MRVL issuer valuation packet using validated completed-session evidence.",
+    "Any MVLL prospectus supplement, split, liquidation, benchmark, derivative, or liquidity notice.",
+    "Rebuild MRVL scenario valuation after the next 10-Q or material capital-structure filing.",
+    "Keep EMA10_RECLAIM_RVOL20 blocked until the deterministic RVOL boundary conflict is resolved."
+  ],
+  "remaining_conditions": [],
+  "shadow_compile_status": "PASSED",
+  "live_strategy_state": "UNCHANGED",
+  "shadow_strategy_state": "REDUCTION_REVIEW",
+  "blocked_decision_classes": [
+    "EMA10_RECLAIM_RVOL20"
+  ],
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

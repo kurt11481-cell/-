@@ -302,7 +302,7 @@ def build_holding_strategies(
         independent_close_status = price_evidence["crosscheck_status"]
         price_verification_status = price_evidence["effective_price_status"]
         verification_required = price_evidence["crosscheck_requirement"] == "REQUIRED"
-        price_conflict = independent_close_status == "CONFLICT"
+        price_conflict = price_evidence.get("divergence_blocking") is True
         if price_conflict and hard is None:
             strategy_state, execution = "DATA_BLOCKED", "DATA_BLOCKED"
             quantity, quantity_authority = None, "none"

@@ -1,0 +1,25 @@
+{
+  "schema_version": "2.6",
+  "cohort_id": "integrated-shadow-423427b3a2aa2a53",
+  "semantic_fingerprint": "423427b3a2aa2a5388d5779d02f21b632ccb3aee321f49bc88dee31963ce0591",
+  "started_at": "2026-08-14T11:18:38.000455+00:00",
+  "observed_attempts": 0,
+  "valid_shadow_sessions": 0,
+  "excluded_attempts": 0,
+  "critical_violations": [],
+  "counted_sessions": [],
+  "baseline_overlay_sessions": {
+    "NBIS": 0,
+    "MVLL": 0,
+    "SOXL": 0
+  },
+  "independent_price_covered_sessions": 0,
+  "missing_expected_sessions": [],
+  "last_attempt_hash": null,
+  "checkpoint_status": "FIRST_VALID_SESSION_PENDING",
+  "promotion_status": "EXPLICIT_USER_APPROVAL_REQUIRED",
+  "order_authority": false,
+  "cohort_status": "COHORT_SUPERSEDED",
+  "superseded_at": "2026-08-14T12:22:40.139701+00:00",
+  "superseded_by": "integrated-shadow-9d9cd4bf89b2793e"
+}

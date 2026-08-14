@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-kiwoom-broker-shadow-v1",
+  "provider": "KIWOOM_REST",
+  "status": "KIWOOM_BROKER_SNAPSHOT_SHADOW",
+  "allowed_api_targets": [
+    "ust21110:/api/us/acnt",
+    "ust21160:/api/us/acnt",
+    "ust21070:/api/us/acnt",
+    "ust21050:/api/us/acnt",
+    "ust21510:/api/us/acnt",
+    "ust21630:/api/us/acnt"
+  ],
+  "snapshot_roles": ["PRE_OPEN_BROKER_SNAPSHOT", "POST_CLOSE_BROKER_SNAPSHOT"],
+  "maximum_age_seconds": 900,
+  "settled_cash_requires_withdrawable_and_order_available": true,
+  "projected_proceeds_are_cash": false,
+  "unsettled_funds_are_cash": false,
+  "margin_or_credit_are_cash": false,
+  "auto_apply": false,
+  "fill_inference": false,
+  "blocked_operation_classes": ["ORDER", "ORDER_MODIFY", "ORDER_CANCEL", "CREDIT_ORDER", "FX_ORDER", "ACCOUNT_MUTATION"],
+  "quantity_authority": false,
+  "order_authority": false
+}

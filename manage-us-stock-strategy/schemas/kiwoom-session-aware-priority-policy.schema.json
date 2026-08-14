@@ -4,17 +4,49 @@
   "title": "Kiwoom Session-Aware Guarded Priority Policy",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "policy_version", "transition_status", "account_facts_authority", "broker_quote_authority", "regular_close_authority", "adjusted_technical_authority", "shadow_provider", "conflict_resolution", "session_types", "price_and_quote_types", "comparability_gate", "extended_hours_authority", "ticker_scope_rules", "provider_scopes", "acceptance_evidence", "semantic_cohort_reset_required", "portfolio_mutation_authority", "quantity_authority", "order_authority"],
+  "required": ["schema_version", "policy_version", "transition_status", "account_facts_authority", "broker_quote_authority", "regular_close_authority", "canonical_price_authority", "activation_price_authority", "valuation_price_authority", "technical_execution_reference_authority", "adjusted_technical_authority", "shadow_provider", "external_reference_role", "conflict_resolution", "cross_provider_divergence_policy", "kiwoom_self_integrity_gate", "session_types", "price_and_quote_types", "comparability_gate", "extended_hours_authority", "ticker_scope_rules", "provider_scopes", "acceptance_evidence", "semantic_cohort_reset_required", "portfolio_mutation_authority", "quantity_authority", "order_authority"],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "policy_version": {"type": "string", "minLength": 1},
     "transition_status": {"enum": ["PENDING_SESSION_AWARE_VALIDATION", "KIWOOM_PRIMARY_GUARDED_FULL", "KIWOOM_PRIMARY_GUARDED_SCOPED", "KIWOOM_PRIMARY_TRANSITION_BLOCKED"]},
     "account_facts_authority": {"const": "KIWOOM_AUTHORITATIVE"},
     "broker_quote_authority": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},
     "regular_close_authority": {"const": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED"},
+    "canonical_price_authority": {"const": "KIWOOM_SELF_INTEGRITY_VALIDATED"},
+    "activation_price_authority": {"const": "KIWOOM_SELF_INTEGRITY_VALIDATED"},
+    "valuation_price_authority": {"const": "KIWOOM_SELF_INTEGRITY_VALIDATED"},
+    "technical_execution_reference_authority": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},
     "adjusted_technical_authority": {"const": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED"},
     "shadow_provider": {"const": "YFINANCE_DIAGNOSTIC_SHADOW"},
+    "external_reference_role": {"const": "EXTERNAL_DIAGNOSTIC_REFERENCE"},
     "conflict_resolution": {"const": "CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY"},
+    "cross_provider_divergence_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "blocking", "kiwoom_override_allowed", "price_averaging_allowed"],
+      "properties": {
+        "status": {"const": "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE"},
+        "blocking": {"const": false},
+        "kiwoom_override_allowed": {"const": false},
+        "price_averaging_allowed": {"const": false}
+      }
+    },
+    "kiwoom_self_integrity_gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticker_identity_required", "security_identity_required", "usd_required", "positive_price_required", "timestamp_required", "freshness_required", "api_success_required", "known_price_semantics_required", "known_market_phase_required", "corporate_action_ambiguity_allowed", "scale_error_allowed"],
+      "properties": {
+        "ticker_identity_required": {"const": true},
+        "security_identity_required": {"const": true},
+        "usd_required": {"const": true},
+        "positive_price_required": {"const": true},
+        "timestamp_required": {"const": true},
+        "freshness_required": {"const": true},
+        "api_success_required": {"const": true},
+        "known_price_semantics_required": {"const": true},
+        "known_market_phase_required": {"const": true},
+        "corporate_action_ambiguity_allowed": {"const": false},
+        "scale_error_allowed": {"const": false}
+      }
+    },
     "session_types": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "price_and_quote_types": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "comparability_gate": {

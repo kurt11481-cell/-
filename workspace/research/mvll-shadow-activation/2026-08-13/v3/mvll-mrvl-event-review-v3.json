@@ -1,0 +1,66 @@
+{
+  "schema_version": "2.6.14",
+  "bundle_id": "mvll-mrvl-event-review-20260814-v3",
+  "analysis_cutoff": "2026-08-14T11:51:13.057460Z",
+  "source_bundle_path": "workspace/research/event-evidence/event-risk-2026-08-13-holding-completion-20260814T073717Z.json",
+  "source_bundle_sha256": "4d059774c3401b44a890ee36ffa35959b3630d9b077483bdeb5842605565c67d",
+  "ticker_coverage": [
+    {
+      "ticker": "MVLL",
+      "coverage_status": "COMPLETE",
+      "event_effect": "CONTEXT_ONLY"
+    },
+    {
+      "ticker": "MRVL",
+      "coverage_status": "COMPLETE",
+      "event_effect": "CONTEXT_ONLY"
+    }
+  ],
+  "review_resolutions": [
+    {
+      "event": "MRVL_SERIES_A_CONVERSION",
+      "resolution": "REPRESENTED_IN_KNOWN_GROSS_STRESS_SHARE_SCENARIO",
+      "shares_millions": 21.778
+    },
+    {
+      "event": "MRVL_CELESTIAL_EARNOUT",
+      "resolution": "REPRESENTED_IN_KNOWN_GROSS_STRESS_SHARE_AND_CASH_SCENARIO",
+      "shares_millions": 24.4,
+      "cash_usd_millions": 233.0
+    },
+    {
+      "event": "MRVL_CUSTOMER_WARRANT",
+      "resolution": "REPRESENTED_IN_KNOWN_GROSS_STRESS_SHARE_SCENARIO",
+      "shares_millions": 4.2
+    },
+    {
+      "event": "MRVL_Q2_FY2027_GUIDANCE",
+      "resolution": "REPRESENTED_AS_BEAR_BASE_BULL_REVENUE_SCENARIOS"
+    },
+    {
+      "event": "MVLL_PRODUCT_SPLIT_AND_STRUCTURE",
+      "resolution": "PRODUCT_CONTEXT_ONLY_NO_UNDERLYING_SUBSTITUTION"
+    }
+  ],
+  "sources": [
+    {
+      "source_type": "SEC_FILING",
+      "url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm",
+      "published_at": "2026-05-28T00:00:00Z"
+    },
+    {
+      "source_type": "ISSUER_IR",
+      "url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "published_at": "2026-05-27T20:05:00Z"
+    },
+    {
+      "source_type": "ETF_SPONSOR",
+      "url": "https://graniteshares.com/etfs/mvll/",
+      "published_at": null
+    }
+  ],
+  "validation_status": "PASSED",
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

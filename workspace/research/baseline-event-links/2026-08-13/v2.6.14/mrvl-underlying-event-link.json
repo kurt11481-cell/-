@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6.12",
+  "baseline_event_link_id": "mvll-20260814-v2--MRVL--mvll-mrvl-event-review-20260814-v2",
+  "ticker": "MRVL",
+  "entity_role": "SUPPLEMENTAL_UNDERLYING",
+  "baseline_id": "mvll-20260814-v2",
+  "baseline_hash": "f834137afc8b96a3453a75d7ceaae0a925e5e69a0030f370abcb54da653ddd1d",
+  "event_bundle_id": "mvll-mrvl-event-review-20260814-v2",
+  "event_bundle_hash": "cf1ef41367e0bd757f561f3c1813d7eff08890b276597f7d3606345a89ba0afd",
+  "event_coverage_status": "COMPLETE",
+  "event_effect": "CONTEXT_ONLY",
+  "analysis_cutoff": "2026-08-14T11:46:17.431602Z",
+  "link_created_at": "2026-08-14T11:46:17.431602Z",
+  "link_validation_status": "VALID",
+  "link_hash": "5e3e91b4e633bd8225f0d2265144c7fc5a603302f830010e27befb0ca9126739",
+  "order_authority": false
+}

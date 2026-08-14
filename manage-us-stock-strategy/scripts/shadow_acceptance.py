@@ -36,6 +36,10 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/schemas/baseline-event-link.schema.json",
     "manage-us-stock-strategy/schemas/shadow-baseline-compile-result.schema.json",
     "manage-us-stock-strategy/schemas/holding-baseline-observation-state.schema.json",
+    "manage-us-stock-strategy/schemas/us-stock-price-authority.schema.json",
+    "manage-us-stock-strategy/schemas/orthogonal-state-axes.schema.json",
+    "manage-us-stock-strategy/schemas/mvll-volume-authority-acceptance.schema.json",
+    "manage-us-stock-strategy/schemas/dual-run-scheduler-policy.schema.json",
     "manage-us-stock-strategy/scripts/holding_research.py",
     "manage-us-stock-strategy/scripts/web_close_evidence.py",
     "manage-us-stock-strategy/scripts/price_evidence.py",
@@ -51,6 +55,10 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/current_event_risk.py",
     "manage-us-stock-strategy/scripts/correct_event_risk_bundle.py",
     "manage-us-stock-strategy/scripts/holding_baseline_operationalization.py",
+    "manage-us-stock-strategy/scripts/us_stock_price_authority.py",
+    "manage-us-stock-strategy/scripts/orthogonal_state_axes.py",
+    "manage-us-stock-strategy/scripts/validate_mvll_volume_authority.py",
+    "manage-us-stock-strategy/scripts/dual_run_scheduler.py",
     "manage-us-stock-strategy/scripts/automation_delivery.py",
     "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
@@ -58,6 +66,8 @@ SEMANTIC_DEFAULTS = (
     "workspace/policies/web_completed_close_evidence_policy.json",
     "workspace/policies/kiwoom-readonly-policy.json",
     "workspace/policies/kiwoom-session-aware-priority-policy.json",
+    "workspace/policies/mvll-volume-authority-policy.json",
+    "workspace/policies/dual_run_scheduler_policy.json",
     "workspace/policies/finalized_postmarket_automation_policy.json",
     "workspace/policies/event_risk_policy.json",
     "workspace/policies/source_capabilities.json",
@@ -247,7 +257,11 @@ def initial_progress(fingerprint: str, started_at: str) -> dict[str, Any]:
     return {
         "schema_version": "2.6", "cohort_id": cohort_id(fingerprint),
         "semantic_fingerprint": fingerprint, "started_at": started_at,
-        "observed_attempts": 0, "valid_shadow_sessions": 0, "excluded_attempts": 0,
+        "observed_attempts": 0, "valid_shadow_sessions": 0,
+        "valid_finalized_sessions": 0, "valid_paired_operational_days": 0,
+        "preopen_success_count": 0, "postclose_success_count": 0,
+        "paired_operational_days": [], "pending_preopen_sessions": [],
+        "excluded_attempts": 0,
         "critical_violations": [], "counted_sessions": [],
         "baseline_overlay_sessions": {ticker: 0 for ticker in REQUIRED_BASELINE_TICKERS},
         "independent_price_covered_sessions": 0, "missing_expected_sessions": [],
@@ -386,7 +400,14 @@ def apply_attempt(progress: dict[str, Any], attempt: dict[str, Any]) -> dict[str
     updated["critical_violations"] = list(dict.fromkeys(updated.get("critical_violations", []) + attempt.get("critical_violations", [])))
     if attempt["counts_as_valid_session"]:
         updated["valid_shadow_sessions"] += 1
+        updated["valid_finalized_sessions"] = updated.get("valid_finalized_sessions", 0) + 1
+        updated["postclose_success_count"] = updated.get("postclose_success_count", 0) + 1
         updated["counted_sessions"].append(attempt["completed_session"])
+        if attempt["completed_session"] in updated.get("pending_preopen_sessions", []):
+            updated["pending_preopen_sessions"].remove(attempt["completed_session"])
+            if attempt["completed_session"] not in updated.get("paired_operational_days", []):
+                updated.setdefault("paired_operational_days", []).append(attempt["completed_session"])
+                updated["valid_paired_operational_days"] = updated.get("valid_paired_operational_days", 0) + 1
         for ticker in REQUIRED_BASELINE_TICKERS:
             if (attempt.get("baseline_coverage") or {}).get(ticker) == "VALIDATED_SHADOW":
                 updated["baseline_overlay_sessions"][ticker] = updated["baseline_overlay_sessions"].get(ticker, 0) + 1
@@ -408,6 +429,17 @@ def apply_attempt(progress: dict[str, Any], attempt: dict[str, Any]) -> dict[str
     else:
         updated["checkpoint_status"] = "FIRST_VALID_SESSION_PENDING"
     updated["promotion_status"] = "EXPLICIT_USER_APPROVAL_REQUIRED"
+    updated["order_authority"] = False
+    return updated
+
+
+def record_valid_preopen(progress: dict[str, Any], trading_session: str) -> dict[str, Any]:
+    """Record a genuine scheduled pre-open success without counting a finalized session."""
+    updated = deepcopy(progress)
+    if trading_session in updated.get("pending_preopen_sessions", []) or trading_session in updated.get("paired_operational_days", []):
+        return updated
+    updated.setdefault("pending_preopen_sessions", []).append(trading_session)
+    updated["preopen_success_count"] = updated.get("preopen_success_count", 0) + 1
     updated["order_authority"] = False
     return updated
 

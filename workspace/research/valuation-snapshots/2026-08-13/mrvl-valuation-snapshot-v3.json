@@ -1,0 +1,483 @@
+{
+  "schema_version": "2.6.12",
+  "valuation_snapshot_id": "mrvl-valuation-20260813-v3",
+  "ticker": "MRVL",
+  "issuer_name": "Marvell Technology, Inc.",
+  "entity_role": "UNDERLYING_ISSUER",
+  "analysis_cutoff": "2026-08-14T11:51:13.057460Z",
+  "market_session": "2026-08-13",
+  "price": {
+    "provider": "KIWOOM_REST",
+    "canonical_provider": "KIWOOM_REST",
+    "raw_regular_session_close": 222.77,
+    "currency": "USD",
+    "price_basis": "RAW_REGULAR_SESSION_CLOSE",
+    "market_session_type": "REGULAR_COMPLETED",
+    "reported_session": "2026-08-13",
+    "bar_finalized": true,
+    "comparison_status": "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE",
+    "yfinance_reference_price": 222.17999267578125,
+    "cross_provider_difference_pct": 0.2655537598651941,
+    "price_authority_evidence_hash": "2f1665dd58abb140ed2966140b84018ca7c01b1c8bb9ae714a7d5c3f64847c40",
+    "self_integrity_status": "KIWOOM_PRICE_VALIDATED",
+    "divergence_blocking": false,
+    "blocking": false
+  },
+  "capitalization": {
+    "basic_shares": {
+      "value": 874.8,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-21",
+      "source_evidence_id": "mrvl-v2-10q-cover",
+      "currency": null,
+      "verification_status": "VERIFIED"
+    },
+    "diluted_shares_base": {
+      "value": 886.1,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-eps",
+      "currency": null,
+      "verification_status": "VERIFIED"
+    },
+    "diluted_shares_stress": {
+      "value": 936.478,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-known-gross-stress",
+      "currency": null,
+      "verification_status": "VERIFIED"
+    }
+  },
+  "balance_sheet": {
+    "cash": {
+      "value": 3843.6,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-balance",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "restricted_cash": {
+      "value": null,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-balance",
+      "currency": "USD",
+      "verification_status": "NOT_EVALUATED"
+    },
+    "debt": {
+      "value": 4961.3,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-debt",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "convertible_debt": {
+      "value": 0.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-series-a-equity",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "preferred_claims": {
+      "value": 2000.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-series-a",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "other_claims": {
+      "value": 233.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-celestial-max-cash",
+      "currency": "USD",
+      "verification_status": "STRESS_ONLY"
+    }
+  },
+  "operating_metrics": {
+    "revenue_ltm": {
+      "value": null,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-revenue",
+      "currency": "USD",
+      "verification_status": "NOT_EVALUATED"
+    },
+    "annualized_revenue_run_rate": {
+      "value": 9672.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-revenue",
+      "currency": "USD",
+      "verification_status": "LOCAL_ANNUALIZATION"
+    },
+    "gross_profit": {
+      "value": 1259.778,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-gaap-gross-margin",
+      "currency": "USD",
+      "verification_status": "DERIVED_FROM_REPORTED"
+    },
+    "operating_cash_flow": {
+      "value": 638.8,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-cash-flow",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "capex": {
+      "value": 155.7,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-cash-flow",
+      "currency": "USD",
+      "verification_status": "VERIFIED"
+    },
+    "free_cash_flow": {
+      "value": null,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mrvl-v2-q1-cash-flow",
+      "currency": "USD",
+      "verification_status": "NOT_COMPANY_REPORTED"
+    }
+  },
+  "derived_values": {
+    "q2_revenue_guidance_usd_millions": {
+      "bear": 2565.0,
+      "base": 2700.0,
+      "bull": 2835.0
+    },
+    "annualized_guidance_scenarios_usd_millions": {
+      "bear": 10260.0,
+      "base": 10800.0,
+      "bull": 11340.0
+    },
+    "local_ocf_minus_capex_proxy_q1_usd_millions": 483.1,
+    "local_ocf_minus_capex_proxy_annualized_usd_millions": 1932.4,
+    "known_stress_share_bridge_millions": {
+      "base": 886.1,
+      "series_a": 21.778,
+      "celestial": 24.4,
+      "customer_warrant": 4.2,
+      "total": 936.478
+    }
+  },
+  "valuation_methods": [
+    {
+      "method": "EV_REVENUE_BEAR_BASE_BULL",
+      "status": "EVALUATED",
+      "judgement_authority": "NONE"
+    },
+    {
+      "method": "LOCAL_OCF_MINUS_CAPEX_PROXY_YIELD",
+      "status": "EVALUATED",
+      "company_reported_fcf": false,
+      "judgement_authority": "NONE"
+    },
+    {
+      "method": "EV_TO_EBITDA",
+      "status": "NOT_EVALUATED",
+      "reason": "NO_APPROVED_POINT_IN_TIME_EBITDA_INPUT"
+    },
+    {
+      "method": "FORWARD_PE",
+      "status": "NOT_EVALUATED",
+      "reason": "NO_APPROVED_POINT_IN_TIME_CONSENSUS_ESTIMATE"
+    },
+    {
+      "method": "DCF",
+      "status": "NOT_EVALUATED",
+      "reason": "ASSUMPTION_PROVENANCE_INCOMPLETE"
+    }
+  ],
+  "valuation_scenarios": [
+    {
+      "scenario_id": "MRVL_LEGAL_BASIC",
+      "scenario_type": "BASIC",
+      "share_basis": 874.8,
+      "equity_value": 194879.196,
+      "enterprise_value": 197996.896,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_REVENUE_BEAR",
+          "value": 19.297943079922028,
+          "denominator": 10260.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BASE",
+          "value": 18.333045925925926,
+          "denominator": 10800.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BULL",
+          "value": 17.460043738977074,
+          "denominator": 11340.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "LOCAL_OCF_MINUS_CAPEX_PROXY_YIELD",
+          "value": 0.009915886557742162,
+          "denominator": 194879.196,
+          "unit": "FRACTION",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q1-cash-flow",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_EBITDA",
+          "value": null,
+          "denominator": null,
+          "unit": "MULTIPLE",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "FORWARD_PE",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "DCF",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        }
+      ],
+      "assumption_ids": [
+        "LEGAL_COMMON_SHARES_AS_OF_2026-05-21"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "equity_value": "shares_millions * kiwoom_raw_close_usd",
+        "enterprise_value": "equity_value + debt + preferred_claims + other_claims - cash",
+        "price_authority": "KIWOOM_REST",
+        "local_fcf_proxy": "Q1_FY2027_OCF_MINUS_CAPEX_X4_NOT_COMPANY_REPORTED_FCF"
+      },
+      "convertible_share_equivalent_included": false,
+      "convertible_debt_included": false
+    },
+    {
+      "scenario_id": "MRVL_BASE_DILUTED",
+      "scenario_type": "BASE_DILUTED",
+      "share_basis": 886.1,
+      "equity_value": 197396.497,
+      "enterprise_value": 200514.197,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_REVENUE_BEAR",
+          "value": 19.543294054580898,
+          "denominator": 10260.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BASE",
+          "value": 18.566129351851853,
+          "denominator": 10800.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BULL",
+          "value": 17.682027954144623,
+          "denominator": 11340.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "LOCAL_OCF_MINUS_CAPEX_PROXY_YIELD",
+          "value": 0.00978943410530735,
+          "denominator": 197396.497,
+          "unit": "FRACTION",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q1-cash-flow",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_EBITDA",
+          "value": null,
+          "denominator": null,
+          "unit": "MULTIPLE",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "FORWARD_PE",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "DCF",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        }
+      ],
+      "assumption_ids": [
+        "Q1_FY2027_DILUTED_WEIGHTED_AVERAGE"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "equity_value": "shares_millions * kiwoom_raw_close_usd",
+        "enterprise_value": "equity_value + debt + preferred_claims + other_claims - cash",
+        "price_authority": "KIWOOM_REST",
+        "local_fcf_proxy": "Q1_FY2027_OCF_MINUS_CAPEX_X4_NOT_COMPANY_REPORTED_FCF"
+      },
+      "convertible_share_equivalent_included": false,
+      "convertible_debt_included": false
+    },
+    {
+      "scenario_id": "MRVL_KNOWN_GROSS_STRESS",
+      "scenario_type": "STRESS_DILUTED",
+      "share_basis": 936.478,
+      "equity_value": 208619.20406,
+      "enterprise_value": 209969.90406,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_REVENUE_BEAR",
+          "value": 20.46490292982456,
+          "denominator": 10260.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BASE",
+          "value": 19.441657783333333,
+          "denominator": 10800.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_REVENUE_BULL",
+          "value": 18.515864555555556,
+          "denominator": 11340.0,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q2-guidance",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "LOCAL_OCF_MINUS_CAPEX_PROXY_YIELD",
+          "value": 0.00926280976244273,
+          "denominator": 208619.20406,
+          "unit": "FRACTION",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mrvl-v2-q1-cash-flow",
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "EV_TO_EBITDA",
+          "value": null,
+          "denominator": null,
+          "unit": "MULTIPLE",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "FORWARD_PE",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        },
+        {
+          "method": "DCF",
+          "value": null,
+          "denominator": null,
+          "unit": "FRACTION",
+          "status": "NOT_EVALUATED",
+          "denominator_evidence_id": null,
+          "judgement_authority": "NONE"
+        }
+      ],
+      "assumption_ids": [
+        "SERIES_A_CONVERTED",
+        "CELESTIAL_MAX_24_4M_SHARES",
+        "CUSTOMER_WARRANT_MAX_4_2M",
+        "CELESTIAL_MAX_233M_CASH"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "equity_value": "shares_millions * kiwoom_raw_close_usd",
+        "enterprise_value": "equity_value + debt + preferred_claims + other_claims - cash",
+        "price_authority": "KIWOOM_REST",
+        "local_fcf_proxy": "Q1_FY2027_OCF_MINUS_CAPEX_X4_NOT_COMPANY_REPORTED_FCF"
+      },
+      "convertible_share_equivalent_included": true,
+      "convertible_debt_included": false
+    }
+  ],
+  "claim_ids": [
+    "mrvl-v2-capital-structure",
+    "mrvl-v2-q2-guidance",
+    "mrvl-v2-celestial-overhang",
+    "mrvl-v2-series-a"
+  ],
+  "evidence_ids": [
+    "mrvl-v2-10q",
+    "mrvl-v2-10k",
+    "mrvl-v2-q1-ir",
+    "2f1665dd58abb140ed2966140b84018ca7c01b1c8bb9ae714a7d5c3f64847c40"
+  ],
+  "required_missing_inputs": [],
+  "calculation_formula_version": "mvll-mrvl-valuation-v2.6.14-1",
+  "staleness_status": "FRESH",
+  "staleness_triggers": [
+    "NEW_MRVL_10Q",
+    "NEW_MRVL_EARNINGS",
+    "CAPITAL_STRUCTURE_CHANGE",
+    "KIWOOM_PRICE_SESSION_CHANGE"
+  ],
+  "valuation_evidence_status": "SCENARIO_VALIDATED",
+  "valuation_judgement_status": "UNCLASSIFIED",
+  "snapshot_hash": "78fcc1c3c8cc505a787d049bed2755cdd7e2ad10f843795fea4db9e8eb39dbd7",
+  "order_authority": false
+}

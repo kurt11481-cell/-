@@ -8,6 +8,13 @@ consolidated or official U.S. auction close. yfinance remains a diagnostic
 Shadow and scoped fallback. Codex Web is restricted to unresolved,
 decision-changing, comparable, finalized regular-close conflicts.
 
+When a Kiwoom U.S. price passes its own identity, currency, timestamp,
+freshness, API, session, field-semantics, corporate-action and scale gates,
+Kiwoom is also the canonical valuation and Shadow-activation price for the
+accepted scope. A yfinance or issuer/Web difference is retained as
+`CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE` with `blocking=false`; it cannot replace
+Kiwoom and provider prices are never averaged.
+
 This contract never grants order, fill, quantity, portfolio-mutation, or policy
 authority.
 
@@ -26,6 +33,11 @@ authority.
   fallback scopes.
 - Codex Web:
   `CODEX_WEB_ORIGINAL_SOURCE_COMPARABLE_FINALIZED_REGULAR_CLOSE_ONLY`.
+
+Cross-provider agreement is not a Kiwoom self-integrity requirement. Kiwoom
+still fails closed for stale or missing data, wrong identity, unknown market
+phase or price semantics, API failure, currency or scale error, and unresolved
+corporate-action ambiguity.
 
 Never call a Kiwoom field `OFFICIAL_EXCHANGE_AUCTION_CLOSE` without exact
 official source evidence for that field.

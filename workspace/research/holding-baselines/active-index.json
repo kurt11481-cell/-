@@ -1,23 +1,25 @@
 {
   "schema_version": "2.6",
   "mode": "SHADOW",
-  "updated_at": "2026-08-14T08:30:38Z",
+  "updated_at": "2026-08-14T11:54:25.267013+00:00",
   "active": {
     "NBIS": {
-      "baseline_id": "nbis-20260813-v1",
-      "baseline_version": 1,
-      "baseline_hash": "4c996507d6b04054f0b9e26748017d354a427b71a07f1004a764312f31af554e",
-      "research_packet_hash": "3132ee5c4866b877bde1ce684ed0a77c3f4e95305f927dbedc321d9d7022afd7",
-      "activated_at": "2026-08-13T06:30:00Z",
-      "baseline_path": "workspace/research/holding-baselines/NBIS/nbis-20260813-v1.json"
+      "baseline_id": "nbis-20260814-v4",
+      "baseline_version": 4,
+      "baseline_hash": "0fa632872c5c0d41bf633bb4081acd06de48d8ff218fa2cc950597bdbececa70",
+      "research_packet_hash": "dcdcdc468d5496de85d2fbf730695bb73fcccd7e97c985c79c680944c990f755",
+      "activated_at": "2026-08-14T11:20:17.694777+00:00",
+      "baseline_path": "workspace/research/holding-baselines/NBIS/nbis-20260814-v4.json",
+      "supersedes_baseline_id": "nbis-20260813-v1"
     },
     "MVLL": {
-      "baseline_id": "mvll-20260813-v1",
-      "baseline_version": 1,
-      "baseline_hash": "472d4701a93219216f1be223ac1f21bb92435a6be8b5aa971a7894122f002fb0",
-      "research_packet_hash": "d55caa198809c45a57d5775855737f76989dbc9630b3a6cb8f7d812e5fc55889",
-      "activated_at": "2026-08-13T06:30:00Z",
-      "baseline_path": "workspace/research/holding-baselines/MVLL/mvll-20260813-v1.json"
+      "baseline_id": "mvll-20260814-v3",
+      "baseline_version": 3,
+      "baseline_hash": "1a78c2f4eb1351d35d69df1a631cc01e7566b16df8183002b54d2317ec33a233",
+      "research_packet_hash": "f7e563644599fc7b367b1e696198fd82c7719c5bc97a35876504c1820bc90746",
+      "activated_at": "2026-08-14T11:54:25.267013+00:00",
+      "baseline_path": "E:/사업/##금동한/코덱스저장소/workspace/research/holding-baselines/MVLL/mvll-20260814-v3.json",
+      "supersedes_baseline_id": "mvll-20260813-v1"
     },
     "SOXL": {
       "baseline_id": "soxl-20260814-v2",

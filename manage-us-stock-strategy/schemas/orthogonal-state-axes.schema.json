@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "orthogonal-state-axes.schema.json",
+  "title": "Orthogonal Decision Readiness Axes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticker", "decision_class", "price_authority_status", "volume_authority_status",
+    "technical_condition_status", "event_readiness_status", "broker_visibility_status",
+    "execution_authority_status", "quantity", "quantity_authority", "order_authority"
+  ],
+  "properties": {
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "decision_class": {"type": "string", "minLength": 1},
+    "price_authority_status": {
+      "enum": ["KIWOOM_VALID", "KIWOOM_API_ERROR", "KIWOOM_DATA_MISSING", "KIWOOM_STALE", "KIWOOM_WRONG_TICKER", "KIWOOM_SECURITY_IDENTITY_MISMATCH", "KIWOOM_UNKNOWN_PRICE_SEMANTICS", "KIWOOM_UNKNOWN_MARKET_PHASE", "KIWOOM_SCALE_OR_CURRENCY_ERROR", "KIWOOM_CORPORATE_ACTION_AMBIGUITY", "NOT_APPLICABLE", "NOT_EVALUATED"]
+    },
+    "volume_authority_status": {
+      "enum": ["KIWOOM_VALID_SCOPED", "YFINANCE_SCOPED_FALLBACK", "UNRESOLVED", "UNAVAILABLE", "NOT_APPLICABLE", "NOT_EVALUATED"]
+    },
+    "technical_condition_status": {
+      "enum": ["READY", "WATCH", "RVOL20_NOT_MET", "HISTORY_FALLBACK_REQUIRED", "CONDITION_NOT_MET", "INVALID", "UNAVAILABLE", "NOT_EVALUATED"]
+    },
+    "event_readiness_status": {
+      "enum": ["COMPLETE", "PARTIAL_NONBLOCKING", "PARTIAL_BLOCKING", "UNAVAILABLE", "INVALID", "NOT_EVALUATED"]
+    },
+    "broker_visibility_status": {
+      "enum": ["VERIFIED", "PARTIAL", "UNKNOWN", "STALE", "NOT_REQUIRED", "NOT_EVALUATED"]
+    },
+    "execution_authority_status": {"const": "NONE"},
+    "quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}

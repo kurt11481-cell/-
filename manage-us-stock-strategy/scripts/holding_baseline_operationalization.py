@@ -22,6 +22,7 @@ from validation_common import canonical_hash, file_hash, parse_datetime, validat
 FORMULA_VERSION = "holding-valuation-v2.6.12-1"
 VALUATION_NUMERIC_SECTIONS = ("capitalization", "balance_sheet", "operating_metrics")
 VALID_EVENT_LINKS = {"VALID", "PARTIAL_NONBLOCKING"}
+VALID_VALUATION_EVIDENCE = {"SCENARIO_VALIDATED", "DIRECT_SCENARIO_VALIDATED", "NOT_APPLICABLE"}
 
 
 def validate_managed_output_path(output: Path, *, repo_root: Path,
@@ -148,6 +149,15 @@ def build_issuer_valuation_snapshot(spec: dict[str, Any]) -> dict[str, Any]:
                   stress_preferred, other_claims, method_specs, spec.get("stress_assumption_ids", [])),
     ]
     required_missing = list(spec.get("required_missing_inputs", []))
+    constitution_price_authority = (
+        price.get("canonical_provider") == "KIWOOM_REST"
+        and isinstance(price.get("price_authority_evidence_hash"), str)
+    )
+    kiwoom_self_integrity_valid = (
+        price.get("self_integrity_status") == "KIWOOM_PRICE_VALIDATED"
+        and price.get("divergence_blocking") is False
+        and price.get("blocking") is False
+    )
     price_valid = (
         price.get("provider") == "KIWOOM_REST"
         and price.get("price_basis") == "RAW_REGULAR_SESSION_CLOSE"
@@ -155,11 +165,14 @@ def build_issuer_valuation_snapshot(spec: dict[str, Any]) -> dict[str, Any]:
         and price.get("reported_session") == spec.get("market_session")
         and price.get("bar_finalized") is True
         and isinstance(close, (int, float)) and close > 0
-        and price.get("comparison_status") != "CONFLICT"
+        and (kiwoom_self_integrity_valid if constitution_price_authority
+             else price.get("comparison_status") != "CONFLICT")
     )
     scenario_complete = all(item["status"] == "EVALUATED" for item in scenarios)
-    if not price_valid or price.get("comparison_status") == "CONFLICT":
-        evidence_status = "PRICE_EVIDENCE_CONFLICT" if price.get("comparison_status") == "CONFLICT" else "INVALID"
+    if not price_valid:
+        evidence_status = ("PRICE_EVIDENCE_CONFLICT"
+                           if price.get("comparison_status") == "CONFLICT" and not constitution_price_authority
+                           else "INVALID")
     elif required_missing:
         evidence_status = "PARTIAL"
     elif scenario_complete:
@@ -208,12 +221,47 @@ def build_issuer_valuation_snapshot(spec: dict[str, Any]) -> dict[str, Any]:
 def validate_valuation_snapshot(record: dict[str, Any], schema_path: Path) -> dict[str, Any]:
     errors = validate_instance(record, schema_path)
     price = record.get("price") if isinstance(record.get("price"), dict) else {}
-    if price.get("provider") != "KIWOOM_REST": errors.append("PRICE_PROVIDER_NOT_KIWOOM")
+    provider = price.get("provider")
+    kiwoom_observation = price.get("kiwoom_observation")
+    kiwoom_scope_explicit = isinstance(kiwoom_observation, dict) and (
+        (
+            kiwoom_observation.get("disposition") == "REJECTED_NOT_COMPARABLE_SESSION"
+            and kiwoom_observation.get("market_session_type") != "REGULAR_COMPLETED"
+            and kiwoom_observation.get("comparable_to_regular_close") is False
+        )
+        or (
+            kiwoom_observation.get("disposition") == "PRESERVED_SAME_SESSION_CONFLICT"
+            and kiwoom_observation.get("market_session_type") == "REGULAR_COMPLETED"
+            and kiwoom_observation.get("comparable_to_regular_close") is True
+        )
+    )
+    original_source_resolution = (
+        provider == "INFRONT_VIA_NEBIUS_IR"
+        and price.get("provider_role") == "ORIGINAL_SOURCE_COMPLETED_CLOSE_VALIDATION"
+        and price.get("original_source_validation_status") == "VALIDATED"
+        and price.get("yfinance_raw_close_status") == "MATCH_AFTER_DISPLAY_QUANTIZATION"
+        and kiwoom_scope_explicit
+    )
+    if provider != "KIWOOM_REST" and not original_source_resolution:
+        errors.append("PRICE_PROVIDER_NOT_APPROVED_FOR_VALUATION")
     if price.get("price_basis") != "RAW_REGULAR_SESSION_CLOSE": errors.append("PRICE_BASIS_NOT_RAW_REGULAR_CLOSE")
     if price.get("market_session_type") != "REGULAR_COMPLETED": errors.append("PRICE_SESSION_NOT_REGULAR_COMPLETED")
     if price.get("bar_finalized") is not True: errors.append("PRICE_BAR_NOT_FINALIZED")
     if price.get("reported_session") != record.get("market_session"): errors.append("PRICE_SESSION_MISMATCH")
-    if price.get("comparison_status") == "CONFLICT": errors.append("PRICE_EVIDENCE_CONFLICT")
+    constitution_price_authority = (
+        provider == "KIWOOM_REST"
+        and isinstance(price.get("price_authority_evidence_hash"), str)
+    )
+    kiwoom_valid = (
+        provider == "KIWOOM_REST"
+        and price.get("self_integrity_status") == "KIWOOM_PRICE_VALIDATED"
+        and price.get("divergence_blocking") is False
+        and price.get("blocking") is False
+    )
+    if constitution_price_authority and not kiwoom_valid:
+        errors.append("KIWOOM_SELF_INTEGRITY_NOT_VALIDATED")
+    if price.get("comparison_status") == "CONFLICT" and not constitution_price_authority:
+        errors.append("PRICE_EVIDENCE_CONFLICT")
     for section_name in VALUATION_NUMERIC_SECTIONS:
         section = record.get(section_name)
         if not isinstance(section, dict):
@@ -298,13 +346,13 @@ def compile_shadow(*, baseline: dict[str, Any], valuation: dict[str, Any] | None
         valuation.get("valuation_judgement_status") if valuation else "UNVERIFIED")
     remaining: list[str] = []
     if baseline.get("content_status") != "COMPLETE": remaining.append("BASELINE_CONTENT_INCOMPLETE")
-    if evidence_status not in {"SCENARIO_VALIDATED", "NOT_APPLICABLE"}: remaining.append("VALUATION_EVIDENCE_NOT_VALIDATED")
+    if evidence_status not in VALID_VALUATION_EVIDENCE: remaining.append("VALUATION_EVIDENCE_NOT_VALIDATED")
     if event_link.get("link_validation_status") not in VALID_EVENT_LINKS: remaining.append("EVENT_LINK_NOT_ACTIVATABLE")
     if overlay.get("primary_price_status") != "VALIDATED": remaining.append("PRIMARY_PRICE_NOT_VALIDATED")
     if errors: remaining.extend(errors)
     hard_risk = overlay.get("hard_risk_observation") == "PRIMARY_BREACH_OBSERVED"
     signal, state = "NONE", "HOLD"
-    if baseline.get("content_status") != "COMPLETE" or evidence_status not in {"SCENARIO_VALIDATED", "NOT_APPLICABLE"}:
+    if baseline.get("content_status") != "COMPLETE" or evidence_status not in VALID_VALUATION_EVIDENCE:
         state = "STRATEGY_REFRESH_REQUIRED"
     elif errors or overlay.get("primary_price_status") != "VALIDATED":
         state = "DATA_BLOCKED"
@@ -363,7 +411,7 @@ def activate_shadow_candidate(*, baseline: dict[str, Any], compile_result: dict[
         return {"activation_status": "REJECTED", "errors": ["SHADOW_COMPILE_NOT_PASSED"], "index_updated": False, "order_authority": False}
     if compile_result.get("candidate_baseline_id") != baseline.get("baseline_id") or compile_result.get("candidate_baseline_hash") != baseline.get("baseline_hash"):
         return {"activation_status": "REJECTED", "errors": ["COMPILE_BASELINE_IDENTITY_MISMATCH"], "index_updated": False, "order_authority": False}
-    if compile_result.get("valuation_evidence_status") not in {"SCENARIO_VALIDATED", "NOT_APPLICABLE"}:
+    if compile_result.get("valuation_evidence_status") not in VALID_VALUATION_EVIDENCE:
         return {"activation_status": "REJECTED", "errors": ["VALUATION_NOT_ACTIVATABLE"], "index_updated": False, "order_authority": False}
     if compile_result.get("event_status") not in {"CLEAR", "CONTEXT_ONLY"}:
         return {"activation_status": "REJECTED", "errors": ["EVENT_LINK_NOT_ACTIVATABLE"], "index_updated": False, "order_authority": False}

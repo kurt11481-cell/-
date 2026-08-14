@@ -1,0 +1,101 @@
+{
+  "schema_version": "3.0",
+  "capital_structure_id": "nbis-capital-structure-20260630-v3",
+  "ticker": "NBIS",
+  "as_of": "2026-06-30",
+  "analysis_cutoff": "2026-08-14T10:19:15Z",
+  "class_rights": {
+    "class_a": {
+      "shares": 238400165,
+      "votes_per_share": 1
+    },
+    "class_b": {
+      "shares": 33455053,
+      "votes_per_share": 10,
+      "conversion": "ONE_CLASS_A_PLUS_TECHNICAL_CLASS_C; CLASS_A_DELIVERED_TO_HOLDER"
+    },
+    "economic_rights_treatment": "CLASS_A_AND_CLASS_B_INCLUDED_IN_LEGAL_ORDINARY_SHARES; PREFUNDED_WARRANTS_ADDED_ONLY_TO_ECONOMIC_BASIC"
+  },
+  "legal_ordinary_shares": 271855218,
+  "prefunded_warrant_shares": 21065936,
+  "economic_basic_shares": 292921154,
+  "gaap_weighted_average_if_converted_shares": 65416804,
+  "gaap_weighted_average_not_point_in_time": true,
+  "initial_rate_convertible_tranches": [
+    {
+      "issuance": "JUNE_2025",
+      "principal_usd": "1000000000",
+      "initial_rate_per_1000": "19.4363",
+      "shares": "19436300"
+    },
+    {
+      "issuance": "SEPTEMBER_2025",
+      "principal_usd": "3162500000",
+      "initial_rate_per_1000": "7.2072",
+      "shares": "22792770"
+    },
+    {
+      "issuance": "MARCH_2026_2031",
+      "principal_usd": "2587500000",
+      "initial_rate_per_1000": "5.4579",
+      "shares": "14122316250"
+    },
+    {
+      "issuance": "MARCH_2026_2033",
+      "principal_usd": "1750000000",
+      "initial_rate_per_1000": "5.5460",
+      "shares": "9705500000"
+    }
+  ],
+  "point_in_time_initial_rate_convertible_equivalent": 66056886.25,
+  "weighted_average_reconciliation_delta": 640082.25,
+  "options_outstanding": 6740600,
+  "rsus_outstanding": 6234091,
+  "atm_authorization_remaining_at_20260630": 12270507,
+  "initial_rate_known_gross_stress_case": 384223238.25,
+  "initial_rate_known_gross_stress_case_label": "INITIAL_RATE_KNOWN_GROSS_STRESS_CASE",
+  "not_a_fully_diluted_count": true,
+  "not_a_lower_or_upper_bound": true,
+  "unquantified_tail": [
+    {
+      "item": "TAVILY_EARNOUT",
+      "maximum_usd_millions": 67.3,
+      "settlement": "CASH_OR_CLASS_A_SHARES_AT_COMPANY_ELECTION",
+      "share_count_basis": "FUTURE_VWAP",
+      "status": "UNQUANTIFIED"
+    },
+    {
+      "item": "CONVERTIBLE_MAKE_WHOLE_INCREMENT",
+      "dependency": "FUTURE_EVENT_AND_PRICE_DEPENDENT",
+      "status": "UNQUANTIFIED"
+    }
+  ],
+  "as_of_bridge": {
+    "from": "2026-07-01",
+    "through": "2026-08-13",
+    "sec_submissions_checked_through": "2026-08-14",
+    "conclusion": "NO_PUBLICLY_DISCLOSED_CHANGE_FOUND",
+    "not_equivalent_to": "UNCHANGED_CONFIRMED"
+  },
+  "source_body_sha256": {
+    "q2": "440449e9671dc8f744e7a9cbbac86384d6eacbfded9dc3c01c95613d64c31c4c",
+    "q2_press": "6251cc57958331181d98ee59ff093992d0658f8d6db5487eed7e7d397225aa03",
+    "20f": "4e1793bf79a63af17e3b868715d0e4c8840a1864fd5d8490354178961b0a5907",
+    "rights": "167395ccec2c455281a4d6bb55006b08efd9a626c288157c0df97bc8afd4e59c",
+    "mar6k": "2ede97a4464670e4da71249801b3e757c447c503e982badc38f45ae48e75b387",
+    "jul6k": "48683243e71a7a91f3461caa328ad5ede912d162a124163d6798af3a39d5cb18",
+    "agm": "e06ea0cc7885909a30b310404261d03a84e6374f7842259fe0fe2533bdc7144a",
+    "facility": "097599930dc151d175cb0dabba53ee44a25bb58b01fef5ccd0a0f73e71124c65"
+  },
+  "validation_checks": {
+    "legal_arithmetic": true,
+    "economic_arithmetic": true,
+    "convertible_arithmetic": true,
+    "gross_stress_arithmetic": true
+  },
+  "validation_status": "VALIDATED",
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "record_hash": "3bdeb789957e583956eb3cd0772fbb513c7fac0673142d22bf267abe88b25abc"
+}
