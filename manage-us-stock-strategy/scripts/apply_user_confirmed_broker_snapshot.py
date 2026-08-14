@@ -56,6 +56,9 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         raise ValueError("CONCURRENT_STATE_HASH_MISMATCH")
     if proposal.get("status") != "USER_CONFIRMATION_REQUIRED":
         raise ValueError("PROPOSAL_NOT_APPLYABLE")
+    source = confirmation.get("source")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError("BROKER_SOURCE_PROVENANCE_REQUIRED")
     updated = deepcopy(state)
     patch = proposal.get("proposed_patch") or {}
     for key in ("holdings", "average_cost_usd", "position_cost_basis_usd", "available_cash_usd"):
@@ -69,6 +72,7 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
     confirmed_at = confirmation.get("confirmed_at") or datetime.now(timezone.utc).isoformat()
     updated["last_confirmed_broker_snapshot"] = {
         "verified": True, "authority_state": "VERIFIED_USER_CONFIRMED_BROKER_SNAPSHOT",
+        "source": source.strip(),
         "scope": proposal["scope"], "account_id_masked": confirmation.get("account_id_masked"),
         "evidence_bundle_id": proposal["bundle_id"], "evidence_sha256": confirmation.get("evidence_sha256"),
         "confirmed_at": confirmed_at, "as_of": confirmation.get("as_of"),

@@ -50,7 +50,7 @@ class V26BrokerBeginnerTests(unittest.TestCase):
         directory = ROOT / "workspace/outputs/v2_5_shadow"; state_path = directory / "test-v26-state.json"; audit = directory / "test-v26-audit.json"
         try:
             state_path.write_text(json.dumps(state), encoding="utf-8")
-            apply_confirmed(state_path=state_path, proposal=proposal, confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"], "account_id_masked": "****5546", "evidence_sha256": "a"*64, "as_of": "2026-08-13", "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T05:00:00Z"}, proposal_schema=self.proposal_schema, audit_path=audit)
+            apply_confirmed(state_path=state_path, proposal=proposal, confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"], "account_id_masked": "****5546", "evidence_sha256": "a"*64, "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT", "as_of": "2026-08-13", "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T05:00:00Z"}, proposal_schema=self.proposal_schema, audit_path=audit)
             self.assertEqual(load_json(state_path)["state_revision"], 2)
         finally: state_path.unlink(missing_ok=True); audit.unlink(missing_ok=True)
 
