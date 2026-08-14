@@ -32,3 +32,27 @@ Where an approved event window exists, cite its exact policy rule. Otherwise use
 Use `EVENT_DATA_INCOMPLETE` when coverage cannot be verified. Never translate
 missing evidence into "no upcoming event." A validated event snapshot must pass
 `scripts/validate_event_snapshot.py` before it enters a decision record.
+
+## Deterministic current coverage semantics
+
+Keep `coverage_status` separate from `event_effect`. Coverage uses
+`COMPLETE_FOR_REQUIRED_CATEGORIES`, `PARTIAL_NONBLOCKING`, `PARTIAL_BLOCKING`,
+`SOURCE_UNAVAILABLE`, `STALE`, or `INVALID`. Event effect remains limited to
+the approved `CONTEXT_ONLY`, `WAIT_REQUIRED`, and `EVENT_REVIEW_REQUIRED`
+semantics. `PARTIAL_NONBLOCKING` never becomes a provider failure or a global
+data block. A blocking or unavailable category creates only a ticker-local
+`EVENT_REVIEW_PENDING` unless an exact approved policy says otherwise.
+
+For every ticker/category retain the required and checked official routes,
+coverage interval, checked/publication/effective/retrieval times, cutoff,
+materiality, next refresh trigger, point-in-time eligibility, claim/evidence
+IDs, and a deterministic record hash. Distinguish an official route that was
+successfully checked before any date was announced
+(`NOT_YET_ANNOUNCED_AS_OF_CUTOFF`) from `SEARCH_INCOMPLETE`,
+`SOURCE_UNAVAILABLE`, and `CONFLICTING_DATES`.
+
+The finalized post-market task loads the same-session append-only checkpoint
+and bundle from `workspace/state/event_risk_archive/`, verifies their schemas,
+hashes, source cutoff, and portfolio immutability, and consumes ticker-local
+coverage gates. A missing or invalid runtime archive remains
+`EVENT_DATA_INCOMPLETE`; it never changes market-provider readiness.

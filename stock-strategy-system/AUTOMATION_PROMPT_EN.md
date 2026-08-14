@@ -55,6 +55,18 @@ decision-class-local `EMA10_RECLAIM_RVOL20` block while retaining its Kiwoom Raw
 close. Map `EVENT_DATA_INCOMPLETE` to `EVENT_REVIEW_PENDING` where policy
 requires without invalidating provider readiness.
 
+Load the immutable current-event checkpoint and bundle for the same completed
+session from `workspace/state/event_risk_archive/<SESSION>/`. Validate both
+schemas, the bundle file hash, checkpoint record hash and previous hash,
+official-source ledger hash, event-policy hash, analysis cutoff, portfolio hash,
+and `order_authority=false` before use. Apply `coverage_status` independently
+from `event_effect`: `PARTIAL_NONBLOCKING` remains contextual and cannot become
+a provider failure or global data block; blocking, unavailable, stale, or
+invalid coverage becomes only the affected ticker's `EVENT_REVIEW_PENDING`
+unless an approved policy explicitly requires `WAIT_REQUIRED`. Missing or
+invalid same-session artifacts remain `EVENT_DATA_INCOMPLETE`. Never infer that
+an event does not exist from an unchecked or unavailable route.
+
 Render the beginner-facing Korean result, perform actual delivery, record its
 delivery ID, capture the portfolio hash after, validate equality, then record
 the scheduled attempt and update cohort progress atomically. Only that actual

@@ -96,6 +96,54 @@ def event_and_provider_readiness(provider_status: str, event_status: str) -> dic
     }
 
 
+def current_event_bundle_readiness(bundle: dict[str, Any] | None) -> dict[str, Any]:
+    """Scope event review per ticker without modifying market-provider readiness."""
+    value = bundle or {}
+    ticker_gates: dict[str, str] = {}
+    coverage = value.get("ticker_coverage") if isinstance(value, dict) else None
+    if (
+        not isinstance(value, dict)
+        or value.get("order_authority") is not False
+        or value.get("coverage_status") not in {
+            "COMPLETE_FOR_REQUIRED_CATEGORIES", "PARTIAL_NONBLOCKING",
+            "PARTIAL_BLOCKING", "SOURCE_UNAVAILABLE", "STALE", "INVALID",
+        }
+        or not isinstance(coverage, list)
+        or not coverage
+    ):
+        return {
+            "event_readiness_status": "EVENT_DATA_INCOMPLETE",
+            "ticker_event_gates": ticker_gates,
+            "provider_readiness_mutated": False,
+        }
+    for item in coverage:
+        if not isinstance(item, dict) or not item.get("ticker"):
+            continue
+        coverage_status = item.get("coverage_status")
+        event_effect = item.get("event_effect")
+        if coverage_status in {"PARTIAL_BLOCKING", "SOURCE_UNAVAILABLE", "STALE", "INVALID"}:
+            gate = "EVENT_REVIEW_PENDING"
+        elif event_effect == "WAIT_REQUIRED":
+            gate = "WAIT_REQUIRED"
+        elif event_effect == "EVENT_REVIEW_REQUIRED":
+            gate = "EVENT_REVIEW_PENDING"
+        else:
+            gate = "CONTEXT_ONLY"
+        ticker_gates[str(item["ticker"])] = gate
+    if len(ticker_gates) != len(coverage):
+        return {
+            "event_readiness_status": "EVENT_DATA_INCOMPLETE",
+            "ticker_event_gates": ticker_gates,
+            "provider_readiness_mutated": False,
+        }
+    review_pending = any(gate in {"EVENT_REVIEW_PENDING", "WAIT_REQUIRED"} for gate in ticker_gates.values())
+    return {
+        "event_readiness_status": "EVENT_REVIEW_PENDING" if review_pending else "CLEAR",
+        "ticker_event_gates": ticker_gates,
+        "provider_readiness_mutated": False,
+    }
+
+
 def delivery_eligible(*, success: bool, run_phase: str,
                       finalization_status: str | None,
                       all_critical_bars_finalized: bool | None,
