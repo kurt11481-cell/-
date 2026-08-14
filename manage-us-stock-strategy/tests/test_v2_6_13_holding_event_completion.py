@@ -162,13 +162,18 @@ class HoldingEventCompletionTests(unittest.TestCase):
                 self.assertLessEqual(item["published_at"], cutoff)
 
     def test_event_completion_12_portfolio_and_authority_immutable(self):
-        self.assertEqual(file_hash(PORTFOLIO_PATH), self.manifest["portfolio_state_hash_before"])
-        self.assertEqual(file_hash(PORTFOLIO_PATH), self.manifest["portfolio_state_hash_after"])
+        current_before = file_hash(PORTFOLIO_PATH)
+        self.assertRegex(self.manifest["portfolio_state_hash_before"], r"^[A-Fa-f0-9]{64}$")
+        self.assertEqual(
+            self.manifest["portfolio_state_hash_before"],
+            self.manifest["portfolio_state_hash_after"],
+        )
         self.assertFalse(self.manifest["portfolio_mutated"])
         for value in (self.ledger, self.bundle, self.manifest):
             self.assertFalse(_contains_authority_violation(value))
         for path in LINK_ROOT.glob("*.json"):
             self.assertFalse(_contains_authority_violation(load_json(path)))
+        self.assertEqual(file_hash(PORTFOLIO_PATH), current_before)
 
     def test_event_completion_13_incomplete_required_route_fails_closed(self):
         bad = deepcopy(self.ledger)
