@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.6.9 - Forward-Only Current Event-Risk Capture
+
+- Added a current immutable event-risk bundle contract with explicit source,
+  publication/effective/retrieval times, point-in-time eligibility, severity,
+  strategy relevance, verification state, and per-ticker missing fields.
+- Added a forward-only append-only event checkpoint with a deterministic hash
+  chain, portfolio-state hash proof, and explicit provider/strategy/quantity/
+  order non-authority.
+- Added cutoff, future-evidence, append-only hash-chain, ETF/underlying
+  separation, ticker-local failure, and portfolio-immutability regressions.
+- Locked a current 2026-08-13 event bundle from official SEC, issuer IR, ETF
+  sponsor, BLS, BEA, Federal Reserve, and OCC sources. Incomplete negative-event
+  coverage remains visible as `EVENT_DATA_INCOMPLETE`.
+- No provider readiness, live strategy state, portfolio fact, quantity, or
+  order authority was changed.
+
 ## v2.6.8 - Finalized Post-Market Automation
 
 - Moved the existing `Morning Portfolio Strategy` operational schedule from
