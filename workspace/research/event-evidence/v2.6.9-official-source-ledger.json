@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "ledger_id": "v2.6.9-official-source-corrections-20260814T023013Z",
+  "analysis_cutoff": "2026-08-14T02:30:13Z",
+  "checked_at": "2026-08-14T02:30:13Z",
+  "evidence_routes": [
+    {
+      "evidence_id": "TOST-SEC-8K-20260804",
+      "ticker": "TOST",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260804.htm",
+      "source_type": "SEC",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "TOST-SEC-EX991-Q2-2026",
+      "ticker": "TOST",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260630xexhibit991.htm",
+      "source_type": "SEC",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "FSLY-IR-Q2-2026-RELEASE",
+      "ticker": "FSLY",
+      "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-second-quarter-2026-financial-results",
+      "source_type": "ISSUER_IR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "FSLY-IR-Q2-2026-SUPPLEMENT",
+      "ticker": "FSLY",
+      "source_url": "https://investors.fastly.com/static-files/bf311bf6-2820-474d-8e88-113a23bb0638",
+      "source_type": "ISSUER_IR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "FSLY-IR-INVESTOR-DAY-20260922",
+      "ticker": "FSLY",
+      "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-upcoming-investor-day",
+      "source_type": "ISSUER_IR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "MVLL-SPONSOR-SPLIT-SUPPLEMENT-20260612",
+      "ticker": "MVLL",
+      "source_url": "https://graniteshares.com/media/t5cbormv/grsh-etf-trust-20260612-fwd-split-supplement.pdf",
+      "source_type": "ETF_SPONSOR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "MVLL-SPONSOR-SPLIT-PRESS-20260612",
+      "ticker": "MVLL",
+      "source_url": "https://graniteshares.com/press/graniteshares-announces-forward-splits/",
+      "source_type": "ETF_SPONSOR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "MRVL-IR-Q2FY27-AND-INVESTOR-DAY-20260803",
+      "ticker": "MRVL",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1029/marvell-technology-inc-announces-conference-call-to-review-second-quarter-of-fiscal-year-2027-financial-results-announces-investor-day-on-october-6-2026",
+      "source_type": "ISSUER_IR",
+      "checked_at": "2026-08-14T02:30:13Z",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "corrections": [
+    {
+      "correction_id": "TOST-Q2-RESULTS-SOURCE-CORRECTION",
+      "target_event_id": "TOST-20260804-Q2-EARNINGS",
+      "replaces_event_id": "TOST-20260804-Q2-CALL",
+      "create_if_missing": false,
+      "claim_ids": ["TOST-Q2-2026-RESULTS-FILED"],
+      "evidence_ids": ["TOST-SEC-8K-20260804", "TOST-SEC-EX991-Q2-2026"],
+      "event_patch": {
+        "ticker": "TOST",
+        "instrument_role": "DIRECT",
+        "event_type": "EARNINGS_RELEASE",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260804.htm",
+        "source_type": "SEC",
+        "published_at": "2026-08-04T20:12:21Z",
+        "published_at_precision": "EXACT",
+        "effective_at": "2026-08-04T20:12:21Z",
+        "effective_at_precision": "EXACT",
+        "point_in_time_eligible": true,
+        "severity": "HIGH",
+        "strategy_relevance": "Official Q2 2026 results require current thesis and valuation review before portfolio-changing action.",
+        "verification_status": "VERIFIED",
+        "policy_effect": "EVENT_REVIEW_REQUIRED",
+        "applies_to": ["TOST"],
+        "supplemental_context_for": [],
+        "evidence_summary": "Toast filed Form 8-K accession 0001650164-26-000162 on August 4, 2026 and furnished Exhibit 99.1 with Q2 2026 results."
+      }
+    },
+    {
+      "correction_id": "FSLY-Q2-EXACT-RELEASE-AND-SUPPLEMENT",
+      "target_event_id": "FSLY-20260805-Q2-EARNINGS",
+      "replaces_event_id": null,
+      "create_if_missing": false,
+      "claim_ids": ["FSLY-Q2-2026-RESULTS-RELEASED", "FSLY-Q2-2026-SUPPLEMENT-PUBLISHED"],
+      "evidence_ids": ["FSLY-IR-Q2-2026-RELEASE", "FSLY-IR-Q2-2026-SUPPLEMENT"],
+      "event_patch": {
+        "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-second-quarter-2026-financial-results",
+        "source_type": "ISSUER_IR",
+        "published_at": "2026-08-05T20:05:00Z",
+        "published_at_precision": "EXACT",
+        "effective_at": "2026-08-05T20:05:00Z",
+        "effective_at_precision": "EXACT",
+        "verification_status": "VERIFIED",
+        "evidence_summary": "Fastly's exact Q2 2026 earnings release and separate Investor Supplement are both verified from issuer IR."
+      }
+    },
+    {
+      "correction_id": "FSLY-INVESTOR-DAY-SEPARATE-EVENT",
+      "target_event_id": "FSLY-20260922-INVESTOR-DAY",
+      "replaces_event_id": null,
+      "create_if_missing": false,
+      "claim_ids": ["FSLY-INVESTOR-DAY-SCHEDULED-20260922"],
+      "evidence_ids": ["FSLY-IR-INVESTOR-DAY-20260922"],
+      "event_patch": {
+        "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-upcoming-investor-day",
+        "source_type": "ISSUER_IR",
+        "verification_status": "VERIFIED"
+      }
+    },
+    {
+      "correction_id": "MVLL-3FOR1-FORWARD-SPLIT",
+      "target_event_id": "MVLL-20260626-3FOR1-FORWARD-SPLIT",
+      "replaces_event_id": null,
+      "create_if_missing": true,
+      "claim_ids": ["MVLL-3FOR1-FORWARD-SPLIT-20260626"],
+      "evidence_ids": ["MVLL-SPONSOR-SPLIT-SUPPLEMENT-20260612", "MVLL-SPONSOR-SPLIT-PRESS-20260612"],
+      "event_patch": {
+        "ticker": "MVLL",
+        "instrument_role": "DIRECT",
+        "event_type": "ETF_SPLIT_OR_REVERSE_SPLIT",
+        "source_url": "https://graniteshares.com/media/t5cbormv/grsh-etf-trust-20260612-fwd-split-supplement.pdf",
+        "source_type": "ETF_SPONSOR",
+        "published_at": "2026-06-12T23:59:59Z",
+        "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+        "effective_at": "2026-06-26T23:59:59Z",
+        "effective_at_precision": "SESSION_DATE",
+        "record_at": "2026-06-24T23:59:59Z",
+        "payable_at": "2026-06-25T23:59:59Z",
+        "first_seen_at": "2026-08-14T01:24:35.982Z",
+        "point_in_time_eligible": true,
+        "severity": "HIGH",
+        "strategy_relevance": "The verified split is required to interpret Raw versus Adjusted history and corporate-action continuity.",
+        "verification_status": "VERIFIED",
+        "policy_effect": "CONTEXT_ONLY",
+        "applies_to": ["MVLL"],
+        "supplemental_context_for": [],
+        "evidence_summary": "GraniteShares specified a 3-for-1 MVLL forward split: record June 24, payable June 25, effective before market open June 26, 2026."
+      }
+    },
+    {
+      "correction_id": "MRVL-Q2FY27-SCHEDULE-REVALIDATED",
+      "target_event_id": "MRVL-20260827-Q2-EARNINGS",
+      "replaces_event_id": null,
+      "create_if_missing": false,
+      "claim_ids": ["MRVL-Q2FY27-RESULTS-SCHEDULED-20260827"],
+      "evidence_ids": ["MRVL-IR-Q2FY27-AND-INVESTOR-DAY-20260803"],
+      "event_patch": {
+        "verification_status": "VERIFIED"
+      }
+    },
+    {
+      "correction_id": "MRVL-INVESTOR-DAY-REVALIDATED",
+      "target_event_id": "MRVL-20261006-INVESTOR-DAY",
+      "replaces_event_id": null,
+      "create_if_missing": false,
+      "claim_ids": ["MRVL-INVESTOR-DAY-SCHEDULED-20261006"],
+      "evidence_ids": ["MRVL-IR-Q2FY27-AND-INVESTOR-DAY-20260803"],
+      "event_patch": {
+        "verification_status": "VERIFIED"
+      }
+    }
+  ],
+  "order_authority": false
+}

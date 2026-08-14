@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-risk-checkpoint.schema.json",
+  "title": "Forward-only immutable event-risk checkpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "checkpoint_id", "market_session", "analysis_cutoff", "created_at",
+    "bundle_path", "bundle_hash", "bundle_status", "coverage_status", "event_data_status",
+    "event_count", "category_coverage_count", "source_urls_hash", "source_evidence_ledger_hash",
+    "event_policy_hash", "active_research_baseline_index_hash",
+    "portfolio_state_hash_before", "portfolio_state_hash_after", "portfolio_mutated",
+    "provider_readiness_mutated", "strategy_state_mutated", "quantity_authority",
+    "order_authority", "historical_backfill", "previous_record_hash", "record_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "checkpoint_id": {"type": "string", "minLength": 1},
+    "market_session": {"type": "string", "format": "date"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "bundle_path": {"type": "string", "minLength": 1},
+    "bundle_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "bundle_status": {"enum": ["COMPLETE", "PARTIAL", "EVENT_REVIEW_REQUIRED", "UNAVAILABLE", "INVALID"]},
+    "coverage_status": {
+      "enum": [
+        "COMPLETE_FOR_REQUIRED_CATEGORIES", "PARTIAL_NONBLOCKING", "PARTIAL_BLOCKING",
+        "SOURCE_UNAVAILABLE", "STALE", "INVALID"
+      ]
+    },
+    "event_data_status": {"enum": ["COMPLETE", "EVENT_DATA_INCOMPLETE"]},
+    "event_count": {"type": "integer", "minimum": 0},
+    "category_coverage_count": {"type": "integer", "minimum": 1},
+    "source_urls_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "source_evidence_ledger_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "event_policy_hash": {"type": "string", "pattern": "[0-9A-Fa-f]{64}"},
+    "active_research_baseline_index_hash": {"type": "string", "pattern": "[0-9A-Fa-f]{64}"},
+    "portfolio_state_hash_before": {"type": "string", "pattern": "[0-9A-Fa-f]{64}"},
+    "portfolio_state_hash_after": {"type": "string", "pattern": "[0-9A-Fa-f]{64}"},
+    "portfolio_mutated": {"const": false},
+    "provider_readiness_mutated": {"const": false},
+    "strategy_state_mutated": {"const": false},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false},
+    "historical_backfill": {"const": false},
+    "previous_record_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+    "record_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  }
+}

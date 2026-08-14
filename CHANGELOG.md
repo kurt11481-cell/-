@@ -1,5 +1,33 @@
 # Changelog
 
+## v2.6.9 - Forward-Only Current Event-Risk Capture
+
+- Corrected the current event bundle with Toast's August 4 Form 8-K and Q2
+  Exhibit 99.1, Fastly's exact Q2 release and Investor Supplement, GraniteShares'
+  official MVLL 3-for-1 forward split, and Marvell's August 27 earnings and
+  October 6 Investor Day source record.
+- Separated deterministic `coverage_status` from `event_effect`, added
+  per-ticker/category route and cutoff provenance, announcement-state
+  semantics, and hashed official-source correction and archive manifests.
+- Added ticker-local scheduled event gates: `PARTIAL_NONBLOCKING` remains
+  contextual, while blocking or unavailable coverage becomes only the affected
+  ticker's `EVENT_REVIEW_PENDING`; provider readiness is never changed.
+- Classified the gate change as semantic, archived the prior cohort, and
+  started a new zero-session cohort without historical backfill.
+- Added a current immutable event-risk bundle contract with explicit source,
+  publication/effective/retrieval times, point-in-time eligibility, severity,
+  strategy relevance, verification state, and per-ticker missing fields.
+- Added a forward-only append-only event checkpoint with a deterministic hash
+  chain, portfolio-state hash proof, and explicit provider/strategy/quantity/
+  order non-authority.
+- Added cutoff, future-evidence, append-only hash-chain, ETF/underlying
+  separation, ticker-local failure, and portfolio-immutability regressions.
+- Locked a corrected 23-record 2026-08-13 event bundle from official SEC, issuer IR, ETF
+  sponsor, BLS, BEA, Federal Reserve, and OCC sources. Incomplete negative-event
+  coverage remains visible as `EVENT_DATA_INCOMPLETE`.
+- No provider readiness, live strategy state, portfolio fact, quantity, or
+  order authority was changed.
+
 ## v2.6.8 - Finalized Post-Market Automation
 
 - Moved the existing `Morning Portfolio Strategy` operational schedule from
