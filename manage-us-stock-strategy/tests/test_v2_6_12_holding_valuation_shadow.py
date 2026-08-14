@@ -346,6 +346,13 @@ class ActivationObservationTests(unittest.TestCase):
         temp,_,_,result=self._activate(b,compile_value(b))
         self.assertEqual(result["errors"],["BASELINE_TARGET_PATH_INVALID"])
         temp.cleanup()
+    def test_act_08_baseline_path_is_portable_and_relative(self):
+        temp,_,idx,result=self._activate()
+        self.assertTrue(result["index_updated"])
+        stored=json.loads(idx.read_text(encoding="utf-8"))["active"]["SOXL"]["baseline_path"]
+        self.assertFalse(Path(stored).is_absolute())
+        self.assertNotIn("E:/",stored)
+        temp.cleanup()
 
     def test_obs_01_manual_not_counted(self): self.assertEqual(record_observation(initialize_observation(ticker="SOXL",baseline_id="b",baseline_hash="a"*64,activation_session="2026-08-13"),observation(manual=True))["valid_sessions"],[])
     def test_obs_02_replay_not_counted(self): self.assertEqual(record_observation(initialize_observation(ticker="SOXL",baseline_id="b",baseline_hash="a"*64,activation_session="2026-08-13"),observation(replay=True))["valid_sessions"],[])
