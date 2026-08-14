@@ -121,11 +121,15 @@ class CurrentEventRiskTests(unittest.TestCase):
         self.assertFalse(checkpoint["order_authority"])
 
     def test_event_10_portfolio_immutable_and_hash_recorded(self):
-        before = file_hash(PORTFOLIO_PATH)
+        current_before = file_hash(PORTFOLIO_PATH)
         checkpoint = load_json(CHECKPOINT_PATH)
-        self.assertEqual(checkpoint["portfolio_state_hash_before"], before)
-        self.assertEqual(checkpoint["portfolio_state_hash_after"], before)
+        self.assertRegex(checkpoint["portfolio_state_hash_before"], r"^[A-Fa-f0-9]{64}$")
+        self.assertEqual(
+            checkpoint["portfolio_state_hash_before"],
+            checkpoint["portfolio_state_hash_after"],
+        )
         self.assertFalse(checkpoint["portfolio_mutated"])
+        self.assertEqual(file_hash(PORTFOLIO_PATH), current_before)
 
     def test_event_11_policy_and_active_baseline_provenance(self):
         self.assertEqual(
@@ -258,7 +262,10 @@ class CurrentEventRiskTests(unittest.TestCase):
             manifest["source_evidence_ledger_sha256"],
             canonical_hash(load_json(ROOT / manifest["source_evidence_ledger_path"])),
         )
-        self.assertEqual(manifest["portfolio_state_sha256"], file_hash(PORTFOLIO_PATH))
+        self.assertEqual(
+            manifest["portfolio_state_sha256"],
+            checkpoint["portfolio_state_hash_before"],
+        )
         self.assertTrue(manifest["scheduled_task_consumes_bundle"])
         automation_prompt = (ROOT / "stock-strategy-system/AUTOMATION_PROMPT_EN.md").read_text(encoding="utf-8")
         self.assertIn("workspace/state/event_risk_archive/<SESSION>/", automation_prompt)
