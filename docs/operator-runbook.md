@@ -179,3 +179,23 @@ authority requires policy reconciliation, not automatic exit mapping.
 Use Codex Scheduled Tasks only. Configuration starts as `FIRST_RUN_PENDING` and
 does not become `DELIVERY_VERIFIED` until the first valid output passes hash,
 schema, commit, and policy checks.
+
+## O. v2.6.8 Finalized Post-Market Run
+
+1. Use the single existing `Morning Portfolio Strategy` task at Tuesday-Saturday
+   10:15 Asia/Seoul. Do not create a second post-market task.
+2. Treat internal `POST_MARKET` component artifacts as analysis only. Build the
+   `POST_MARKET_FINALIZED` evidence envelope before delivery.
+3. Require the official completed session and same-session stable USD
+   `REGULAR_COMPLETED` Raw daily bars with `bar_finalized=true` for every
+   critical direct ticker.
+4. Keep extended-session records separate. They cannot overwrite daily bars or
+   confirm indicators and hard risk.
+5. Preserve FSLY's full-series yfinance fallback and MVLL's decision-class-local
+   RVOL block from the provider-scope manifest.
+6. Keep `EVENT_REVIEW_PENDING` separate from provider readiness.
+7. Deliver first, record the delivery ID, verify portfolio hashes, then append
+   the scheduled attempt and atomically update the cohort.
+8. Configuration, preliminary/generic post-market, manual, test, replay,
+   pre-open, stale, dirty, undelivered, or finalization-pending runs do not
+   count.

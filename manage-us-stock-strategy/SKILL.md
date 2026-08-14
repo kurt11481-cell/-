@@ -42,7 +42,7 @@ Load only the references needed for the current task:
   references. Require the versioned multi-regime walk-forward gate; unavailable
   history means the return-seeking rule remains inactive rather than being
   justified by a shorter sample.
-- For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md), then read the workspace state and policy files named by the automation prompt.
+- For recurring post-market monitoring or alert generation, read [alert-automation.md](references/alert-automation.md) and [finalized-postmarket-automation.md](references/finalized-postmarket-automation.md), then read the workspace state and policy files named by the automation prompt.
 - For a held-position thesis baseline, slow research refresh, or integrated
   holding-strategy comparison, also read
   [holding-research-baseline.md](references/holding-research-baseline.md).
@@ -58,8 +58,9 @@ Load only the references needed for the current task:
 - For integrated Shadow progress, checkpoint, delivery eligibility, or
   promotion review, read
   [shadow-operational-acceptance.md](references/shadow-operational-acceptance.md).
-  Count only real delivered post-market scheduled runs from committed `main`;
-  manual smoke, configuration, fixtures, pre-open, and backfill never count.
+  Count only real delivered `POST_MARKET_FINALIZED` scheduled runs from
+  committed `main`; preliminary, generic post-market analysis, manual smoke,
+  configuration, fixtures, pre-open, and backfill never count.
 - For a broker screenshot, portfolio screenshot, holdings/cash reconciliation,
   or snapshot request, read [broker-snapshot-reconciliation.md](references/broker-snapshot-reconciliation.md).
   Treat upload and extraction as untrusted; only an explicitly confirmed,

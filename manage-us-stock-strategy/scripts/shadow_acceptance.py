@@ -16,6 +16,11 @@ from typing import Any, Iterable
 
 from validation_common import canonical_hash, file_hash
 from validate_skill_deployment import normalized_text_sha256
+from finalized_postmarket_automation import (
+    FINALIZED_RUN_PHASE,
+    validate_finalization_evidence,
+    validate_scoped_provider_limits,
+)
 
 
 REQUIRED_BASELINE_TICKERS = ("NBIS", "MVLL", "SOXL")
@@ -23,6 +28,7 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/schemas/holding-research-baseline.schema.json",
     "manage-us-stock-strategy/schemas/compiled-holding-research-context.schema.json",
     "manage-us-stock-strategy/schemas/raw-web-close-evidence.schema.json",
+    "manage-us-stock-strategy/schemas/finalized-postmarket-evidence.schema.json",
     "manage-us-stock-strategy/scripts/holding_research.py",
     "manage-us-stock-strategy/scripts/web_close_evidence.py",
     "manage-us-stock-strategy/scripts/price_evidence.py",
@@ -34,12 +40,15 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/build_kiwoom_session_observation.py",
     "manage-us-stock-strategy/scripts/build_kiwoom_market_snapshot.py",
     "manage-us-stock-strategy/scripts/validate_kiwoom_market_snapshot.py",
+    "manage-us-stock-strategy/scripts/finalized_postmarket_automation.py",
+    "manage-us-stock-strategy/scripts/automation_delivery.py",
     "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
     "workspace/policies/holding_research_baseline_policy.json",
     "workspace/policies/web_completed_close_evidence_policy.json",
     "workspace/policies/kiwoom-readonly-policy.json",
     "workspace/policies/kiwoom-session-aware-priority-policy.json",
+    "workspace/policies/finalized_postmarket_automation_policy.json",
     "workspace/policies/source_capabilities.json",
     "workspace/policies/shadow_acceptance_policy.json",
 )
@@ -296,7 +305,8 @@ def critical_violations(report: dict[str, Any], *, portfolio_hash_before: str,
     return list(dict.fromkeys(violations))
 
 
-def classify_attempt(raw: dict[str, Any], *, progress: dict[str, Any]) -> dict[str, Any]:
+def classify_attempt(raw: dict[str, Any], *, progress: dict[str, Any],
+                     provider_scope_policy: dict[str, Any] | None = None) -> dict[str, Any]:
     attempt = deepcopy(raw)
     exclusions: list[str] = []
     violations = critical_violations(attempt.get("report") or {},
@@ -304,8 +314,10 @@ def classify_attempt(raw: dict[str, Any], *, progress: dict[str, Any]) -> dict[s
                                     portfolio_hash_after=str(attempt.get("portfolio_hash_after") or ""))
     if attempt.get("attempt_type") != "SCHEDULED_POST_MARKET":
         exclusions.append(f"ATTEMPT_TYPE_EXCLUDED:{attempt.get('attempt_type')}")
-    if attempt.get("run_phase") != "POST_MARKET":
-        exclusions.append("RUN_PHASE_NOT_POST_MARKET")
+    if attempt.get("run_phase") == "POST_MARKET_PRELIMINARY":
+        exclusions.append("PRELIMINARY_RUN_NOT_COUNTABLE")
+    elif attempt.get("run_phase") != FINALIZED_RUN_PHASE:
+        exclusions.append("RUN_PHASE_NOT_POST_MARKET_FINALIZED")
     if attempt.get("automation_name") != "Morning Portfolio Strategy":
         exclusions.append("AUTOMATION_NAME_MISMATCH")
     if attempt.get("official_session_status") != "VALIDATED":
@@ -322,6 +334,14 @@ def classify_attempt(raw: dict[str, Any], *, progress: dict[str, Any]) -> dict[s
         exclusions.append("DEPLOYMENT_NOT_VALIDATED")
     if attempt.get("registry_status") != "VALIDATED":
         exclusions.append("REGISTRY_NOT_VALIDATED")
+    finalization_errors = validate_finalization_evidence(
+        attempt.get("finalization_evidence"), attempt.get("completed_session")
+    )
+    exclusions.extend(finalization_errors)
+    if provider_scope_policy is not None:
+        exclusions.extend(validate_scoped_provider_limits(
+            provider_scope_policy, attempt.get("finalization_evidence") or {}
+        ))
     for ticker in REQUIRED_BASELINE_TICKERS:
         if (attempt.get("baseline_coverage") or {}).get(ticker) != "VALIDATED_SHADOW":
             exclusions.append(f"BASELINE_COVERAGE_INCOMPLETE:{ticker}")
@@ -489,7 +509,8 @@ def _atomic_write(path: Path, value: dict[str, Any]) -> None:
 def record_attempt(raw: dict[str, Any], *, progress_path: Path, attempts_root: Path,
                    fingerprint: str, now: str | None = None,
                    sessions_root: Path | None = None,
-                   lock_policy: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+                   lock_policy: dict[str, Any] | None = None,
+                   provider_scope_policy: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     lock_path = progress_path.with_suffix(progress_path.suffix + ".lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -509,7 +530,8 @@ def record_attempt(raw: dict[str, Any], *, progress_path: Path, attempts_root: P
                 progress = initial_progress(fingerprint, now)
         else:
             progress = initial_progress(fingerprint, now)
-        attempt = classify_attempt(raw, progress=progress)
+        attempt = classify_attempt(raw, progress=progress,
+                                   provider_scope_policy=provider_scope_policy)
         attempt_path = attempts_root / progress["cohort_id"] / f"{attempt['attempt_id']}.json"
         if attempt_path.exists():
             raise ValueError("attempt_id already exists; append-only ledger rejects overwrite")

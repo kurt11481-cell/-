@@ -1,5 +1,27 @@
 # v2.1 Production Readiness
 
+## v2.6.8 Finalized Post-Market Automation Addendum — 2026-08-14
+
+**AUTOMATION STATUS: CONFIGURED_FIRST_RUN_PENDING**
+
+The existing `Morning Portfolio Strategy` task is the only intended operational
+post-market task. Its operating mode is `SINGLE_FINALIZED_RUN`, scheduled for
+Tuesday-Saturday 10:15 Asia/Seoul. The analytical components retain
+`POST_MARKET`; delivery and operational Shadow counting require the separately
+validated `POST_MARKET_FINALIZED` envelope.
+
+Every critical direct daily record must be the stable, same-session USD
+`REGULAR_COMPLETED` Raw close with `bar_finalized=true`. Extended-session values
+stay separate and cannot overwrite the close, enter daily indicators, confirm
+hard risk, upgrade readiness, create quantity, or place an order. FSLY and MVLL
+scope limitations remain intact, and event readiness is reported separately
+from provider readiness.
+
+The prior zero-session cohort is preserved as superseded. The new semantic
+cohort starts at 0 and receives no replay, manual, preliminary, or configuration
+backfill. Configuration is not delivery verification; the first eligible real
+scheduled run remains pending.
+
 ## v2.6.7 Session-Aware Kiwoom Priority Addendum — 2026-08-14
 
 **MARKET-DATA STATUS: KIWOOM_PRIMARY_GUARDED_SCOPED**

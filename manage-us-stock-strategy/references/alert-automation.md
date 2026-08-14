@@ -8,10 +8,12 @@ attempt after the ordinary read-only report. These artifacts cannot alter the
 live conclusion, execution state, quantity, policy, or portfolio state.
 
 Record every scheduled success or failure where possible. Only an actual
-delivered scheduled run from committed `main` that passes the cohort policy may
-advance `valid_shadow_sessions`. Configuration, manual smoke, fixtures, replay,
-and pre-open runs are excluded. Run-phase and cohort identifiers remain part of
-deduplication.
+delivered `POST_MARKET_FINALIZED` scheduled run from committed `main` that
+passes the cohort and finalization policies may advance `valid_shadow_sessions`.
+Configuration, preliminary or generic post-market analysis, manual smoke,
+fixtures, replay, and pre-open runs are excluded. Run-phase and cohort
+identifiers remain part of audit deduplication; a phase-neutral signal
+fingerprint suppresses duplicate urgent state notifications.
 
 ## Safety objective
 
@@ -74,8 +76,12 @@ Support lower-level policy scopes without silently translating one into another:
   runtime and research/audit outputs; it may not write portfolio state, policy,
   holdings, cash, cost basis, fills, or approved quantities.
 
-The tactical radar normally runs Tuesday through Saturday at 07:45 KST, but an
-official completed-session gate remains authoritative. Return
+The finalized portfolio strategy normally runs Tuesday through Saturday at
+10:15 KST, after the U.S. extended-hours session plus a safety buffer. Its
+analytical components may retain `POST_MARKET`, but only the validated
+`POST_MARKET_FINALIZED` envelope can be delivered or counted. The tactical
+radar remains a component of that run. An official completed-session gate
+remains authoritative. Return
 `NO_NEW_SESSION` for duplicates, weekends, holidays, or stale catch-up
 attempts. Emit a short summary on every valid new session, while urgent
 notifications are limited to new `READY`, new `NEAR_TRIGGER`, material

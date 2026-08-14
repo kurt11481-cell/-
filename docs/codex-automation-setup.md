@@ -1,6 +1,6 @@
-# Codex Automation Setup: v2.4 Dual Phase
+# Codex Automation Setup: v2.6.8 Finalized Post-Market
 
-## v2.6.7 session-aware provider authority
+## v2.6.8 finalized session-aware provider authority
 
 Post-market and pre-open tasks must load the committed session-aware Kiwoom
 priority policy. Kiwoom is the guarded operational priority only in its
@@ -10,7 +10,7 @@ not confirm indicators or hard risk. A same-day Kiwoom daily row without a
 deterministic finalization field is `FINALIZATION_PENDING`. This policy change
 does not itself prove a scheduled delivery and does not grant order authority.
 
-## v2.6.3 Massive-free staged new-buy extension
+## v2.6.8 finalized operational counting
 
 The existing `Morning Portfolio Strategy` task must continue using committed
 `main` and now also follow
@@ -21,11 +21,12 @@ append-only Shadow recording. It requires no Massive credential, MCP, OAuth, or
 subscription. Update the existing task; do not create a duplicate or install an
 OS scheduler.
 
-Lifecycle remains `FIRST_RUN_PENDING` until a genuine scheduled output is
-delivered. Configuration and manual smoke do not advance the v2.6.3
-1/5/10/20/60 cohort. Exact route acceptance may use historical sessions but
-also does not advance operational Shadow. Pre-open remains `NOT_CONFIGURED`
-until its existing prerequisites and a valid post-market baseline pass.
+Lifecycle remains `FIRST_RUN_PENDING` until a genuine finalized scheduled
+output is delivered. Configuration, preliminary/generic post-market analysis,
+and manual smoke do not advance the v2.6.8 1/5/10/20/60 cohort. Exact route
+acceptance may use historical sessions but also does not advance operational
+Shadow. Pre-open remains `NOT_CONFIGURED` until its existing prerequisites and
+a valid post-market baseline pass.
 
 Use Codex Scheduled Tasks/heartbeat automations only. No Windows Task
 Scheduler, service, startup script, cron workaround, or background daemon is
@@ -33,8 +34,10 @@ permitted.
 
 ## Morning Portfolio Strategy
 
-- Run phase: `POST_MARKET`
-- Schedule: Tuesday-Saturday 07:45 `Asia/Seoul`
+- Analytical phase: `POST_MARKET`
+- Delivery/counting phase: `POST_MARKET_FINALIZED`
+- Operating mode: `SINGLE_FINALIZED_RUN`
+- Schedule: Tuesday-Saturday 10:15 `Asia/Seoul`
 - Workspace: `E:\사업\##금동한\코덱스저장소`
 - Source: committed `main`
 - Prompt:
@@ -43,7 +46,8 @@ permitted.
 - Configuration status: `FIRST_RUN_PENDING`
 - Delivery status: not yet verified
 
-The existing automation was updated in place; no duplicate was created.
+The existing automation is updated in place; no duplicate is created. The prior
+07:45 KST configuration is not an operational-counting run.
 
 ## Pre-Open Portfolio Risk Refresh
 
@@ -70,10 +74,12 @@ Configuration never equals delivery success. After each task's first valid run,
 verify:
 
 1. output commit/policy versions match committed main;
-2. report, runtime, baseline/manifest schemas pass;
-3. portfolio-state hashes before and after are identical;
-4. no policy/source/registry mutation occurred;
-5. `order_authority=false` and quantity remains unauthorized.
+2. every critical direct daily bar is the validated same-session
+   `REGULAR_COMPLETED` Raw close with `bar_finalized=true`;
+3. report, runtime, finalization evidence, baseline, and manifest schemas pass;
+4. portfolio-state hashes before and after are identical;
+5. no policy/source/registry mutation occurred;
+6. `order_authority=false` and quantity remains unauthorized.
 
 Only then may `workspace/state/automation_delivery_runtime.json` move that task
 to `DELIVERY_VERIFIED`.

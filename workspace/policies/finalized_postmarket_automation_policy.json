@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-finalized-postmarket-v1",
+  "operating_mode": "SINGLE_FINALIZED_RUN",
+  "automation_name": "Morning Portfolio Strategy",
+  "schedule": {
+    "timezone": "Asia/Seoul",
+    "local_time": "10:15",
+    "weekdays": ["TU", "WE", "TH", "FR", "SA"],
+    "extended_hours_safety_buffer_required": true
+  },
+  "analysis_run_phase": "POST_MARKET",
+  "counted_run_phase": "POST_MARKET_FINALIZED",
+  "non_counting_run_phases": ["POST_MARKET_PRELIMINARY", "POST_MARKET", "PRE_OPEN"],
+  "official_completed_session_required": true,
+  "required_market_session_type": "REGULAR_COMPLETED",
+  "required_price_basis": "RAW_REGULAR_SESSION_CLOSE",
+  "required_quote_type": "RAW_REGULAR_SESSION_CLOSE",
+  "bar_finalized_required": true,
+  "stable_bar_required": true,
+  "currency": "USD",
+  "extended_hours_records_separate": true,
+  "actual_scheduled_delivery_required": true,
+  "committed_main_required": true,
+  "clean_worktree_required": true,
+  "portfolio_hash_equality_required": true,
+  "provider_scope_policy": "workspace/policies/kiwoom-session-aware-priority-policy.json",
+  "event_readiness_separate_from_provider_readiness": true,
+  "phase_neutral_urgent_state_dedup": true,
+  "quantity_authority": false,
+  "order_authority": false
+}

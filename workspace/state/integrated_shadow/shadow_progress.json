@@ -1,8 +1,8 @@
 {
   "schema_version": "2.6",
-  "cohort_id": "integrated-shadow-e98eae84fbced316",
-  "semantic_fingerprint": "e98eae84fbced31673b58d068ac28d0672c6ff4f9fd95627de2291383551ae85",
-  "started_at": "2026-08-14T08:22:07+09:00",
+  "cohort_id": "integrated-shadow-23b7c365047fc27f",
+  "semantic_fingerprint": "23b7c365047fc27f513d6470b3d404c55a995950b4ac6475e1ec1f3aaa77fa1a",
+  "started_at": "2026-08-14T09:52:30.9194778+09:00",
   "observed_attempts": 0,
   "valid_shadow_sessions": 0,
   "excluded_attempts": 0,

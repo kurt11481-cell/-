@@ -105,14 +105,42 @@ def valid_web_evidence(ticker: str = "MVLL", close: float = 100.02) -> dict[str,
 
 
 def valid_scheduled_attempt(**overrides: Any) -> dict[str, Any]:
+    from validation_common import canonical_hash, load_json
+
+    completed_session = str(overrides.get("completed_session") or "2026-08-12")
+    provider_scope_hash = canonical_hash(load_json(
+        ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json"
+    ))
+    critical_bars = {
+        ticker: {
+            "market_session_type": "REGULAR_COMPLETED", "reported_session": completed_session,
+            "price_basis": "RAW_REGULAR_SESSION_CLOSE", "quote_type": "RAW_REGULAR_SESSION_CLOSE",
+            "currency": "USD", "bar_finalized": True, "stable": True,
+            "regular_close_provider": "KIWOOM_REST",
+            "technical_history_provider": (
+                "YFINANCE_PRIMARY_VALIDATED_FALLBACK" if ticker == "FSLY"
+                else "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC"
+            ),
+            "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"] if ticker == "MVLL" else [],
+        }
+        for ticker in ("SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY")
+    }
     value = {
         "attempt_id": "scheduled-2026-08-12-a", "attempt_type": "SCHEDULED_POST_MARKET",
-        "run_phase": "POST_MARKET", "automation_name": "Morning Portfolio Strategy",
-        "attempted_at": "2026-08-13T00:00:00Z", "completed_session": "2026-08-12",
+        "run_phase": "POST_MARKET_FINALIZED", "automation_name": "Morning Portfolio Strategy",
+        "attempted_at": "2026-08-13T00:00:00Z", "completed_session": completed_session,
         "official_session_status": "VALIDATED", "expected_scheduled_session": True,
         "historical_backfill": False, "delivery_status": "DELIVERED", "delivery_id": "delivery-1",
         "git_commit": "a" * 40, "branch": "main", "working_tree_clean": True,
         "deployment_status": "PASS", "registry_status": "VALIDATED",
+        "finalization_evidence": {"schema_version": "1.0", "run_phase": "POST_MARKET_FINALIZED",
+            "analysis_run_phase": "POST_MARKET", "completed_session": completed_session,
+            "official_session_status": "VALIDATED", "finalization_status": "VALIDATED",
+            "all_critical_bars_finalized": True, "critical_bars": critical_bars,
+            "extended_hours_records_separate": True,
+            "provider_readiness_status": "KIWOOM_PRIMARY_GUARDED_SCOPED_READY",
+            "event_readiness_status": "CLEAR", "provider_scope_manifest_hash": provider_scope_hash,
+            "order_authority": False},
         "run_manifest_hash": "b" * 64, "report_hash": "c" * 64,
         "portfolio_hash_before": "d" * 64, "portfolio_hash_after": "d" * 64,
         "baseline_coverage": {ticker: "VALIDATED_SHADOW" for ticker in ("NBIS", "MVLL", "SOXL")},

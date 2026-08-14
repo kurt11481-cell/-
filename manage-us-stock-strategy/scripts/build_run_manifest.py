@@ -120,7 +120,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--run-phase", choices=["POST_MARKET", "PRE_OPEN", "HISTORICAL", "VALIDATION"], default="POST_MARKET")
+    parser.add_argument("--run-phase", choices=["POST_MARKET_PRELIMINARY", "POST_MARKET", "POST_MARKET_FINALIZED", "PRE_OPEN", "HISTORICAL", "VALIDATION"], default="POST_MARKET")
     parser.add_argument("--analysis-id", required=True)
     parser.add_argument("--run-type", required=True, choices=["HIGH_CONSEQUENCE_ANALYSIS", "TACTICAL_SHORTLIST", "HISTORICAL_EVALUATION", "LIVE_SHADOW_REVIEW", "VALIDATION_TEST"])
     parser.add_argument("--generated-at", default=datetime.now(timezone.utc).isoformat())
