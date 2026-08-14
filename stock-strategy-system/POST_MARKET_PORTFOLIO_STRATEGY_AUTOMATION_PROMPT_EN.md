@@ -1,10 +1,12 @@
-# Post-Market Full Portfolio Strategy
+# Finalized Post-Market Full Portfolio Strategy
 
 Use `$manage-us-stock-strategy` from
 `E:\사업\##금동한\코덱스저장소` on committed `main` only.
 
-Run the read-only `POST_MARKET_FULL_STRATEGY` workflow for the latest verified
-completed U.S. regular session. Read the canonical portfolio state, alert
+Run the read-only `POST_MARKET_FINALIZED` operational phase at the configured
+Tuesday-Saturday 10:15 Asia/Seoul schedule. The underlying completed-session
+analysis phase remains `POST_MARKET`; only the validated finalized envelope may
+be delivered or counted. Read the canonical portfolio state, alert
 policy/runtime, instrument registry, tactical universe/policy, event policy,
 source-capability registry, and monitoring runtimes before analysis.
 
@@ -25,6 +27,17 @@ after ticker, identity, session type, reported session, quote type, price basis,
 currency, timestamp, stability, and finalization all pass. Non-comparable
 extended-session differences are not conflicts. Use Codex Web only for an
 unresolved comparable finalized regular-close conflict. Never average values.
+
+Also load `workspace/policies/finalized_postmarket_automation_policy.json`.
+Before delivery, build and validate `finalization_evidence` against
+`manage-us-stock-strategy/schemas/finalized-postmarket-evidence.schema.json`.
+Every critical direct daily record must be the same official completed session,
+`REGULAR_COMPLETED`, `RAW_REGULAR_SESSION_CLOSE`, stable, USD, and
+`bar_finalized=true`. Extended-session records must remain separate. A
+`POST_MARKET_PRELIMINARY`, legacy generic `POST_MARKET`,
+`FINALIZATION_PENDING`, manual, replay, pre-open, dirty-worktree, stale,
+undelivered, or portfolio-hash-mismatched attempt is observed but never counted
+and can never create `DELIVERY_VERIFIED`.
 
 Reuse one canonical completed-session market snapshot and one event snapshot.
 Do not
@@ -72,6 +85,14 @@ automation delivery runtime only after schema validation and portfolio hash
 verification. Return the conclusion first in Korean and state the commit,
 policy version, provider status, subsystem statuses, and that no brokerage
 order was placed or scheduled.
+
+After actual delivery, record the phase-specific delivery ID and the scheduled
+attempt, then update the active cohort atomically. Configuration or manual smoke
+does not count. Apply phase-neutral urgent-state deduplication so an unchanged
+state is never delivered twice across preliminary and finalized observations.
+Keep provider readiness and event readiness separate: `EVENT_DATA_INCOMPLETE`
+maps to `EVENT_REVIEW_PENDING` where required and does not invalidate the
+session-aware Kiwoom provider scope.
 
 Extended-session Kiwoom observations must remain separate from completed daily
 bars. They may add caution or downgrade readiness, but may not confirm daily

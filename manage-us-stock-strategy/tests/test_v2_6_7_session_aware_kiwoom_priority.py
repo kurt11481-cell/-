@@ -322,10 +322,12 @@ class InvariantAndContractTests(unittest.TestCase):
         self.assertEqual(progress["semantic_fingerprint"], semantic_fingerprint(ROOT))
         self.assertEqual(progress["valid_shadow_sessions"], 0)
         self.assertEqual(progress["observed_attempts"], 0)
-        old = load_json(ROOT / "workspace/state/integrated_shadow/cohorts/integrated-shadow-8633bb549d3c7d87/superseded_progress.json")
-        self.assertEqual(old["cohort_status"], "COHORT_SUPERSEDED")
-        self.assertEqual(old["superseded_by"], progress["cohort_id"])
-        self.assertFalse(old["order_authority"])
+        archives = [load_json(path) for path in
+                    (ROOT / "workspace/state/integrated_shadow/cohorts").glob("*/superseded_progress.json")]
+        predecessors = [item for item in archives if item.get("superseded_by") == progress["cohort_id"]]
+        self.assertEqual(len(predecessors), 1)
+        self.assertEqual(predecessors[0]["cohort_status"], "COHORT_SUPERSEDED")
+        self.assertFalse(predecessors[0]["order_authority"])
 
 
 if __name__ == "__main__":

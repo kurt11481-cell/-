@@ -30,7 +30,10 @@ class V24AutomationTests(unittest.TestCase):
         result = update_delivery(self.runtime, "morning_portfolio_strategy", attempted_at="2026-08-13T00:00:00+00:00",
             success=True, completed_session="2026-08-12", output_artifact="workspace/outputs/test/report.json",
             notification_status="DELIVERED", git_commit="abc", policy_version="v2.4",
-            portfolio_hash_before="a" * 64, portfolio_hash_after="a" * 64)
+            portfolio_hash_before="a" * 64, portfolio_hash_after="a" * 64,
+            run_phase="POST_MARKET_FINALIZED", finalization_status="VALIDATED",
+            all_critical_bars_finalized=True, actual_scheduled_run=True,
+            delivery_id="delivery-1")
         self.assertEqual(result["automations"]["morning_portfolio_strategy"]["status"], "DELIVERY_VERIFIED")
         self.assertEqual(validate_instance(result, ROOT / "manage-us-stock-strategy" / "schemas" / "automation-delivery-runtime.schema.json"), [])
 
@@ -38,7 +41,8 @@ class V24AutomationTests(unittest.TestCase):
         result = update_delivery(self.runtime, "preopen_portfolio_risk_refresh", attempted_at="2026-08-13T12:45:00+00:00",
             success=True, completed_session="2026-08-12", output_artifact="workspace/outputs/test/preopen.json",
             notification_status="FAILED", git_commit="abc", policy_version="v2.4",
-            portfolio_hash_before="a" * 64, portfolio_hash_after="b" * 64)
+            portfolio_hash_before="a" * 64, portfolio_hash_after="b" * 64,
+            run_phase="PRE_OPEN", actual_scheduled_run=True, delivery_id="delivery-2")
         row = result["automations"]["preopen_portfolio_risk_refresh"]
         self.assertEqual(row["status"], "FAILED")
         self.assertEqual(row["failure_reason"], "PORTFOLIO_STATE_HASH_CHANGED")

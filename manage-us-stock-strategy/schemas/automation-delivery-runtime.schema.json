@@ -12,10 +12,10 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["automation_name", "run_phase", "schedule", "status", "last_attempted_run", "last_successful_run", "last_completed_session", "output_artifact", "notification_status", "git_commit", "policy_version", "portfolio_state_hash_before", "portfolio_state_hash_after", "failure_reason"],
+        "required": ["automation_name", "run_phase", "schedule", "status", "last_attempted_run", "last_successful_run", "last_completed_session", "output_artifact", "notification_status", "git_commit", "policy_version", "portfolio_state_hash_before", "portfolio_state_hash_after", "failure_reason", "last_attempt_run_phase", "last_finalization_status", "last_attempt_was_scheduled", "last_delivery_id"],
         "properties": {
           "automation_name": {"type": "string", "minLength": 1},
-          "run_phase": {"enum": ["POST_MARKET", "PRE_OPEN"]},
+          "run_phase": {"enum": ["POST_MARKET_PRELIMINARY", "POST_MARKET", "POST_MARKET_FINALIZED", "PRE_OPEN"]},
           "schedule": {"type": "string", "minLength": 1},
           "status": {"enum": ["NOT_CONFIGURED", "CONFIGURED", "FIRST_RUN_PENDING", "DELIVERY_VERIFIED", "FAILED"]},
           "last_attempted_run": {"type": ["string", "null"], "format": "date-time"},
@@ -27,7 +27,11 @@
           "policy_version": {"type": ["string", "null"]},
           "portfolio_state_hash_before": {"type": ["string", "null"]},
           "portfolio_state_hash_after": {"type": ["string", "null"]},
-          "failure_reason": {"type": ["string", "null"]}
+          "failure_reason": {"type": ["string", "null"]},
+          "last_attempt_run_phase": {"type": ["string", "null"]},
+          "last_finalization_status": {"type": ["string", "null"]},
+          "last_attempt_was_scheduled": {"type": "boolean"},
+          "last_delivery_id": {"type": ["string", "null"]}
         }
       }
     },

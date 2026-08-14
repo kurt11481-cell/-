@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finalized-postmarket-evidence.schema.json",
+  "title": "Finalized Post-Market Operational Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_phase", "analysis_run_phase", "completed_session", "official_session_status", "finalization_status", "all_critical_bars_finalized", "critical_bars", "extended_hours_records_separate", "provider_readiness_status", "event_readiness_status", "provider_scope_manifest_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_phase": {"const": "POST_MARKET_FINALIZED"},
+    "analysis_run_phase": {"const": "POST_MARKET"},
+    "completed_session": {"type": "string", "format": "date"},
+    "official_session_status": {"const": "VALIDATED"},
+    "finalization_status": {"enum": ["VALIDATED", "FINALIZATION_PENDING", "DATA_INCOMPLETE"]},
+    "all_critical_bars_finalized": {"type": "boolean"},
+    "critical_bars": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["market_session_type", "reported_session", "price_basis", "quote_type", "currency", "bar_finalized", "stable", "regular_close_provider", "technical_history_provider"],
+        "properties": {
+          "market_session_type": {"enum": ["REGULAR_COMPLETED", "PRE_MARKET", "REGULAR_INTRADAY", "AFTER_HOURS", "DAY_MARKET", "OVERNIGHT", "MARKET_CLOSED", "UNKNOWN"]},
+          "reported_session": {"type": "string", "format": "date"},
+          "price_basis": {"type": "string"},
+          "quote_type": {"type": "string"},
+          "currency": {"type": "string"},
+          "bar_finalized": {"type": "boolean"},
+          "stable": {"type": "boolean"},
+          "regular_close_provider": {"type": "string"},
+          "technical_history_provider": {"type": "string"},
+          "blocked_decision_classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        }
+      }
+    },
+    "extended_hours_records_separate": {"const": true},
+    "provider_readiness_status": {"enum": ["KIWOOM_PRIMARY_GUARDED_SCOPED_READY", "TICKER_LOCAL_LIMITATION", "DATA_INCOMPLETE"]},
+    "event_readiness_status": {"enum": ["CLEAR", "EVENT_REVIEW_PENDING", "EVENT_BLOCKED", "EVENT_DATA_INCOMPLETE"]},
+    "provider_scope_manifest_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

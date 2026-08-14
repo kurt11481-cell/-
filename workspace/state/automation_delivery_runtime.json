@@ -3,8 +3,8 @@
   "automations": {
     "morning_portfolio_strategy": {
       "automation_name": "Morning Portfolio Strategy",
-      "run_phase": "POST_MARKET",
-      "schedule": "Tuesday-Saturday 07:45 Asia/Seoul",
+      "run_phase": "POST_MARKET_FINALIZED",
+      "schedule": "Tuesday-Saturday 10:15 Asia/Seoul",
       "status": "FIRST_RUN_PENDING",
       "last_attempted_run": "2026-08-12T22:53:41.9622765Z",
       "last_successful_run": null,
@@ -12,10 +12,14 @@
       "output_artifact": "workspace/outputs/portfolio-strategy/2026-08-12/portfolio_strategy_report.json",
       "notification_status": "DELIVERY_UNVERIFIED",
       "git_commit": "3ef389c04d77a0c386be7b7a7a278b6d6162552b",
-      "policy_version": "2026-08-05-v4",
+      "policy_version": "2026-08-14-finalized-postmarket-v1",
       "portfolio_state_hash_before": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
       "portfolio_state_hash_after": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
-      "failure_reason": null
+      "failure_reason": null,
+      "last_attempt_run_phase": null,
+      "last_finalization_status": null,
+      "last_attempt_was_scheduled": false,
+      "last_delivery_id": null
     },
     "preopen_portfolio_risk_refresh": {
       "automation_name": "Pre-Open Portfolio Risk Refresh",
@@ -31,7 +35,11 @@
       "policy_version": null,
       "portfolio_state_hash_before": null,
       "portfolio_state_hash_after": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "last_attempt_run_phase": null,
+      "last_finalization_status": null,
+      "last_attempt_was_scheduled": false,
+      "last_delivery_id": null
     }
   },
   "order_authority": false

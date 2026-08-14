@@ -1,9 +1,10 @@
 # Cohort-Based Shadow Operational Acceptance
 
-The coverage-weighted 1/5/10/20/60-session process measures scheduled
-post-market delivery and safety. It is not a counter that a manual smoke test,
-manual Run Now, historical replay, route-acceptance replay, or pre-open run may
-advance.
+The coverage-weighted 1/5/10/20/60-session process measures scheduled finalized
+post-market delivery and safety. Only `POST_MARKET_FINALIZED` may count. It is
+not a counter that preliminary or generic post-market analysis, a manual smoke
+test, manual Run Now, historical replay, route-acceptance replay, or pre-open run
+may advance.
 
 Stage 1 verifies live read-only scheduled delivery. Stage 5 may only generate a
 limited exact-scope approval proposal after replay, fault injection, broker
@@ -20,11 +21,13 @@ new-buy-approval, execution, and promotion states remain separate.
 
 ## Eligible session
 
-One session counts only when the official completed session is validated, the
-run is an actual delivered `Morning Portfolio Strategy` scheduled run from
-committed `main`, deployment and registry hashes pass, portfolio hashes before
-and after match, all three held-ticker baseline states are present, and no
-critical violation exists.
+One session counts only when the official completed session is validated, every
+critical direct daily bar is the same-session stable `REGULAR_COMPLETED` Raw
+close with `bar_finalized=true`, and the run is an actual delivered
+`Morning Portfolio Strategy` `POST_MARKET_FINALIZED` scheduled run from
+committed `main`. Deployment and registry hashes must pass, portfolio hashes
+before and after must match, all three held-ticker baseline states must be
+present, and no critical violation may exist.
 
 Manual runs, unit tests, pre-open runs, backfills, unverified delivery, dirty
 worktrees, and missing expected-session evidence are logged but excluded.

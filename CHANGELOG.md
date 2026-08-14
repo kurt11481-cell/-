@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.6.8 - Finalized Post-Market Automation
+
+- Moved the existing `Morning Portfolio Strategy` operational schedule from
+  07:45 to 10:15 Asia/Seoul and selected one `SINGLE_FINALIZED_RUN` rather than
+  creating a duplicate task.
+- Added a deterministic `POST_MARKET_FINALIZED` delivery/counting envelope.
+  Preliminary, generic post-market, finalization-pending, manual, replay,
+  pre-open, stale, dirty, undelivered, and hash-mismatched runs cannot count.
+- Required every critical direct daily record to be a stable, same-session USD
+  `REGULAR_COMPLETED` Raw close with `bar_finalized=true` before delivery
+  verification or Shadow counting.
+- Preserved FSLY's ticker-local yfinance technical-history fallback, MVLL's
+  `EMA10_RECLAIM_RVOL20` decision-class block, and separation of event readiness
+  from provider readiness.
+- Added phase-neutral urgent-state deduplication, explicit delivery-ID and
+  scheduled-attempt lifecycle fields, AUTO-01 through AUTO-11 regressions, and
+  a new zero-session semantic cohort.
+- No order, fill, quantity, portfolio mutation, hard-risk threshold, timing
+  quantity, or rearm authority was added.
+
 ## v2.6.7 - Session-Aware Kiwoom Operational Priority
 
 - Added explicit premarket, regular-intraday, regular-completed, after-hours,

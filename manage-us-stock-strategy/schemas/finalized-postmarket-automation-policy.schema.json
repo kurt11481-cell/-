@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finalized-postmarket-automation-policy.schema.json",
+  "title": "Finalized Post-Market Automation Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_version", "operating_mode", "automation_name", "schedule", "analysis_run_phase", "counted_run_phase", "non_counting_run_phases", "official_completed_session_required", "required_market_session_type", "required_price_basis", "required_quote_type", "bar_finalized_required", "stable_bar_required", "currency", "extended_hours_records_separate", "actual_scheduled_delivery_required", "committed_main_required", "clean_worktree_required", "portfolio_hash_equality_required", "provider_scope_policy", "event_readiness_separate_from_provider_readiness", "phase_neutral_urgent_state_dedup", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "operating_mode": {"const": "SINGLE_FINALIZED_RUN"},
+    "automation_name": {"const": "Morning Portfolio Strategy"},
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timezone", "local_time", "weekdays", "extended_hours_safety_buffer_required"],
+      "properties": {
+        "timezone": {"const": "Asia/Seoul"},
+        "local_time": {"const": "10:15"},
+        "weekdays": {"const": ["TU", "WE", "TH", "FR", "SA"]},
+        "extended_hours_safety_buffer_required": {"const": true}
+      }
+    },
+    "analysis_run_phase": {"const": "POST_MARKET"},
+    "counted_run_phase": {"const": "POST_MARKET_FINALIZED"},
+    "non_counting_run_phases": {"const": ["POST_MARKET_PRELIMINARY", "POST_MARKET", "PRE_OPEN"]},
+    "official_completed_session_required": {"const": true},
+    "required_market_session_type": {"const": "REGULAR_COMPLETED"},
+    "required_price_basis": {"const": "RAW_REGULAR_SESSION_CLOSE"},
+    "required_quote_type": {"const": "RAW_REGULAR_SESSION_CLOSE"},
+    "bar_finalized_required": {"const": true},
+    "stable_bar_required": {"const": true},
+    "currency": {"const": "USD"},
+    "extended_hours_records_separate": {"const": true},
+    "actual_scheduled_delivery_required": {"const": true},
+    "committed_main_required": {"const": true},
+    "clean_worktree_required": {"const": true},
+    "portfolio_hash_equality_required": {"const": true},
+    "provider_scope_policy": {"type": "string", "minLength": 1},
+    "event_readiness_separate_from_provider_readiness": {"const": true},
+    "phase_neutral_urgent_state_dedup": {"const": true},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

@@ -28,7 +28,10 @@ def main() -> int:
                                        attempts_root=args.attempts_root,
                                        fingerprint=semantic_fingerprint(args.repo_root),
                                        sessions_root=args.sessions_root,
-                                       lock_policy=lock_policy)
+                                       lock_policy=lock_policy,
+                                       provider_scope_policy=load_json(
+                                           args.repo_root / "workspace/policies/kiwoom-session-aware-priority-policy.json"
+                                       ))
     errors = validate_instance(attempt, args.attempt_schema) + validate_instance(progress, args.progress_schema)
     if errors:
         raise SystemExit("shadow ledger validation failed: " + "; ".join(errors))

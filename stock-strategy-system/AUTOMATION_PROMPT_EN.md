@@ -1,4 +1,4 @@
-# Deterministic Post-Market Monitoring Prompt
+# Deterministic Finalized Post-Market Monitoring Prompt
 
 Use `$manage-us-stock-strategy` to run the read-only U.S. post-market holding-risk,
 EMA timing, and watchlist workflow. Follow the active JSON policy exactly. Never
@@ -28,6 +28,41 @@ candidate or mutate runtime state.
 
 ## Required workflow
 
+### v2.6.8 finalized operational phase
+
+This scheduled task uses `SINGLE_FINALIZED_RUN` at Tuesday-Saturday 10:15
+Asia/Seoul. Load and enforce
+`workspace/policies/finalized_postmarket_automation_policy.json`. The delivered
+and count-eligible phase is exactly `POST_MARKET_FINALIZED`; the underlying
+completed-session analytical components may retain `POST_MARKET`.
+
+Capture the portfolio hash before work. Verify the official latest completed
+U.S. regular session, then run Kiwoom OAuth/IP/lock/rate-limit/circuit preflight,
+resolve identities, and collect Kiwoom Raw and Adjusted completed-daily history.
+Require each critical direct daily record to be the same session,
+`REGULAR_COMPLETED`, `RAW_REGULAR_SESSION_CLOSE`, USD, stable, and
+`bar_finalized=true`. Calculate indicators locally from validated Kiwoom
+Adjusted history, subject to the active ticker scopes. Collect yfinance only as
+diagnostic Shadow or the explicit FSLY technical-history fallback. Compare only
+same-ticker, same-session, same-quote-type, compatible-basis finalized records;
+non-comparable extended-session observations are not price conflicts. Codex Web
+is restricted to unresolved comparable finalized regular-close conflicts.
+
+Build holding strategies, Tactical opportunities, unsized new-buy drafts, and
+event readiness as separate axes. Preserve FSLY's complete yfinance history
+fallback without history mixing or a reduced lookback. Preserve MVLL's
+decision-class-local `EMA10_RECLAIM_RVOL20` block while retaining its Kiwoom Raw
+close. Map `EVENT_DATA_INCOMPLETE` to `EVENT_REVIEW_PENDING` where policy
+requires without invalidating provider readiness.
+
+Render the beginner-facing Korean result, perform actual delivery, record its
+delivery ID, capture the portfolio hash after, validate equality, then record
+the scheduled attempt and update cohort progress atomically. Only that actual
+delivered finalized run from clean committed `main` may count. Preliminary,
+legacy generic POST_MARKET, finalization-pending, manual, test, replay, stale,
+catch-up, dirty, undelivered, or pre-open attempts are excluded. Configuration
+leaves lifecycle at `FIRST_RUN_PENDING`.
+
 ### Session-aware Kiwoom operational priority
 
 Load `workspace/policies/kiwoom-session-aware-priority-policy.json` through the
@@ -47,7 +82,7 @@ or affect order authority. FSLY history fallback and the MVLL
 `EMA10_RECLAIM_RVOL20` conflict remain ticker/decision-class local. Event-data
 incompleteness remains an event/strategy gate, not a market-provider failure.
 
-### v2.6.3 Massive-free staged new-buy and integrated Shadow extension
+### v2.6.8 Massive-free staged new-buy and integrated Shadow extension
 
 Run the ordinary v2.5 read-only post-market workflow first. Then, without
 changing its live conclusion or any portfolio/policy fact:
@@ -79,7 +114,7 @@ changing its live conclusion or any portfolio/policy fact:
    summary without exposing account identifiers or treating broker display
    prices as market evidence.
 9. Capture the portfolio hash before and after all work.
-10. Record a v2.6.3 integrated Shadow attempt for both scheduled success and
+10. Record a v2.6.8 integrated Shadow attempt for both scheduled success and
    scheduled failure where possible, classify it, update the append-only cohort
    progress atomically, and generate a due checkpoint.
 
@@ -96,8 +131,10 @@ not count as operational Shadow sessions. No stage auto-promotes. A Web MATCH
 changes only price evidence and cannot approve the instrument, entry rule,
 maximum-loss rule, risk budget, cash, quantity, or order.
 
-Only an actual delivered `Morning Portfolio Strategy` scheduled run from
-committed `main` may count. Configuration, manual smoke, unit tests, pre-open,
+Only an actual delivered `Morning Portfolio Strategy` `POST_MARKET_FINALIZED`
+scheduled run from committed `main`, with validated finalization evidence, may
+count. Configuration, preliminary or legacy generic POST_MARKET, manual smoke,
+unit tests, pre-open,
 historical backfill, unverified delivery, dirty worktrees, hash mismatch, or a
 critical Shadow violation must be logged but excluded. Do not import any prior
 v2.5 session into the new cohort. Do not claim delivery verification or advance
@@ -115,15 +152,16 @@ not be configured or upgraded by this prompt.
    be verified, return grade `F` and stop.
 2. If runtime state already records that session as processed, return a compact
    no-new-alert result. Do not replay the session after a policy migration.
-3. Build one transient snapshot using every available completed daily bar for:
+3. Build one transient snapshot using the session-aware Kiwoom guarded scope
+   for every available completed daily bar for:
    `SOXL`, `MVLL`, `NBIL`, `SOXX`, `MRVL`, `NBIS`, `DRAM`, and `BE`.
-   Use the installed `scripts/build_market_snapshot.py` with
-   `--provider yfinance --request-delay-seconds 1.0`. yfinance is an unofficial
-   Yahoo Finance wrapper, so use it only for raw collection. Request one ticker
-   at a time, keep `threads=False`, `prepost=False`, `auto_adjust=False`, and
-   `repair=False`, and compute every indicator locally. Reuse this one snapshot
-   across validators and the evaluator instead of downloading the same session
-   again.
+   Use the installed Kiwoom read-only Adapter and its dynamic identity resolver
+   for Primary Raw and Adjusted history. Run requests under the approved pacing,
+   bounded retry, single-session lock, and circuit policy. Use yfinance only as
+   diagnostic Shadow or an exact ticker-local fallback; keep `threads=False`,
+   `prepost=False`, `auto_adjust=False`, and `repair=False`. Compute every
+   indicator locally and reuse the canonical snapshots instead of downloading
+   the same session again.
    Require at least 252 completed bars whenever the selected formula or
    validator requires a one-year history. For an inception-limited instrument,
    preserve its verified raw close for a separately approved hard-risk review,

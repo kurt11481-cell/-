@@ -7,7 +7,7 @@
   "required": ["schema_version", "run_phase", "run_id", "analysis_id", "run_type", "generated_at", "analysis_cutoff", "market_session", "code_provenance", "llm_provenance", "input_hashes", "tool_provenance", "result_provenance", "secrets_recorded"],
   "properties": {
     "schema_version": {"const": "1.0"},
-    "run_phase": {"enum": ["POST_MARKET", "PRE_OPEN", "HISTORICAL", "VALIDATION"]},
+    "run_phase": {"enum": ["POST_MARKET_PRELIMINARY", "POST_MARKET", "POST_MARKET_FINALIZED", "PRE_OPEN", "HISTORICAL", "VALIDATION"]},
     "run_id": {"type": "string", "minLength": 1},
     "analysis_id": {"type": "string", "minLength": 1},
     "run_type": {"enum": ["HIGH_CONSEQUENCE_ANALYSIS", "TACTICAL_SHORTLIST", "HISTORICAL_EVALUATION", "LIVE_SHADOW_REVIEW", "VALIDATION_TEST"]},
