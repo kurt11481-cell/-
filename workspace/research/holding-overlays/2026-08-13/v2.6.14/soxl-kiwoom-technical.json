@@ -1,0 +1,74 @@
+{
+  "schema_version": "2.6.14",
+  "market_session": "2026-08-13",
+  "source_snapshot_path": "workspace/outputs/activation/soxl-shadow-activation/20260814T082336Z/kiwoom_market_snapshot.json",
+  "source_snapshot_sha256": "704ccdae98deb589f0dfd103c4176dfe5108031de1cbe392096fba9e9db4d331",
+  "formula_authority": "LOCAL_DETERMINISTIC",
+  "records": {
+    "SOXL": {
+      "status": "KIWOOM_TECHNICAL_VALIDATED",
+      "cutoff": "2026-08-13",
+      "history_rows": 300,
+      "minimum_history_bars": 252,
+      "formula_version": "2026-08-05-ema-atr-v2",
+      "technical_price_basis": "Kiwoom Adjusted OHLC rescaled to latest Kiwoom Raw close",
+      "indicators": {
+        "close": 145.36,
+        "ema10": 135.7300283610588,
+        "ema20": 141.30579509673697,
+        "atr14": 21.435651224372894,
+        "rsi14": 49.31428643323572,
+        "macd": -10.68964192236055,
+        "macd_signal": -15.649292346227403,
+        "rvol20": 0.7143061396348743
+      },
+      "decision_signature": {
+        "ema10_reclaim_confirmed": false,
+        "ema20_reclaim_confirmed": false,
+        "ema20_failed_reclaim_confirmed": false,
+        "decisive_breach_ema20": false,
+        "breakout_confirmed": false,
+        "breakout_acceptance_confirmed": false,
+        "failed_higher_high_confirmed": false,
+        "overheat_rejection_confirmed": false
+      },
+      "validation_errors": [],
+      "future_leakage": false,
+      "order_authority": false
+    },
+    "SOXX": {
+      "status": "KIWOOM_TECHNICAL_VALIDATED",
+      "cutoff": "2026-08-13",
+      "history_rows": 300,
+      "minimum_history_bars": 252,
+      "formula_version": "2026-08-05-ema-atr-v2",
+      "technical_price_basis": "Kiwoom Adjusted OHLC rescaled to latest Kiwoom Raw close",
+      "indicators": {
+        "close": 550.74,
+        "ema10": 535.2738143023154,
+        "ema20": 535.9844407232431,
+        "atr14": 26.013884757193818,
+        "rsi14": 53.14591644801547,
+        "macd": -4.066192776896173,
+        "macd_signal": -9.494108708621411,
+        "rvol20": 0.5613504897197876
+      },
+      "decision_signature": {
+        "ema10_reclaim_confirmed": false,
+        "ema20_reclaim_confirmed": false,
+        "ema20_failed_reclaim_confirmed": false,
+        "decisive_breach_ema20": false,
+        "breakout_confirmed": false,
+        "breakout_acceptance_confirmed": false,
+        "failed_higher_high_confirmed": false,
+        "overheat_rejection_confirmed": false
+      },
+      "validation_errors": [],
+      "future_leakage": false,
+      "order_authority": false
+    }
+  },
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

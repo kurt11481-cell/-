@@ -28,7 +28,6 @@ BUNDLE_PATH = ROOT / "workspace/research/event-evidence/event-risk-2026-08-13-ho
 MANIFEST_PATH = ROOT / "workspace/research/event-evidence/v2.6.13-holding-event-completion-manifest.json"
 LINK_ROOT = ROOT / "workspace/research/baseline-event-links/2026-08-13/v2.6.13"
 PORTFOLIO_PATH = ROOT / "stock-strategy-system/portfolio_state.json"
-ACTIVE_INDEX_PATH = ROOT / "workspace/research/holding-baselines/active-index.json"
 
 
 def _contains_authority_violation(value):
@@ -129,9 +128,15 @@ class HoldingEventCompletionTests(unittest.TestCase):
 
     def test_event_completion_09_active_bundle_and_active_baselines_remain_unchanged(self):
         self.assertEqual(file_hash(BASE_PATH), self.manifest["active_bundle_file_hash"])
-        self.assertEqual(file_hash(ACTIVE_INDEX_PATH), self.manifest["active_baseline_index_hash"])
-        index = load_json(ACTIVE_INDEX_PATH)
-        active_ids = {item["baseline_id"] for item in index["active"].values()}
+        point_in_time_bundle = load_json(BASE_PATH)
+        self.assertEqual(
+            point_in_time_bundle["active_research_baseline_index_hash"].lower(),
+            self.manifest["active_baseline_index_hash"],
+        )
+        active_ids = {
+            item["baseline_id"]
+            for item in point_in_time_bundle["active_research_baselines"]
+        }
         self.assertEqual(active_ids, {"soxl-20260813-v1", "mvll-20260813-v1", "nbis-20260813-v1"})
         self.assertFalse(self.manifest["active_bundle_mutated"])
         self.assertFalse(self.manifest["active_baseline_index_mutated"])

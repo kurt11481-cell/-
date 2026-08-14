@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6.12",
+  "ticker": "SOXL",
+  "baseline_id": "soxl-20260814-v2",
+  "baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+  "activation_session": "2026-08-13",
+  "required_valid_sessions": 5,
+  "observed_sessions": [],
+  "valid_sessions": [],
+  "excluded_sessions": [],
+  "live_shadow_differences": [],
+  "critical_violations": [],
+  "status": "FIRST_OBSERVATION_SESSION_PENDING",
+  "previous_record_hash": null,
+  "record_hash": "17279cf8aa1371cef84372f1cde2bf167532b581f7922b0caa660ab129cb5f63",
+  "order_authority": false
+}
