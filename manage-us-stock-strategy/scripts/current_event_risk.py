@@ -235,8 +235,9 @@ def build_checkpoint(
         "market_session": market_session,
         "analysis_cutoff": bundle["analysis_cutoff"],
         "created_at": created_at,
+        "hash_basis": "CANONICAL_JSON_SHA256",
         "bundle_path": bundle_path.as_posix(),
-        "bundle_hash": file_hash(bundle_path),
+        "bundle_hash": canonical_hash(bundle),
         "bundle_status": bundle["bundle_status"],
         "coverage_status": bundle["coverage_status"],
         "event_data_status": bundle["event_data_status"],
@@ -298,7 +299,7 @@ def main() -> int:
     portfolio_hash = file_hash(args.portfolio_state)
     event_policy_hash = file_hash(args.event_policy)
     baseline_index_hash = file_hash(args.baseline_index)
-    source_evidence_ledger_hash = file_hash(args.source_evidence_ledger)
+    source_evidence_ledger_hash = canonical_hash(load_json(args.source_evidence_ledger))
     if bundle["event_policy_hash"].lower() != event_policy_hash.lower():
         raise SystemExit("EVENT_POLICY_HASH_MISMATCH")
     if bundle["active_research_baseline_index_hash"].lower() != baseline_index_hash.lower():

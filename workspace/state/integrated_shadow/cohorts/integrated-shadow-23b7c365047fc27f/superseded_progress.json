@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "cohort_status": "COHORT_SUPERSEDED",
   "superseded_at": "2026-08-14T11:44:41.3048666+09:00",
-  "superseded_by": "integrated-shadow-2278158bc4aed35d",
+  "superseded_by": "integrated-shadow-8c22e0073e2f2136",
   "reason": "EVENT_COVERAGE_AND_GATE_SEMANTICS_CHANGE",
   "prior_progress": {
     "schema_version": "2.6",

@@ -200,7 +200,11 @@ class CurrentEventRiskTests(unittest.TestCase):
 
     def test_event_20_checkpoint_includes_source_ledger_and_coverage_hashes(self):
         checkpoint = load_json(CHECKPOINT_PATH)
-        self.assertEqual(checkpoint["source_evidence_ledger_hash"], file_hash(ROOT / "workspace/research/event-evidence/v2.6.9-official-source-ledger.json"))
+        self.assertEqual(
+            checkpoint["source_evidence_ledger_hash"],
+            canonical_hash(load_json(ROOT / "workspace/research/event-evidence/v2.6.9-official-source-ledger.json")),
+        )
+        self.assertEqual(checkpoint["bundle_hash"], canonical_hash(self.bundle))
         self.assertEqual(checkpoint["coverage_status"], self.bundle["coverage_status"])
         self.assertEqual(checkpoint["event_count"], len(self.bundle["events"]))
 
@@ -242,11 +246,14 @@ class CurrentEventRiskTests(unittest.TestCase):
             validate_instance(manifest, SCHEMAS / "event-risk-archive-manifest.schema.json"),
             [],
         )
-        self.assertEqual(manifest["bundle_sha256"], file_hash(BUNDLE_PATH))
-        self.assertEqual(manifest["checkpoint_sha256"], file_hash(CHECKPOINT_PATH))
+        checkpoint = load_json(CHECKPOINT_PATH)
+        self.assertEqual(manifest["hash_basis"], "CANONICAL_JSON_SHA256")
+        self.assertEqual(manifest["bundle_sha256"], canonical_hash(self.bundle))
+        self.assertEqual(manifest["checkpoint_sha256"], canonical_hash(checkpoint))
+        self.assertEqual(manifest["checkpoint_record_hash"], checkpoint["record_hash"])
         self.assertEqual(
             manifest["source_evidence_ledger_sha256"],
-            file_hash(ROOT / manifest["source_evidence_ledger_path"]),
+            canonical_hash(load_json(ROOT / manifest["source_evidence_ledger_path"])),
         )
         self.assertEqual(manifest["portfolio_state_sha256"], file_hash(PORTFOLIO_PATH))
         self.assertTrue(manifest["scheduled_task_consumes_bundle"])
