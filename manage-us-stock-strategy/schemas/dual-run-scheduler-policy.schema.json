@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dual-run-scheduler-policy.schema.json",
+  "type": "object",
+  "required": ["schema_version", "policy_version", "timezone", "official_exchange_calendar_required", "runs_per_trading_day", "pre_open", "post_close", "early_close_late_validation_allowed", "early_close_actual_run_must_not_precede_offset", "finalization_retry_minutes_after_close", "finalization_retry_deadline_minutes_after_close", "retry_attempts_share_scheduled_run_id", "delivery_at_most_once", "pre_open_finalized_session_increment", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "timezone": {"const": "America/New_York"},
+    "official_exchange_calendar_required": {"const": true},
+    "runs_per_trading_day": {"const": 2},
+    "pre_open": {"type": "object", "required": ["run_phase", "relative_to", "offset_minutes", "normal_local_time"], "properties": {"run_phase": {"const": "PRE_OPEN_T_MINUS_30"}, "relative_to": {"const": "official_core_open"}, "offset_minutes": {"const": -30}, "normal_local_time": {"const": "09:00"}}, "additionalProperties": false},
+    "post_close": {"type": "object", "required": ["run_phase", "relative_to", "offset_minutes", "normal_local_time"], "properties": {"run_phase": {"const": "REGULAR_CLOSE_T_PLUS_30"}, "relative_to": {"const": "official_core_close"}, "offset_minutes": {"const": 30}, "normal_local_time": {"const": "16:30"}}, "additionalProperties": false},
+    "early_close_late_validation_allowed": {"const": true},
+    "early_close_actual_run_must_not_precede_offset": {"const": true},
+    "finalization_retry_minutes_after_close": {"const": [30, 40, 50, 60]},
+    "finalization_retry_deadline_minutes_after_close": {"const": 60},
+    "retry_attempts_share_scheduled_run_id": {"const": true},
+    "delivery_at_most_once": {"const": true},
+    "pre_open_finalized_session_increment": {"const": 0},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": false
+}

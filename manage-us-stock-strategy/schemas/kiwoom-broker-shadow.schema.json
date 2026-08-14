@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-broker-shadow.schema.json",
+  "type": "object",
+  "required": ["schema_version", "snapshot_role", "status", "generated_at", "broker_snapshot_as_of", "broker_snapshot_age_seconds", "broker_snapshot_freshness_status", "account_identifier_stored", "scope_complete", "operation_statuses", "holdings", "cash", "open_orders", "fills", "realized_pnl", "fill_inference_performed", "portfolio_mutation", "quantity_authority", "order_authority", "snapshot_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "snapshot_role": {"enum": ["PRE_OPEN_BROKER_SNAPSHOT", "POST_CLOSE_BROKER_SNAPSHOT"]},
+    "status": {"const": "KIWOOM_BROKER_SNAPSHOT_SHADOW"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "broker_snapshot_as_of": {"type": "string", "format": "date-time"},
+    "broker_snapshot_age_seconds": {"type": "integer", "minimum": 0},
+    "broker_snapshot_freshness_status": {"enum": ["FRESH", "STALE"]},
+    "account_identifier_stored": {"const": false},
+    "scope_complete": {"type": "boolean"},
+    "operation_statuses": {"type": "object", "additionalProperties": {"type": "string"}},
+    "holdings": {"type": "array", "items": {"type": "object", "required": ["ticker", "settled_quantity", "held_quantity", "available_shares", "average_cost"], "properties": {"ticker": {"type": "string"}, "security_name": {"type": ["string", "null"]}, "currency": {"type": ["string", "null"]}, "settled_quantity": {"type": ["number", "null"]}, "held_quantity": {"type": ["number", "null"]}, "available_shares": {"type": ["number", "null"]}, "average_cost": {"type": ["number", "null"]}}, "additionalProperties": false}},
+    "cash": {"type": "object", "required": ["currency", "foreign_currency_deposit", "withdrawable_cash", "order_available_cash", "settled_available_cash", "cash_status", "unsettled_funds", "projected_proceeds_included", "margin_or_credit_included"], "properties": {"currency": {"const": "USD"}, "foreign_currency_deposit": {"type": ["number", "null"]}, "withdrawable_cash": {"type": ["number", "null"]}, "order_available_cash": {"type": ["number", "null"]}, "settled_available_cash": {"type": ["number", "null"]}, "cash_status": {"enum": ["VERIFIED_ZERO", "VERIFIED_POSITIVE", "UNVERIFIED"]}, "unsettled_funds": {"type": "object"}, "projected_proceeds_included": {"const": false}, "margin_or_credit_included": {"const": false}}, "additionalProperties": false},
+    "open_orders": {"type": "array"},
+    "fills": {"type": "array"},
+    "realized_pnl": {"type": "array"},
+    "fill_inference_performed": {"const": false},
+    "portfolio_mutation": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "snapshot_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,508 @@
+{
+  "schema_version": "2.6.12",
+  "valuation_snapshot_id": "nbis-20260813-valuation-v3",
+  "ticker": "NBIS",
+  "issuer_name": "Nebius Group N.V.",
+  "entity_role": "DIRECT_ISSUER",
+  "analysis_cutoff": "2026-08-14T10:19:15Z",
+  "market_session": "2026-08-13",
+  "price": {
+    "provider": "INFRONT_VIA_NEBIUS_IR",
+    "provider_role": "ORIGINAL_SOURCE_COMPLETED_CLOSE_VALIDATION",
+    "price_basis": "RAW_REGULAR_SESSION_CLOSE",
+    "market_session_type": "REGULAR_COMPLETED",
+    "reported_session": "2026-08-13",
+    "raw_regular_session_close": 255.04,
+    "bar_finalized": true,
+    "original_source_validation_status": "VALIDATED",
+    "yfinance_raw_close": 255.0399932861328,
+    "yfinance_raw_close_status": "MATCH_AFTER_DISPLAY_QUANTIZATION",
+    "comparison_status": "CONFLICT",
+    "price_evidence_id": "nbis-20260813-close-v3",
+    "price_evidence_hash": "7bec5f9819179ffae38bd9e1748ec05a3727a65c66bc851a892591730520f19a",
+    "kiwoom_observation": {
+      "provider": "KIWOOM_REST",
+      "value": 255.84,
+      "source_field": "result_list.cur_prc",
+      "reported_session": "2026-08-13",
+      "market_session_type": "REGULAR_COMPLETED",
+      "quote_type": "REGULAR_SESSION_LAST",
+      "comparable_to_regular_close": true,
+      "disposition": "PRESERVED_SAME_SESSION_CONFLICT",
+      "reason": "KIWOOM_ARTIFACT_ASSERTS_FINALIZED_COMPARABLE_REGULAR_CLOSE_AND_DIFFERS_FROM_TWO_MATCHING_SOURCES",
+      "source_path": "workspace/outputs/activation/holding-valuation-shadow/2026-08-13/session-aware-validation.json",
+      "source_file_sha256": "9b59ca831fa9edacae83cda75c76c253fb49f6b9044d8474bede54457d4aa0e3"
+    }
+  },
+  "capitalization": {
+    "legal_ordinary_shares": {
+      "value": 271.855218,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED"
+    },
+    "economic_basic_shares": {
+      "value": 292.921154,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED"
+    },
+    "gaap_weighted_average_if_converted": {
+      "value": 65.416804,
+      "unit": "SHARES_MILLIONS_WEIGHTED_AVERAGE",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "NOT_POINT_IN_TIME"
+    },
+    "initial_rate_convertible_equivalent": {
+      "value": 66.05688625,
+      "unit": "SHARES_MILLIONS_POINT_IN_TIME_SCENARIO",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "SCENARIO"
+    },
+    "initial_rate_known_gross_stress": {
+      "value": 384.22323825,
+      "unit": "SHARES_MILLIONS_SCENARIO",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "SCENARIO_NOT_FULLY_DILUTED"
+    },
+    "unquantified_tail": [
+      {
+        "item": "TAVILY_EARNOUT",
+        "maximum_usd_millions": 67.3,
+        "settlement": "CASH_OR_CLASS_A_SHARES_AT_COMPANY_ELECTION",
+        "share_count_basis": "FUTURE_VWAP",
+        "status": "UNQUANTIFIED"
+      },
+      {
+        "item": "CONVERTIBLE_MAKE_WHOLE_INCREMENT",
+        "dependency": "FUTURE_EVENT_AND_PRICE_DEPENDENT",
+        "status": "UNQUANTIFIED"
+      }
+    ],
+    "model_version": "nbis-v3-settlement-aware"
+  },
+  "balance_sheet": {
+    "cash": {
+      "value": 8042.1,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "restricted_cash": {
+      "value": 1056.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "nonconvertible_debt": {
+      "value": 46.7,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "convertible_carrying_amount": {
+      "value": 8499.0,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "convertible_accreted_principal": {
+      "value": 10041.8,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "convertible_fair_value": {
+      "value": 20823.7,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "secured_facility_limit": {
+      "value": 775.0,
+      "unit": "USD_MILLIONS_APPROXIMATE",
+      "as_of": "2026-07-10",
+      "source_evidence_id": "nbis-facility-2026",
+      "verification_status": "VERIFIED_APPROXIMATE",
+      "currency": "USD"
+    },
+    "facility_sensitivity": {
+      "limit_usd_millions": 775.0,
+      "draw_usd_millions": null,
+      "cash_retained_usd_millions": null,
+      "cash_spent_usd_millions": null,
+      "fees_usd_millions": null,
+      "net_ev_effect_formula": "draw - retained_cash",
+      "base_case_draw_assumed": false
+    }
+  },
+  "operating_metrics": {
+    "revenue_ltm": {
+      "value": 1355.1,
+      "unit": "USD_MILLIONS_LTM",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "recognized_revenue_run_rate": {
+      "value": 2329.2,
+      "unit": "USD_MILLIONS_ANNUALIZED_Q2_X4",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "LOCAL_Q2_REVENUE_TIMES_FOUR",
+      "currency": "USD"
+    },
+    "gross_profit_ltm": {
+      "value": null,
+      "unit": "USD_MILLIONS_LTM",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "NOT_EVALUATED",
+      "currency": "USD"
+    },
+    "operating_cash_flow_six_months": {
+      "value": 4504.1,
+      "unit": "USD_MILLIONS_SIX_MONTHS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "capex_purchases_six_months": {
+      "value": 8130.3,
+      "unit": "USD_MILLIONS_SIX_MONTHS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "local_ocf_minus_capex_proxy": {
+      "value": -3626.2,
+      "unit": "USD_MILLIONS_SIX_MONTHS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "LOCAL_CALCULATION_NOT_COMPANY_REPORTED_FCF",
+      "currency": "USD"
+    },
+    "reported_free_cash_flow": {
+      "value": null,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "NOT_EVALUATED",
+      "currency": "USD"
+    },
+    "deferred_revenue": {
+      "value": 5975.2,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "remaining_performance_obligations": {
+      "value": 37490.6,
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "future_lease_payments": {
+      "value": 12054.1,
+      "unit": "USD_MILLIONS_UNDISCOUNTED",
+      "as_of": "2026-06-30",
+      "source_evidence_id": "nbis-q2-2026",
+      "verification_status": "VERIFIED",
+      "currency": "USD"
+    },
+    "operating_cash_flow_quality": {
+      "status": "CUSTOMER_ADVANCE_DRIVEN",
+      "recurring_status": "NOT_ESTABLISHED"
+    }
+  },
+  "derived_values": {
+    "scenario_enterprise_values_usd_millions": {
+      "LEGAL_BASIC_CARRYING_DEBT_CASE": 69837.55479872,
+      "ECONOMIC_BASIC_CARRYING_DEBT_CASE": 75210.21111616,
+      "CONVERTIBLE_SHARE_SETTLEMENT_CASE": 83558.35938536,
+      "CONVERTIBLE_CASH_SETTLEMENT_CASE": 76753.01111616,
+      "INITIAL_RATE_KNOWN_GROSS_STRESS_CASE": 89996.89468328
+    },
+    "old_erroneous_stress_ev_reproduction_usd_billions": 99.41451463104,
+    "old_error_formula": "383.583156m*255.84/1000 + 8.5457b + 0.775b - 8.0421b",
+    "old_error_reasons": [
+      "FACILITY_INCLUDED_DESPITE_TEXT_SAYING_NO_DRAW_ASSUMED",
+      "CONVERTIBLE_SHARES_AND_CONVERTIBLE_DEBT_DOUBLE_COUNTED",
+      "GAAP_WEIGHTED_AVERAGE_USED_AS_POINT_IN_TIME"
+    ],
+    "currency": "USD",
+    "unit": "USD_MILLIONS_UNLESS_EXPLICIT"
+  },
+  "valuation_methods": [
+    {
+      "method": "EV_TO_LTM_REVENUE",
+      "status": "EVALUATED",
+      "judgement_authority": "NONE"
+    },
+    {
+      "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+      "status": "EVALUATED",
+      "judgement_authority": "NONE"
+    },
+    {
+      "method": "EV_TO_GROSS_PROFIT",
+      "status": "NOT_EVALUATED",
+      "reason": "GROSS_PROFIT_LTM_NOT_VALIDATED"
+    },
+    {
+      "method": "DCF",
+      "status": "NOT_EVALUATED",
+      "reason": "ASSUMPTION_PROVENANCE_INCOMPLETE"
+    }
+  ],
+  "valuation_scenarios": [
+    {
+      "scenario_id": "LEGAL_BASIC_CARRYING_DEBT_CASE",
+      "scenario_type": "BASIC",
+      "share_basis": 271.855218,
+      "equity_value": 69333.95479872,
+      "enterprise_value": 69837.55479872,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_LTM_REVENUE",
+          "value": 51.53682739186776,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "69.83755479872 / 1.3551"
+        },
+        {
+          "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+          "value": 29.9834942464022,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "69.83755479872 / 2.3292"
+        }
+      ],
+      "assumption_ids": [
+        "LEGAL_ORDINARY_SHARES",
+        "CONVERTIBLE_CARRYING_DEBT"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "units": "USD_BILLIONS_EXCEPT_SHARE_COUNT_MILLIONS_AND_PRICE_USD",
+        "shares_millions": "271.855218",
+        "price_usd": "255.04",
+        "equity_value_billions": "69.33395479872",
+        "debt_billions": "8.5457",
+        "cash_billions": "8.0421",
+        "enterprise_value_billions": "69.83755479872",
+        "formula": "shares_millions * price_usd / 1000 + debt_billions - cash_billions"
+      },
+      "convertible_share_equivalent_included": false,
+      "convertible_debt_included": true
+    },
+    {
+      "scenario_id": "ECONOMIC_BASIC_CARRYING_DEBT_CASE",
+      "scenario_type": "BASE_DILUTED",
+      "share_basis": 292.921154,
+      "equity_value": 74706.61111616,
+      "enterprise_value": 75210.21111616,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_LTM_REVENUE",
+          "value": 55.50159480197772,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "75.21021111616 / 1.3551"
+        },
+        {
+          "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+          "value": 32.290147310733296,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "75.21021111616 / 2.3292"
+        }
+      ],
+      "assumption_ids": [
+        "ECONOMIC_BASIC_INCLUDES_PREFUNDED",
+        "CONVERTIBLE_CARRYING_DEBT"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "units": "USD_BILLIONS_EXCEPT_SHARE_COUNT_MILLIONS_AND_PRICE_USD",
+        "shares_millions": "292.921154",
+        "price_usd": "255.04",
+        "equity_value_billions": "74.70661111616",
+        "debt_billions": "8.5457",
+        "cash_billions": "8.0421",
+        "enterprise_value_billions": "75.21021111616",
+        "formula": "shares_millions * price_usd / 1000 + debt_billions - cash_billions"
+      },
+      "convertible_share_equivalent_included": false,
+      "convertible_debt_included": true
+    },
+    {
+      "scenario_id": "CONVERTIBLE_SHARE_SETTLEMENT_CASE",
+      "scenario_type": "BASE_DILUTED",
+      "share_basis": 358.97804025,
+      "equity_value": 91553.75938536,
+      "enterprise_value": 83558.35938536,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_LTM_REVENUE",
+          "value": 61.662135182171056,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "83.55835938536 / 1.3551"
+        },
+        {
+          "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+          "value": 35.8742741651039,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "83.55835938536 / 2.3292"
+        }
+      ],
+      "assumption_ids": [
+        "INITIAL_RATE_CONVERTIBLE_SHARES",
+        "NO_CONVERTIBLE_DEBT_CLAIM"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "units": "USD_BILLIONS_EXCEPT_SHARE_COUNT_MILLIONS_AND_PRICE_USD",
+        "shares_millions": "358.97804025",
+        "price_usd": "255.04",
+        "equity_value_billions": "91.55375938536",
+        "debt_billions": "0.0467",
+        "cash_billions": "8.0421",
+        "enterprise_value_billions": "83.55835938536",
+        "formula": "shares_millions * price_usd / 1000 + debt_billions - cash_billions"
+      },
+      "convertible_share_equivalent_included": true,
+      "convertible_debt_included": false
+    },
+    {
+      "scenario_id": "CONVERTIBLE_CASH_SETTLEMENT_CASE",
+      "scenario_type": "BASE_DILUTED",
+      "share_basis": 292.921154,
+      "equity_value": 74706.61111616,
+      "enterprise_value": 76753.01111616,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_LTM_REVENUE",
+          "value": 56.64010856479965,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "76.75301111616 / 1.3551"
+        },
+        {
+          "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+          "value": 32.95252065780525,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "76.75301111616 / 2.3292"
+        }
+      ],
+      "assumption_ids": [
+        "NO_CONVERTIBLE_SHARES",
+        "ACCRETED_PRINCIPAL_CASH_CLAIM"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "units": "USD_BILLIONS_EXCEPT_SHARE_COUNT_MILLIONS_AND_PRICE_USD",
+        "shares_millions": "292.921154",
+        "price_usd": "255.04",
+        "equity_value_billions": "74.70661111616",
+        "debt_billions": "10.0885",
+        "cash_billions": "8.0421",
+        "enterprise_value_billions": "76.75301111616",
+        "formula": "shares_millions * price_usd / 1000 + debt_billions - cash_billions"
+      },
+      "convertible_share_equivalent_included": false,
+      "convertible_debt_included": true
+    },
+    {
+      "scenario_id": "INITIAL_RATE_KNOWN_GROSS_STRESS_CASE",
+      "scenario_type": "STRESS_DILUTED",
+      "share_basis": 384.22323825,
+      "equity_value": 97992.29468328,
+      "enterprise_value": 89996.89468328,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_LTM_REVENUE",
+          "value": 66.41347109680467,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "89.99689468328 / 1.3551"
+        },
+        {
+          "method": "EV_TO_RECOGNIZED_REVENUE_RUN_RATE",
+          "value": 38.638543140683495,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "formula": "89.99689468328 / 2.3292"
+        }
+      ],
+      "assumption_ids": [
+        "KNOWN_GROSS_STRESS_NOT_FULLY_DILUTED",
+        "NO_CONVERTIBLE_DEBT_DOUBLE_COUNT"
+      ],
+      "status": "EVALUATED",
+      "formula_trace": {
+        "units": "USD_BILLIONS_EXCEPT_SHARE_COUNT_MILLIONS_AND_PRICE_USD",
+        "shares_millions": "384.22323825",
+        "price_usd": "255.04",
+        "equity_value_billions": "97.99229468328",
+        "debt_billions": "0.0467",
+        "cash_billions": "8.0421",
+        "enterprise_value_billions": "89.99689468328",
+        "formula": "shares_millions * price_usd / 1000 + debt_billions - cash_billions"
+      },
+      "convertible_share_equivalent_included": true,
+      "convertible_debt_included": false
+    }
+  ],
+  "claim_ids": [
+    "nbis-v3-price",
+    "nbis-v3-capital",
+    "nbis-v3-settlement",
+    "nbis-v3-cashflow-quality"
+  ],
+  "evidence_ids": [
+    "nbis-price-v3",
+    "nbis-q2-2026",
+    "nbis-facility-2026"
+  ],
+  "required_missing_inputs": [
+    "SAME_SESSION_RAW_CLOSE_CONFLICT"
+  ],
+  "calculation_formula_version": "nbis-settlement-aware-v3",
+  "staleness_status": "INVALID",
+  "staleness_triggers": [
+    "NEW_SHARE_COUNT_OR_FINANCING_DISCLOSURE",
+    "NEW_COMPLETED_SESSION_PRICE"
+  ],
+  "valuation_evidence_status": "PRICE_EVIDENCE_CONFLICT",
+  "valuation_judgement_status": "UNVERIFIED",
+  "snapshot_hash": "8448cb98975c588c44e7c7ddfcf5c3b47cdcb9d2b94aed5f8b8df1cb32e8b758",
+  "order_authority": false
+}

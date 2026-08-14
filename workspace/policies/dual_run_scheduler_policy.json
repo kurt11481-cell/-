@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-dual-run-session-aware-v1",
+  "timezone": "America/New_York",
+  "official_exchange_calendar_required": true,
+  "runs_per_trading_day": 2,
+  "pre_open": {"run_phase": "PRE_OPEN_T_MINUS_30", "relative_to": "official_core_open", "offset_minutes": -30, "normal_local_time": "09:00"},
+  "post_close": {"run_phase": "REGULAR_CLOSE_T_PLUS_30", "relative_to": "official_core_close", "offset_minutes": 30, "normal_local_time": "16:30"},
+  "early_close_late_validation_allowed": true,
+  "early_close_actual_run_must_not_precede_offset": true,
+  "finalization_retry_minutes_after_close": [30, 40, 50, 60],
+  "finalization_retry_deadline_minutes_after_close": 60,
+  "retry_attempts_share_scheduled_run_id": true,
+  "delivery_at_most_once": true,
+  "pre_open_finalized_session_increment": 0,
+  "quantity_authority": false,
+  "order_authority": false
+}

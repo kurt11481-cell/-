@@ -1,0 +1,122 @@
+{
+  "schema_version": "2.6.12",
+  "review_id": "NBIS-capital-structure-review-2026-08-13-v2",
+  "ticker": "NBIS",
+  "analysis_cutoff": "2026-08-14T09:27:03.7915806Z",
+  "market_session": "2026-08-13",
+  "source_authority": "OFFICIAL_PRIMARY_SOURCES_ONLY",
+  "price_evidence_status": "SAME_SESSION_PRICE_CONFLICT",
+  "capital_structure_status": "SCENARIO_COMPLETE_WITH_UNQUANTIFIED_RESIDUAL_DILUTION",
+  "basic_shares": {
+    "value_millions": 271.855218,
+    "components_millions": {
+      "class_a": 238.400165,
+      "class_b": 33.455053
+    },
+    "as_of": "2026-06-30",
+    "status": "VERIFIED"
+  },
+  "share_class_rights": {
+    "economic_rights": "EQUAL_PER_SHARE_DISTRIBUTIONS_AND_LIQUIDATION",
+    "class_a_votes_per_share": 1,
+    "class_b_votes_per_share": 10,
+    "class_b_conversion": "ONE_CLASS_A_PLUS_ONE_TECHNICAL_CLASS_C_PER_CLASS_B",
+    "status": "VERIFIED"
+  },
+  "base_dilution": {
+    "shares_millions": 292.921154,
+    "components_millions": {
+      "basic_shares": 271.855218,
+      "prefunded_warrant_economic_equivalent": 21.065936
+    },
+    "status": "SCENARIO_VALIDATED_NOT_FULLY_DILUTED_COUNT"
+  },
+  "stress_dilution": {
+    "shares_millions": 383.583156,
+    "components_millions": {
+      "base_dilution": 292.921154,
+      "q2_if_converted_incremental_shares": 65.416804,
+      "options_outstanding": 6.7406,
+      "unvested_rsus": 6.234091,
+      "remaining_atm_capacity": 12.270507
+    },
+    "excluded_unquantified_items": [
+      "TAVILY_EARNOUT_SETTLEABLE_IN_CASH_OR_CLASS_A_SHARES",
+      "CONVERTIBLE_MAKE_WHOLE_AND_ANTIDILUTION_INCREMENT",
+      "OTHER_AWARD_TYPES_NOT_SEPARATELY_QUANTIFIED"
+    ],
+    "status": "KNOWN_QUANTIFIABLE_OVERHANG_FLOOR_NOT_EXACT_FULLY_DILUTED_COUNT"
+  },
+  "double_count_controls": {
+    "eigen_unvested_participating_shares_millions": 2.743655,
+    "eigen_treatment": "NOT_ADDED_AGAIN_TO_LEGAL_OUTSTANDING_SHARE_COUNT",
+    "tavily_replacement_options": "INCLUDED_IN_Q2_OPTIONS_OUTSTANDING_TABLE",
+    "clarifai_rsus": "INCLUDED_IN_Q2_UNVESTED_RSU_TABLE"
+  },
+  "financing": {
+    "convertible_principal_outstanding_usd_millions": 10041.8,
+    "convertible_carrying_amount_usd_millions": 8499.0,
+    "prefunded_warrant_shares_millions": 21.065936,
+    "prefunded_warrant_exercise_price_usd": 0.0001,
+    "remaining_atm_capacity_shares_millions": 12.270507,
+    "secured_facility_capacity_usd_millions": 775.0,
+    "secured_facility_draw_status": "NOT_ASSUMED_FULLY_DRAWN"
+  },
+  "liquidity_and_claims": {
+    "cash_usd_millions": 8042.1,
+    "restricted_cash_usd_millions": 1056.0,
+    "debt_current_usd_millions": 46.7,
+    "debt_noncurrent_usd_millions": 8499.0,
+    "deferred_revenue_usd_millions": 5975.2,
+    "customer_prepayments": "INCLUDED_IN_DEFERRED_REVENUE_NOT_RECOGNIZED_REVENUE"
+  },
+  "cash_flow": {
+    "period": "SIX_MONTHS_ENDED_2026-06-30",
+    "operating_cash_flow_usd_millions": 4504.1,
+    "property_equipment_and_intangibles_purchases_usd_millions": 8130.3,
+    "local_ocf_minus_capex_proxy_usd_millions": -3626.2,
+    "company_reported_free_cash_flow": null,
+    "proxy_is_company_reported_fcf": false
+  },
+  "valuation_denominators": {
+    "ltm_revenue_usd_millions": 1355.1,
+    "ltm_revenue_formula": "FY2025_REVENUE_529.8_MINUS_H1_2025_REVENUE_156.0_PLUS_H1_2026_REVENUE_981.3",
+    "recognized_revenue_run_rate_usd_millions": 2329.2,
+    "run_rate_formula": "Q2_2026_REVENUE_582.3_TIMES_FOUR",
+    "gross_profit_ltm": null,
+    "gross_profit_status": "NOT_EVALUATED_NO_COMPATIBLE_DIRECT_DENOMINATOR",
+    "dcf_status": "NOT_EVALUATED_ASSUMPTION_PROVENANCE_INCOMPLETE"
+  },
+  "sources": [
+    {
+      "evidence_id": "nbis-v2-e1",
+      "source_type": "SEC_ISSUER_FILING_EXHIBIT",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094844/nbis-20260812xex99d2.htm",
+      "supports": "Q2_FINANCIALS_SHARE_COUNTS_DEBT_CASH_DEFERRED_REVENUE_CASH_FLOW_ATM_STOCK_COMPENSATION"
+    },
+    {
+      "evidence_id": "nbis-v2-e6",
+      "source_type": "SEC_ISSUER_FILING",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/tm2620683d1_6k.htm",
+      "supports": "SECURED_FACILITY_CAPACITY_AND_TERMS"
+    },
+    {
+      "evidence_id": "nbis-v2-e8",
+      "source_type": "SEC_ANNUAL_REPORT_AND_SECURITIES_DESCRIPTION",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926052948/nbis-20251231xex2d1.htm",
+      "supports": "CLASS_A_CLASS_B_VOTING_ECONOMIC_AND_CONVERSION_RIGHTS"
+    },
+    {
+      "evidence_id": "nbis-v2-e12",
+      "source_type": "SEC_ANNUAL_REPORT",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926052948/nbis-20251231x20f.htm",
+      "supports": "FY2025_REVENUE_FOR_LTM_DERIVATION"
+    }
+  ],
+  "valuation_evidence_status": "PRICE_EVIDENCE_CONFLICT",
+  "valuation_judgement_status": "UNVERIFIED",
+  "activation_eligible": false,
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

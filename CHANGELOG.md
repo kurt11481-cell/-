@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.6.13 - Holding Event Coverage Completion
+
+- Added a data-only official-source completion ledger and immutable successor
+  event bundle for the exact SOXL, MVLL/MRVL, and NBIS categories required by
+  the version-2 holding-baseline candidates.
+- Distinguished complete source-route coverage from event effect: SOXL and
+  MVLL remain contextual, while verified NBIS and MRVL events retain
+  `EVENT_REVIEW_REQUIRED`.
+- Recorded the unannounced next NBIS earnings date as
+  `NOT_YET_ANNOUNCED_AS_OF_CUTOFF` after checking issuer IR rather than treating
+  it as a missing-source or no-event assertion.
+- Rebuilt four hash-bound candidate baseline-event links while preserving SOXX
+  separation and MRVL's supplemental-only role for MVLL.
+- Added deterministic route-completeness, cutoff, exact-ticker separation,
+  link-hash, ticker-local failure, portfolio-immutability, and recursive
+  no-order-authority tests.
+- Left the locked operational event archive, active baseline index, provider
+  readiness, cohort, live strategy, quantities, portfolio facts, and order
+  authority unchanged.
+
 ## v2.6.12 - Holding Valuation and Shadow Activation Gates
 
 - Added deterministic point-in-time issuer valuation snapshots with separate

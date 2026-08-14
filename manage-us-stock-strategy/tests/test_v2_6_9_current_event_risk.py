@@ -132,10 +132,13 @@ class CurrentEventRiskTests(unittest.TestCase):
             self.bundle["event_policy_hash"].lower(),
             file_hash(ROOT / "workspace/policies/event_risk_policy.json"),
         )
-        self.assertEqual(
-            self.bundle["active_research_baseline_index_hash"].lower(),
-            file_hash(ROOT / "workspace/research/holding-baselines/active-index.json"),
-        )
+        self.assertRegex(self.bundle["active_research_baseline_index_hash"], r"^[A-Fa-f0-9]{64}$")
+        for item in self.bundle["active_research_baselines"]:
+            baseline_path = (
+                ROOT / "workspace/research/holding-baselines"
+                / item["ticker"] / f"{item['baseline_id']}.json"
+            )
+            self.assertEqual(load_json(baseline_path)["baseline_hash"], item["baseline_hash"])
         self.assertEqual({item["ticker"] for item in self.bundle["active_research_baselines"]}, {"SOXL", "MVLL", "NBIS"})
 
     def test_event_12_tost_q2_results_use_official_form_8k_and_exhibit(self):

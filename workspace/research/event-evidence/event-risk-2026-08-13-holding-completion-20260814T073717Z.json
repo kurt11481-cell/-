@@ -1,0 +1,2353 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "event-risk-2026-08-13-holding-completion-20260814T073717Z",
+  "policy_version": "2026-08-11-event-risk-v1",
+  "event_policy_hash": "45A7E4E38F5ACCAD347FE8E1883C106B86F3AE775311B304CC8519ECD26FBE98",
+  "active_research_baseline_index_hash": "C0F7293C10EE70FAF6198FA3C22DABF9BA8A0559E653F4589C001FB0CF3ECE34",
+  "active_research_baselines": [
+    {
+      "ticker": "NBIS",
+      "baseline_id": "nbis-20260813-v1",
+      "baseline_hash": "4c996507d6b04054f0b9e26748017d354a427b71a07f1004a764312f31af554e"
+    },
+    {
+      "ticker": "MVLL",
+      "baseline_id": "mvll-20260813-v1",
+      "baseline_hash": "472d4701a93219216f1be223ac1f21bb92435a6be8b5aa971a7894122f002fb0"
+    },
+    {
+      "ticker": "SOXL",
+      "baseline_id": "soxl-20260813-v1",
+      "baseline_hash": "9291815f1322493baff8224209f2a1278961a1812f534077939c55591cce629b"
+    }
+  ],
+  "market_session": "2026-08-13",
+  "analysis_cutoff": "2026-08-14T07:37:17Z",
+  "generated_at": "2026-08-14T07:37:17Z",
+  "retrieval_mode": "LIVE_FORWARD_CAPTURE",
+  "bundle_status": "EVENT_REVIEW_REQUIRED",
+  "event_data_status": "EVENT_DATA_INCOMPLETE",
+  "universe": {
+    "direct": [
+      "SOXL",
+      "MVLL",
+      "NBIS",
+      "BE",
+      "TOST",
+      "NOW",
+      "FSLY"
+    ],
+    "supplemental": [
+      "SOXX",
+      "MRVL"
+    ]
+  },
+  "ticker_coverage": [
+    {
+      "ticker": "SOXL",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "SOXL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "checked_source_types": [
+        "ETF_SPONSOR",
+        "SEC"
+      ],
+      "missing_fields": [],
+      "event_data_incomplete": false,
+      "notes": [
+        "The sponsor page showed 2026 reverse-split notices for SOXS, not SOXL; this is not evidence that SOXL has no other event.",
+        "Required holding-baseline event categories were checked on official routes as of the successor cutoff; unannounced status is not proof that no event exists."
+      ],
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "category_ids": [
+        "SOXL:CORPORATE_ACTION",
+        "SOXL:ETF_PRODUCT_STRUCTURE"
+      ]
+    },
+    {
+      "ticker": "MVLL",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "MVLL-20260626-3FOR1-FORWARD-SPLIT",
+        "MVLL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "checked_source_types": [
+        "ETF_SPONSOR",
+        "SEC"
+      ],
+      "missing_fields": [],
+      "event_data_incomplete": false,
+      "notes": [
+        "GraniteShares verified MVLL's 3-for-1 forward split with June 24 record date, June 25 payable date, and June 26 effective date.",
+        "MRVL issuer events remain supplemental thesis context and are not MVLL product-structure events.",
+        "Required holding-baseline event categories were checked on official routes as of the successor cutoff; unannounced status is not proof that no event exists."
+      ],
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "category_ids": [
+        "MVLL:CORPORATE_ACTION",
+        "MVLL:ETF_PRODUCT_STRUCTURE"
+      ]
+    },
+    {
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "NBIS-20260311-PREFUNDED-WARRANT",
+        "NBIS-20260316-META-CONTRACT",
+        "NBIS-20260318-CONVERTIBLE-NOTES",
+        "NBIS-20260717-SECURED-FACILITY",
+        "NBIS-20260812-Q2-EARNINGS"
+      ],
+      "checked_source_types": [
+        "EXCHANGE",
+        "ISSUER_IR",
+        "SEC"
+      ],
+      "missing_fields": [],
+      "event_data_incomplete": false,
+      "notes": [
+        "Recent earnings, secured financing, dilution-capable warrant, and a material customer contract require thesis and risk review; none creates an order.",
+        "Required holding-baseline event categories were checked on official routes as of the successor cutoff; unannounced status is not proof that no event exists."
+      ],
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "NBIS:DELISTING_OR_TRADING_HALT",
+        "NBIS:FINANCING_DILUTION",
+        "NBIS:MAJOR_CUSTOMER_OR_CONTRACT",
+        "NBIS:NEXT_EARNINGS",
+        "NBIS:RECENT_EARNINGS",
+        "NBIS:REGULATORY"
+      ]
+    },
+    {
+      "ticker": "BE",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "BE-20260728-Q2-EARNINGS",
+        "BE-20260728-GUIDANCE"
+      ],
+      "checked_source_types": [
+        "ISSUER_IR"
+      ],
+      "missing_fields": [
+        "next_official_earnings_date",
+        "post_earnings_sec_financing_and_dilution_sweep",
+        "current_exchange_halt_or_delisting_notice_sweep"
+      ],
+      "event_data_incomplete": true,
+      "notes": [
+        "The Q2 release and raised guidance are verified; later filing and exchange coverage remains incomplete."
+      ],
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "BE:DELISTING_OR_TRADING_HALT",
+        "BE:FINANCING_DILUTION",
+        "BE:GUIDANCE",
+        "BE:NEXT_EARNINGS",
+        "BE:RECENT_EARNINGS"
+      ]
+    },
+    {
+      "ticker": "TOST",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "TOST-20260721-Q2-SCHEDULE",
+        "TOST-20260804-Q2-EARNINGS"
+      ],
+      "checked_source_types": [
+        "ISSUER_IR"
+      ],
+      "missing_fields": [
+        "next_official_earnings_date",
+        "current_financing_dilution_and_regulatory_sweep"
+      ],
+      "event_data_incomplete": true,
+      "notes": [
+        "The August 4, 2026 Form 8-K and Exhibit 99.1 verify the Q2 2026 results; next-event and financing/regulatory sweeps remain incomplete."
+      ],
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "TOST:FINANCING_DILUTION",
+        "TOST:NEXT_EARNINGS",
+        "TOST:RECENT_EARNINGS"
+      ]
+    },
+    {
+      "ticker": "NOW",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "NOW-20260722-Q2-EARNINGS",
+        "NOW-20260722-GUIDANCE"
+      ],
+      "checked_source_types": [
+        "ISSUER_IR"
+      ],
+      "missing_fields": [
+        "next_official_earnings_date",
+        "current_financing_dilution_and_regulatory_sweep"
+      ],
+      "event_data_incomplete": true,
+      "notes": [
+        "Recent results and raised outlook require the active research baseline to be refreshed before portfolio-changing review."
+      ],
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "NOW:FINANCING_DILUTION",
+        "NOW:GUIDANCE",
+        "NOW:NEXT_EARNINGS",
+        "NOW:RECENT_EARNINGS"
+      ]
+    },
+    {
+      "ticker": "FSLY",
+      "instrument_role": "DIRECT",
+      "event_ids": [
+        "FSLY-20260805-Q2-EARNINGS",
+        "FSLY-20260922-INVESTOR-DAY"
+      ],
+      "checked_source_types": [
+        "ISSUER_IR"
+      ],
+      "missing_fields": [
+        "next_official_earnings_date",
+        "current_financing_dilution_and_regulatory_sweep"
+      ],
+      "event_data_incomplete": true,
+      "notes": [
+        "The exact Q2 2026 release and Investor Supplement are verified separately from the September 22 Investor Day."
+      ],
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "FSLY:FINANCING_DILUTION",
+        "FSLY:INVESTOR_DAY",
+        "FSLY:NEXT_EARNINGS",
+        "FSLY:RECENT_EARNINGS"
+      ]
+    },
+    {
+      "ticker": "SOXX",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_ids": [
+        "SOXX-20260915-EX-DIVIDEND"
+      ],
+      "checked_source_types": [
+        "ETF_SPONSOR"
+      ],
+      "missing_fields": [
+        "current_sponsor_corporate_action_notice_feed",
+        "current_exchange_halt_or_delisting_notice_sweep"
+      ],
+      "event_data_incomplete": true,
+      "notes": [
+        "SOXX events are supplemental index-ETF context only and are not SOXL issuer events."
+      ],
+      "coverage_status": "PARTIAL_NONBLOCKING",
+      "event_effect": "CONTEXT_ONLY",
+      "category_ids": [
+        "SOXX:CORPORATE_ACTION",
+        "SOXX:DELISTING_OR_TRADING_HALT",
+        "SOXX:EX_DIVIDEND"
+      ]
+    },
+    {
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_ids": [
+        "MRVL-20260202-ACQUISITION-EQUITY-OVERHANG",
+        "MRVL-20260311-SERIES-A-CONVERSION-OVERHANG",
+        "MRVL-20260527-CUSTOM-XPU-PROGRAM-UPDATE",
+        "MRVL-20260527-Q1FY27-EARNINGS",
+        "MRVL-20260527-Q2FY27-GUIDANCE",
+        "MRVL-20260827-Q2-EARNINGS",
+        "MRVL-20261006-INVESTOR-DAY"
+      ],
+      "checked_source_types": [
+        "ISSUER_IR",
+        "SEC"
+      ],
+      "missing_fields": [],
+      "event_data_incomplete": false,
+      "notes": [
+        "MRVL earnings are supplemental MVLL thesis context only; they do not substitute for an MVLL product event.",
+        "Required holding-baseline event categories were checked on official routes as of the successor cutoff; unannounced status is not proof that no event exists."
+      ],
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "category_ids": [
+        "MRVL:FINANCING_DILUTION",
+        "MRVL:GUIDANCE",
+        "MRVL:MAJOR_CUSTOMER_OR_CONTRACT",
+        "MRVL:NEXT_EARNINGS",
+        "MRVL:RECENT_EARNINGS"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "BE-20260728-GUIDANCE",
+      "ticker": "BE",
+      "instrument_role": "DIRECT",
+      "event_type": "GUIDANCE",
+      "source_url": "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-28T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-07-28T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "VALUATION_AND_FORWARD_EXPECTATIONS",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "BE"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The same release raised full-year 2026 revenue guidance to $3.9-$4.2 billion.",
+      "claim_ids": [
+        "CLAIM:BE-20260728-GUIDANCE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:BE-20260728-GUIDANCE"
+      ],
+      "record_hash": "0a60fcfefbf79c6acb1b6b11a4341839ab5185575a8546dd4c2df13f9bb2d47c"
+    },
+    {
+      "event_id": "BE-20260728-Q2-EARNINGS",
+      "ticker": "BE",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-28T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-07-28T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_EARNINGS_THESIS_REFRESH",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "BE"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Bloom Energy IR published second-quarter 2026 results dated July 28, 2026.",
+      "claim_ids": [
+        "CLAIM:BE-20260728-Q2-EARNINGS"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:BE-20260728-Q2-EARNINGS"
+      ],
+      "record_hash": "9bd135a66cfd224089f42a93b947a4f670fb9428d4e0349503139787fafe637d"
+    },
+    {
+      "event_id": "FSLY-20260805-Q2-EARNINGS",
+      "ticker": "FSLY",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-second-quarter-2026-financial-results",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-08-05T20:05:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-08-05T20:05:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_EARNINGS_THESIS_REFRESH",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "FSLY"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Fastly's exact Q2 2026 earnings release and separate Investor Supplement are both verified from issuer IR.",
+      "claim_ids": [
+        "FSLY-Q2-2026-RESULTS-RELEASED",
+        "FSLY-Q2-2026-SUPPLEMENT-PUBLISHED"
+      ],
+      "evidence_ids": [
+        "FSLY-IR-Q2-2026-RELEASE",
+        "FSLY-IR-Q2-2026-SUPPLEMENT"
+      ],
+      "record_hash": "70e1aea3a36d1b6185fd57281d8dba4edad6b382f78d3bc3823f70a384b59783"
+    },
+    {
+      "event_id": "FSLY-20260922-INVESTOR-DAY",
+      "ticker": "FSLY",
+      "instrument_role": "DIRECT",
+      "event_type": "INVESTOR_DAY",
+      "source_url": "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-upcoming-investor-day",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-16T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-09-22T17:00:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "MEDIUM",
+      "strategy_relevance": "UPCOMING_MANAGEMENT_DISCLOSURE_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "FSLY"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Fastly IR schedules Investor Day for September 22, 2026 at 1:00 PM EDT.",
+      "claim_ids": [
+        "FSLY-INVESTOR-DAY-SCHEDULED-20260922"
+      ],
+      "evidence_ids": [
+        "FSLY-IR-INVESTOR-DAY-20260922"
+      ],
+      "record_hash": "cdcfc5681220f14d8569f7bcf68bb574541467962608c4b9e4f7ddde627f3b5a"
+    },
+    {
+      "event_id": "GLOBAL-20260812-CPI",
+      "ticker": "GLOBAL",
+      "instrument_role": "GLOBAL",
+      "event_type": "CPI",
+      "source_url": "https://www.bls.gov/schedule/2026/08_sched.htm",
+      "source_type": "GOVERNMENT",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": "2026-08-12T12:30:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_MACRO_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL",
+        "MVLL",
+        "NBIS",
+        "BE",
+        "TOST",
+        "NOW",
+        "FSLY",
+        "SOXX",
+        "MRVL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The BLS August 2026 schedule identifies the July CPI release on August 12 at 08:30 ET.",
+      "claim_ids": [
+        "CLAIM:GLOBAL-20260812-CPI"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:GLOBAL-20260812-CPI"
+      ],
+      "record_hash": "9e3a4b4da299e89fb4d13545711c243ab9f73c0a9b6a6e56d2e4975868500bd2"
+    },
+    {
+      "event_id": "GLOBAL-20260813-PPI",
+      "ticker": "GLOBAL",
+      "instrument_role": "GLOBAL",
+      "event_type": "PPI",
+      "source_url": "https://www.bls.gov/schedule/2026/08_sched.htm",
+      "source_type": "GOVERNMENT",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": "2026-08-13T12:30:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "SAME_SESSION_MACRO_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL",
+        "MVLL",
+        "NBIS",
+        "BE",
+        "TOST",
+        "NOW",
+        "FSLY",
+        "SOXX",
+        "MRVL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The BLS August 2026 schedule identifies the July PPI release on August 13 at 08:30 ET.",
+      "claim_ids": [
+        "CLAIM:GLOBAL-20260813-PPI"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:GLOBAL-20260813-PPI"
+      ],
+      "record_hash": "6d65396edd81c2502ce3cbe143a621909273dda3e7674db54f32b244a4d3f082"
+    },
+    {
+      "event_id": "GLOBAL-20260821-OPEX",
+      "ticker": "GLOBAL",
+      "instrument_role": "GLOBAL",
+      "event_type": "MONTHLY_OPTIONS_EXPIRATION",
+      "source_url": "https://infomemo.theocc.com/infomemos?number=57897",
+      "source_type": "REGULATOR",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": "2026-08-21T23:59:59Z",
+      "effective_at_precision": "SESSION_DATE",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "MEDIUM",
+      "strategy_relevance": "MARKET_STRUCTURE_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL",
+        "MVLL",
+        "NBIS",
+        "BE",
+        "TOST",
+        "NOW",
+        "FSLY",
+        "SOXX",
+        "MRVL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The OCC 2026 expiration schedule lists August monthly options expiration on August 21.",
+      "claim_ids": [
+        "CLAIM:GLOBAL-20260821-OPEX"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:GLOBAL-20260821-OPEX"
+      ],
+      "record_hash": "cdba2c090cf6efb1a01adf71b031d7a9a6fd83a5e312070adb12adfd364c0157"
+    },
+    {
+      "event_id": "GLOBAL-20260826-PCE",
+      "ticker": "GLOBAL",
+      "instrument_role": "GLOBAL",
+      "event_type": "PCE",
+      "source_url": "https://www.bea.gov/index.php/news/schedule/full",
+      "source_type": "GOVERNMENT",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": "2026-08-26T12:30:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "UPCOMING_MACRO_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL",
+        "MVLL",
+        "NBIS",
+        "BE",
+        "TOST",
+        "NOW",
+        "FSLY",
+        "SOXX",
+        "MRVL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The BEA schedule lists Personal Income and Outlays for July 2026 on August 26 at 08:30 ET.",
+      "claim_ids": [
+        "CLAIM:GLOBAL-20260826-PCE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:GLOBAL-20260826-PCE"
+      ],
+      "record_hash": "24174a580c299f55910dd3e8bf32e1ee4554630099a2aef6c17acf3361b80b2f"
+    },
+    {
+      "event_id": "GLOBAL-20260916-FOMC",
+      "ticker": "GLOBAL",
+      "instrument_role": "GLOBAL",
+      "event_type": "FOMC_DECISION",
+      "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "source_type": "GOVERNMENT",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": "2026-09-16T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "UPCOMING_MACRO_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL",
+        "MVLL",
+        "NBIS",
+        "BE",
+        "TOST",
+        "NOW",
+        "FSLY",
+        "SOXX",
+        "MRVL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The Federal Reserve calendar lists a September 15-16, 2026 FOMC meeting; no decision time was inferred.",
+      "claim_ids": [
+        "CLAIM:GLOBAL-20260916-FOMC"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:GLOBAL-20260916-FOMC"
+      ],
+      "record_hash": "33b6e32fc6d24bf25d4f8dee0a3a5a466b26c960ce48e5767b0cd51302fea9dc"
+    },
+    {
+      "event_id": "MRVL-20260202-ACQUISITION-EQUITY-OVERHANG",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "DILUTION",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm",
+      "source_type": "SEC",
+      "published_at": "2026-05-28T12:00:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-02-02T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Acquisition-related shares and contingent equity are supplemental MRVL dilution evidence and not an MVLL close or product event.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell's official quarterly filing discloses acquisition-related equity consideration and contingent overhang.",
+      "claim_ids": [
+        "MRVL-ACQUISITION-EQUITY-OVERHANG-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "MRVL-SEC-Q1FY27-10Q"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "e8a17c93c94cd3d4450238a7862c005ce22b5e37cb9d40eb96c23b1198b12eec"
+    },
+    {
+      "event_id": "MRVL-20260311-SERIES-A-CONVERSION-OVERHANG",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "DILUTION",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm",
+      "source_type": "SEC",
+      "published_at": "2026-03-11T21:00:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": null,
+      "effective_at_precision": "UNKNOWN",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Series A preferred conversion exposure is supplemental dilution evidence for MRVL valuation and not an MVLL product event.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell disclosed Series A preferred terms and conversion exposure in its official annual filing.",
+      "claim_ids": [
+        "MRVL-SERIES-A-CONVERSION-OVERHANG"
+      ],
+      "evidence_ids": [
+        "MRVL-SEC-FY2026-10K"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "391e78324d7f64f21f81b8caf0c47cc9e25c0a7c7120a0eae9977bd06a28eca4"
+    },
+    {
+      "event_id": "MRVL-20260527-CUSTOM-XPU-PROGRAM-UPDATE",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "MAJOR_CUSTOMER_OR_CONTRACT",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-05-27T20:45:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "effective_at_precision": "EXACT",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Custom XPU, networking, and optical program execution is supplemental MRVL thesis evidence for MVLL.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell's official results discuss custom XPU and data-center networking and optical program progress.",
+      "claim_ids": [
+        "MRVL-CUSTOM-XPU-AND-NETWORKING-PROGRAM-UPDATE"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "a30eb08f471306af3a43765a61ea6fc0b245c5d19c9a9dc38d8cefe18ef66246"
+    },
+    {
+      "event_id": "MRVL-20260527-Q1FY27-EARNINGS",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-05-27T20:45:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "effective_at_precision": "EXACT",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "MRVL earnings are supplemental valuation and thesis evidence for MVLL and never replace MVLL product evidence.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell published fiscal 2027 first-quarter results and current operating commentary through issuer IR.",
+      "claim_ids": [
+        "MRVL-Q1FY27-RESULTS-FILED"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "735899ff392321e769d0ffbfc861982c508c5cf4ce14a7e60a8e9d382b4aa996"
+    },
+    {
+      "event_id": "MRVL-20260527-Q2FY27-GUIDANCE",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "GUIDANCE",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-05-27T20:45:00Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "effective_at_precision": "EXACT",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Current issuer guidance affects the supplemental MRVL valuation and counter-thesis review for MVLL.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell provided fiscal 2027 second-quarter guidance in its official first-quarter earnings release.",
+      "claim_ids": [
+        "MRVL-Q2FY27-GUIDANCE-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "04a2bf4317a997212c4bb68d53926c26963ea930886f575d67b7ab25e7da84f2"
+    },
+    {
+      "event_id": "MRVL-20260827-Q2-EARNINGS",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "EARNINGS_SCHEDULE",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1029/marvell-technology-inc-announces-conference-call-to-review-second-quarter-of-fiscal-year-2027-financial-results-announces-investor-day-on-october-6-2026",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-08-03T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-08-27T20:45:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "SUPPLEMENTAL_MVLL_UNDERLYING_EARNINGS_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "Marvell IR announced Q2 FY2027 results and a conference call for August 27, 2026 at 1:45 PM PT.",
+      "claim_ids": [
+        "MRVL-Q2FY27-RESULTS-SCHEDULED-20260827"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q2FY27-AND-INVESTOR-DAY-20260803"
+      ],
+      "record_hash": "8a0dab2d541072aa1648605993a8b80fe8a534d1e48862ea9d511b4c0eab9a00"
+    },
+    {
+      "event_id": "MRVL-20261006-INVESTOR-DAY",
+      "ticker": "MRVL",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "INVESTOR_DAY",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1029/marvell-technology-inc-announces-conference-call-to-review-second-quarter-of-fiscal-year-2027-financial-results-announces-investor-day-on-october-6-2026",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-08-03T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-10-06T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "MEDIUM",
+      "strategy_relevance": "SUPPLEMENTAL_MVLL_UNDERLYING_MANAGEMENT_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "MRVL"
+      ],
+      "supplemental_context_for": [
+        "MVLL"
+      ],
+      "evidence_summary": "The same Marvell announcement schedules Investor Day for October 6, 2026; no event time was inferred.",
+      "claim_ids": [
+        "MRVL-INVESTOR-DAY-SCHEDULED-20261006"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q2FY27-AND-INVESTOR-DAY-20260803"
+      ],
+      "record_hash": "0a33e358c949e1f2a70cb84edbc2d6efd47dbcf6853a703748247d4cfb51e955"
+    },
+    {
+      "ticker": "MVLL",
+      "instrument_role": "DIRECT",
+      "event_type": "ETF_SPLIT_OR_REVERSE_SPLIT",
+      "source_url": "https://graniteshares.com/media/t5cbormv/grsh-etf-trust-20260612-fwd-split-supplement.pdf",
+      "source_type": "ETF_SPONSOR",
+      "published_at": "2026-06-12T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-06-26T23:59:59Z",
+      "effective_at_precision": "SESSION_DATE",
+      "record_at": "2026-06-24T23:59:59Z",
+      "payable_at": "2026-06-25T23:59:59Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "The verified split is required to interpret Raw versus Adjusted history and corporate-action continuity.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "MVLL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "GraniteShares specified a 3-for-1 MVLL forward split: record June 24, payable June 25, effective before market open June 26, 2026.",
+      "event_id": "MVLL-20260626-3FOR1-FORWARD-SPLIT",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "claim_ids": [
+        "MVLL-3FOR1-FORWARD-SPLIT-20260626"
+      ],
+      "evidence_ids": [
+        "MVLL-SPONSOR-SPLIT-SUPPLEMENT-20260612",
+        "MVLL-SPONSOR-SPLIT-PRESS-20260612"
+      ],
+      "record_hash": "70e238da99f5f78bdd3000b550ad88370dc91f99a977b4db05ebf300db9632d1"
+    },
+    {
+      "event_id": "MVLL-20260814-PRODUCT-STRUCTURE",
+      "ticker": "MVLL",
+      "instrument_role": "DIRECT",
+      "event_type": "ETF_PRODUCT_STRUCTURE",
+      "source_url": "https://graniteshares.com/etfs/mvll/",
+      "source_type": "ETF_SPONSOR",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": null,
+      "effective_at_precision": "UNKNOWN",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "MEDIUM",
+      "strategy_relevance": "DIRECT_ETF_PRODUCT_STRUCTURE",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "MVLL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The sponsor identifies MVLL as seeking 2 times the daily percentage change of MRVL and warns against multi-day multiple expectations.",
+      "claim_ids": [
+        "CLAIM:MVLL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:MVLL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "record_hash": "eea94b949b6f7a1a6538442cc2dc7d00252ccc8bac67c0c5cd06c83248f4aa07"
+    },
+    {
+      "event_id": "NBIS-20260311-PREFUNDED-WARRANT",
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_type": "DILUTION",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/tm268532d1_6k.htm",
+      "source_type": "SEC",
+      "published_at": "2026-03-11T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-03-11T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "DILUTION_AND_CAPITAL_STRUCTURE_RISK",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NBIS"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Nebius filed a roughly $2 billion pre-funded warrant for up to 21,065,936 Class A shares, subject to its terms.",
+      "claim_ids": [
+        "CLAIM:NBIS-20260311-PREFUNDED-WARRANT"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NBIS-20260311-PREFUNDED-WARRANT"
+      ],
+      "record_hash": "54185fe29e973f1f9c79f74bde219859f48d2f9e60608f5c39d902c1f2234dfe"
+    },
+    {
+      "event_id": "NBIS-20260316-META-CONTRACT",
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_type": "MAJOR_CUSTOMER_OR_CONTRACT",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/tm268879d1_6k.htm",
+      "source_type": "SEC",
+      "published_at": "2026-03-16T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-03-13T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "CUSTOMER_CONCENTRATION_AND_EXECUTION_THESIS",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NBIS"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Nebius disclosed a Meta infrastructure agreement and initial orders with aggregate potential contract value up to approximately $27 billion.",
+      "claim_ids": [
+        "CLAIM:NBIS-20260316-META-CONTRACT"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NBIS-20260316-META-CONTRACT"
+      ],
+      "record_hash": "66ebaedd23845b6a60b01325c92510986628b576e96263191bb5df667e354428"
+    },
+    {
+      "event_id": "NBIS-20260318-CONVERTIBLE-NOTES",
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_type": "FINANCING",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/0001104659-26-029863.txt",
+      "source_type": "SEC",
+      "published_at": "2026-03-18T11:14:51Z",
+      "published_at_precision": "EXACT",
+      "effective_at": null,
+      "effective_at_precision": "UNKNOWN",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Convertible notes add financing and potential dilution exposure that must remain visible in the NBIS risk thesis.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NBIS"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Nebius disclosed convertible senior-note financing in an official SEC filing.",
+      "claim_ids": [
+        "NBIS-CONVERTIBLE-NOTES-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "NBIS-SEC-CONVERTIBLE-NOTES-20260318"
+      ],
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "first_seen_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "record_hash": "07470220bce9150ea142c8284fb00022c7a3fd46ec7fea936fc97cf9af9948c2"
+    },
+    {
+      "event_id": "NBIS-20260717-SECURED-FACILITY",
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_type": "FINANCING",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/tm2620683d1_6k.htm",
+      "source_type": "SEC",
+      "published_at": "2026-07-17T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-07-10T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "BALANCE_SHEET_AND_LIQUIDITY_RISK",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NBIS"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Nebius filed a Form 6-K describing an approximately $775 million senior secured term-loan facility entered July 10, 2026.",
+      "claim_ids": [
+        "CLAIM:NBIS-20260717-SECURED-FACILITY"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NBIS-20260717-SECURED-FACILITY"
+      ],
+      "record_hash": "e8f3366a4403d3a3f27230f19978349c7df706cbf2ef4c5da4ad387d963abe3a"
+    },
+    {
+      "event_id": "NBIS-20260812-Q2-EARNINGS",
+      "ticker": "NBIS",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://nebius.com/financials",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-08-12T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-08-12T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_EARNINGS_THESIS_REFRESH",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NBIS"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Nebius IR lists Q2 2026 financial results and an earnings release dated August 12, 2026.",
+      "claim_ids": [
+        "CLAIM:NBIS-20260812-Q2-EARNINGS"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NBIS-20260812-Q2-EARNINGS"
+      ],
+      "record_hash": "b7a495620ffb082f189d145dbc1859bc846045541756729170ed75595874458b"
+    },
+    {
+      "event_id": "NOW-20260722-GUIDANCE",
+      "ticker": "NOW",
+      "instrument_role": "DIRECT",
+      "event_type": "GUIDANCE",
+      "source_url": "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-22T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-07-22T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "VALUATION_AND_FORWARD_EXPECTATIONS",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NOW"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The Q2 release states that ServiceNow raised its full-year subscription revenue outlook.",
+      "claim_ids": [
+        "CLAIM:NOW-20260722-GUIDANCE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NOW-20260722-GUIDANCE"
+      ],
+      "record_hash": "08b6c3fa3300c2d9bbcc5642cf1483e21fbe839833c31f64f9525c255de556fb"
+    },
+    {
+      "event_id": "NOW-20260722-Q2-EARNINGS",
+      "ticker": "NOW",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-22T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-07-22T21:00:00Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_EARNINGS_THESIS_REFRESH",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "NOW"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "ServiceNow IR published Q2 2026 results on July 22 and identified the related call time.",
+      "claim_ids": [
+        "CLAIM:NOW-20260722-Q2-EARNINGS"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NOW-20260722-Q2-EARNINGS"
+      ],
+      "record_hash": "eb81d7bd866d805baa2b4f47ec5e4f0a146e4a51abfe49a5cbb75d095168ac12"
+    },
+    {
+      "event_id": "SOXL-20260814-PRODUCT-STRUCTURE",
+      "ticker": "SOXL",
+      "instrument_role": "DIRECT",
+      "event_type": "ETF_PRODUCT_STRUCTURE",
+      "source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+      "source_type": "ETF_SPONSOR",
+      "published_at": null,
+      "published_at_precision": "FIRST_SEEN_AT_CUTOFF",
+      "effective_at": null,
+      "effective_at_precision": "UNKNOWN",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "MEDIUM",
+      "strategy_relevance": "DIRECT_ETF_PRODUCT_STRUCTURE",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXL"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "The sponsor identifies SOXL as a daily +300% semiconductor ETF; listed 2026 reverse-split notices concern SOXS, not SOXL.",
+      "claim_ids": [
+        "CLAIM:SOXL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:SOXL-20260814-PRODUCT-STRUCTURE"
+      ],
+      "record_hash": "46182ec76bfdbd72b4d2c441e4c318650d4ad1ce9fa29c49ce22f57db446c00a"
+    },
+    {
+      "event_id": "SOXX-20260915-EX-DIVIDEND",
+      "ticker": "SOXX",
+      "instrument_role": "SUPPLEMENTAL",
+      "event_type": "EX_DIVIDEND",
+      "source_url": "https://www.ishares.com/us/literature/shareholder-letters/isharesandblackrocketfsdistributionschedule.pdf",
+      "source_type": "ETF_SPONSOR",
+      "published_at": "2026-08-13T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-09-15T23:59:59Z",
+      "effective_at_precision": "SESSION_DATE",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "LOW",
+      "strategy_relevance": "SUPPLEMENTAL_ETF_DISTRIBUTION_CONTEXT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "CONTEXT_ONLY",
+      "applies_to": [
+        "SOXX"
+      ],
+      "supplemental_context_for": [
+        "SOXL"
+      ],
+      "evidence_summary": "The sponsor's 2026 distribution schedule lists SOXX in the quarterly schedule with a September 15 ex-date.",
+      "claim_ids": [
+        "CLAIM:SOXX-20260915-EX-DIVIDEND"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:SOXX-20260915-EX-DIVIDEND"
+      ],
+      "record_hash": "f499697d2184124489099df1715b72a9465e9e25a46746aa5f1b2fb8b81aa3e0"
+    },
+    {
+      "event_id": "TOST-20260721-Q2-SCHEDULE",
+      "ticker": "TOST",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_SCHEDULE",
+      "source_url": "https://investors.toasttab.com/news/default.aspx",
+      "source_type": "ISSUER_IR",
+      "published_at": "2026-07-21T23:59:59Z",
+      "published_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "effective_at": "2026-08-04T23:59:59Z",
+      "effective_at_precision": "DATE_CONSERVATIVE_END_UTC",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "RECENT_EARNINGS_EVENT_WITH_MISSING_RESULT_DOCUMENT",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "TOST"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Toast IR lists a July 21 announcement of the Q2 2026 release date.",
+      "claim_ids": [
+        "CLAIM:TOST-20260721-Q2-SCHEDULE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:TOST-20260721-Q2-SCHEDULE"
+      ],
+      "record_hash": "e60abeebbe7aa444bf02d6f1d08f23f7b79cdc681a87951fa9b922f0cb2ade44"
+    },
+    {
+      "event_id": "TOST-20260804-Q2-EARNINGS",
+      "ticker": "TOST",
+      "instrument_role": "DIRECT",
+      "event_type": "EARNINGS_RELEASE",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260804.htm",
+      "source_type": "SEC",
+      "published_at": "2026-08-04T20:12:21Z",
+      "published_at_precision": "EXACT",
+      "effective_at": "2026-08-04T20:12:21Z",
+      "effective_at_precision": "EXACT",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "first_seen_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "point_in_time_eligible": true,
+      "severity": "HIGH",
+      "strategy_relevance": "Official Q2 2026 results require current thesis and valuation review before portfolio-changing action.",
+      "verification_status": "VERIFIED",
+      "policy_effect": "EVENT_REVIEW_REQUIRED",
+      "applies_to": [
+        "TOST"
+      ],
+      "supplemental_context_for": [],
+      "evidence_summary": "Toast filed Form 8-K accession 0001650164-26-000162 on August 4, 2026 and furnished Exhibit 99.1 with Q2 2026 results.",
+      "claim_ids": [
+        "TOST-Q2-2026-RESULTS-FILED"
+      ],
+      "evidence_ids": [
+        "TOST-SEC-8K-20260804",
+        "TOST-SEC-EX991-Q2-2026"
+      ],
+      "record_hash": "9d21ad21fdf6905c004d328e000f25172dfd84cffcf1a7bd82b043de584fec8b"
+    }
+  ],
+  "provider_readiness_mutated": false,
+  "strategy_state_mutated": false,
+  "quantity_authority": false,
+  "order_authority": false,
+  "category_coverage": [
+    {
+      "category_id": "BE:DELISTING_OR_TRADING_HALT",
+      "ticker": "BE",
+      "event_category": "DELISTING_OR_TRADING_HALT",
+      "required_source_routes": [
+        "REQUIRED:current_exchange_halt_or_delisting_notice_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "a87dd135c8a0baaf0835111d3e9e86ea503479cbc7cbec316ea25040cdbcce0e",
+      "order_authority": false
+    },
+    {
+      "category_id": "BE:FINANCING_DILUTION",
+      "ticker": "BE",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "REQUIRED:post_earnings_sec_financing_and_dilution_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "d7d87b2dfd31ae38844d3dc8ba3869be75bdc133971303f9df461c58b71a7ea1",
+      "order_authority": false
+    },
+    {
+      "category_id": "BE:GUIDANCE",
+      "ticker": "BE",
+      "event_category": "GUIDANCE",
+      "required_source_routes": [
+        "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx"
+      ],
+      "checked_source_routes": [
+        "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx"
+      ],
+      "coverage_start": "2026-07-28T23:59:59Z",
+      "coverage_end": "2026-07-28T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-28T23:59:59Z",
+      "effective_at": "2026-07-28T23:59:59Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:BE-20260728-GUIDANCE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:BE-20260728-GUIDANCE"
+      ],
+      "record_hash": "fe9939ce371c47baa4f5ff48a58a917c4d0911263fbe945c4a64397bed30c04e",
+      "order_authority": false
+    },
+    {
+      "category_id": "BE:NEXT_EARNINGS",
+      "ticker": "BE",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "REQUIRED:next_official_earnings_date"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "eec66c24e1c73b7e120dd1d96332c62a960d189807e6c95e99747cfba558286d",
+      "order_authority": false
+    },
+    {
+      "category_id": "BE:RECENT_EARNINGS",
+      "ticker": "BE",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx"
+      ],
+      "checked_source_routes": [
+        "https://investor.bloomenergy.com/press-releases/press-release-details/2026/Bloom-Energy-Reports-Record-Second-Quarter-2026-Financial-Results-and-Raises-Full-Year-2026-Guidance/default.aspx"
+      ],
+      "coverage_start": "2026-07-28T23:59:59Z",
+      "coverage_end": "2026-07-28T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-28T23:59:59Z",
+      "effective_at": "2026-07-28T23:59:59Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:BE-20260728-Q2-EARNINGS"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:BE-20260728-Q2-EARNINGS"
+      ],
+      "record_hash": "7e2d5c1fbb0d1a9379b87bd1e34b34503c5ff4d2421ebb3ce62fa4bc0e14f452",
+      "order_authority": false
+    },
+    {
+      "category_id": "FSLY:FINANCING_DILUTION",
+      "ticker": "FSLY",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "REQUIRED:current_financing_dilution_and_regulatory_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "a8873106fdf8009fdc3043ce9ed077966b27b88fc4403a9e43326a8d2253743b",
+      "order_authority": false
+    },
+    {
+      "category_id": "FSLY:INVESTOR_DAY",
+      "ticker": "FSLY",
+      "event_category": "INVESTOR_DAY",
+      "required_source_routes": [
+        "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-upcoming-investor-day"
+      ],
+      "checked_source_routes": [
+        "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-upcoming-investor-day"
+      ],
+      "coverage_start": "2026-07-16T23:59:59Z",
+      "coverage_end": "2026-09-22T17:00:00Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-16T23:59:59Z",
+      "effective_at": "2026-09-22T17:00:00Z",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "MEDIUM",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "FSLY-INVESTOR-DAY-SCHEDULED-20260922"
+      ],
+      "evidence_ids": [
+        "FSLY-IR-INVESTOR-DAY-20260922"
+      ],
+      "record_hash": "d0ae8b02b5fce9f7a528cc7e963f4fee905d909671ba35c79887f3138ef0ce06",
+      "order_authority": false
+    },
+    {
+      "category_id": "FSLY:NEXT_EARNINGS",
+      "ticker": "FSLY",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "REQUIRED:next_official_earnings_date"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "a18e3b1b8d406fdbda5dec5562def7659995ac94f02cca53ca41cb9f4cbb0da0",
+      "order_authority": false
+    },
+    {
+      "category_id": "FSLY:RECENT_EARNINGS",
+      "ticker": "FSLY",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-second-quarter-2026-financial-results"
+      ],
+      "checked_source_routes": [
+        "https://investors.fastly.com/news-releases/news-release-details/fastly-announces-second-quarter-2026-financial-results"
+      ],
+      "coverage_start": "2026-08-05T20:05:00Z",
+      "coverage_end": "2026-08-05T20:05:00Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-08-05T20:05:00Z",
+      "effective_at": "2026-08-05T20:05:00Z",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "FSLY-Q2-2026-RESULTS-RELEASED",
+        "FSLY-Q2-2026-SUPPLEMENT-PUBLISHED"
+      ],
+      "evidence_ids": [
+        "FSLY-IR-Q2-2026-RELEASE",
+        "FSLY-IR-Q2-2026-SUPPLEMENT"
+      ],
+      "record_hash": "ccdd2b63e9a05046aedf072c454223d8085f74eb330de66ca59a52c82b92b8be",
+      "order_authority": false
+    },
+    {
+      "category_id": "MRVL:FINANCING_DILUTION",
+      "ticker": "MRVL",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm"
+      ],
+      "checked_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm"
+      ],
+      "coverage_start": "2026-02-02T23:59:59Z",
+      "coverage_end": "2026-05-28T12:00:00Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-05-28T12:00:00Z",
+      "effective_at": "2026-02-02T23:59:59Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MRVL-ACQUISITION-EQUITY-OVERHANG-DISCLOSED",
+        "MRVL-FINANCING-AND-CAPITAL-STRUCTURE-DISCLOSED",
+        "MRVL-SERIES-A-CONVERSION-OVERHANG"
+      ],
+      "evidence_ids": [
+        "MRVL-SEC-FY2026-10K",
+        "MRVL-SEC-Q1FY27-10Q"
+      ],
+      "record_hash": "c71426781da94d8979418e67a430876ec56f2918ba77c2714b98af58ebe2b571",
+      "order_authority": false
+    },
+    {
+      "category_id": "MRVL:GUIDANCE",
+      "ticker": "MRVL",
+      "event_category": "GUIDANCE",
+      "required_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results"
+      ],
+      "checked_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results"
+      ],
+      "coverage_start": "2026-05-27T20:45:00Z",
+      "coverage_end": "2026-05-27T20:45:00Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-05-27T20:45:00Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MRVL-Q2FY27-GUIDANCE-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS"
+      ],
+      "record_hash": "31910da1842b45b27f407b2c9718fc46d39762cc442bdb94f5113e3f854880a9",
+      "order_authority": false
+    },
+    {
+      "category_id": "MRVL:MAJOR_CUSTOMER_OR_CONTRACT",
+      "ticker": "MRVL",
+      "event_category": "MAJOR_CUSTOMER_OR_CONTRACT",
+      "required_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm"
+      ],
+      "checked_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm"
+      ],
+      "coverage_start": "2026-05-27T20:45:00Z",
+      "coverage_end": "2026-05-27T20:45:00Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-05-27T20:45:00Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MRVL-CUSTOM-XPU-AND-NETWORKING-PROGRAM-UPDATE"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS",
+        "MRVL-SEC-FY2026-10K"
+      ],
+      "record_hash": "fbb66b2f089199bb764629a86f46009957777198876d0a5ff332d2f529a10c98",
+      "order_authority": false
+    },
+    {
+      "category_id": "MRVL:NEXT_EARNINGS",
+      "ticker": "MRVL",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1029/marvell-technology-inc-announces-conference-call-to-review-second-quarter-of-fiscal-year-2027-financial-results-announces-investor-day-on-october-6-2026"
+      ],
+      "checked_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1029/marvell-technology-inc-announces-conference-call-to-review-second-quarter-of-fiscal-year-2027-financial-results-announces-investor-day-on-october-6-2026"
+      ],
+      "coverage_start": "2026-08-03T23:59:59Z",
+      "coverage_end": "2026-08-27T20:45:00Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-08-03T23:59:59Z",
+      "effective_at": "2026-08-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MRVL-Q2FY27-RESULTS-SCHEDULED-20260827"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q2FY27-SCHEDULE"
+      ],
+      "record_hash": "99824d0e065c6b8f4a25484d7085dc264c3f65d56e224bbbe00956d79ecf3ad4",
+      "order_authority": false
+    },
+    {
+      "category_id": "MRVL:RECENT_EARNINGS",
+      "ticker": "MRVL",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm"
+      ],
+      "checked_source_routes": [
+        "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+        "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000019/mrvl-20260502.htm"
+      ],
+      "coverage_start": "2026-05-27T20:45:00Z",
+      "coverage_end": "2026-05-28T12:00:00Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-05-28T12:00:00Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MRVL-Q1FY27-RESULTS-FILED"
+      ],
+      "evidence_ids": [
+        "MRVL-IR-Q1FY27-RESULTS",
+        "MRVL-SEC-Q1FY27-10Q"
+      ],
+      "record_hash": "0fdf90c57514a5c9fcf06e3fdf8fe3b92d139d131d44324233cc45c9694269b9",
+      "order_authority": false
+    },
+    {
+      "category_id": "MVLL:CORPORATE_ACTION",
+      "ticker": "MVLL",
+      "event_category": "CORPORATE_ACTION",
+      "required_source_routes": [
+        "https://graniteshares.com/media/t5cbormv/grsh-etf-trust-20260612-fwd-split-supplement.pdf",
+        "https://graniteshares.com/press/graniteshares-announces-forward-splits/"
+      ],
+      "checked_source_routes": [
+        "https://graniteshares.com/media/t5cbormv/grsh-etf-trust-20260612-fwd-split-supplement.pdf",
+        "https://graniteshares.com/press/graniteshares-announces-forward-splits/"
+      ],
+      "coverage_start": "2026-06-12T23:59:59Z",
+      "coverage_end": "2026-06-26T23:59:59Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-06-12T23:59:59Z",
+      "effective_at": "2026-06-26T23:59:59Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MVLL-3FOR1-FORWARD-SPLIT-20260626",
+        "MVLL-SPONSOR-SPLIT-NOTICE"
+      ],
+      "evidence_ids": [
+        "MVLL-SPONSOR-PRESS-SPLIT",
+        "MVLL-SPONSOR-SPLIT-SUPPLEMENT"
+      ],
+      "record_hash": "eed81eff60787c814ff69313f9e182a4348cd3df1a35a1d699434b59f5c86616",
+      "order_authority": false
+    },
+    {
+      "category_id": "MVLL:ETF_PRODUCT_STRUCTURE",
+      "ticker": "MVLL",
+      "event_category": "ETF_PRODUCT_STRUCTURE",
+      "required_source_routes": [
+        "https://graniteshares.com/etfs/mvll/",
+        "https://graniteshares.com/press/",
+        "https://www.sec.gov/cgi-bin/browse-edgar?CIK=0001689873&owner=exclude&action=getcompany&count=100"
+      ],
+      "checked_source_routes": [
+        "https://graniteshares.com/etfs/mvll/",
+        "https://graniteshares.com/press/",
+        "https://www.sec.gov/cgi-bin/browse-edgar?CIK=0001689873&owner=exclude&action=getcompany&count=100"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "MEDIUM",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "MVLL-CURRENT-DAILY-2X-PRODUCT-STRUCTURE",
+        "MVLL-CURRENT-DERIVATIVES-AND-DAILY-RESET-RISK"
+      ],
+      "evidence_ids": [
+        "MVLL-SEC-CURRENT-PRODUCT-FILINGS",
+        "MVLL-SPONSOR-PRESS-NO-LIQUIDATION",
+        "MVLL-SPONSOR-PRODUCT-CURRENT"
+      ],
+      "record_hash": "34128fd654c1ce0b78cb4b8bd8d5e36dba27dce5ed37f2b858cad1aa310ed36d",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:DELISTING_OR_TRADING_HALT",
+      "ticker": "NBIS",
+      "event_category": "DELISTING_OR_TRADING_HALT",
+      "required_source_routes": [
+        "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts"
+      ],
+      "checked_source_routes": [
+        "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "NOT_YET_ANNOUNCED_AS_OF_CUTOFF",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [],
+      "evidence_ids": [
+        "NBIS-NASDAQ-CURRENT-TRADE-HALTS"
+      ],
+      "record_hash": "e8e8f1e620629419c2f1cc4b4f073c0d69abe87b3661c6a57a48dd78d93431dd",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:FINANCING_DILUTION",
+      "ticker": "NBIS",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/0001104659-26-026163.txt",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/0001104659-26-029863.txt",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/0001104659-26-084452.txt"
+      ],
+      "checked_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/0001104659-26-026163.txt",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/0001104659-26-029863.txt",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/0001104659-26-084452.txt"
+      ],
+      "coverage_start": "2026-03-11T12:15:28Z",
+      "coverage_end": "2026-07-17T13:29:13Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-07-17T13:29:13Z",
+      "effective_at": "2026-07-10T23:59:59Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "NBIS-CONVERTIBLE-DILUTION-EXPOSURE",
+        "NBIS-CONVERTIBLE-NOTES-DISCLOSED",
+        "NBIS-PREFUNDED-WARRANT-DILUTION",
+        "NBIS-PREFUNDED-WARRANT-DISCLOSED",
+        "NBIS-SECURED-FACILITY-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "NBIS-SEC-CONVERTIBLE-NOTES-20260318",
+        "NBIS-SEC-PREFUNDED-WARRANT-20260311",
+        "NBIS-SEC-SECURED-FACILITY-20260717"
+      ],
+      "record_hash": "650fd1d5b3da3e466376b09c9ef6d12ab829a07bcaa438a782dfe3cba31d94aa",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:MAJOR_CUSTOMER_OR_CONTRACT",
+      "ticker": "NBIS",
+      "event_category": "MAJOR_CUSTOMER_OR_CONTRACT",
+      "required_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/0001104659-26-027886.txt"
+      ],
+      "checked_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/0001104659-26-027886.txt"
+      ],
+      "coverage_start": "2026-03-13T23:59:59Z",
+      "coverage_end": "2026-03-16T10:18:17Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-03-16T10:18:17Z",
+      "effective_at": "2026-03-13T23:59:59Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "NBIS-META-CONTRACT-DISCLOSED"
+      ],
+      "evidence_ids": [
+        "NBIS-SEC-META-CONTRACT-20260316"
+      ],
+      "record_hash": "8753cf7eb237beedf741fff36ef84cf488a02ff8912345aaa2ca9905a9e79387",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:NEXT_EARNINGS",
+      "ticker": "NBIS",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "https://nebius.com/investor-events"
+      ],
+      "checked_source_routes": [
+        "https://nebius.com/investor-events"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "NOT_YET_ANNOUNCED_AS_OF_CUTOFF",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [],
+      "evidence_ids": [
+        "NBIS-IR-EVENTS-NEXT-EARNINGS"
+      ],
+      "record_hash": "49d58e0ea3a8e6c308b990ae4459bcde7596ce205c4771850b06beb634e93ad7",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:RECENT_EARNINGS",
+      "ticker": "NBIS",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://nebius.com/financials"
+      ],
+      "checked_source_routes": [
+        "https://nebius.com/financials"
+      ],
+      "coverage_start": "2026-08-12T11:58:03Z",
+      "coverage_end": "2026-08-12T11:58:03Z",
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": "2026-08-12T11:58:03Z",
+      "effective_at": "2026-08-12T11:58:03Z",
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "NBIS-Q2-2026-RESULTS-RELEASED"
+      ],
+      "evidence_ids": [
+        "NBIS-IR-FINANCIALS-Q2-2026"
+      ],
+      "record_hash": "9bd10c12f671150206cab9997e10a1412157bc8a4c064e56d351cca69adb0bc2",
+      "order_authority": false
+    },
+    {
+      "category_id": "NBIS:REGULATORY",
+      "ticker": "NBIS",
+      "event_category": "REGULATORY",
+      "required_source_routes": [
+        "https://www.sec.gov/edgar/browse/?CIK=1513845&owner=exclude&action=getcompany"
+      ],
+      "checked_source_routes": [
+        "https://www.sec.gov/edgar/browse/?CIK=1513845&owner=exclude&action=getcompany"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "NOT_YET_ANNOUNCED_AS_OF_CUTOFF",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [],
+      "evidence_ids": [
+        "NBIS-SEC-CURRENT-FILINGS-REGULATORY"
+      ],
+      "record_hash": "800c1de5ad0f772378776b7c2665f591664bab8e8c20caece08b90f7664beb87",
+      "order_authority": false
+    },
+    {
+      "category_id": "NOW:FINANCING_DILUTION",
+      "ticker": "NOW",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "REQUIRED:current_financing_dilution_and_regulatory_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "50424b29ce35dfda5e54a4311fbddad4d81a0e799a8e9f70d72183068f3ec58e",
+      "order_authority": false
+    },
+    {
+      "category_id": "NOW:GUIDANCE",
+      "ticker": "NOW",
+      "event_category": "GUIDANCE",
+      "required_source_routes": [
+        "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx"
+      ],
+      "checked_source_routes": [
+        "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx"
+      ],
+      "coverage_start": "2026-07-22T23:59:59Z",
+      "coverage_end": "2026-07-22T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-22T23:59:59Z",
+      "effective_at": "2026-07-22T23:59:59Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:NOW-20260722-GUIDANCE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NOW-20260722-GUIDANCE"
+      ],
+      "record_hash": "9a96a228cb3c1b8cf294b4f45abf460d19749db58e849d21b1bce4cd4ee6074e",
+      "order_authority": false
+    },
+    {
+      "category_id": "NOW:NEXT_EARNINGS",
+      "ticker": "NOW",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "REQUIRED:next_official_earnings_date"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "51a96eca46e22a7a14a31604174bc7c9e69ffbd4a2536c91097b0509cb3a9104",
+      "order_authority": false
+    },
+    {
+      "category_id": "NOW:RECENT_EARNINGS",
+      "ticker": "NOW",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx"
+      ],
+      "checked_source_routes": [
+        "https://investor.servicenow.com/news/news-details/2026/ServiceNow-Reports-Second-Quarter-2026-Financial-Results/default.aspx"
+      ],
+      "coverage_start": "2026-07-22T21:00:00Z",
+      "coverage_end": "2026-07-22T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-22T23:59:59Z",
+      "effective_at": "2026-07-22T21:00:00Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:NOW-20260722-Q2-EARNINGS"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:NOW-20260722-Q2-EARNINGS"
+      ],
+      "record_hash": "55f9564705be37a66ec4ed52de7d37a5f718ad8b1406feeb7673e23d5ded134b",
+      "order_authority": false
+    },
+    {
+      "category_id": "SOXL:CORPORATE_ACTION",
+      "ticker": "SOXL",
+      "event_category": "CORPORATE_ACTION",
+      "required_source_routes": [
+        "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+        "https://www.sec.gov/Archives/edgar/data/1424958/000119312526078540/d50601d497k.htm"
+      ],
+      "checked_source_routes": [
+        "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+        "https://www.sec.gov/Archives/edgar/data/1424958/000119312526078540/d50601d497k.htm"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "NOT_YET_ANNOUNCED_AS_OF_CUTOFF",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [],
+      "evidence_ids": [
+        "SOXL-SEC-CURRENT-PRODUCT-FILINGS",
+        "SOXL-SPONSOR-PRESS-CURRENT"
+      ],
+      "record_hash": "b01843c616d9ceb11044170d4d8cd981ea9ab675ce53b66f51382f501373eae7",
+      "order_authority": false
+    },
+    {
+      "category_id": "SOXL:ETF_PRODUCT_STRUCTURE",
+      "ticker": "SOXL",
+      "event_category": "ETF_PRODUCT_STRUCTURE",
+      "required_source_routes": [
+        "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+        "https://www.sec.gov/Archives/edgar/data/1424958/000119312526078540/d50601d497k.htm"
+      ],
+      "checked_source_routes": [
+        "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+        "https://www.sec.gov/Archives/edgar/data/1424958/000119312526078540/d50601d497k.htm"
+      ],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T07:37:17Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T07:37:17Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "NOT_YET_ANNOUNCED_AS_OF_CUTOFF",
+      "next_refresh_trigger": "AT_NEW_OFFICIAL_DISCLOSURE_OR_EVENT_EFFECTIVE",
+      "point_in_time_eligible": true,
+      "claim_ids": [],
+      "evidence_ids": [
+        "SOXL-SEC-CURRENT-PRODUCT-FILINGS",
+        "SOXL-SPONSOR-PRESS-CURRENT",
+        "SOXL-SPONSOR-PRODUCT-CURRENT"
+      ],
+      "record_hash": "2a38b69c74848e42aa415b3042a244fbfd96827cbe1ba6ba40362d047b37dfbf",
+      "order_authority": false
+    },
+    {
+      "category_id": "SOXX:CORPORATE_ACTION",
+      "ticker": "SOXX",
+      "event_category": "CORPORATE_ACTION",
+      "required_source_routes": [
+        "REQUIRED:current_sponsor_corporate_action_notice_feed"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_NONBLOCKING",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "a5554e21899a99d8b52502d57759d31d48b44d93dbe0c28d5a275706a39db405",
+      "order_authority": false
+    },
+    {
+      "category_id": "SOXX:DELISTING_OR_TRADING_HALT",
+      "ticker": "SOXX",
+      "event_category": "DELISTING_OR_TRADING_HALT",
+      "required_source_routes": [
+        "REQUIRED:current_exchange_halt_or_delisting_notice_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_NONBLOCKING",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "c8d64ed420a19179086329078d4f20cc2d5580174b2a4fab6187aa3afe54ce89",
+      "order_authority": false
+    },
+    {
+      "category_id": "SOXX:EX_DIVIDEND",
+      "ticker": "SOXX",
+      "event_category": "EX_DIVIDEND",
+      "required_source_routes": [
+        "https://www.ishares.com/us/literature/shareholder-letters/isharesandblackrocketfsdistributionschedule.pdf"
+      ],
+      "checked_source_routes": [
+        "https://www.ishares.com/us/literature/shareholder-letters/isharesandblackrocketfsdistributionschedule.pdf"
+      ],
+      "coverage_start": "2026-08-13T23:59:59Z",
+      "coverage_end": "2026-09-15T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-08-13T23:59:59Z",
+      "effective_at": "2026-09-15T23:59:59Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "LOW",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "CONTEXT_ONLY",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:SOXX-20260915-EX-DIVIDEND"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:SOXX-20260915-EX-DIVIDEND"
+      ],
+      "record_hash": "0aad6b3c9c3f6ee51f5a95b26647fd8f0da504c9f4f6ec28eb51870e18a4c704",
+      "order_authority": false
+    },
+    {
+      "category_id": "TOST:FINANCING_DILUTION",
+      "ticker": "TOST",
+      "event_category": "FINANCING_DILUTION",
+      "required_source_routes": [
+        "REQUIRED:current_financing_dilution_and_regulatory_sweep"
+      ],
+      "checked_source_routes": [],
+      "coverage_start": null,
+      "coverage_end": null,
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": null,
+      "effective_at": null,
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "UNKNOWN",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "SEARCH_INCOMPLETE",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": false,
+      "claim_ids": [],
+      "evidence_ids": [],
+      "record_hash": "05b3e33208408bc6d54bd00a65c7cb3e4ade72be53175042b1b4936b0c497bd7",
+      "order_authority": false
+    },
+    {
+      "category_id": "TOST:NEXT_EARNINGS",
+      "ticker": "TOST",
+      "event_category": "NEXT_EARNINGS",
+      "required_source_routes": [
+        "REQUIRED:next_official_earnings_date",
+        "https://investors.toasttab.com/news/default.aspx"
+      ],
+      "checked_source_routes": [
+        "https://investors.toasttab.com/news/default.aspx"
+      ],
+      "coverage_start": "2026-07-21T23:59:59Z",
+      "coverage_end": "2026-08-04T23:59:59Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-07-21T23:59:59Z",
+      "effective_at": "2026-08-04T23:59:59Z",
+      "retrieved_at": "2026-08-14T01:24:35.982Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "PARTIAL_BLOCKING",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "WHEN_REQUIRED_OFFICIAL_ROUTE_IS_RECHECKED",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "CLAIM:TOST-20260721-Q2-SCHEDULE"
+      ],
+      "evidence_ids": [
+        "EVIDENCE:TOST-20260721-Q2-SCHEDULE"
+      ],
+      "record_hash": "e54d072e3b8e1acf89394303ae9c0570c7c3f84748fcc82e0b174c8779fd3b7a",
+      "order_authority": false
+    },
+    {
+      "category_id": "TOST:RECENT_EARNINGS",
+      "ticker": "TOST",
+      "event_category": "RECENT_EARNINGS",
+      "required_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260804.htm"
+      ],
+      "checked_source_routes": [
+        "https://www.sec.gov/Archives/edgar/data/1650164/000165016426000162/tost-20260804.htm"
+      ],
+      "coverage_start": "2026-08-04T20:12:21Z",
+      "coverage_end": "2026-08-04T20:12:21Z",
+      "last_checked_at": "2026-08-14T02:30:13Z",
+      "published_at": "2026-08-04T20:12:21Z",
+      "effective_at": "2026-08-04T20:12:21Z",
+      "retrieved_at": "2026-08-14T02:30:13Z",
+      "analysis_cutoff": "2026-08-14T07:37:17Z",
+      "materiality": "HIGH",
+      "coverage_status": "COMPLETE_FOR_REQUIRED_CATEGORIES",
+      "event_effect": "EVENT_REVIEW_REQUIRED",
+      "announcement_status": "ANNOUNCED",
+      "next_refresh_trigger": "AT_EVENT_EFFECTIVE_OR_NEW_OFFICIAL_DISCLOSURE",
+      "point_in_time_eligible": true,
+      "claim_ids": [
+        "TOST-Q2-2026-RESULTS-FILED"
+      ],
+      "evidence_ids": [
+        "TOST-SEC-8K-20260804",
+        "TOST-SEC-EX991-Q2-2026"
+      ],
+      "record_hash": "f4ed93ddee1ce4ebeeceed7cde0a3df2c08b832f46ad8397aa3e3448acbb0094",
+      "order_authority": false
+    }
+  ],
+  "coverage_status": "PARTIAL_BLOCKING"
+}

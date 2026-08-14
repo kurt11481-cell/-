@@ -28,8 +28,10 @@
           "bar_finalized": {"type": "boolean"},
           "stable": {"type": "boolean"},
           "regular_close_provider": {"type": "string"},
-          "technical_history_provider": {"type": "string"},
-          "blocked_decision_classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        "technical_history_provider": {"type": "string"},
+        "volume_authority_status": {"type": "string"},
+        "technical_condition_status": {"type": "string"},
+        "blocked_decision_classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
         }
       }
     },

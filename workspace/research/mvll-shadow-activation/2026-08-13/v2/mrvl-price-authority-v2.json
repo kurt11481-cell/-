@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "authority_policy_version": "2026-08-14-kiwoom-execution-primary-v2",
+  "ticker": "MRVL",
+  "security_identity": "MARVELL TECHNOLOGY INC",
+  "canonical_provider": "KIWOOM_REST",
+  "canonical_provider_role": "OPERATIONAL_EXECUTION_PRIMARY",
+  "canonical_price": 222.77,
+  "currency": "USD",
+  "target_session": "2026-08-13",
+  "market_phase": "COMPLETED_DAILY",
+  "price_semantics": "COMPLETED_DAILY_CLOSE",
+  "price_basis": "RAW_REGULAR_SESSION_CLOSE",
+  "source_api_id": "usa06012",
+  "source_endpoint": "/api/us/chart",
+  "source_field": "result_list.cur_prc",
+  "retrieval_timestamp": "2026-08-14T05:11:43.232981+00:00",
+  "retrieval_market_phase": "MARKET_CLOSED_ARCHIVED_DAILY_QUERY",
+  "request_parameters": {
+    "stex_tp": "ND",
+    "stk_cd": "MRVL",
+    "strt_dt": "20260813",
+    "upd_stkpc_tp": "0",
+    "exrt_appl_tp": "0"
+  },
+  "returned_row_date": "2026-08-13",
+  "self_integrity": {
+    "status": "KIWOOM_PRICE_VALIDATED",
+    "blocking": false,
+    "errors": [],
+    "order_authority": false
+  },
+  "price_evidence_status": "VALID",
+  "comparison_status": "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE",
+  "diagnostics": {
+    "yfinance_role": "DIAGNOSTIC_SHADOW",
+    "yfinance_reference_price": 222.17999267578125,
+    "external_reference_role": "EXTERNAL_DIAGNOSTIC_REFERENCE",
+    "external_reference_price": null,
+    "cross_provider_divergence": true,
+    "cross_provider_difference_abs": 0.59000732421875,
+    "cross_provider_difference_fraction": 0.0026555375986519413,
+    "cross_provider_difference_pct": 0.2655537598651941,
+    "divergence_blocking": false,
+    "provider_price_averaged": false
+  },
+  "blocking": false,
+  "generated_at": "2026-08-14T11:46:17.431602Z",
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "evidence_hash": "df4dd8b183dcd39bb56766256d6fcc00a6aefba49cc7e22dcf3306bd4a7fdf3e",
+  "source_provenance": {
+    "kiwoom_snapshot_path": "workspace/outputs/activation/holding-valuation-shadow/2026-08-13/kiwoom-finalized-snapshot.json",
+    "kiwoom_snapshot_sha256": "79aa60bb3b3791fb0dcbd977a0b1df6021a04e0f4f2458123bf543600fc90968",
+    "kiwoom_identity_api_id": "usa10099",
+    "kiwoom_runtime_commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
+    "yfinance_path": "workspace/outputs/portfolio-strategy/2026-08-13/yfinance_replay_evidence.json",
+    "yfinance_sha256": "2b3ef76cb45ce7157c1b6e303fb754dac9ee4644aec58f251984b42d195d34bd",
+    "diagnostic_classification": "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE"
+  }
+}

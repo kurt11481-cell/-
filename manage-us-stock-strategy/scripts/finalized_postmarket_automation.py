@@ -76,13 +76,25 @@ def validate_scoped_provider_limits(provider_policy: dict[str, Any],
         errors.append("FSLY_HISTORY_MERGE_NOT_PROHIBITED")
     if fsly.get("minimum_history_reduction_prohibited") is not True:
         errors.append("FSLY_MINIMUM_HISTORY_REDUCTION_NOT_PROHIBITED")
-    if "EMA10_RECLAIM_RVOL20" not in (mvll.get("blocked_decision_classes") or []):
-        errors.append("MVLL_DECISION_CLASS_BLOCK_MISSING")
+    if mvll.get("volume_primary") != "KIWOOM_VALID_SCOPED":
+        errors.append("MVLL_VOLUME_AUTHORITY_NOT_SCOPED")
+    if mvll.get("volume_decision_class") != "RVOL20":
+        errors.append("MVLL_VOLUME_DECISION_CLASS_MISMATCH")
+    if mvll.get("technical_condition_status") != "RVOL20_NOT_MET":
+        errors.append("MVLL_TECHNICAL_CONDITION_NOT_PRESERVED")
+    if mvll.get("blocked_decision_classes"):
+        errors.append("MVLL_PROVIDER_BLOCK_NOT_CLEARED")
     bars = evidence.get("critical_bars") or {}
     if "FSLY" in bars and bars["FSLY"].get("technical_history_provider") != "YFINANCE_PRIMARY_VALIDATED_FALLBACK":
         errors.append("FSLY_FALLBACK_NOT_APPLIED")
-    if "MVLL" in bars and "EMA10_RECLAIM_RVOL20" not in (bars["MVLL"].get("blocked_decision_classes") or []):
-        errors.append("MVLL_DECISION_CLASS_NOT_ISOLATED")
+    if "MVLL" in bars:
+        mvll_bar = bars["MVLL"]
+        if mvll_bar.get("volume_authority_status") != "KIWOOM_VALID_SCOPED":
+            errors.append("MVLL_VOLUME_AUTHORITY_NOT_APPLIED")
+        if mvll_bar.get("technical_condition_status") != "RVOL20_NOT_MET":
+            errors.append("MVLL_TECHNICAL_CONDITION_NOT_APPLIED")
+        if mvll_bar.get("blocked_decision_classes"):
+            errors.append("MVLL_PROVIDER_BLOCK_NOT_CLEARED_IN_EVIDENCE")
     return list(dict.fromkeys(errors))
 
 

@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "ticker": "NBIS",
+  "security_identity": "Nebius Group N.V. (NASDAQ:NBIS)",
+  "source_page_url": "https://nebius.com/stock-data",
+  "embedded_original_route": "https://charts3.equitystory.com/chart/nebius-v31/English/",
+  "source_provider": "Infront GmbH via Nebius investor page",
+  "retrieved_at": "2026-08-14T10:19:14Z",
+  "visible_text": "NASDAQ:NBIS\nClosed\nAug 13, 2026 ET\nUSD 255.04 USD -4.16 (-1.60%)\nNebius Group N.V. (NASDAQ:NBIS)\nEnd date Thu Aug 13 2026\nData provided by Infront GmbH. Prices at least 15 minutes delayed.",
+  "page_http_status": 200,
+  "page_body_sha256": "bcb69407bc277ed8dccda3c3f6b2b16224097d4039f9c2ed51060980be99d1c4",
+  "embedded_route_http_status": 200,
+  "embedded_route_body_sha256": "7edd7e3de77fad32fded67b2c2ad3b771cd9415e7dadda9e591a42d3b802e968",
+  "untrusted_until_deterministically_validated": true,
+  "order_authority": false
+}

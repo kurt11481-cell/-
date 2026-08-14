@@ -1,0 +1,19 @@
+{
+  "schema_version": "2.6.12",
+  "ticker": "NBIS",
+  "baseline_id": "nbis-20260814-v4",
+  "baseline_hash": "0fa632872c5c0d41bf633bb4081acd06de48d8ff218fa2cc950597bdbececa70",
+  "activation_session": "2026-08-13",
+  "required_valid_sessions": 5,
+  "observed_sessions": [],
+  "valid_sessions": [],
+  "excluded_sessions": [],
+  "live_shadow_differences": [],
+  "critical_violations": [],
+  "status": "FIRST_OBSERVATION_SESSION_PENDING",
+  "previous_record_hash": null,
+  "record_hash": "4f5154d0fc97b2eefa8dbe26f1037106e38a16495347c6bf460bb21e6d4ce306",
+  "order_authority": false,
+  "backfill": false,
+  "historical_sessions": []
+}

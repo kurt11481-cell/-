@@ -4,7 +4,7 @@
   "title": "Integrated Shadow Acceptance Progress",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "cohort_id", "semantic_fingerprint", "started_at", "observed_attempts", "valid_shadow_sessions", "excluded_attempts", "critical_violations", "counted_sessions", "baseline_overlay_sessions", "independent_price_covered_sessions", "missing_expected_sessions", "last_attempt_hash", "checkpoint_status", "promotion_status", "order_authority"],
+  "required": ["schema_version", "cohort_id", "semantic_fingerprint", "started_at", "observed_attempts", "valid_shadow_sessions", "valid_finalized_sessions", "valid_paired_operational_days", "preopen_success_count", "postclose_success_count", "paired_operational_days", "pending_preopen_sessions", "excluded_attempts", "critical_violations", "counted_sessions", "baseline_overlay_sessions", "independent_price_covered_sessions", "missing_expected_sessions", "last_attempt_hash", "checkpoint_status", "promotion_status", "order_authority"],
   "properties": {
     "schema_version": {"const": "2.6"},
     "cohort_id": {"type": "string", "minLength": 1},
@@ -12,6 +12,12 @@
     "started_at": {"type": "string", "format": "date-time"},
     "observed_attempts": {"type": "integer", "minimum": 0},
     "valid_shadow_sessions": {"type": "integer", "minimum": 0},
+    "valid_finalized_sessions": {"type": "integer", "minimum": 0},
+    "valid_paired_operational_days": {"type": "integer", "minimum": 0},
+    "preopen_success_count": {"type": "integer", "minimum": 0},
+    "postclose_success_count": {"type": "integer", "minimum": 0},
+    "paired_operational_days": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
+    "pending_preopen_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
     "excluded_attempts": {"type": "integer", "minimum": 0},
     "critical_violations": {"type": "array", "items": {"type": "string"}},
     "counted_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
@@ -19,7 +25,7 @@
     "independent_price_covered_sessions": {"type": "integer", "minimum": 0},
     "missing_expected_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
     "last_attempt_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
-    "checkpoint_status": {"enum": ["FIRST_VALID_SESSION_PENDING", "TRACKING", "CHECKPOINT_5_REVIEW_REQUIRED", "CHECKPOINT_20_REVIEW_REQUIRED", "CHECKPOINT_60_REVIEW_REQUIRED"]},
+    "checkpoint_status": {"enum": ["FIRST_VALID_SESSION_PENDING", "TRACKING", "CHECKPOINT_1_REVIEW_REQUIRED", "CHECKPOINT_5_REVIEW_REQUIRED", "CHECKPOINT_10_REVIEW_REQUIRED", "CHECKPOINT_20_REVIEW_REQUIRED", "CHECKPOINT_60_REVIEW_REQUIRED"]},
     "promotion_status": {"const": "EXPLICIT_USER_APPROVAL_REQUIRED"},
     "order_authority": {"const": false}
   }

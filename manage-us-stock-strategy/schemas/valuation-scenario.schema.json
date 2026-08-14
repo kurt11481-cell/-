@@ -13,6 +13,9 @@
     "enterprise_value": {"type": ["number", "null"], "minimum": 0},
     "valuation_methods": {"type": "array", "items": {"type": "object"}},
     "assumption_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-    "status": {"enum": ["EVALUATED", "NOT_EVALUATED", "INCOMPLETE"]}
+    "status": {"enum": ["EVALUATED", "NOT_EVALUATED", "INCOMPLETE"]},
+    "formula_trace": {"type": "object"},
+    "convertible_share_equivalent_included": {"type": "boolean"},
+    "convertible_debt_included": {"type": "boolean"}
   }
 }

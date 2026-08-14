@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6.12",
+  "baseline_event_link_id": "nbis-20260814-v4--NBIS--nbis-event-review-20260814-v3",
+  "ticker": "NBIS",
+  "entity_role": "DIRECT_ISSUER",
+  "baseline_id": "nbis-20260814-v4",
+  "baseline_hash": "0fa632872c5c0d41bf633bb4081acd06de48d8ff218fa2cc950597bdbececa70",
+  "event_bundle_id": "nbis-event-review-20260814-v3",
+  "event_bundle_hash": "5bd997855c1b13a570c8efb0e4bb020504d075e3471ab13332c893f1a93fe630",
+  "event_coverage_status": "COMPLETE",
+  "event_effect": "CONTEXT_ONLY",
+  "analysis_cutoff": "2026-08-14T10:19:15Z",
+  "link_created_at": "2026-08-14T11:09:21.868986Z",
+  "link_validation_status": "VALID",
+  "link_hash": "72730270cb893ba5a754280a382386c19bb58fc13bead5efb57db302301c2061",
+  "order_authority": false
+}

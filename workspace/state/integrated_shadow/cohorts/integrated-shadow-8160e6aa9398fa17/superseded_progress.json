@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "cohort_status": "COHORT_SUPERSEDED",
+  "superseded_at": "2026-08-14T14:05:01.294237+00:00",
+  "superseded_by": "integrated-shadow-e033d36d296f9ce2",
+  "reason": "GLOBAL_AUTHORITY_VOLUME_AND_DUAL_RUN_SEMANTICS_CHANGE",
+  "prior_progress": {
+    "schema_version": "2.6",
+    "cohort_id": "integrated-shadow-8160e6aa9398fa17",
+    "semantic_fingerprint": "8160e6aa9398fa171501e0f02bcdd9528b74abf6e6665ad27ad2b03e8bd38735",
+    "started_at": "2026-08-14T14:01:59.545593+00:00",
+    "observed_attempts": 0,
+    "valid_shadow_sessions": 0,
+    "valid_finalized_sessions": 0,
+    "valid_paired_operational_days": 0,
+    "preopen_success_count": 0,
+    "postclose_success_count": 0,
+    "paired_operational_days": [],
+    "pending_preopen_sessions": [],
+    "excluded_attempts": 0,
+    "critical_violations": [],
+    "counted_sessions": [],
+    "baseline_overlay_sessions": {
+      "NBIS": 0,
+      "MVLL": 0,
+      "SOXL": 0
+    },
+    "independent_price_covered_sessions": 0,
+    "missing_expected_sessions": [],
+    "last_attempt_hash": null,
+    "checkpoint_status": "FIRST_VALID_SESSION_PENDING",
+    "promotion_status": "EXPLICIT_USER_APPROVAL_REQUIRED",
+    "order_authority": false
+  },
+  "order_authority": false
+}

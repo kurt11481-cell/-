@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "us-stock-price-authority.schema.json",
+  "title": "Kiwoom Execution-Primary U.S. Stock Price Authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "authority_policy_version", "ticker", "security_identity", "canonical_provider", "canonical_provider_role", "canonical_price", "currency", "target_session", "market_phase", "price_semantics", "price_basis", "source_api_id", "source_endpoint", "source_field", "retrieval_timestamp", "retrieval_market_phase", "request_parameters", "returned_row_date", "self_integrity", "price_evidence_status", "comparison_status", "diagnostics", "source_provenance", "blocking", "generated_at", "quantity", "quantity_authority", "order_authority", "evidence_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "authority_policy_version": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,14}$"},
+    "security_identity": {"type": "string", "minLength": 1},
+    "canonical_provider": {"const": "KIWOOM_REST"},
+    "canonical_provider_role": {"const": "OPERATIONAL_EXECUTION_PRIMARY"},
+    "canonical_price": {"type": "number", "minimum": 0},
+    "currency": {"const": "USD"},
+    "target_session": {"type": "string", "format": "date"},
+    "market_phase": {"enum": ["DAY_MARKET", "PRE_MARKET", "REGULAR", "AFTER_MARKET", "COMPLETED_DAILY", "MARKET_CLOSED", "OVERNIGHT"]},
+    "price_semantics": {"enum": ["CURRENT_PRICE", "DAY_MARKET_CURRENT", "PREMARKET_CURRENT", "REGULAR_CURRENT", "AFTERMARKET_CURRENT", "COMPLETED_DAILY_CLOSE"]},
+    "price_basis": {"type": "string", "minLength": 1},
+    "source_api_id": {"type": "string", "minLength": 1},
+    "source_endpoint": {"type": "string", "minLength": 1},
+    "source_field": {"type": "string", "minLength": 1},
+    "retrieval_timestamp": {"type": "string", "format": "date-time"},
+    "retrieval_market_phase": {"type": "string", "minLength": 1},
+    "request_parameters": {"type": "object"},
+    "returned_row_date": {"type": "string", "format": "date"},
+    "self_integrity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "blocking", "errors", "order_authority"],
+      "properties": {
+        "status": {"const": "KIWOOM_PRICE_VALIDATED"},
+        "blocking": {"const": false},
+        "errors": {"type": "array", "items": {"type": "string"}},
+        "order_authority": {"const": false}
+      }
+    },
+    "price_evidence_status": {"const": "VALID"},
+    "comparison_status": {"enum": ["CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE", "DIAGNOSTIC_MATCH"]},
+    "diagnostics": {"type": "object"},
+    "source_provenance": {"type": "object"},
+    "blocking": {"const": false},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "evidence_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

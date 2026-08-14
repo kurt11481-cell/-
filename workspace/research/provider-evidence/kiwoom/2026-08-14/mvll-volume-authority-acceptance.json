@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "ticker": "MVLL",
+  "data_class": "DAILY_VOLUME",
+  "decision_class": "RVOL20",
+  "market_session": "2026-08-13",
+  "acceptance_status": "VALID",
+  "volume_authority_status": "KIWOOM_VALID_SCOPED",
+  "technical_condition_status": "RVOL20_NOT_MET",
+  "kiwoom_rvol20": 0.8924874478089728,
+  "yfinance_rvol20": 0.8657542447522418,
+  "threshold": 1.0,
+  "same_session_window": true,
+  "volume_semantics": "SESSION_AGGREGATED_DAILY_VOLUME_AS_REPORTED_BY_KIWOOM_USA06012",
+  "identity_status": "VERIFIED",
+  "missing_bar_count": 0,
+  "duplicate_session_count": 0,
+  "raw_adjusted_volume_match": true,
+  "corporate_action_status": "NO_UNRESOLVED_ACTION",
+  "source_artifacts": {
+    "kiwoom": "79aa60bb3b3791fb0dcbd977a0b1df6021a04e0f4f2458123bf543600fc90968",
+    "yfinance": "327c108c2203ecb4058b74a813253cce35dfd23162ebc95ec9b474c7726bc0d3",
+    "policy": "adc07e001071d072e4b54e607debfd9b9d3b2851e0715e2e7cbb016822d054ef",
+    "alert_policy": "8b2bcc9d0204f36f63d2851d771a17cfb6eb3483a5eb7e2297560a86d77909c4"
+  },
+  "diagnostic_divergence": 0.026733203056730992,
+  "blocking": false,
+  "volume_averaged": false,
+  "record_hash": "ab1e99660f5b19a0dd8d8d5c4471d5f84b9285b6d8dabd76fb7006acab86027f",
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "2.6.13",
+  "manifest_id": "event-risk-2026-08-13-holding-completion-20260814T073717Z--manifest",
+  "market_session": "2026-08-13",
+  "analysis_cutoff": "2026-08-14T07:37:17Z",
+  "change_classification": "DATA_ONLY",
+  "active_bundle_id": "event-risk-2026-08-13-cutoff-20260814T012435982Z",
+  "active_bundle_file_hash": "87a921f10d80649b34462e92acd8d8e2209d74e6a4a32233e82256747207cce8",
+  "successor_bundle_id": "event-risk-2026-08-13-holding-completion-20260814T073717Z",
+  "successor_bundle_path": "workspace/research/event-evidence/event-risk-2026-08-13-holding-completion-20260814T073717Z.json",
+  "successor_bundle_file_hash": "4d059774c3401b44a890ee36ffa35959b3630d9b077483bdeb5842605565c67d",
+  "successor_bundle_canonical_hash": "d71ff5d1cbf80a98114ce4bd382f952bfa98688228ac0c7aaab9de427b907f88",
+  "source_ledger_path": "workspace/research/event-evidence/v2.6.13-holding-event-completion-ledger.json",
+  "source_ledger_canonical_hash": "52743d0c1a72ad3e9d8fcf350742c29fa25d89e57f4e900c835d341b776b3713",
+  "baseline_event_links": [
+    {
+      "ticker": "MRVL",
+      "baseline_id": "mvll-20260814-v2",
+      "path": "workspace/research/baseline-event-links/2026-08-13/v2.6.13/mrvl-underlying-event-link.json",
+      "file_hash": "66b0dda67626655775a2f32298b11f17ecce3d9b857965557aedb9167326bbdb",
+      "link_hash": "f51ee4ad5aab6498c4efc07ccfa72b3a5cb75e7ccc0f7758b6190aaa15b064f4",
+      "validation_status": "PASSED"
+    },
+    {
+      "ticker": "MVLL",
+      "baseline_id": "mvll-20260814-v2",
+      "path": "workspace/research/baseline-event-links/2026-08-13/v2.6.13/mvll-product-event-link.json",
+      "file_hash": "89769546c3c832efaf9c65f29737ae55a6a2594d851c3bb969669f639d4eebc6",
+      "link_hash": "d499b619dbb6a44d5b220f250522211a567092ce2bb425562de304bf82c68984",
+      "validation_status": "PASSED"
+    },
+    {
+      "ticker": "NBIS",
+      "baseline_id": "nbis-20260814-v2",
+      "path": "workspace/research/baseline-event-links/2026-08-13/v2.6.13/nbis-issuer-event-link.json",
+      "file_hash": "51c3ac9f12fa7bcc1ed1ce6c06493a9b9a0fab62a221f497962804cd8c1e6d31",
+      "link_hash": "5b9ffaf150ac50260f27db6bbe28bf6f3c7388997dfd3b48ab3419a35767ef47",
+      "validation_status": "PASSED"
+    },
+    {
+      "ticker": "SOXL",
+      "baseline_id": "soxl-20260814-v2",
+      "path": "workspace/research/baseline-event-links/2026-08-13/v2.6.13/soxl-product-event-link.json",
+      "file_hash": "665eb410f538e9a07635d4dcf37fcb7d0f05fe054298dac5f8169290f65ced67",
+      "link_hash": "e87f33658947e55485015f12d1b44f398b00367b8d39356b70122f83b290e74b",
+      "validation_status": "PASSED"
+    }
+  ],
+  "active_baseline_index_hash": "c0f7293c10ee70faf6198fa3c22dabf9ba8a0559e653f4589c001fb0cf3ece34",
+  "active_bundle_mutated": false,
+  "active_baseline_index_mutated": false,
+  "portfolio_state_hash_before": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "portfolio_state_hash_after": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "portfolio_mutated": false,
+  "provider_readiness_mutated": false,
+  "strategy_state_mutated": false,
+  "baseline_activation_mutated": false,
+  "quantity_authority": false,
+  "order_authority": false
+}

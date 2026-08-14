@@ -19,6 +19,8 @@
     "critical_violations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "status": {"enum": ["FIRST_OBSERVATION_SESSION_PENDING", "OBSERVING", "FIVE_SESSION_REVIEW_REQUIRED", "CRITICAL_VIOLATION"]},
     "previous_record_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "backfill": {"type": "boolean"},
+    "historical_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
     "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "order_authority": {"const": false}
   }

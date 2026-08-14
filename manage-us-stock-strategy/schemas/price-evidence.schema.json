@@ -16,6 +16,6 @@
     "crosscheck_method": {"enum": ["NONE", "CODEX_WEB", "STRUCTURED_API"]},
     "evidence_validation_status": {"enum": ["NOT_REQUIRED", "PENDING", "VALIDATED", "REJECTED"]},
     "comparison_status": {"enum": ["NOT_EVALUATED", "MATCH", "PRICE_BASIS_MISMATCH", "SESSION_MISMATCH", "CURRENCY_MISMATCH", "IDENTITY_MISMATCH", "DECISION_BOUNDARY_FLIP", "CONFLICT"]},
-    "effective_price_status": {"enum": ["PRIMARY_VALIDATED", "INDEPENDENT_VERIFIED", "PRICE_CONFLICT", "DATA_BLOCKED"]}
+    "effective_price_status": {"enum": ["PRIMARY_VALIDATED", "INDEPENDENT_VERIFIED", "KIWOOM_CANONICAL_COMPLETED_CLOSE", "PRICE_CONFLICT", "DATA_BLOCKED"]}
   }
 }

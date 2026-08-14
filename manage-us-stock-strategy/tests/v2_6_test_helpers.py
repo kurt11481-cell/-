@@ -121,7 +121,9 @@ def valid_scheduled_attempt(**overrides: Any) -> dict[str, Any]:
                 "YFINANCE_PRIMARY_VALIDATED_FALLBACK" if ticker == "FSLY"
                 else "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC"
             ),
-            "blocked_decision_classes": ["EMA10_RECLAIM_RVOL20"] if ticker == "MVLL" else [],
+            "blocked_decision_classes": [],
+            "volume_authority_status": "KIWOOM_VALID_SCOPED" if ticker == "MVLL" else "NOT_APPLICABLE",
+            "technical_condition_status": "RVOL20_NOT_MET" if ticker == "MVLL" else "NOT_EVALUATED",
         }
         for ticker in ("SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY")
     }

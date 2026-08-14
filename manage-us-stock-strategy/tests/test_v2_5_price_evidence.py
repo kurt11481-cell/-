@@ -156,6 +156,47 @@ class V25PriceEvidenceTests(unittest.TestCase):
         mismatch = self.evidence(source_domain="other.example")
         self.assertIn("SOURCE_DOMAIN_URL_MISMATCH", validate_web_evidence(mismatch))
 
+    def test_stage0_kiwoom_conflict_is_diagnostic_not_blocking(self):
+        row = self.row(cross={"status": "conflict"})
+        row.update({"provider": "KIWOOM_REST", "provider_role": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED"})
+        result = evidence_status(row, "2026-08-11", "READY")
+        self.assertEqual(result["effective_price_status"], "KIWOOM_CANONICAL_COMPLETED_CLOSE")
+        self.assertEqual(result["cross_provider_diagnostic_status"], "CROSS_PROVIDER_DIAGNOSTIC_DIVERGENCE")
+        self.assertFalse(result["divergence_blocking"])
+        self.assertFalse(result["provider_price_averaged"])
+
+    def test_stage0_radar_preserves_kiwoom_ready_on_diagnostic_divergence(self):
+        market = self.market(cross={"status": "conflict"})
+        for row in market["symbols"].values():
+            row.update({"provider": "KIWOOM_REST", "provider_role": "KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED"})
+        candidates = {}
+        for symbol in ACTIVE_SYMBOLS:
+            validated = symbol == "MVLL"
+            candidates[symbol] = {
+                "validation": {"status": "VALIDATED" if validated else "UNVALIDATED",
+                               "evidence_packet_validated": validated,
+                               "deterministic_gate_status": "PASS" if validated else "NOT_RUN",
+                               "risk_controller_status": "ALLOW_REVIEW" if validated else "NOT_RUN"},
+                "thesis_status": "STRONG" if validated else "UNVERIFIED",
+                "valuation_status": "FAIR" if validated else "UNVERIFIED",
+                "technical_status": "READY" if validated else "WATCH",
+                "risk_liquidity_status": "ACCEPTABLE" if validated else "CONSTRAINED",
+                "portfolio_fit_status": "FITS" if validated else "UNVERIFIED",
+                "remaining_conditions": [], "next_review_trigger": "NEXT_COMPLETED_US_SESSION"}
+        runtime = {"schema_version": "1.0", "policy_version": self.radar_policy["policy_version"],
+                   "last_processed_us_session": None, "last_run_at": None, "candidates": {},
+                   "deliveries": {}, "order_authority": False}
+        report, _ = build_radar(
+            self.universe, self.registry, self.registry_validation, market,
+            {"coverage_status": "COMPLETE", "events": []},
+            {"candidates": candidates, "deep_research_results": {}},
+            {"available_cash_usd": 0}, runtime, self.radar_policy,
+            generated_at="2026-08-12T00:45:00+00:00", analysis_cutoff="2026-08-12T00:44:00+00:00",
+            market_session="2026-08-11", latest_completed_session="2026-08-11")
+        item = report["candidate_dispositions"][0]
+        self.assertEqual(item["opportunity_state"], "READY")
+        self.assertNotEqual(item["execution_state"], "DATA_BLOCKED")
+
 
 if __name__ == "__main__":
     unittest.main()

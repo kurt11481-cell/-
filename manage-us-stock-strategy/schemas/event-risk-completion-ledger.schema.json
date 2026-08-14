@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-risk-completion-ledger.schema.json",
+  "title": "Holding baseline event coverage completion ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ledger_id",
+    "base_bundle_id",
+    "base_bundle_file_hash",
+    "successor_bundle_id",
+    "market_session",
+    "analysis_cutoff",
+    "checked_at",
+    "change_classification",
+    "evidence_routes",
+    "required_category_checks",
+    "event_additions",
+    "link_targets",
+    "provider_readiness_mutated",
+    "strategy_state_mutated",
+    "baseline_activation_mutated",
+    "quantity_authority",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "2.6.13"},
+    "ledger_id": {"type": "string", "minLength": 1},
+    "base_bundle_id": {"type": "string", "minLength": 1},
+    "base_bundle_file_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "successor_bundle_id": {"type": "string", "minLength": 1},
+    "market_session": {"type": "string", "format": "date"},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "change_classification": {"const": "DATA_ONLY"},
+    "evidence_routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id", "ticker", "source_url", "source_type", "checked_at",
+          "route_result", "verification_status"
+        ],
+        "properties": {
+          "evidence_id": {"type": "string", "minLength": 1},
+          "ticker": {"enum": ["SOXL", "MVLL", "NBIS", "MRVL"]},
+          "source_url": {"type": "string", "format": "uri"},
+          "source_type": {"enum": ["SEC", "ISSUER_IR", "ETF_SPONSOR", "EXCHANGE", "REGULATOR"]},
+          "checked_at": {"type": "string", "format": "date-time"},
+          "route_result": {"enum": ["EVENT_VERIFIED", "ROUTE_CHECKED_NO_ANNOUNCEMENT", "CURRENT_STRUCTURE_VERIFIED"]},
+          "verification_status": {"const": "VERIFIED"}
+        }
+      }
+    },
+    "required_category_checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category_id", "ticker", "required_category", "bundle_event_category",
+          "required_source_route_ids", "checked_source_route_ids", "coverage_status",
+          "event_effect", "announcement_status", "published_at", "effective_at",
+          "materiality", "next_refresh_trigger", "point_in_time_eligible", "claim_ids",
+          "evidence_ids", "order_authority"
+        ],
+        "properties": {
+          "category_id": {"type": "string", "minLength": 1},
+          "ticker": {"enum": ["SOXL", "MVLL", "NBIS", "MRVL"]},
+          "required_category": {
+            "enum": [
+              "LATEST_EARNINGS", "NEXT_OFFICIALLY_ANNOUNCED_EARNINGS", "FINANCING",
+              "DILUTION", "WARRANTS", "CONVERTIBLE_INSTRUMENTS", "MATERIAL_CONTRACTS",
+              "TRADING_HALT_OR_LISTING_ISSUE", "REGULATORY_ISSUE", "SPONSOR_NOTICE",
+              "SPLIT_OR_REVERSE_SPLIT", "PRODUCT_STRUCTURE_CHANGE",
+              "LIQUIDATION_OR_TERMINATION", "MATERIAL_TRACKING_OR_DERIVATIVES_NOTICE",
+              "GUIDANCE", "PREFERRED_OR_SERIES_A_CONVERSION",
+              "ACQUISITION_RELATED_EQUITY_OVERHANG", "MATERIAL_CUSTOMER_PROGRAM_EVENT",
+              "INDEX_OR_METHODOLOGY_CHANGE", "PRODUCT_LIQUIDATION_OR_STRUCTURE_CHANGE"
+            ]
+          },
+          "bundle_event_category": {
+            "enum": [
+              "RECENT_EARNINGS", "NEXT_EARNINGS", "GUIDANCE", "FINANCING_DILUTION",
+              "MAJOR_CUSTOMER_OR_CONTRACT", "CORPORATE_ACTION", "ETF_PRODUCT_STRUCTURE",
+              "DELISTING_OR_TRADING_HALT", "REGULATORY"
+            ]
+          },
+          "required_source_route_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "checked_source_route_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "coverage_status": {"const": "COMPLETE_FOR_REQUIRED_CATEGORIES"},
+          "event_effect": {"enum": ["CONTEXT_ONLY", "WAIT_REQUIRED", "EVENT_REVIEW_REQUIRED"]},
+          "announcement_status": {"enum": ["ANNOUNCED", "NOT_YET_ANNOUNCED_AS_OF_CUTOFF"]},
+          "published_at": {"type": ["string", "null"], "format": "date-time"},
+          "effective_at": {"type": ["string", "null"], "format": "date-time"},
+          "materiality": {"enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL", "UNKNOWN"]},
+          "next_refresh_trigger": {"type": "string", "minLength": 1},
+          "point_in_time_eligible": {"const": true},
+          "claim_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "order_authority": {"const": false}
+        }
+      }
+    },
+    "event_additions": {"type": "array", "items": {"type": "object"}},
+    "link_targets": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "entity_role", "baseline_path", "baseline_id", "output_name"],
+        "properties": {
+          "ticker": {"enum": ["SOXL", "MVLL", "NBIS", "MRVL"]},
+          "entity_role": {"enum": ["DIRECT_PRODUCT", "DIRECT_ISSUER", "SUPPLEMENTAL_UNDERLYING"]},
+          "baseline_path": {"type": "string", "minLength": 1},
+          "baseline_id": {"type": "string", "minLength": 1},
+          "output_name": {"type": "string", "pattern": "^[a-z0-9-]+\\.json$"}
+        }
+      }
+    },
+    "provider_readiness_mutated": {"const": false},
+    "strategy_state_mutated": {"const": false},
+    "baseline_activation_mutated": {"const": false},
+    "quantity_authority": {"const": false},
+    "order_authority": {"const": false}
+  }
+}

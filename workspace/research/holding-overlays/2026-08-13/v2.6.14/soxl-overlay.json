@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.6",
+  "ticker": "SOXL",
+  "market_session": "2026-08-13",
+  "primary_price_status": "VALIDATED",
+  "independent_price_status": "NOT_REQUIRED",
+  "technical_status": "WATCH",
+  "event_risk_status": "KNOWN_EVENT",
+  "hard_risk_observation": "NO_PRIMARY_BREACH",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "cash_status": "VERIFIED_ZERO",
+  "broker_snapshot_status": "VERIFIED",
+  "leveraged_confirmation_status": "ALIGNED",
+  "active_timing_tranche": null,
+  "rearm_status": "OBSERVATION_ONLY",
+  "portfolio_state_revision": 13,
+  "deterministic_existing_policy": null,
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "overlay_hash": "f5bf396b5e6e419c23785e6c10e6a6a459fb07d7750c182cb598f35e0fbdde6e"
+}

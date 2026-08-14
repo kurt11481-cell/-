@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-14-mvll-volume-authority-v1",
+  "ticker": "MVLL",
+  "data_class": "DAILY_VOLUME",
+  "decision_class": "RVOL20",
+  "primary_provider": "KIWOOM_REST",
+  "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW",
+  "volume_semantics": "SESSION_AGGREGATED_DAILY_VOLUME_AS_REPORTED_BY_KIWOOM_USA06012",
+  "window_sessions": 20,
+  "threshold_source": "stock-strategy-system/alert_policy.json#holding_timing_rules.definitions.pullback_reclaim_relative_volume_minimum",
+  "provider_divergence_blocking": false,
+  "volume_averaging_allowed": false,
+  "preferred_result_selection_allowed": false,
+  "scope_expansion_allowed": false,
+  "quantity_authority": "none",
+  "order_authority": false
+}

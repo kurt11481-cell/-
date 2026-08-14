@@ -1,0 +1,126 @@
+{
+  "schema_version": "2.6.14",
+  "decision_id": "soxl-v2-shadow-activation-20260814T083038Z",
+  "result": "SOXL_VALIDATED_SHADOW",
+  "evaluated_at": "2026-08-14T08:30:38Z",
+  "market_session": "2026-08-13",
+  "repository": {
+    "origin_main_commit": "d5743791486380394b90d1f95e68a01bcc56ebc2",
+    "activation_branch_base_commit": "b55562405fa5cc98ce10a0009e6a630a1a975cbf",
+    "active_branch": "codex/v2.6.14-soxl-v2-shadow-activation"
+  },
+  "candidate": {
+    "path": "workspace/research/holding-baseline-candidates/2026-08-14/soxl-20260814-v2.json",
+    "file_sha256": "76b6a9816ead669ed463cd3078603134af96644e5e965bab20bf701a03591713",
+    "baseline_id": "soxl-20260814-v2",
+    "baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+    "research_packet_hash": "fde3ae2bce4320f5b8f9ac5348dd711a151f93a68b57c9a7449d4cd4aa0fe78a",
+    "content_status": "COMPLETE",
+    "valuation_applicability": "NOT_APPLICABLE_TO_PRODUCT",
+    "confirmation_mode": "DIRECTION_ONLY",
+    "semantic_validation": "PASSED"
+  },
+  "direct_price_evidence": {
+    "path": "workspace/research/holding-overlays/2026-08-13/v2.6.14/soxl-price-evidence.json",
+    "file_sha256": "a108e99e298794292a6b6d6045f8e233fa9a8ea9f081dce876d26992f13ff07b",
+    "ticker": "SOXL",
+    "provider": "KIWOOM_REST_GUARDED_SCOPED",
+    "price_basis": "RAW_REGULAR_SESSION_CLOSE",
+    "raw_close_usd": 145.36,
+    "bar_finalized": true,
+    "validation_status": "PRIMARY_VALIDATED",
+    "diagnostic_yfinance_raw_match": true
+  },
+  "event_link": {
+    "path": "workspace/research/baseline-event-links/2026-08-13/v2.6.13/soxl-product-event-link.json",
+    "file_sha256": "665eb410f538e9a07635d4dcf37fcb7d0f05fe054298dac5f8169290f65ced67",
+    "link_hash": "e87f33658947e55485015f12d1b44f398b00367b8d39356b70122f83b290e74b",
+    "link_validation_status": "VALID",
+    "coverage_status": "COMPLETE",
+    "event_effect": "CONTEXT_ONLY",
+    "product_event_ticker": "SOXL",
+    "soxx_event_substitution": false
+  },
+  "kiwoom_overlay": {
+    "price_artifact_sha256": "704ccdae98deb589f0dfd103c4176dfe5108031de1cbe392096fba9e9db4d331",
+    "technical_artifact_path": "workspace/research/holding-overlays/2026-08-13/v2.6.14/soxl-kiwoom-technical.json",
+    "technical_artifact_sha256": "c1b8e123f97bbfcf18691503ae0c652e3fffdf089a0130550d03d2aff62fba7b",
+    "overlay_path": "workspace/research/holding-overlays/2026-08-13/v2.6.14/soxl-overlay.json",
+    "overlay_file_sha256": "91b8923923ed7509b745f760184df5b86e514800aac3e4d67f8acbefa1a464cc",
+    "overlay_hash": "f5bf396b5e6e419c23785e6c10e6a6a459fb07d7750c182cb598f35e0fbdde6e",
+    "technical_status": "WATCH",
+    "technical_source": "CURRENT_SESSION_KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC",
+    "historical_technical_state_reused": false,
+    "portfolio_state_revision": 13,
+    "historical_portfolio_fit_reused": false,
+    "quantity": null,
+    "quantity_authority": "none",
+    "order_authority": false
+  },
+  "hard_risk": {
+    "rule_id": "HR-SOXL-MAXLOSS-20",
+    "maximum_loss_fraction": 0.2,
+    "verified_average_cost_usd": 123.3251,
+    "calculated_boundary_usd": 98.66008,
+    "raw_completed_close_usd": 145.36,
+    "breach_observed": false,
+    "baseline_override_allowed": false,
+    "priority_test": "PASSED"
+  },
+  "soxx_confirmation": {
+    "ticker": "SOXX",
+    "mode": "DIRECTION_ONLY",
+    "direct_soxl_price_replaced": false,
+    "soxx_times_three_used": false,
+    "expected_return_multiple_prohibited": true,
+    "direction_status": "ALIGNED"
+  },
+  "compile": {
+    "path": "workspace/research/shadow-compiles/2026-08-13/v2.6.14/soxl-shadow-compile.json",
+    "file_sha256": "f0d5d4ba37972107458f6505f315372cdf765862e5fd6ed6f1a784b1068c04db",
+    "status": "PASSED",
+    "mode": "NON_AUTHORITATIVE_SHADOW",
+    "raw_llm_strategy_signal_used": false,
+    "strategy_signal_source": "DETERMINISTIC_COMPILER",
+    "shadow_strategy_state": "REDUCTION_REVIEW",
+    "live_strategy_state": "UNCHANGED",
+    "urgent_historical_alert_generated": false,
+    "historical_alert_replay_count": 0,
+    "quantity": null,
+    "quantity_authority": "none",
+    "order_authority": false
+  },
+  "activation": {
+    "active_index_path": "workspace/research/holding-baselines/active-index.json",
+    "prior_index_file_sha256": "c0f7293c10ee70faf6198fa3c22dabf9ba8a0559e653f4589c001fb0cf3ece34",
+    "prior_index_canonical_hash": "dc5ad51ede9edf722dae6e82496fd424930bf3b161ed5f50d52105149131e17d",
+    "new_index_file_sha256": "26ce9a04e6b07c4dbb09f494ae39173947a3208d43f77389edb70666549e3954",
+    "new_index_canonical_hash": "296a53278d4d267dc2b97412daeacd0fd441e8d1fe9698e373c490f9ef22f225",
+    "previous_soxl_baseline_id": "soxl-20260813-v1",
+    "active_soxl_baseline_id": "soxl-20260814-v2",
+    "other_ticker_index_entries_changed": false,
+    "activation_status": "VALIDATED_SHADOW"
+  },
+  "observation": {
+    "path": "workspace/state/holding-baseline-observations/SOXL/soxl-20260814-v2.json",
+    "file_sha256": "b906e63eec52a313fdbc2311e17126db0d368a595a9564ca2ebde29638a3039f",
+    "required_valid_sessions": 5,
+    "valid_sessions": 0,
+    "status": "FIRST_OBSERVATION_SESSION_PENDING",
+    "backfilled_sessions": 0
+  },
+  "invariants": {
+    "portfolio_sha256_before": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+    "portfolio_sha256_after_activation": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+    "portfolio_unchanged": true,
+    "alert_policy_sha256_before": "8b2bcc9d0204f36f63d2851d771a17cfb6eb3483a5eb7e2297560a86d77909c4",
+    "alert_policy_sha256_after_activation": "8b2bcc9d0204f36f63d2851d771a17cfb6eb3483a5eb7e2297560a86d77909c4",
+    "hard_risk_policy_unchanged": true,
+    "timing_quantities_unchanged": true,
+    "live_strategy_changed": false,
+    "quantity": null,
+    "quantity_authority": "none",
+    "order_authority": false
+  },
+  "order_authority": false
+}

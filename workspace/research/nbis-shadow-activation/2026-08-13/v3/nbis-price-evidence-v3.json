@@ -1,0 +1,65 @@
+{
+  "schema_version": "3.0",
+  "price_evidence_id": "nbis-20260813-close-v3",
+  "ticker": "NBIS",
+  "security_identity": "Nebius Group N.V. (NASDAQ:NBIS)",
+  "market_session": "2026-08-13",
+  "currency": "USD",
+  "canonical_price_basis": "RAW_REGULAR_SESSION_CLOSE",
+  "canonical_raw_close": 255.0399932861328,
+  "canonical_display_close": 255.04,
+  "decimal_quantization": "Decimal(value).quantize(Decimal('0.01'), ROUND_HALF_UP)",
+  "validation_status": "CONFLICT",
+  "comparison_status": "CONFLICT",
+  "raw_sources": [
+    {
+      "role": "PRIMARY_RAW_MARKET_ARCHIVE",
+      "provider": "yfinance",
+      "path": "workspace/outputs/portfolio-strategy/2026-08-13/yfinance_replay_evidence.json",
+      "file_sha256": "2b3ef76cb45ce7157c1b6e303fb754dac9ee4644aec58f251984b42d195d34bd",
+      "raw_close": 255.0399932861328,
+      "session": "2026-08-13",
+      "request_contract": "interval=1d;auto_adjust=false;actions=true;prepost=false;threads=false;repair=false"
+    },
+    {
+      "role": "ORIGINAL_SOURCE_VALIDATION",
+      "provider": "Infront via Nebius IR",
+      "path": "workspace/research/price-evidence/2026-08-13/nbis-official-stock-page-raw-v3.json",
+      "file_sha256": "ab232972c8ea292ae6b3842e03cf9ec3258b23d1019ccae9f3cc468a509ee49f",
+      "display_close": 255.04,
+      "session": "2026-08-13",
+      "source_url": "https://nebius.com/stock-data",
+      "embedded_route": "https://charts3.equitystory.com/chart/nebius-v31/English/"
+    }
+  ],
+  "comparable_conflicting_sources": [
+    {
+      "provider": "KIWOOM_REST",
+      "value": 255.84,
+      "source_field": "result_list.cur_prc",
+      "reported_session": "2026-08-13",
+      "market_session_type": "REGULAR_COMPLETED",
+      "quote_type": "REGULAR_SESSION_LAST",
+      "comparable_to_regular_close": true,
+      "disposition": "PRESERVED_SAME_SESSION_CONFLICT",
+      "reason": "KIWOOM_ARTIFACT_ASSERTS_FINALIZED_COMPARABLE_REGULAR_CLOSE_AND_DIFFERS_FROM_TWO_MATCHING_SOURCES",
+      "source_path": "workspace/outputs/activation/holding-valuation-shadow/2026-08-13/session-aware-validation.json",
+      "source_file_sha256": "9b59ca831fa9edacae83cda75c76c253fb49f6b9044d8474bede54457d4aa0e3"
+    }
+  ],
+  "rejected_sources": [],
+  "conflicts": [
+    {
+      "type": "SAME_SESSION_RAW_CLOSE_CONFLICT",
+      "canonical_candidate": 255.04,
+      "kiwoom_value": 255.84,
+      "absolute_difference": 0.8,
+      "resolution_status": "UNRESOLVED_FAIL_CLOSED"
+    }
+  ],
+  "analysis_cutoff": "2026-08-14T10:19:15Z",
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "evidence_hash": "7bec5f9819179ffae38bd9e1748ec05a3727a65c66bc851a892591730520f19a"
+}

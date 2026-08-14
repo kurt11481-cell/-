@@ -14,6 +14,11 @@ numerical vendor comparison. Non-comparable values are never price conflicts.
 Use one canonical validated snapshot per run. Analysts must not fetch competing
 prices independently.
 
+For U.S. stocks inside an accepted Kiwoom scope, provider disagreement alone is
+not a provider failure. Validate Kiwoom independently, preserve yfinance and
+issuer/Web values as diagnostics, prohibit averaging, and set divergence to
+non-blocking. Kiwoom self-integrity failures remain fail-closed.
+
 `workspace/policies/source_capabilities.json` declares source capability by
 evidence type. Unknown capability is false or `UNKNOWN`, never inferred.
 Historical evidence is rejected when the applicable capability does not support
