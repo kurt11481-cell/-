@@ -30,7 +30,7 @@ ACCOUNT_BODIES = {
     "account_holdings_read": {"stex_tp": "", "stk_cd": ""},
     "account_open_items": {"ord_dt": "", "slby_tp": "0", "stex_tp": "", "stk_cd": ""},
     "account_fills_read": {"stex_tp": "", "stk_cd": ""},
-    "account_realized_pnl_read": {"stex_tp": "", "stk_cd": ""},
+    "account_realized_pnl_read": {"fc_krw_tp": "0", "stex_tp": "", "stk_cd": ""},
 }
 SAFE_FIELDS = {
     "account_deposit_read": ("crnc_code", "crnc_nm", "fc_entra", "fc_pymn_alowa", "fc_ord_alowa"),
@@ -79,7 +79,7 @@ def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str,
             if not isinstance(payload, dict):
                 raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
             if not _return_code_ok(payload):
-                raise BridgeError("KIWOOM_API_UNAVAILABLE", "EMPTY_RESPONSE")
+                raise BridgeError("KIWOOM_API_RESPONSE_ERROR", "API_RESPONSE_ERROR")
             return response
         except Exception as exc:
             last_error = exc

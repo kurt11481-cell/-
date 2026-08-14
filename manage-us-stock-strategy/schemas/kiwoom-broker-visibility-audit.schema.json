@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-broker-visibility-audit.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "provider", "runtime_commit", "generated_at", "snapshot_freshness_status", "cash_visibility", "holdings_visibility", "open_orders_visibility", "fills_visibility", "realized_pnl_visibility", "capability_gaps", "current_readonly_readiness", "broker_visibility_for_live_execution", "fill_inference_performed", "portfolio_mutation", "quantity", "quantity_authority", "order_authority", "record_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"const": "FUTURE_EXECUTION_BROKER_VISIBILITY_AUDIT"},
+    "provider": {"const": "KIWOOM_REST"},
+    "runtime_commit": {"type": ["string", "null"]},
+    "generated_at": {"type": "string"},
+    "snapshot_freshness_status": {"enum": ["FRESH", "STALE", "UNAVAILABLE"]},
+    "cash_visibility": {"type": "object"},
+    "holdings_visibility": {"type": "object"},
+    "open_orders_visibility": {"type": "object"},
+    "fills_visibility": {"type": "object"},
+    "realized_pnl_visibility": {"type": "object"},
+    "capability_gaps": {"type": "array", "items": {"type": "object"}},
+    "current_readonly_readiness": {"enum": ["BROKER_READ_ONLY_SHADOW_VERIFIED", "BROKER_READ_ONLY_SHADOW_PARTIAL", "BROKER_READ_ONLY_SHADOW_FAILED"]},
+    "broker_visibility_for_live_execution": {"enum": ["READY", "NOT_READY"]},
+    "fill_inference_performed": {"const": false},
+    "portfolio_mutation": {"const": false},
+    "quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

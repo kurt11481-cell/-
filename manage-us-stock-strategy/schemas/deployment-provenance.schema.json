@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deployment-provenance.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "verified_at", "runtime_repository_path", "runtime_head", "runtime_clean", "policy_hashes", "provider_scope_hash", "semantic_cohort_id", "tasks", "counting_enabled", "order_authority", "record_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"enum": ["DEPLOYMENT_PROVENANCE_VERIFIED", "DEPLOYMENT_PROVENANCE_NOT_VERIFIED"]},
+    "verified_at": {"type": "string"},
+    "runtime_repository_path": {"type": "string"},
+    "runtime_head": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "runtime_clean": {"type": "boolean"},
+    "code_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "policy_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "provider_scope_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "semantic_cohort_id": {"type": "string"},
+    "tasks": {"type": "array", "minItems": 2, "items": {"type": "object"}},
+    "dependency_paths": {"type": "object"},
+    "failure_reasons": {"type": "array", "items": {"type": "string"}},
+    "counting_enabled": {"type": "boolean"},
+    "order_authority": {"const": false},
+    "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

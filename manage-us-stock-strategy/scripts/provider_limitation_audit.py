@@ -21,7 +21,8 @@ def _rvol20(bars: list[dict[str, Any]]) -> float | None:
 
 def build_audit(*, kiwoom_snapshot: dict[str, Any], yfinance_snapshot: dict[str, Any],
                 extended_snapshot: dict[str, Any], provider_policy: dict[str, Any],
-                volume_acceptance: dict[str, Any] | None = None) -> dict[str, Any]:
+                volume_acceptance: dict[str, Any] | None = None,
+                volume_lineage: dict[str, Any] | None = None) -> dict[str, Any]:
     kiwoom = {item["ticker"]: item for item in kiwoom_snapshot.get("ticker_results") or []}
     yfinance = yfinance_snapshot.get("symbols") or {}
     fsly = kiwoom.get("FSLY") or {}
@@ -33,12 +34,14 @@ def build_audit(*, kiwoom_snapshot: dict[str, Any], yfinance_snapshot: dict[str,
                     (yfinance.get("MVLL") or {}).get("bar_date"))
     extended = {item["ticker"]: item for item in extended_snapshot.get("records") or []}
     scope = provider_policy.get("ticker_scope_rules") or {}
-    scoped_volume_valid = bool(
-        volume_acceptance and volume_acceptance.get("ticker") == "MVLL"
-        and volume_acceptance.get("acceptance_status") == "VALID"
-        and volume_acceptance.get("volume_authority_status") == "KIWOOM_VALID_SCOPED"
-        and volume_acceptance.get("blocking") is False
-    )
+    authority = volume_lineage if volume_lineage else volume_acceptance
+    scoped_volume_valid = bool(authority and authority.get("ticker") == "MVLL"
+        and authority.get("volume_authority_status") == "KIWOOM_VALID_SCOPED"
+        and authority.get("order_authority") is False
+        and (authority.get("divergence_blocking") is False
+             if volume_lineage else authority.get("blocking") is False))
+    canonical_rvol = (authority.get("canonical_rvol20") if volume_lineage
+                      else authority.get("kiwoom_rvol20") if authority else None)
     result = {
         "schema_version": "1.0", "market_session": kiwoom_snapshot.get("completed_session"),
         "FSLY": {
@@ -52,11 +55,15 @@ def build_audit(*, kiwoom_snapshot: dict[str, Any], yfinance_snapshot: dict[str,
         "MVLL": {
             "price_authority": "KIWOOM_REST",
             "volume_authority": "KIWOOM_VALID_SCOPED" if scoped_volume_valid else "UNRESOLVED",
-            "same_session_window": same_session, "kiwoom_rvol20": kiwoom_rvol,
+            "same_session_window": same_session, "kiwoom_rvol20": canonical_rvol,
+            "snapshot_observed_rvol20": kiwoom_rvol,
+            "canonical_volume_lineage_hash": (volume_lineage or {}).get("record_hash"),
+            "lineage_consistent": bool(canonical_rvol is not None and kiwoom_rvol is not None
+                                       and abs(float(canonical_rvol) - float(kiwoom_rvol)) < 1e-12),
             "yfinance_rvol20": yfinance_rvol, "volume_averaged": False,
             "preferred_result_selected": False, "threshold_changed": False,
             "technical_condition_status": (
-                volume_acceptance.get("technical_condition_status") if scoped_volume_valid
+                authority.get("technical_condition_status") if scoped_volume_valid
                 else "TECHNICAL_BOUNDARY_CONFLICT"
             ),
             "blocked_decision_classes": list((scope.get("MVLL") or {}).get("blocked_decision_classes") or []),
@@ -85,11 +92,13 @@ def main() -> int:
     parser.add_argument("--extended", required=True, type=Path)
     parser.add_argument("--policy", required=True, type=Path)
     parser.add_argument("--volume-acceptance", type=Path)
+    parser.add_argument("--volume-lineage", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     result = build_audit(kiwoom_snapshot=load_json(args.kiwoom), yfinance_snapshot=load_json(args.yfinance),
                          extended_snapshot=load_json(args.extended), provider_policy=load_json(args.policy),
-                         volume_acceptance=load_json(args.volume_acceptance) if args.volume_acceptance else None)
+                         volume_acceptance=load_json(args.volume_acceptance) if args.volume_acceptance else None,
+                         volume_lineage=load_json(args.volume_lineage) if args.volume_lineage else None)
     write_json(args.output, result)
     print("PROVIDER_LIMITATION_AUDIT_COMPLETE")
     return 0

@@ -135,6 +135,8 @@ def valid_scheduled_attempt(**overrides: Any) -> dict[str, Any]:
         "historical_backfill": False, "delivery_status": "DELIVERED", "delivery_id": "delivery-1",
         "git_commit": "a" * 40, "branch": "main", "working_tree_clean": True,
         "deployment_status": "PASS", "registry_status": "VALIDATED",
+        "deployment_provenance_status": "DEPLOYMENT_PROVENANCE_VERIFIED",
+        "deployment_provenance_hash": "d" * 64,
         "finalization_evidence": {"schema_version": "1.0", "run_phase": "POST_MARKET_FINALIZED",
             "analysis_run_phase": "POST_MARKET", "completed_session": completed_session,
             "official_session_status": "VALIDATED", "finalization_status": "VALIDATED",

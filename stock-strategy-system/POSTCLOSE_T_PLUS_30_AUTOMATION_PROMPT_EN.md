@@ -3,6 +3,14 @@
 Use `$manage-us-stock-strategy` from committed `main` in
 `E:\사업\##금동한\코덱스저장소`.
 
+Before any operational recording or delivery, load and validate the immutable
+deployment provenance artifact for the configured clean scheduled-runtime
+worktree. Its runtime HEAD, task-config hashes, policy hashes, provider-scope
+hash, semantic cohort, and clean-worktree state must match the files actually
+used. If it is missing or mismatched, return
+`DEPLOYMENT_PROVENANCE_NOT_VERIFIED`; delivery and all session counters remain
+disabled.
+
 Run one read-only `REGULAR_CLOSE_T_PLUS_30` phase for the official U.S. trading
 date. Verify the official exchange calendar. On a normal session the scheduled
 time is 16:30 America/New_York. On an early-close session a later 16:30 check is

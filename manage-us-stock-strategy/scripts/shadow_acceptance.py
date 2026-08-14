@@ -40,6 +40,7 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/schemas/orthogonal-state-axes.schema.json",
     "manage-us-stock-strategy/schemas/mvll-volume-authority-acceptance.schema.json",
     "manage-us-stock-strategy/schemas/dual-run-scheduler-policy.schema.json",
+    "manage-us-stock-strategy/schemas/deployment-provenance.schema.json",
     "manage-us-stock-strategy/scripts/holding_research.py",
     "manage-us-stock-strategy/scripts/web_close_evidence.py",
     "manage-us-stock-strategy/scripts/price_evidence.py",
@@ -59,6 +60,8 @@ SEMANTIC_DEFAULTS = (
     "manage-us-stock-strategy/scripts/orthogonal_state_axes.py",
     "manage-us-stock-strategy/scripts/validate_mvll_volume_authority.py",
     "manage-us-stock-strategy/scripts/dual_run_scheduler.py",
+    "manage-us-stock-strategy/scripts/deployment_provenance.py",
+    "manage-us-stock-strategy/scripts/run_deployment_provenance.py",
     "manage-us-stock-strategy/scripts/automation_delivery.py",
     "manage-us-stock-strategy/scripts/staged_promotion.py",
     "manage-us-stock-strategy/scripts/shadow_acceptance.py",
@@ -357,6 +360,10 @@ def classify_attempt(raw: dict[str, Any], *, progress: dict[str, Any],
         exclusions.append("WORKING_TREE_NOT_CLEAN")
     if attempt.get("deployment_status") != "PASS":
         exclusions.append("DEPLOYMENT_NOT_VALIDATED")
+    if attempt.get("deployment_provenance_status") != "DEPLOYMENT_PROVENANCE_VERIFIED":
+        exclusions.append("DEPLOYMENT_PROVENANCE_NOT_VERIFIED")
+    if not attempt.get("deployment_provenance_hash"):
+        exclusions.append("DEPLOYMENT_PROVENANCE_HASH_MISSING")
     if attempt.get("registry_status") != "VALIDATED":
         exclusions.append("REGISTRY_NOT_VALIDATED")
     finalization_errors = validate_finalization_evidence(

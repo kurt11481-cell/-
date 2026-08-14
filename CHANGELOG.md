@@ -1,5 +1,13 @@
 # Changelog
 
+## Recovery and expansion hardening
+
+- Added exact Scheduled Task deployment-provenance gating before operational counting.
+- Resolved MVLL Kiwoom RVOL20 to a stable canonical data lineage without changing the formula or threshold.
+- Added a strict read-only Kiwoom U.S. candidate-discovery allowlist and adapter acceptance.
+- Added broker-visibility gap classification and retained future execution as not ready.
+- Added non-network future-order Shadow contracts with null quantity and no order authority.
+
 ## v2.6.13 - Holding Event Coverage Completion
 
 - Added a data-only official-source completion ledger and immutable successor

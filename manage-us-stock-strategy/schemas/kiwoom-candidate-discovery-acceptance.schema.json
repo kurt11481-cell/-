@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-candidate-discovery-acceptance.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "provider", "runtime_commit", "retrieved_at", "operation_statuses", "operation_failures", "candidates", "ticker_failures", "deduplicated_count", "watchlist_authority", "active_universe_authority", "new_buy_authority", "portfolio_mutation", "quantity", "quantity_authority", "order_authority", "record_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"enum": ["CANDIDATE_DISCOVERY_ADAPTER_VERIFIED", "CANDIDATE_DISCOVERY_OPERATION_COMPLETE", "CANDIDATE_DISCOVERY_PARTIAL", "CANDIDATE_DISCOVERY_FAILED"]},
+    "provider": {"const": "KIWOOM_REST"},
+    "runtime_commit": {"type": ["string", "null"]},
+    "retrieved_at": {"type": "string"},
+    "operation_statuses": {"type": "object"},
+    "operation_failures": {"type": "array", "items": {"type": "object"}},
+    "candidates": {"type": "array", "items": {"type": "object"}},
+    "ticker_failures": {"type": "array", "items": {"type": "object"}},
+    "deduplicated_count": {"type": "integer", "minimum": 0},
+    "watchlist_authority": {"const": false},
+    "active_universe_authority": {"const": false},
+    "new_buy_authority": {"const": false},
+    "portfolio_mutation": {"const": false},
+    "quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
