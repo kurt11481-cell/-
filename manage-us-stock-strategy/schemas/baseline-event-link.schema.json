@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "baseline-event-link.schema.json",
+  "title": "Immutable Baseline Event Link",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "baseline_event_link_id", "ticker", "entity_role", "baseline_id", "baseline_hash", "event_bundle_id", "event_bundle_hash", "event_coverage_status", "event_effect", "analysis_cutoff", "link_created_at", "link_validation_status", "link_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.12"},
+    "baseline_event_link_id": {"type": "string", "minLength": 1},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "entity_role": {"enum": ["DIRECT_PRODUCT", "DIRECT_ISSUER", "SUPPLEMENTAL_UNDERLYING"]},
+    "baseline_id": {"type": "string", "minLength": 1},
+    "baseline_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "event_bundle_id": {"type": "string", "minLength": 1},
+    "event_bundle_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "event_coverage_status": {"enum": ["COMPLETE", "PARTIAL_NONBLOCKING", "PARTIAL_BLOCKING", "EVENT_REVIEW_REQUIRED", "UNAVAILABLE", "INVALID"]},
+    "event_effect": {"enum": ["CONTEXT_ONLY", "EVENT_REVIEW_PENDING", "WAIT_REQUIRED", "INVALID"]},
+    "analysis_cutoff": {"type": "string", "format": "date-time"},
+    "link_created_at": {"type": "string", "format": "date-time"},
+    "link_validation_status": {"enum": ["VALID", "PARTIAL_NONBLOCKING", "EVENT_REVIEW_PENDING", "STALE", "INVALID", "MISSING"]},
+    "link_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}

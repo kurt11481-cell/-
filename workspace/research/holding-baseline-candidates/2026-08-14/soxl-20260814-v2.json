@@ -1,0 +1,235 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "soxl-20260814-v2",
+  "baseline_version": 2,
+  "ticker": "SOXL",
+  "baseline_type": "SECTOR_LEVERAGED_ETF",
+  "analysis_cutoff": "2026-08-14T04:15:35Z",
+  "evidence_cutoff": "2026-08-14T04:15:35Z",
+  "content_status": "COMPLETE",
+  "thesis_status": "CONTESTED",
+  "valuation_applicability": "NOT_APPLICABLE_TO_PRODUCT",
+  "valuation_status": "NOT_APPLICABLE",
+  "valuation_basis": "SEMICONDUCTOR_SECTOR_REGIME",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "Current primary evidence supports strong HBM, memory, foundry, advanced-packaging, custom-silicon and networking demand alongside continued hyperscaler infrastructure spending, but extreme memory pricing, heavy capacity investment, customer concentration and daily 3x leverage make the sector thesis contested rather than a company-style valuation conclusion.",
+  "strongest_counter_case": "Memory average selling prices and margins are at unusually high levels while Micron and competitors are expanding capacity; AI customers may decelerate or reallocate CAPEX, custom programs may slip, foundry or CoWoS capacity can bottleneck deployments, and export or competition risks can compress earnings and sector multiples. SOXL daily compounding and volatility then magnify any reversal and can diverge materially from three times the sector's multi-day return.",
+  "invalidation_conditions": [
+    "Official evidence across memory, foundry, custom silicon, networking or hyperscaler customers shows broad deterioration in AI-infrastructure demand or capital spending.",
+    "Memory supply expansion or customer inventories produce sustained price and margin deterioration across major issuers.",
+    "Official foundry or advanced-packaging evidence shows that capacity constraints materially delay sector revenue conversion rather than merely shift timing.",
+    "SOXL sponsor disclosures change the daily objective, benchmark, continued listing, or operating structure."
+  ],
+  "next_research_triggers": [
+    "The next official earnings cycle for leading memory, foundry, compute, equipment, networking and advanced-packaging issuers.",
+    "Material hyperscaler guidance changes to AI-infrastructure capital expenditures.",
+    "Any SOXL prospectus supplement, split, benchmark, derivative, liquidity, or product-structure change.",
+    "A broad primary-source confirmation of sector demand deterioration, supply overshoot, export restrictions, or a customer-CAPEX slowdown."
+  ],
+  "claims": [
+    {
+      "claim_id": "soxl-v2-c1",
+      "claim_type": "PRODUCT_OBJECTIVE_AND_PATH_DEPENDENCE",
+      "evidence_ids": [
+        "soxl-v2-e1"
+      ],
+      "normalized_claim": "SOXL seeks 300% of its semiconductor benchmark's daily result and should not be expected to deliver three times the benchmark's cumulative return over periods longer than one day."
+    },
+    {
+      "claim_id": "soxl-v2-c2",
+      "claim_type": "HBM_AND_MEMORY_CYCLE",
+      "evidence_ids": [
+        "soxl-v2-e2",
+        "soxl-v2-e3"
+      ],
+      "normalized_claim": "Micron reported Q3 FY2026 revenue of $41.456 billion, high-volume HBM4 shipments, $25.39 billion of operating cash flow and $7.1 billion of net capital expenditures, while its filings also show extreme DRAM and NAND price increases and warn that capacity investment and industry oversupply can reverse pricing and margins."
+    },
+    {
+      "claim_id": "soxl-v2-c3",
+      "claim_type": "FOUNDRY_AND_ADVANCED_PACKAGING",
+      "evidence_ids": [
+        "soxl-v2-e4",
+        "soxl-v2-e5"
+      ],
+      "normalized_claim": "TSMC reported Q2 2026 revenue of $40.20 billion and Q3 guidance of $44.6-$45.8 billion, while its current CoWoS materials describe increasing generative-AI demand, continued advanced-packaging capacity expansion, and integration of logic with HBM."
+    },
+    {
+      "claim_id": "soxl-v2-c4",
+      "claim_type": "ASIC_NETWORKING_AND_OPTICAL",
+      "evidence_ids": [
+        "soxl-v2-e6",
+        "soxl-v2-e7"
+      ],
+      "normalized_claim": "MRVL primary evidence supports demand for custom XPU, 800G and 1.6T optical interconnect, 51.2T switching, CPO/NPO and DCI, while its 10-K also discloses program timing, customer concentration, competition and insourcing risks."
+    },
+    {
+      "claim_id": "soxl-v2-c5",
+      "claim_type": "AI_CAPEX_AND_SLOWDOWN_RISK",
+      "evidence_ids": [
+        "soxl-v2-e7",
+        "soxl-v2-e8",
+        "soxl-v2-e9"
+      ],
+      "normalized_claim": "Alphabet reported $35.7 billion of Q1 2026 capital expenditures and expected a significant 2026 increase, while Meta raised its 2026 CAPEX range to $125-$145 billion; MRVL nevertheless warns that current AI-infrastructure CAPEX may be unsustainable and customers may decelerate or reallocate spending."
+    },
+    {
+      "claim_id": "soxl-v2-c6",
+      "claim_type": "SECTOR_PEAK_AND_PROXY_BOUNDARY",
+      "evidence_ids": [
+        "soxl-v2-e1",
+        "soxl-v2-e3",
+        "soxl-v2-e7"
+      ],
+      "normalized_claim": "High memory pricing, gross margins, large capital programs and concentrated AI demand create sector-peak risk; SOXX remains direction-only, SOXX multiplied by three is not an SOXL close, and current technical or portfolio conclusions remain outside this slow baseline."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "soxl-v2-e1",
+      "source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs",
+      "source_type": "SPONSOR_PRIMARY",
+      "published_at": "2026-08-12T20:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-08-12T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "SOXL daily 300% objective, benchmark composition, multi-day tracking warning, leverage, derivatives, compounding, volatility and concentration risks",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e2",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-06-24T20:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-05-28T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Micron Q3 FY2026 revenue, cash flow, capex, adjusted free cash flow, memory business results, HBM4 shipments and HBM4E roadmap",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e3",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000015/mu-20260528.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-06-25T20:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-05-28T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Micron memory pricing, margins, capital plan, strategic customer commitments, cyclical volatility, competitor capacity and oversupply risks",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e4",
+      "source_url": "https://investor.tsmc.com/english/quarterly-results/2026/q2",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-07-16T05:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-06-30T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "TSMC Q2 2026 revenue, gross margin, operating margin and Q3 guidance",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e5",
+      "source_url": "https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/cowos.htm",
+      "source_type": "ISSUER_PRIMARY_CURRENT_PAGE",
+      "published_at": "2026-08-14T04:15:35Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-08-14T04:15:35Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Current official CoWoS page snapshot first captured at this cutoff: logic-HBM integration, generative-AI demand and continued advanced-packaging capacity expansion; no earlier point-in-time availability is assumed",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e6",
+      "source_url": "https://investor.marvell.com/news-events/press-releases/detail/1023/marvell-technology-inc-reports-first-quarter-of-fiscal-year-2027-financial-results",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-05-27T20:45:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-05-27T20:45:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL Q1 FY2027 AI bookings, custom XPU, switching, optical-interconnect demand, margins, cash flow and guidance",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e7",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000011/mrvl-20260131.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-11T21:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-01-31T21:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "MRVL custom ASIC and optical roadmap, customer and data-center concentration, competition, insourcing, program timing and AI-CAPEX sustainability risk",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e8",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000048/goog-20260331.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-04-29T21:02:11Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-31T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Alphabet Q1 2026 operating cash flow, technical-infrastructure capital expenditures and expected 2026 investment increase",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "soxl-v2-e9",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000162828026028364/meta-03312026xexhibit991.htm",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-04-29T20:00:00Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-04-29T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Meta Q1 2026 capital expenditures, operating cash flow, free cash flow and raised full-year 2026 CAPEX range",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "soxl-v2-c1",
+    "soxl-v2-c2",
+    "soxl-v2-c3",
+    "soxl-v2-c4",
+    "soxl-v2-c5",
+    "soxl-v2-c6"
+  ],
+  "evidence_ids": [
+    "soxl-v2-e1",
+    "soxl-v2-e2",
+    "soxl-v2-e3",
+    "soxl-v2-e4",
+    "soxl-v2-e5",
+    "soxl-v2-e6",
+    "soxl-v2-e7",
+    "soxl-v2-e8",
+    "soxl-v2-e9"
+  ],
+  "linked_components": [
+    {
+      "ticker": "SOXX",
+      "role": "SECTOR_DIRECTION_PROXY",
+      "confirmation_mode": "DIRECTION_ONLY",
+      "product_close_substitution": false,
+      "expected_return_multiple_prohibited": true
+    }
+  ],
+  "research_packet_hash": "fde3ae2bce4320f5b8f9ac5348dd711a151f93a68b57c9a7449d4cd4aa0fe78a",
+  "baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+  "supersedes_baseline_id": "soxl-20260813-v1",
+  "validation_status": "DRAFT",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false
+}

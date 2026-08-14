@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "valuation-scenario.schema.json",
+  "title": "Point-in-Time Valuation Scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenario_id", "scenario_type", "share_basis", "equity_value", "enterprise_value", "valuation_methods", "assumption_ids", "status"],
+  "properties": {
+    "scenario_id": {"type": "string", "minLength": 1},
+    "scenario_type": {"enum": ["BASIC", "BASE_DILUTED", "STRESS_DILUTED"]},
+    "share_basis": {"type": ["number", "null"], "minimum": 0},
+    "equity_value": {"type": ["number", "null"], "minimum": 0},
+    "enterprise_value": {"type": ["number", "null"], "minimum": 0},
+    "valuation_methods": {"type": "array", "items": {"type": "object"}},
+    "assumption_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "status": {"enum": ["EVALUATED", "NOT_EVALUATED", "INCOMPLETE"]}
+  }
+}

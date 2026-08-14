@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.6.12",
+  "market_session": "2026-08-13",
+  "analysis_cutoff": "2026-08-14T05:12:45.898410+00:00",
+  "kiwoom_source_artifact_sha256": "79aa60bb3b3791fb0dcbd977a0b1df6021a04e0f4f2458123bf543600fc90968",
+  "yfinance_shadow_artifact_sha256": "c4cee22adf75bf702439adfbb495b88bbc548b343029f9b3815fa19283edc0a8",
+  "session_aware_comparison_sha256": "9b59ca831fa9edacae83cda75c76c253fb49f6b9044d8474bede54457d4aa0e3",
+  "records": [
+    {"ticker": "SOXL", "kiwoom_raw_close": 142.54, "yfinance_raw_close": 145.36000061035156, "comparison_status": "CONFLICT", "relative_difference": 0.01940011418898377},
+    {"ticker": "MVLL", "kiwoom_raw_close": 27.9, "yfinance_raw_close": 27.809999465942383, "comparison_status": "CONFLICT", "relative_difference": 0.003236265220638902},
+    {"ticker": "NBIS", "kiwoom_raw_close": 255.84, "yfinance_raw_close": 255.0399932861328, "comparison_status": "CONFLICT", "relative_difference": 0.003136789268064529},
+    {"ticker": "SOXX", "kiwoom_raw_close": 547.09, "yfinance_raw_close": 550.739990234375, "comparison_status": "CONFLICT", "relative_difference": 0.006627429093757409},
+    {"ticker": "MRVL", "kiwoom_raw_close": 222.77, "yfinance_raw_close": 222.17999267578125, "comparison_status": "CONFLICT", "relative_difference": 0.0026555375986519873}
+  ],
+  "original_source_resolution": {
+    "SOXL": "UNAVAILABLE_FOR_2026-08-13; Direxion page exposed only 2026-08-12 market close",
+    "MVLL": "UNAVAILABLE_FOR_2026-08-13",
+    "NBIS": "UNAVAILABLE_FOR_2026-08-13",
+    "MRVL": "UNAVAILABLE_FOR_2026-08-13"
+  },
+  "quantity_authority": "none",
+  "order_authority": false
+}

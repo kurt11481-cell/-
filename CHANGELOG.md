@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.6.12 - Holding Valuation and Shadow Activation Gates
+
+- Added deterministic point-in-time issuer valuation snapshots with separate
+  basic/base/stress dilution, cash/restricted-cash/debt/claim fields, valuation
+  evidence versus judgement status, and explicit staleness triggers.
+- Added immutable baseline-to-event links, non-authoritative holding-baseline
+  compilation, expected-index-hash atomic per-ticker Shadow activation, and a
+  forward-only five-session observation contract.
+- Preserved SOXX as direction-only for SOXL, MRVL as supplemental for MVLL, and
+  the MVLL `EMA10_RECLAIM_RVOL20` decision-class block.
+- Failed closed on unresolved same-session Kiwoom/yfinance Raw-close conflicts:
+  no candidate baseline was activated, the active index and live strategy stayed
+  unchanged, and no observation was backfilled.
+- Classified the new compiler and observation semantics as a semantic change,
+  archived the prior zero-session cohort, and started a new zero-session cohort.
+- Added deterministic valuation, event-link, compile, activation, observation,
+  policy-invariant, portfolio-immutability, and authority-boundary tests.
+- No order, fill, quantity, portfolio fact, strategy threshold, rearm rule,
+  provider authority, or live strategy was changed.
+
 ## v2.6.9 - Forward-Only Current Event-Risk Capture
 
 - Corrected the current event bundle with Toast's August 4 Form 8-K and Q2

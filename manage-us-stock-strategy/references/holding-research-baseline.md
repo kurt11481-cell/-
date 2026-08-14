@@ -47,3 +47,31 @@ another ticker.
 All compiled output is `SHADOW_ONLY` until a separately approved promotion
 gate passes. Quantity remains null unless an already approved deterministic
 policy supplies exact authority. `order_authority` is always false.
+
+## Point-in-time valuation and event links
+
+Issuer-equity and underlying-issuer research uses an immutable valuation
+snapshot. Its price input must be a finalized Kiwoom Raw regular-session close;
+yfinance remains a same-ticker, same-session diagnostic Shadow. An unresolved
+Raw-close conflict sets `PRICE_EVIDENCE_CONFLICT` and prevents valuation
+judgement and baseline activation. Basic, base-diluted, and stress-diluted share
+bases remain separate, as do unrestricted cash, restricted cash, debt,
+convertibles, preferred claims, and locally calculated OCF-minus-CAPEX proxies.
+
+Each candidate baseline links by hash to the current event bundle. Product and
+underlying links remain separate (`SOXL != SOXX`, `MVLL != MRVL`). A stale or
+blocking link constrains only the affected strategy scope and never changes
+market-data provider readiness.
+
+The non-authoritative compiler consumes the candidate baseline, valuation
+snapshot when applicable, event link, completed-session overlay, current
+portfolio state, and versioned policy. Only a `PASSED` compile may enter atomic
+per-ticker Shadow activation. Manual compilation cannot update live strategy,
+notification runtime, quantities, or orders.
+
+After activation, a separate five-session observation state starts at
+`FIRST_OBSERVATION_SESSION_PENDING`. Only a future officially verified,
+finalized, delivered Post-Market run from clean committed main with unchanged
+portfolio and policy hashes can count. Manual, replay, duplicate, preliminary,
+unverified, or backfilled sessions never count, and five observations require a
+human review rather than automatic promotion.

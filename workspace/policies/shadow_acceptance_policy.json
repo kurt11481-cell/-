@@ -1,6 +1,6 @@
 {
-  "schema_version": "2.6.8",
-  "policy_version": "2026-08-14-finalized-postmarket-counting-v1",
+  "schema_version": "2.6.12",
+  "policy_version": "2026-08-14-holding-baseline-shadow-semantics-v1",
   "mode": "COHORT_BASED_SHADOW_ONLY",
   "promotion_model": "COVERAGE_WEIGHTED_STAGED",
   "promotion_scope_model": "TICKER_DECISION_CLASS_SOURCE_ROUTE",
@@ -40,7 +40,7 @@
   "uncovered_scope_remains_shadow": true,
   "required_baseline_tickers": ["NBIS", "MVLL", "SOXL"],
   "minimum_overlay_sessions_per_ticker_for_promotion": 5,
-  "semantic_inputs": ["holding-research-baseline.schema.json", "compiled-holding-research-context.schema.json", "raw-web-close-evidence.schema.json", "finalized-postmarket-evidence.schema.json", "holding_research.py", "web_close_evidence.py", "price_evidence.py", "build_price_crosscheck_queue.py", "finalized_postmarket_automation.py", "automation_delivery.py", "shadow_acceptance.py", "holding_research_baseline_policy.json", "web_completed_close_evidence_policy.json", "finalized_postmarket_automation_policy.json", "shadow_acceptance_policy.json", "approved_alert_policy_semantics", "leveraged_confirmation_semantics"],
+  "semantic_inputs": ["holding-research-baseline.schema.json", "compiled-holding-research-context.schema.json", "issuer-valuation-snapshot.schema.json", "valuation-scenario.schema.json", "baseline-event-link.schema.json", "shadow-baseline-compile-result.schema.json", "holding-baseline-observation-state.schema.json", "raw-web-close-evidence.schema.json", "finalized-postmarket-evidence.schema.json", "holding_research.py", "holding_baseline_operationalization.py", "web_close_evidence.py", "price_evidence.py", "build_price_crosscheck_queue.py", "finalized_postmarket_automation.py", "automation_delivery.py", "shadow_acceptance.py", "holding_research_baseline_policy.json", "web_completed_close_evidence_policy.json", "finalized_postmarket_automation_policy.json", "shadow_acceptance_policy.json", "approved_alert_policy_semantics", "leveraged_confirmation_semantics"],
   "nonsemantic_inputs": ["baseline_content", "ko-KR.json"],
   "order_authority": false
 }

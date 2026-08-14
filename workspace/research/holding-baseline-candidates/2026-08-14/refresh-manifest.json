@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "refresh_id": "holding-baseline-refresh-20260814T041535Z",
+  "analysis_cutoff": "2026-08-14T04:15:35Z",
+  "architecture": {
+    "immutable_slow_baseline": "workspace/research/holding-baselines",
+    "candidate_baselines": "workspace/research/holding-baseline-candidates/2026-08-14",
+    "completed_daily_overlay_schema": "manage-us-stock-strategy/schemas/holding-research-overlay.schema.json",
+    "deterministic_compiler_schema": "manage-us-stock-strategy/schemas/compiled-holding-research-context.schema.json",
+    "kiwoom_adjusted_completed_daily_authority": "KIWOOM_ADJUSTED_LOCAL_DETERMINISTIC_SCOPED"
+  },
+  "candidate_results": [
+    {
+      "ticker": "NBIS",
+      "baseline_id": "nbis-20260814-v2",
+      "content_status": "PARTIAL",
+      "lifecycle_status": "PARTIAL_REFRESH_REQUIRED",
+      "validation_status": "PASSED",
+      "baseline_hash": "b361d1bb11864c91165fd24dbbef161a552313a73a5a52c1939fc8b873b2feb7",
+      "active": false,
+      "blocking_reasons": [
+        "DIRECT_POINT_IN_TIME_VALUATION_UNVERIFIED",
+        "CUSTOMER_CONCENTRATION_PERCENTAGE_NOT_DISCLOSED",
+        "EVENT_REVIEW_REQUIRED"
+      ]
+    },
+    {
+      "ticker": "MVLL",
+      "baseline_id": "mvll-20260814-v2",
+      "content_status": "PARTIAL",
+      "lifecycle_status": "PARTIAL_REFRESH_REQUIRED",
+      "validation_status": "PASSED",
+      "baseline_hash": "fecb44c6615f13466bb2a2285f89d6a50170eee1cda72d0fe15daed4efe89823",
+      "active": false,
+      "blocking_reasons": [
+        "MRVL_POINT_IN_TIME_VALUATION_UNVERIFIED",
+        "MRVL_Q2_EARNINGS_PENDING",
+        "EMA10_RECLAIM_RVOL20_TECHNICAL_BOUNDARY_CONFLICT"
+      ]
+    },
+    {
+      "ticker": "SOXL",
+      "baseline_id": "soxl-20260814-v2",
+      "content_status": "COMPLETE",
+      "lifecycle_status": "DRAFT",
+      "validation_status": "PASSED",
+      "baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+      "active": false,
+      "blocking_reasons": [
+        "MANUAL_SHADOW_ACTIVATION_AND_EVENT_RELINK_REQUIRED"
+      ]
+    }
+  ],
+  "preserved_boundaries": {
+    "slow_baseline_current_technical_state": false,
+    "slow_baseline_portfolio_fit": false,
+    "slow_baseline_holdings": false,
+    "slow_baseline_average_cost": false,
+    "slow_baseline_cash": false,
+    "slow_baseline_hard_risk_observation": false,
+    "slow_baseline_quantity": false,
+    "mrvl_is_supplemental": true,
+    "mrvl_valuation_is_mvll_target_price": false,
+    "mrvl_times_two_is_mvll_close": false,
+    "soxx_confirmation_mode": "DIRECTION_ONLY",
+    "soxx_times_three_is_soxl_close": false,
+    "mvll_blocked_decision_classes": [
+      "EMA10_RECLAIM_RVOL20"
+    ]
+  },
+  "event_linkage": {
+    "event_bundle_path": "workspace/state/event_risk_archive/2026-08-13/event_risk_bundle.json",
+    "event_bundle_sha256": "87A921F10D80649B34462E92ACD8D8E2209D74E6A4A32233E82256747207CCE8",
+    "active_baseline_index_sha256": "C0F7293C10EE70FAF6198FA3C22DABF9BA8A0559E653F4589C001FB0CF3ECE34",
+    "event_bundle_active_index_link_status": "VALID_UNCHANGED",
+    "candidate_event_relink_status": "REQUIRED_BEFORE_ACTIVATION"
+  },
+  "mutation_status": {
+    "active_baseline_index_mutated": false,
+    "event_bundle_mutated": false,
+    "daily_overlay_mutated": false,
+    "deterministic_compiler_mutated": false,
+    "live_strategy_mutated": false,
+    "portfolio_state_mutated": false,
+    "quantity_authority": "none",
+    "order_authority": false
+  }
+}

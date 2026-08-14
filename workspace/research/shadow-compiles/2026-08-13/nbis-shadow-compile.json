@@ -1,0 +1,50 @@
+{
+  "schema_version": "2.6.12",
+  "mode": "NON_AUTHORITATIVE_SHADOW",
+  "ticker": "NBIS",
+  "candidate_baseline_id": "nbis-20260814-v2",
+  "candidate_baseline_hash": "b361d1bb11864c91165fd24dbbef161a552313a73a5a52c1939fc8b873b2feb7",
+  "valuation_snapshot_id": "NBIS-valuation-2026-08-13-v1",
+  "valuation_snapshot_hash": "19c6d4289e20d7a616a2e7d39531579b64bc335b6d6892729a193bce2de51cc2",
+  "event_link_id": "nbis-20260814-v2--NBIS--event-risk-2026-08-13-cutoff-20260814T012435982Z",
+  "event_link_hash": "84ecca7c5d2cc05c29db325415a313b00f424f0f6ff6f2d70f0617eacb154f68",
+  "overlay_hash": "96786c143dc1ae2c0f12c46caabbead691afa8c9cbd236e90215b38a0a1973a5",
+  "portfolio_state_revision": 13,
+  "portfolio_state_hash": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "policy_hash": "feaef6debcb42fb90c45af7d5ad0a22d840eee8df1e301947a0eecac8bc18423",
+  "provider_scope_hash": "483fba06fdefcf9e368d6637454e12f89e483f05c911f177a85587a7d22f4ba8",
+  "thesis_status": "VALID",
+  "valuation_evidence_status": "PRICE_EVIDENCE_CONFLICT",
+  "valuation_judgement_status": "UNVERIFIED",
+  "technical_status": "READY",
+  "event_status": "EVENT_REVIEW_PENDING",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "strategy_signal": "NONE",
+  "primary_reason": "Nebius reported rapid AI-cloud revenue growth, more than $40 billion of customer commitments, materially expanded contracted-power plans, and strong customer prepayments, but the build-out remains extremely capital intensive and direct point-in-time valuation is not verified in this slow baseline.",
+  "strongest_counter_case": "Q2 operating cash flow was dominated by customer prepayments while capital expenditures materially exceeded operating cash flow; the company also used equity, pre-funded warrants, convertibles, and secured debt, and it did not disclose a complete quantitative customer-concentration schedule. Execution delays, GPU or power constraints, contract repricing, dilution, or weaker customer prepayments could therefore impair the capacity ramp before it produces durable free cash flow.",
+  "invalidation": [
+    "Official evidence shows a material cancellation, repricing, delay, or non-renewal of the large contracted AI-cloud commitments.",
+    "Verified liquidity, customer prepayments, and financing sources no longer cover the disclosed capacity build-out without materially adverse solvency or dilution risk.",
+    "Official evidence shows that GPU availability, power delivery, or data-center construction cannot support the announced capacity ramp.",
+    "A validated point-in-time valuation packet shows that expected capacity and cash-flow growth cannot justify the observed enterprise value under conservative assumptions."
+  ],
+  "next_review_trigger": [
+    "A validated point-in-time NBIS valuation packet using a completed-session market snapshot and current diluted share count.",
+    "The next official earnings release and filed financial statements.",
+    "A new official disclosure of customer concentration, contract economics, financing, dilution, GPU supply, power delivery, or data-center commissioning."
+  ],
+  "remaining_conditions": [
+    "BASELINE_CONTENT_INCOMPLETE",
+    "VALUATION_EVIDENCE_NOT_VALIDATED",
+    "EVENT_LINK_NOT_ACTIVATABLE",
+    "PRIMARY_PRICE_NOT_VALIDATED"
+  ],
+  "shadow_compile_status": "PENDING",
+  "live_strategy_state": "DATA_BLOCKED",
+  "shadow_strategy_state": "STRATEGY_REFRESH_REQUIRED",
+  "blocked_decision_classes": [],
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

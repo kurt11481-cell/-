@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.6",
+  "ticker": "MVLL",
+  "market_session": "2026-08-13",
+  "primary_price_status": "INVALID",
+  "independent_price_status": "CONFLICT",
+  "technical_status": "WATCH",
+  "event_risk_status": "EVENT_DATA_INCOMPLETE",
+  "hard_risk_observation": "NO_PRIMARY_BREACH",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "cash_status": "VERIFIED_ZERO",
+  "broker_snapshot_status": "VERIFIED",
+  "leveraged_confirmation_status": "INCONCLUSIVE",
+  "active_timing_tranche": null,
+  "rearm_status": "EMA10_RECLAIM_RVOL20_BLOCKED",
+  "portfolio_state_revision": 13,
+  "deterministic_existing_policy": null,
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "overlay_hash": "eb0a0837dc0b8144b4a426aab7272413239afa094d690ff5faa75dd6a7dd200c"
+}

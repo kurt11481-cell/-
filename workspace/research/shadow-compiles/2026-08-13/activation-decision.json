@@ -1,0 +1,42 @@
+{
+  "schema_version": "2.6.12",
+  "decision_id": "holding-baseline-shadow-activation-2026-08-13",
+  "market_session": "2026-08-13",
+  "evaluated_at": "2026-08-14T05:27:45Z",
+  "active_index_path": "workspace/research/holding-baselines/active-index.json",
+  "active_index_sha256_before": "c0f7293c10ee70faf6198fa3c22dabf9ba8a0559e653f4589c001fb0cf3ece34",
+  "active_index_sha256_after": "c0f7293c10ee70faf6198fa3c22dabf9ba8a0559e653f4589c001fb0cf3ece34",
+  "results": [
+    {
+      "ticker": "SOXL",
+      "candidate_baseline_id": "soxl-20260814-v2",
+      "compile_status": "PENDING",
+      "activation_status": "SOXL_SHADOW_ACTIVATION_BLOCKED",
+      "blockers": ["PRIMARY_PRICE_NOT_VALIDATED"],
+      "observation_state_initialized": false
+    },
+    {
+      "ticker": "NBIS",
+      "candidate_baseline_id": "nbis-20260814-v2",
+      "compile_status": "PENDING",
+      "activation_status": "NBIS_VALUATION_PENDING",
+      "blockers": ["BASELINE_CONTENT_INCOMPLETE", "VALUATION_EVIDENCE_NOT_VALIDATED", "EVENT_LINK_NOT_ACTIVATABLE", "PRIMARY_PRICE_NOT_VALIDATED"],
+      "observation_state_initialized": false
+    },
+    {
+      "ticker": "MVLL",
+      "candidate_baseline_id": "mvll-20260814-v2",
+      "compile_status": "PENDING",
+      "activation_status": "MRVL_VALUATION_PENDING",
+      "blockers": ["BASELINE_CONTENT_INCOMPLETE", "VALUATION_EVIDENCE_NOT_VALIDATED", "PRIMARY_PRICE_NOT_VALIDATED", "EMA10_RECLAIM_RVOL20"],
+      "observation_state_initialized": false
+    }
+  ],
+  "independently_activated_tickers": [],
+  "historical_alert_replay_count": 0,
+  "live_strategy_changed": false,
+  "portfolio_state_mutated": false,
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}
