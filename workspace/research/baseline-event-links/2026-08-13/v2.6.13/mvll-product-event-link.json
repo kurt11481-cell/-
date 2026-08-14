@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6.12",
+  "baseline_event_link_id": "mvll-20260814-v2--MVLL--event-risk-2026-08-13-holding-completion-20260814T073717Z",
+  "ticker": "MVLL",
+  "entity_role": "DIRECT_PRODUCT",
+  "baseline_id": "mvll-20260814-v2",
+  "baseline_hash": "fecb44c6615f13466bb2a2285f89d6a50170eee1cda72d0fe15daed4efe89823",
+  "event_bundle_id": "event-risk-2026-08-13-holding-completion-20260814T073717Z",
+  "event_bundle_hash": "4d059774c3401b44a890ee36ffa35959b3630d9b077483bdeb5842605565c67d",
+  "event_coverage_status": "COMPLETE",
+  "event_effect": "CONTEXT_ONLY",
+  "analysis_cutoff": "2026-08-14T07:37:17Z",
+  "link_created_at": "2026-08-14T07:37:17Z",
+  "link_validation_status": "VALID",
+  "link_hash": "d499b619dbb6a44d5b220f250522211a567092ce2bb425562de304bf82c68984",
+  "order_authority": false
+}
