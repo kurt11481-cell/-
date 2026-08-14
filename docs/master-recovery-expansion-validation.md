@@ -10,10 +10,13 @@ contracts. Portfolio facts and live execution authority are outside scope.
 ## Deployment provenance
 
 Both Codex Scheduled Tasks remain configured at 09:00 and 16:30
-America/New_York. Operational recording now requires a clean, exact-HEAD
-scheduled-runtime worktree plus matching task, code, policy, provider-scope and
-cohort hashes. Until the external runtime manifest is generated and the task
-configuration is revalidated, counting fails closed.
+America/New_York. Operational recording requires the clean
+`E:\사업\##금동한\runtime\stock-strategy-scheduled` exact-HEAD worktree plus
+matching task, code, policy, provider-scope and cohort hashes. The Git-ignored
+canonical portfolio state remains in the strategy repository and is passed by
+its absolute read-only input path; it is not duplicated into the code
+worktree. Until the external runtime manifest and task configuration validate,
+counting fails closed.
 
 ## MVLL canonical volume lineage
 

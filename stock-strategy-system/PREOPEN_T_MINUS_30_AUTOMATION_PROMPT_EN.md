@@ -10,6 +10,13 @@ cohort, and clean-worktree state must match the files actually used. If it is
 missing or mismatched, return `DEPLOYMENT_PROVENANCE_NOT_VERIFIED` and do not
 record a Pre-Open success.
 
+Execute code only from `E:\사업\##금동한\runtime\stock-strategy-scheduled`.
+Read the canonical portfolio state only from
+`E:\사업\##금동한\코덱스저장소\stock-strategy-system\portfolio_state.json`;
+do not copy results back, write it, or substitute a worktree-local state file.
+The deployment manifest is
+`E:\사업\##금동한\runtime\stock-strategy-scheduled\deployment-provenance.json`.
+
 Run one read-only `PRE_OPEN_T_MINUS_30` phase for the upcoming official U.S.
 regular session. Verify the official exchange calendar and upcoming session
 before doing work; return `MARKET_HOLIDAY` or `OFFICIAL_SESSION_UNVERIFIED`
