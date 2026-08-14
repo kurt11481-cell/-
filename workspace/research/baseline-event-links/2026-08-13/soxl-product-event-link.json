@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.6.12",
+  "baseline_event_link_id": "soxl-20260814-v2--SOXL--event-risk-2026-08-13-cutoff-20260814T012435982Z",
+  "ticker": "SOXL",
+  "entity_role": "DIRECT_PRODUCT",
+  "baseline_id": "soxl-20260814-v2",
+  "baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+  "event_bundle_id": "event-risk-2026-08-13-cutoff-20260814T012435982Z",
+  "event_bundle_hash": "87a921f10d80649b34462e92acd8d8e2209d74e6a4a32233e82256747207cce8",
+  "event_coverage_status": "PARTIAL_NONBLOCKING",
+  "event_effect": "CONTEXT_ONLY",
+  "analysis_cutoff": "2026-08-14T02:30:13Z",
+  "link_created_at": "2026-08-14T05:12:45.898410+00:00",
+  "link_validation_status": "PARTIAL_NONBLOCKING",
+  "link_hash": "c9c4db6b560ccac25a5f5b7cb2a60d4921a40d86bbfaa94ae4cb028190567b66",
+  "order_authority": false
+}

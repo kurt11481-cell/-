@@ -1,0 +1,188 @@
+{
+  "schema_version": "2.6",
+  "baseline_id": "nbis-20260814-v2",
+  "baseline_version": 2,
+  "ticker": "NBIS",
+  "baseline_type": "ISSUER_EQUITY",
+  "analysis_cutoff": "2026-08-14T04:15:35Z",
+  "evidence_cutoff": "2026-08-14T04:15:35Z",
+  "content_status": "PARTIAL",
+  "thesis_status": "VALID",
+  "valuation_applicability": "DIRECT",
+  "valuation_status": "UNVERIFIED",
+  "valuation_basis": "NBIS_ISSUER",
+  "fundamental_risk_status": "CONSTRAINED",
+  "primary_reason": "Nebius reported rapid AI-cloud revenue growth, more than $40 billion of customer commitments, materially expanded contracted-power plans, and strong customer prepayments, but the build-out remains extremely capital intensive and direct point-in-time valuation is not verified in this slow baseline.",
+  "strongest_counter_case": "Q2 operating cash flow was dominated by customer prepayments while capital expenditures materially exceeded operating cash flow; the company also used equity, pre-funded warrants, convertibles, and secured debt, and it did not disclose a complete quantitative customer-concentration schedule. Execution delays, GPU or power constraints, contract repricing, dilution, or weaker customer prepayments could therefore impair the capacity ramp before it produces durable free cash flow.",
+  "invalidation_conditions": [
+    "Official evidence shows a material cancellation, repricing, delay, or non-renewal of the large contracted AI-cloud commitments.",
+    "Verified liquidity, customer prepayments, and financing sources no longer cover the disclosed capacity build-out without materially adverse solvency or dilution risk.",
+    "Official evidence shows that GPU availability, power delivery, or data-center construction cannot support the announced capacity ramp.",
+    "A validated point-in-time valuation packet shows that expected capacity and cash-flow growth cannot justify the observed enterprise value under conservative assumptions."
+  ],
+  "next_research_triggers": [
+    "A validated point-in-time NBIS valuation packet using a completed-session market snapshot and current diluted share count.",
+    "The next official earnings release and filed financial statements.",
+    "A new official disclosure of customer concentration, contract economics, financing, dilution, GPU supply, power delivery, or data-center commissioning."
+  ],
+  "claims": [
+    {
+      "claim_id": "nbis-v2-c1",
+      "claim_type": "REVENUE_CONTRACTED_CAPACITY_AND_DEMAND",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2",
+        "nbis-v2-e3"
+      ],
+      "normalized_claim": "Nebius reported Q2 2026 revenue of $582.3 million, AI-cloud revenue of $574.9 million, more than $40 billion of customer commitments, four landmark deals with an average value above $1 billion, and a target of 5 GW of contracted power by year-end 2026."
+    },
+    {
+      "claim_id": "nbis-v2-c2",
+      "claim_type": "CAPEX_OPERATING_CASH_FLOW_AND_FREE_CASH_FLOW",
+      "evidence_ids": [
+        "nbis-v2-e1"
+      ],
+      "normalized_claim": "For Q2 2026 Nebius reported $2.2461 billion of operating cash flow and $5.6574 billion of capital expenditures; the arithmetic operating-cash-flow-minus-capex proxy is negative $3.4113 billion and is a local calculation rather than a company-reported free-cash-flow metric."
+    },
+    {
+      "claim_id": "nbis-v2-c3",
+      "claim_type": "LIQUIDITY_AND_CONTRACT_LIABILITIES",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2"
+      ],
+      "normalized_claim": "At June 30, 2026 Nebius reported $8.0421 billion of cash and cash equivalents, $1.0560 billion of restricted cash, approximately $8.5 billion of noncurrent debt, and approximately $6.0 billion of current and noncurrent deferred revenue, so headline cash must be assessed together with debt, restrictions, and prepaid delivery obligations."
+    },
+    {
+      "claim_id": "nbis-v2-c4",
+      "claim_type": "FINANCING_AND_DILUTION",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e4",
+        "nbis-v2-e5",
+        "nbis-v2-e6"
+      ],
+      "normalized_claim": "Nebius disclosed large financing inflows from convertibles, a pre-funded warrant, treasury-share sales and its at-the-market program; during Q2 it sold 12.7 million Class A shares for approximately $2.8 billion gross and retained capacity to sell a further 12.3 million shares under the program."
+    },
+    {
+      "claim_id": "nbis-v2-c5",
+      "claim_type": "CUSTOMER_CONCENTRATION_GPU_POWER_AND_BUILD_CONSTRAINTS",
+      "evidence_ids": [
+        "nbis-v2-e2",
+        "nbis-v2-e3"
+      ],
+      "normalized_claim": "Large individual contracts, the disclosed Meta framework, a small number of landmark deals, Vera Rubin deployment, power delivery, and data-center construction create material customer and execution concentration; exact customer revenue shares were not disclosed in the reviewed primary sources."
+    },
+    {
+      "claim_id": "nbis-v2-c6",
+      "claim_type": "DIRECT_VALUATION_LIMITATION",
+      "evidence_ids": [
+        "nbis-v2-e1",
+        "nbis-v2-e2"
+      ],
+      "normalized_claim": "The issuer operating packet is refreshed, but this slow baseline intentionally excludes current market price and does not contain a separately validated point-in-time enterprise-value or diluted-share valuation packet; direct valuation remains unverified."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "nbis-v2-e1",
+      "source_url": "https://assets.nebius.com/assets/dfe7a7f3-771e-4653-94e8-8f86bf126b1d/PR.pdf?cache-buster=2026-08-12T11:58:03.516Z",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-08-12T11:58:03Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-06-30T20:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Nebius Q2 2026 revenue, income statement, cash flow, capex, liquidity, debt, deferred revenue, equity issuance and financing",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e2",
+      "source_url": "https://assets.nebius.com/assets/4462517b-ce83-41f2-96ed-f2ac1bc06a05/SHLQ226%20%281%29.pdf?cache-buster=2026-08-12T11:57:07.944Z",
+      "source_type": "ISSUER_PRIMARY",
+      "published_at": "2026-08-12T11:57:07Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-08-12T11:57:07Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Nebius Q2 shareholder letter covering customer commitments, landmark deals, prepayments, contracted power, Vera Rubin systems and build-out constraints",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e3",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926027886/0001104659-26-027886.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-16T10:18:17Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-13T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Meta infrastructure-services framework and initial five-year GPU-capacity orders",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e4",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926026163/0001104659-26-026163.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-11T12:15:28Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-11T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Approximately $2 billion NVIDIA pre-funded warrant private placement and related share issuance mechanics",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e5",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926029863/0001104659-26-029863.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-03-18T11:14:51Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-03-17T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Upsized convertible senior-note offering",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "evidence_id": "nbis-v2-e6",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926084452/0001104659-26-084452.txt",
+      "source_type": "REGULATORY_PRIMARY",
+      "published_at": "2026-07-17T13:29:13Z",
+      "retrieved_at": "2026-08-14T04:15:35Z",
+      "effective_at": "2026-07-10T12:00:00Z",
+      "evidence_cutoff": "2026-08-14T04:15:35Z",
+      "point_in_time_eligible": true,
+      "normalized_field": "Secured project financing and collateral structure",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "claim_ids": [
+    "nbis-v2-c1",
+    "nbis-v2-c2",
+    "nbis-v2-c3",
+    "nbis-v2-c4",
+    "nbis-v2-c5",
+    "nbis-v2-c6"
+  ],
+  "evidence_ids": [
+    "nbis-v2-e1",
+    "nbis-v2-e2",
+    "nbis-v2-e3",
+    "nbis-v2-e4",
+    "nbis-v2-e5",
+    "nbis-v2-e6"
+  ],
+  "linked_components": [],
+  "research_packet_hash": "b26420f8671159b1dd6e023fb94bce4d21d1ca45da40656caa6258212ce29637",
+  "baseline_hash": "b361d1bb11864c91165fd24dbbef161a552313a73a5a52c1939fc8b873b2feb7",
+  "supersedes_baseline_id": "nbis-20260813-v1",
+  "validation_status": "PARTIAL_REFRESH_REQUIRED",
+  "evidence_packet_validation": "PASSED",
+  "deterministic_research_gate": "PASSED",
+  "risk_controller_result": "DOWNGRADE",
+  "point_in_time_status": "PASSED",
+  "research_recommendation": "REASSESS",
+  "quantity_authority": "none",
+  "order_authority": false
+}

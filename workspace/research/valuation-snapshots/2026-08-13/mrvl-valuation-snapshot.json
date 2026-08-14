@@ -1,0 +1,334 @@
+{
+  "schema_version": "2.6.12",
+  "valuation_snapshot_id": "MRVL-valuation-2026-08-13-v1",
+  "ticker": "MRVL",
+  "issuer_name": "Marvell Technology, Inc.",
+  "entity_role": "UNDERLYING_ISSUER",
+  "analysis_cutoff": "2026-08-14T05:12:45.898410+00:00",
+  "market_session": "2026-08-13",
+  "price": {
+    "provider": "KIWOOM_REST",
+    "price_basis": "RAW_REGULAR_SESSION_CLOSE",
+    "market_session_type": "REGULAR_COMPLETED",
+    "reported_session": "2026-08-13",
+    "raw_regular_session_close": 222.77,
+    "currency": "USD",
+    "bar_finalized": true,
+    "retrieved_at": "2026-08-14T14:11:43.232981+09:00",
+    "source_record_hash": "79aa60bb3b3791fb0dcbd977a0b1df6021a04e0f4f2458123bf543600fc90968",
+    "shadow_provider": "YFINANCE_DIAGNOSTIC_SHADOW",
+    "shadow_raw_close": 222.17999267578125,
+    "comparison_status": "CONFLICT"
+  },
+  "capitalization": {
+    "share_count_as_of": "2026-05-21",
+    "basic_shares": {
+      "value": 874.8,
+      "currency": null,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-21",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "diluted_shares_base": {
+      "value": 886.1,
+      "currency": null,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "SCENARIO_USING_WEIGHTED_INCREMENTAL_AWARDS"
+    },
+    "diluted_shares_stress": {
+      "value": 907.878,
+      "currency": null,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "SCENARIO_INCLUDING_SERIES_A_CONVERSION"
+    },
+    "share_class_breakdown": {
+      "common_shares_millions": 874.8,
+      "series_a_preferred_shares_millions": 2.0
+    },
+    "preferred_equity": {
+      "value": 2000.0,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_STATED_VALUE",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "convertible_instruments": {
+      "series_a_max_common_shares_millions": 21.778,
+      "initial_conversion_price_usd": 91.8355,
+      "evidence_id": "mvll-v2-e3"
+    },
+    "warrants": {
+      "value": 0.0,
+      "currency": null,
+      "unit": "SHARES_MILLIONS_SEPARATELY_IDENTIFIED",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NO_SEPARATE_MATERIAL_WARRANT_COUNT_USED"
+    },
+    "ATM_capacity": {
+      "value": 0.0,
+      "currency": null,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_USED_IN_SCENARIO"
+    },
+    "stock_compensation": {
+      "value": 11.3,
+      "currency": null,
+      "unit": "WEIGHTED_INCREMENTAL_DILUTED_SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "QUARTER_WEIGHTED_SCENARIO_PROXY"
+    },
+    "other_dilution": {
+      "value": null,
+      "currency": null,
+      "unit": "SHARES_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "CONTINGENT_ACQUISITION_SHARES_UNRESOLVED"
+    }
+  },
+  "balance_sheet": {
+    "cash": {
+      "value": 3843.6,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "restricted_cash": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_SEPARATELY_USED"
+    },
+    "debt": {
+      "value": 4961.3,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "secured_financing": {
+      "value": 0.0,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_SEPARATELY_IDENTIFIED"
+    },
+    "preferred_claims": {
+      "value": 2000.0,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_STATED_VALUE",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "other_claims": {
+      "value": 0.0,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "SCENARIO_ASSUMPTION"
+    }
+  },
+  "operating_metrics": {
+    "revenue_ltm": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_EVALUATED"
+    },
+    "annualized_revenue_run_rate": {
+      "value": 9672.0,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_PER_YEAR",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e2",
+      "verification_status": "LOCAL_Q1_REVENUE_TIMES_FOUR"
+    },
+    "gross_profit_ltm": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_EVALUATED"
+    },
+    "operating_cash_flow": {
+      "value": 638.8,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_Q1",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e2",
+      "verification_status": "VERIFIED"
+    },
+    "capital_expenditure": {
+      "value": 155.7,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_Q1",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "VERIFIED"
+    },
+    "local_ocf_minus_capex_proxy": {
+      "value": 483.1,
+      "currency": "USD",
+      "unit": "USD_MILLIONS_Q1",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "LOCAL_CALCULATION_NOT_REPORTED_FCF"
+    },
+    "reported_free_cash_flow": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e2",
+      "verification_status": "NOT_USED_WITHOUT_EXPLICIT_RECONCILIATION"
+    },
+    "deferred_revenue": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_EVALUATED"
+    },
+    "customer_prepayments": {
+      "value": null,
+      "currency": "USD",
+      "unit": "USD_MILLIONS",
+      "as_of": "2026-05-02",
+      "source_evidence_id": "mvll-v2-e3",
+      "verification_status": "NOT_EVALUATED"
+    }
+  },
+  "derived_values": {
+    "equity_value_basic": 194879.196,
+    "equity_value_diluted_base": 197396.497,
+    "equity_value_diluted_stress": 202247.98206,
+    "enterprise_value_basic": 197996.89599999998,
+    "enterprise_value_base": 200514.197,
+    "enterprise_value_stress": 203365.68206,
+    "currency": "USD",
+    "unit": "USD_MILLIONS"
+  },
+  "valuation_methods": [
+    {
+      "method": "EV_TO_ANNUALIZED_REVENUE_RUN_RATE",
+      "status": "EVALUATED",
+      "judgement_authority": "NONE"
+    }
+  ],
+  "valuation_scenarios": [
+    {
+      "scenario_id": "MRVL-basic",
+      "scenario_type": "BASIC",
+      "share_basis": 874.8,
+      "equity_value": 194879.196,
+      "enterprise_value": 197996.89599999998,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_ANNUALIZED_REVENUE_RUN_RATE",
+          "value": 20.47114309346567,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mvll-v2-e2"
+        }
+      ],
+      "assumption_ids": [
+        "BASIC_SHARES_ONLY"
+      ],
+      "status": "EVALUATED"
+    },
+    {
+      "scenario_id": "MRVL-base-diluted",
+      "scenario_type": "BASE_DILUTED",
+      "share_basis": 886.1,
+      "equity_value": 197396.497,
+      "enterprise_value": 200514.197,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_ANNUALIZED_REVENUE_RUN_RATE",
+          "value": 20.731409946236557,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mvll-v2-e2"
+        }
+      ],
+      "assumption_ids": [
+        "Q1_WEIGHTED_INCREMENTAL_STOCK_AWARDS_PROXY",
+        "SERIES_A_REMAINS_PREFERRED_CLAIM"
+      ],
+      "status": "EVALUATED"
+    },
+    {
+      "scenario_id": "MRVL-stress-diluted",
+      "scenario_type": "STRESS_DILUTED",
+      "share_basis": 907.878,
+      "equity_value": 202247.98206,
+      "enterprise_value": 203365.68206,
+      "valuation_methods": [
+        {
+          "method": "EV_TO_ANNUALIZED_REVENUE_RUN_RATE",
+          "value": 21.02622850082713,
+          "unit": "MULTIPLE",
+          "status": "EVALUATED",
+          "denominator_evidence_id": "mvll-v2-e2"
+        }
+      ],
+      "assumption_ids": [
+        "Q1_WEIGHTED_INCREMENTAL_STOCK_AWARDS_PROXY",
+        "SERIES_A_FULL_INITIAL_CONVERSION",
+        "PREFERRED_CLAIM_REMOVED_AFTER_CONVERSION"
+      ],
+      "status": "EVALUATED"
+    }
+  ],
+  "claim_ids": [
+    "mvll-v2-c2",
+    "mvll-v2-c5",
+    "mvll-v2-c6"
+  ],
+  "evidence_ids": [
+    "mvll-v2-e2",
+    "mvll-v2-e3"
+  ],
+  "required_missing_inputs": [
+    "SAME_SESSION_PRICE_CONFLICT",
+    "CONTINGENT_ACQUISITION_SHARE_OVERHANG",
+    "APPROVED_FORWARD_ESTIMATE_SOURCE"
+  ],
+  "calculation_formula_version": "holding-valuation-v2.6.12-1",
+  "staleness_status": "INVALID",
+  "staleness_triggers": [
+    "NEXT_EARNINGS",
+    "GUIDANCE_CHANGE",
+    "MATERIAL_CUSTOMER_PROGRAM_CHANGE",
+    "CAPITAL_STRUCTURE_CHANGE",
+    "DEBT_OR_CASH_CHANGE",
+    "PREFERRED_EQUITY_CONVERSION",
+    "MAJOR_ACQUISITION_OR_DIVESTITURE"
+  ],
+  "valuation_evidence_status": "PRICE_EVIDENCE_CONFLICT",
+  "valuation_judgement_status": "UNVERIFIED",
+  "snapshot_hash": "7f3130763e760f9092233d8bff780959cebf49cb99a14c34caef30c7b0c8fc7f",
+  "order_authority": false
+}

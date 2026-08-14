@@ -1,0 +1,48 @@
+{
+  "schema_version": "2.6.12",
+  "mode": "NON_AUTHORITATIVE_SHADOW",
+  "ticker": "SOXL",
+  "candidate_baseline_id": "soxl-20260814-v2",
+  "candidate_baseline_hash": "0bb1e035dc321bf4f8a4c9cc88f442d083ffea87e7527a33a86d79d76cb99d1a",
+  "valuation_snapshot_id": null,
+  "valuation_snapshot_hash": null,
+  "event_link_id": "soxl-20260814-v2--SOXL--event-risk-2026-08-13-cutoff-20260814T012435982Z",
+  "event_link_hash": "c9c4db6b560ccac25a5f5b7cb2a60d4921a40d86bbfaa94ae4cb028190567b66",
+  "overlay_hash": "86d709876013fab77ae6d0c0cbc3d7e4b8e5dbffb1020780686f96606c73c819",
+  "portfolio_state_revision": 13,
+  "portfolio_state_hash": "08b2011ce69bc8dc47fd52f78077c0eb5f4aee1c472f4e1179881250169d4555",
+  "policy_hash": "feaef6debcb42fb90c45af7d5ad0a22d840eee8df1e301947a0eecac8bc18423",
+  "provider_scope_hash": "483fba06fdefcf9e368d6637454e12f89e483f05c911f177a85587a7d22f4ba8",
+  "thesis_status": "CONTESTED",
+  "valuation_evidence_status": "NOT_APPLICABLE",
+  "valuation_judgement_status": "NOT_APPLICABLE",
+  "technical_status": "WATCH",
+  "event_status": "CONTEXT_ONLY",
+  "risk_status": "CONSTRAINED",
+  "portfolio_fit_status": "CONSTRAINED",
+  "strategy_signal": "NONE",
+  "primary_reason": "Current primary evidence supports strong HBM, memory, foundry, advanced-packaging, custom-silicon and networking demand alongside continued hyperscaler infrastructure spending, but extreme memory pricing, heavy capacity investment, customer concentration and daily 3x leverage make the sector thesis contested rather than a company-style valuation conclusion.",
+  "strongest_counter_case": "Memory average selling prices and margins are at unusually high levels while Micron and competitors are expanding capacity; AI customers may decelerate or reallocate CAPEX, custom programs may slip, foundry or CoWoS capacity can bottleneck deployments, and export or competition risks can compress earnings and sector multiples. SOXL daily compounding and volatility then magnify any reversal and can diverge materially from three times the sector's multi-day return.",
+  "invalidation": [
+    "Official evidence across memory, foundry, custom silicon, networking or hyperscaler customers shows broad deterioration in AI-infrastructure demand or capital spending.",
+    "Memory supply expansion or customer inventories produce sustained price and margin deterioration across major issuers.",
+    "Official foundry or advanced-packaging evidence shows that capacity constraints materially delay sector revenue conversion rather than merely shift timing.",
+    "SOXL sponsor disclosures change the daily objective, benchmark, continued listing, or operating structure."
+  ],
+  "next_review_trigger": [
+    "The next official earnings cycle for leading memory, foundry, compute, equipment, networking and advanced-packaging issuers.",
+    "Material hyperscaler guidance changes to AI-infrastructure capital expenditures.",
+    "Any SOXL prospectus supplement, split, benchmark, derivative, liquidity, or product-structure change.",
+    "A broad primary-source confirmation of sector demand deterioration, supply overshoot, export restrictions, or a customer-CAPEX slowdown."
+  ],
+  "remaining_conditions": [
+    "PRIMARY_PRICE_NOT_VALIDATED"
+  ],
+  "shadow_compile_status": "PENDING",
+  "live_strategy_state": "DATA_BLOCKED",
+  "shadow_strategy_state": "DATA_BLOCKED",
+  "blocked_decision_classes": [],
+  "quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

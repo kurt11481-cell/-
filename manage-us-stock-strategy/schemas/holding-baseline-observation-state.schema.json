@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "holding-baseline-observation-state.schema.json",
+  "title": "Forward-Only Holding Baseline Observation State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ticker", "baseline_id", "baseline_hash", "activation_session", "required_valid_sessions", "observed_sessions", "valid_sessions", "excluded_sessions", "live_shadow_differences", "critical_violations", "status", "previous_record_hash", "record_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.6.12"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "baseline_id": {"type": "string", "minLength": 1},
+    "baseline_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "activation_session": {"type": "string", "format": "date"},
+    "required_valid_sessions": {"const": 5},
+    "observed_sessions": {"type": "array", "items": {"type": "object"}},
+    "valid_sessions": {"type": "array", "items": {"type": "string", "format": "date"}, "uniqueItems": true},
+    "excluded_sessions": {"type": "array", "items": {"type": "object"}},
+    "live_shadow_differences": {"type": "array", "items": {"type": "object"}},
+    "critical_violations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "status": {"enum": ["FIRST_OBSERVATION_SESSION_PENDING", "OBSERVING", "FIVE_SESSION_REVIEW_REQUIRED", "CRITICAL_VIOLATION"]},
+    "previous_record_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "record_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "order_authority": {"const": false}
+  }
+}
