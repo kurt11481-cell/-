@@ -17,6 +17,8 @@ canonical portfolio state remains in the strategy repository and is passed by
 its absolute read-only input path; it is not duplicated into the code
 worktree. Until the external runtime manifest and task configuration validate,
 counting fails closed.
+The manifest itself is written only under the Git-ignored runtime output path
+`workspace/outputs/activation/deployment-provenance/current.json`.
 
 ## MVLL canonical volume lineage
 

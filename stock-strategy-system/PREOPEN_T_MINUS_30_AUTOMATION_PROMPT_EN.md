@@ -15,7 +15,7 @@ Read the canonical portfolio state only from
 `E:\사업\##금동한\코덱스저장소\stock-strategy-system\portfolio_state.json`;
 do not copy results back, write it, or substitute a worktree-local state file.
 The deployment manifest is
-`E:\사업\##금동한\runtime\stock-strategy-scheduled\deployment-provenance.json`.
+`E:\사업\##금동한\runtime\stock-strategy-scheduled\workspace\outputs\activation\deployment-provenance\current.json`.
 
 Run one read-only `PRE_OPEN_T_MINUS_30` phase for the upcoming official U.S.
 regular session. Verify the official exchange calendar and upcoming session
