@@ -433,10 +433,16 @@ def activate_shadow_candidate(*, baseline: dict[str, Any], compile_result: dict[
     if target.exists() and json.loads(target.read_text(encoding="utf-8")) != activated:
         return {"activation_status": "REJECTED", "errors": ["IMMUTABLE_BASELINE_EXISTS"], "index_updated": False, "order_authority": False}
     if not target.exists(): _atomic_write_json(target, activated)
+    workspace_ancestors = [parent for parent in baseline_root.resolve().parents if parent.name == "workspace"]
+    if workspace_ancestors:
+        repository_root = workspace_ancestors[0].parent
+        portable_target = target.resolve().relative_to(repository_root.resolve()).as_posix()
+    else:
+        portable_target = target.resolve().relative_to(index_path.resolve().parent).as_posix()
     index["active"][ticker] = {
         "baseline_id": baseline["baseline_id"], "baseline_version": baseline["baseline_version"],
         "baseline_hash": baseline["baseline_hash"], "research_packet_hash": baseline["research_packet_hash"],
-        "activated_at": activated_at, "baseline_path": target.as_posix(),
+        "activated_at": activated_at, "baseline_path": portable_target,
         "supersedes_baseline_id": previous.get("baseline_id") if previous else None,
     }
     index["updated_at"] = activated_at
