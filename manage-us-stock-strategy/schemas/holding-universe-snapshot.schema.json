@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "holding-universe-snapshot.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "universe_role", "holding_universe_as_of", "instrument_identities", "holding_universe_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "HOLDING_UNIVERSE_SNAPSHOT"},
+    "universe_role": {"const": "PORTFOLIO_HOLDING_UNIVERSE"},
+    "holding_universe_as_of": {"type": "string", "format": "date-time"},
+    "instrument_identities": {"type": "array"},
+    "holding_universe_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

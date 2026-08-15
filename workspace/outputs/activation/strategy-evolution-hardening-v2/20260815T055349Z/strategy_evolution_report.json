@@ -1,0 +1,356 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-2.0",
+  "metric_definition_version": "strategy-evolution-metrics-2.0",
+  "scorecard_version": "portfolio-optimization-scorecard-2.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+  "schema_version": "1.0",
+  "artifact_type": "STRATEGY_EVOLUTION_CURRENT_STATE",
+  "generated_at": "2026-08-15T05:53:49Z",
+  "status": "STRATEGY_EVOLUTION_ENGINE_VERIFIED",
+  "lifecycle_status": "FIRST_GENUINE_DUAL_RUN_PENDING",
+  "champion_policy_id": "champion-read-only-v1",
+  "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+  "holding_universe_hash": "47432ed241ed1ce0299e0ced5375f95f320ec428c069b2370a61c0de6faa8907",
+  "candidate_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f",
+  "candidate_opportunity_universe_status": "UNAVAILABLE_AT_DECISION_TIME",
+  "survivorship_reconstruction_forbidden": true,
+  "live_event_resolution_status": "NO_GENUINE_RUN_YET",
+  "event_analytics_granularity": [
+    "RUN_LEVEL",
+    "TICKER_CATEGORY_ACTION_LEVEL"
+  ],
+  "safe_fallback_reasons": [
+    "SAFE_FALLBACK_BROKER_VISIBILITY",
+    "SAFE_FALLBACK_EVENT_UNRESOLVED",
+    "SAFE_FALLBACK_EXECUTION_FEASIBILITY",
+    "SAFE_FALLBACK_INSUFFICIENT_VERIFIED_CASH",
+    "SAFE_FALLBACK_NO_ELIGIBLE_CANDIDATE",
+    "SAFE_FALLBACK_PORTFOLIO_RISK"
+  ],
+  "forward_outcomes": {
+    "1": {
+      "status": "NO_BASE_DECISION",
+      "completed_trading_sessions_required": 1
+    },
+    "5": {
+      "status": "NO_BASE_DECISION",
+      "completed_trading_sessions_required": 5
+    },
+    "10": {
+      "status": "NO_BASE_DECISION",
+      "completed_trading_sessions_required": 10
+    },
+    "20": {
+      "status": "NO_BASE_DECISION",
+      "completed_trading_sessions_required": 20
+    }
+  },
+  "benchmark_portfolios": [
+    {
+      "analytics_engine_version": "strategy-evolution-engine-2.0",
+      "metric_definition_version": "strategy-evolution-metrics-2.0",
+      "scorecard_version": "portfolio-optimization-scorecard-2.0",
+      "regime_definition_version": "NOT_CONFIGURED",
+      "transaction_cost_model_version": "NOT_CONFIGURED",
+      "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+      "schema_version": "1.0",
+      "artifact_type": "BENCHMARK_PORTFOLIO",
+      "benchmark_id": "BENCHMARK_CHAMPION",
+      "benchmark_version": "1.0",
+      "definition": "CURRENT_APPROVED_CHAMPION_PATH",
+      "decision_as_of": "2026-08-15T05:53:49Z",
+      "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+      "market_hash": "NO_BASE_DECISION",
+      "event_hash": "NO_BASE_DECISION",
+      "broker_state_reference": "NO_BASE_DECISION",
+      "holding_universe_hash": "47432ed241ed1ce0299e0ced5375f95f320ec428c069b2370a61c0de6faa8907",
+      "candidate_opportunity_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f",
+      "outcome_state": "NO_BASE_DECISION",
+      "counterfactual_validity": "MODELLED_ONLY",
+      "portfolio_mutation": false,
+      "actual_cash_mutation": false,
+      "order_authority": false,
+      "fingerprint": "0e072bfacd14fd86239ac0b4c65d5c61db38e509f72e9143e893337fbe67025f"
+    },
+    {
+      "analytics_engine_version": "strategy-evolution-engine-2.0",
+      "metric_definition_version": "strategy-evolution-metrics-2.0",
+      "scorecard_version": "portfolio-optimization-scorecard-2.0",
+      "regime_definition_version": "NOT_CONFIGURED",
+      "transaction_cost_model_version": "NOT_CONFIGURED",
+      "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+      "schema_version": "1.0",
+      "artifact_type": "BENCHMARK_PORTFOLIO",
+      "benchmark_id": "BENCHMARK_HOLD_ALL",
+      "benchmark_version": "1.0",
+      "definition": "PRESERVE_POSITIONS_NO_DISCRETIONARY_REALLOCATION",
+      "decision_as_of": "2026-08-15T05:53:49Z",
+      "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+      "market_hash": "NO_BASE_DECISION",
+      "event_hash": "NO_BASE_DECISION",
+      "broker_state_reference": "NO_BASE_DECISION",
+      "holding_universe_hash": "47432ed241ed1ce0299e0ced5375f95f320ec428c069b2370a61c0de6faa8907",
+      "candidate_opportunity_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f",
+      "outcome_state": "NO_BASE_DECISION",
+      "counterfactual_validity": "MODELLED_ONLY",
+      "portfolio_mutation": false,
+      "actual_cash_mutation": false,
+      "order_authority": false,
+      "fingerprint": "73754a25fc34e9f7e94a62a62eab833e48c83eb56d58b82ecd2f5a3b324b2da0"
+    },
+    {
+      "analytics_engine_version": "strategy-evolution-engine-2.0",
+      "metric_definition_version": "strategy-evolution-metrics-2.0",
+      "scorecard_version": "portfolio-optimization-scorecard-2.0",
+      "regime_definition_version": "NOT_CONFIGURED",
+      "transaction_cost_model_version": "NOT_CONFIGURED",
+      "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+      "schema_version": "1.0",
+      "artifact_type": "BENCHMARK_PORTFOLIO",
+      "benchmark_id": "BENCHMARK_TRIM_NO_REDEPLOY",
+      "benchmark_version": "1.0",
+      "definition": "VALID_CHAMPION_TRIM_EXIT_MODELED_PROCEEDS_REMAIN_CASH",
+      "decision_as_of": "2026-08-15T05:53:49Z",
+      "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+      "market_hash": "NO_BASE_DECISION",
+      "event_hash": "NO_BASE_DECISION",
+      "broker_state_reference": "NO_BASE_DECISION",
+      "holding_universe_hash": "47432ed241ed1ce0299e0ced5375f95f320ec428c069b2370a61c0de6faa8907",
+      "candidate_opportunity_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f",
+      "outcome_state": "NO_BASE_DECISION",
+      "counterfactual_validity": "MODELLED_ONLY",
+      "portfolio_mutation": false,
+      "actual_cash_mutation": false,
+      "order_authority": false,
+      "fingerprint": "b098d2c9c93b0aee820fcbb38663a44c4b78d5fe627321dcf4af40c59c195672"
+    }
+  ],
+  "paired_evidence_identity": {
+    "decision_as_of": "2026-08-15T05:53:49Z",
+    "market_evidence_hash": "NO_BASE_DECISION",
+    "event_evidence_hash": "NO_BASE_DECISION",
+    "broker_state_hash": "NO_BASE_DECISION",
+    "holding_universe_hash": "47432ed241ed1ce0299e0ced5375f95f320ec428c069b2370a61c0de6faa8907",
+    "candidate_opportunity_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f",
+    "policy_independent_source_hash": "NO_BASE_DECISION"
+  },
+  "paired_value_attribution": {
+    "TRIM_VALUE": {
+      "status": "NOT_APPLICABLE",
+      "value": null
+    },
+    "REDEPLOYMENT_VALUE": {
+      "status": "NOT_APPLICABLE",
+      "value": null
+    },
+    "REALLOCATION_VALUE": {
+      "status": "NOT_APPLICABLE",
+      "value": null
+    },
+    "CANDIDATE_SELECTION_VALUE": {
+      "status": "NOT_APPLICABLE",
+      "value": null
+    }
+  },
+  "portfolio_optimization_scorecard": {
+    "analytics_engine_version": "strategy-evolution-engine-2.0",
+    "metric_definition_version": "strategy-evolution-metrics-2.0",
+    "scorecard_version": "portfolio-optimization-scorecard-2.0",
+    "regime_definition_version": "NOT_CONFIGURED",
+    "transaction_cost_model_version": "NOT_CONFIGURED",
+    "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+    "schema_version": "1.0",
+    "artifact_type": "PORTFOLIO_OPTIMIZATION_SCORECARD",
+    "evaluation_order": [
+      "DATA_INTEGRITY",
+      "HARD_SAFETY",
+      "EXECUTABILITY",
+      "STABILITY",
+      "OPTIMIZATION",
+      "RETURN",
+      "EFFICIENCY"
+    ],
+    "single_composite_score_authority": false,
+    "data_integrity_status": "PASS",
+    "hard_safety_status": "PASS",
+    "executability_status": "NOT_READY",
+    "axes": {
+      "RETURN": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "STABILITY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "OPTIMIZATION": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "EFFICIENCY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "ROBUSTNESS": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "EXECUTABILITY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      }
+    },
+    "evidence_sample_size": 0,
+    "policy_thresholds_invented": false,
+    "order_authority": false,
+    "dominance_status": "EXECUTION_REJECTED",
+    "scorecard_hash": "3bbc616aa06cfa8aec6eef519b44768e9cfb40528d1523d60d0bb691bf76fd3d"
+  },
+  "paired_evaluation_status": "INSUFFICIENT_EVIDENCE",
+  "uncertainty": {
+    "evidence_uncertainty_status": "INSUFFICIENT_EVIDENCE",
+    "paired_sample_size": 0,
+    "confidence_interval": null,
+    "bootstrap_uncertainty": null,
+    "out_of_sample_status": "INSUFFICIENT_OUT_OF_SAMPLE_EVIDENCE",
+    "significance_threshold_configured": false
+  },
+  "decision_attribution": {
+    "status": "INSUFFICIENT_EVIDENCE",
+    "attributions": []
+  },
+  "improvement_findings": [],
+  "challenger_hypotheses": [],
+  "six_axis_dominance": "INSUFFICIENT_EVIDENCE",
+  "evidence_sufficiency_status": "INSUFFICIENT_EVIDENCE",
+  "evolution_budget_status": "OBSERVATIONAL_NO_NUMERIC_LIMIT",
+  "policy_stability_status": {
+    "policy_stability_status": "BASELINE_BUILDING",
+    "champion_age_seconds": 5453,
+    "semantic_policy_change_count": 0,
+    "policy_change_frequency": "INSUFFICIENT_EVIDENCE",
+    "active_production_challenger_count": 0,
+    "unresolved_production_challenger_count": 0,
+    "pending_oos_count": 0,
+    "pending_outcome_horizon_count": 0,
+    "recent_regression_count": 0,
+    "no_change_decision_count": 1,
+    "fixed_stability_thresholds_configured": false
+  },
+  "capital_efficiency": {
+    "CASH_IDLE_RATIO": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "VERIFIED_CASH_DEPLOYMENT_RATE": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "RETURN_ON_DEPLOYED_CAPITAL": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "RETURN_ON_TOTAL_CAPITAL": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "CAPITAL_REALLOCATION_GAIN": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "TURNOVER_EFFICIENCY": {
+      "status": "NO_BASE_DECISION",
+      "value": null
+    },
+    "EXECUTION_COST_EFFICIENCY": {
+      "status": "NOT_MODELLED",
+      "value": null
+    },
+    "NET_TRADING_EFFICIENCY": {
+      "status": "NOT_VERIFIED",
+      "value": null
+    }
+  },
+  "evidence_grade_policy": {
+    "grade_a_required_for_production_promotion": true,
+    "lower_grades_can_support_promotion_analysis": true,
+    "lower_grades_can_replace_grade_a": false,
+    "lower_grades_can_satisfy_operational_maturity": false
+  },
+  "real_challenger_creation_rule": {
+    "requires_repeated_evidence_based_finding_or_explicit_user_hypothesis": true,
+    "eligible_trigger_present": false,
+    "production_challenger_count": 0
+  },
+  "policy_change_proposals": [],
+  "auto_apply": false,
+  "evolution_authority": "EVOLUTION_4",
+  "evolution_5_enabled": false,
+  "execution_authority_status": "NONE",
+  "core_counters": {
+    "valid_finalized_sessions": 0,
+    "valid_paired_operational_days": 0,
+    "preopen_success_count": 0,
+    "postclose_success_count": 0
+  },
+  "portfolio_decision_counters": {
+    "genuine_decision_observations": 0,
+    "genuine_full_compile_observations": 0,
+    "genuine_degraded_compile_observations": 0,
+    "genuine_actionable_decisions": 0,
+    "genuine_review_required_decisions": 0
+  },
+  "analytics_counters": {
+    "scheduled_genuine_ingested": 0,
+    "manual_ingested": 0,
+    "replay_ingested": 0,
+    "shadow_ingested": 0,
+    "outcome_records": 0
+  },
+  "event_resolution_counters": {
+    "live_resolution_exercised": 0,
+    "live_resolution_success": 0,
+    "live_resolution_partial": 0,
+    "live_resolution_failed": 0
+  },
+  "strategy_evolution_counters": {
+    "champions": 1,
+    "production_challengers": 0,
+    "sentinel_challengers": 0,
+    "outcomes": 0,
+    "proposals": 0,
+    "no_change_decisions": 1
+  },
+  "strategy_evolution_cohort": "strategy-evolution-e40b68d58611ba34",
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "report_hash": "c0ba73cf10c2c864c6d9df4c5631285e163ff7f390362c60800662bed8c3966f"
+}

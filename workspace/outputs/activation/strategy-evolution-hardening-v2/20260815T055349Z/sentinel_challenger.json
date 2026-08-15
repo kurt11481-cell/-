@@ -1,0 +1,23 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-2.0",
+  "metric_definition_version": "strategy-evolution-metrics-2.0",
+  "scorecard_version": "portfolio-optimization-scorecard-2.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+  "schema_version": "1.0",
+  "artifact_type": "SENTINEL_CHALLENGER",
+  "namespace": "SENTINEL_TEST_NAMESPACE",
+  "mode": "TEST_ONLY",
+  "created_at": "2026-08-15T05:53:49Z",
+  "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+  "promotion_eligible": false,
+  "operational_maturity_eligible": false,
+  "decision_quality_eligible": false,
+  "policy_evolution_eligible": false,
+  "production_challenger": false,
+  "portfolio_mutation": false,
+  "production_decision_impact": "NONE",
+  "order_authority": false,
+  "sentinel_fingerprint": "3074ad44e098eb19d1a9ee1bc8dddfebb694b7f46eb6205e99439be168cdeb1c"
+}

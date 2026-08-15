@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sentinel-challenger.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "namespace", "mode", "promotion_eligible", "operational_maturity_eligible", "decision_quality_eligible", "policy_evolution_eligible", "production_challenger", "portfolio_mutation", "production_decision_impact", "sentinel_fingerprint", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "SENTINEL_CHALLENGER"},
+    "namespace": {"const": "SENTINEL_TEST_NAMESPACE"},
+    "mode": {"const": "TEST_ONLY"},
+    "promotion_eligible": {"const": false},
+    "operational_maturity_eligible": {"const": false},
+    "decision_quality_eligible": {"const": false},
+    "policy_evolution_eligible": {"const": false},
+    "production_challenger": {"const": false},
+    "portfolio_mutation": {"const": false},
+    "production_decision_impact": {"const": "NONE"},
+    "sentinel_fingerprint": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

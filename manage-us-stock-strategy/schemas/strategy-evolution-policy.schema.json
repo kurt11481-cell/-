@@ -5,7 +5,7 @@
   "required": ["schema_version", "policy_id", "evolution_authority_ceiling", "evolution_5_enabled", "scorecard_axes", "evaluation_order", "evidence_grades", "eligibility_axes", "outcome_horizons", "safe_fallback_reasons", "production_auto_apply", "execution_quantity", "quantity_authority", "order_authority"],
   "properties": {
     "schema_version": {"const": "1.0"},
-    "policy_id": {"const": "strategy-evolution-v2"},
+    "policy_id": {"enum": ["strategy-evolution-v2", "strategy-evolution-hardening-v2"]},
     "evolution_authority_ceiling": {"const": "EVOLUTION_4"},
     "evolution_5_enabled": {"const": false},
     "scorecard_axes": {"type": "array", "minItems": 6},

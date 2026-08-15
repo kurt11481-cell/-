@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "REJECTED_CHALLENGER_REGISTRY",
+  "mode": "APPEND_ONLY",
+  "entries": [],
+  "last_record_hash": null,
+  "order_authority": false
+}

@@ -1,0 +1,17 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-2.0",
+  "metric_definition_version": "strategy-evolution-metrics-2.0",
+  "scorecard_version": "portfolio-optimization-scorecard-2.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+  "schema_version": "1.0",
+  "artifact_type": "CANDIDATE_UNIVERSE_SNAPSHOT",
+  "universe_role": "CANDIDATE_OPPORTUNITY_UNIVERSE",
+  "candidate_universe_as_of": "2026-08-15T05:53:49Z",
+  "availability_status": "UNAVAILABLE_AT_DECISION_TIME",
+  "instrument_identities": [],
+  "survivorship_reconstruction_forbidden": true,
+  "order_authority": false,
+  "candidate_universe_hash": "a9c0b7b4b569998aa3779298501c75ab126b31cde4788905ac22c570c754e49f"
+}

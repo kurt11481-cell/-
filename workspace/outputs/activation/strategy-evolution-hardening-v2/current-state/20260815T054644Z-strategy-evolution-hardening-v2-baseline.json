@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "STRATEGY_EVOLUTION_HARDENING_V2_BASELINE",
+  "created_at": "2026-08-15T05:46:44Z",
+  "source_repository": {
+    "branch": "codex/master-recovery-expansion",
+    "head": "0e97f1612fcfb6941dcc73335eb84d8b6a577b2a",
+    "origin_main": "d5743791486380394b90d1f95e68a01bcc56ebc2",
+    "ahead": 19,
+    "behind": 0,
+    "pre_existing_user_changes": [
+      "AGENTS.md",
+      "manage-us-stock-strategy/SKILL.md",
+      "manage-us-stock-strategy/scripts/finalized_postmarket_automation.py",
+      "manage-us-stock-strategy/tests/test_v2_6_8_finalized_postmarket_automation.py",
+      "manage-us-stock-strategy/tests/test_v2_6_9_current_event_risk.py",
+      "stock-strategy-system/alert_policy.json",
+      "docs/chatgpt-define-goal-workflow.md"
+    ]
+  },
+  "scheduled_runtime": {
+    "branch": "main",
+    "head": "664909f6cabd79949eefba95fdc4b36175bb2005",
+    "tree_hash": "05850f31eda12d13b6df168f906725dbb9d84adf",
+    "clean": true,
+    "deployment_manifest_sha256": "a2ed18e7d8bd1aa228537fe77b32a0b5ad14cfd0d3b679c96ab946b2867a93ed",
+    "deployment_status": "DEPLOYMENT_PROVENANCE_VERIFIED_WITH_RUNTIME_TEST_SCOPE_LIMITATION"
+  },
+  "scheduler": {
+    "preopen": {
+      "task_id": "automation",
+      "status": "ACTIVE",
+      "timezone": "America/New_York",
+      "local_time": "09:00",
+      "config_sha256": "3edba23fbf4c372fb9afa60e94e80ac25217022f31dd8147b261405e455eaf23"
+    },
+    "postclose": {
+      "task_id": "post-close-portfolio-strategy",
+      "status": "ACTIVE",
+      "timezone": "America/New_York",
+      "local_time": "16:30",
+      "config_sha256": "9758fd0133c3e9c6859f8a55479ce84b6749e27a43f1387c60e1871d9b0fdafd"
+    },
+    "expected_head": "664909f6cabd79949eefba95fdc4b36175bb2005"
+  },
+  "protected_hashes": {
+    "portfolio_state_sha256": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+    "alert_policy_sha256": "255ca47ecdf3d8036f7b7dd996a49f09c826c4c5c103a58c932b98fe04ec349f",
+    "provider_scope_sha256": "9a7fac689f3cc9761d1bf1c15074951b716528abb507c0861e3c9a23410d1bcc",
+    "strategy_evolution_policy_sha256": "20a1d9912e95ed9dfb21b66a00837ab0832ec0faf3086d2d5ce1090311c2b172"
+  },
+  "champion": {
+    "champion_policy_id": "champion-read-only-v1",
+    "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e"
+  },
+  "cohorts": {
+    "core_operational": "integrated-shadow-246c0aa2eb76b27f",
+    "portfolio_decision": "portfolio-decision-32fb4351fc727f7e",
+    "improvement_analytics": "continuous-improvement-sidecar-v4",
+    "strategy_evolution": "strategy-evolution-453b5c7ed5dfc6b4"
+  },
+  "counters": {
+    "core": {
+      "valid_finalized_sessions": 0,
+      "valid_paired_operational_days": 0,
+      "preopen_success_count": 0,
+      "postclose_success_count": 0
+    },
+    "portfolio_decision": {
+      "valid_decision_observations": 0
+    },
+    "improvement_analytics": {
+      "ingested_runs": 0,
+      "maturity_eligible_runs": 0
+    },
+    "strategy_evolution": {
+      "champions": 1,
+      "challengers": 0,
+      "outcome_records": 0,
+      "policy_proposals": 0
+    }
+  },
+  "feature_audit": {
+    "A_OUTCOME_STATE_SEMANTICS": "CONFLICTING",
+    "B_UNIVERSE_MODEL": "CONFLICTING",
+    "C_EVIDENCE_GRADES": "PARTIALLY_IMPLEMENTED",
+    "D_LIVE_EVENT_RESOLUTION_STATUS": "CONFLICTING",
+    "E_BENCHMARK_PORTFOLIOS": "MISSING",
+    "F_PAIRED_VALUE_ATTRIBUTION": "MISSING",
+    "G_RUNTIME_CONTRACT_TEST_SUITE": "MISSING",
+    "H_SENTINEL_CHALLENGER": "MISSING",
+    "I_NO_CHANGE_DECISION": "MISSING",
+    "J_POLICY_STABILITY": "PARTIALLY_IMPLEMENTED"
+  },
+  "change_classification": {
+    "core_operational_cohort": "UNCHANGED",
+    "portfolio_decision_cohort": "UNCHANGED",
+    "improvement_analytics_cohort": "UNCHANGED_NO_SIDECAR_SEMANTIC_CHANGE",
+    "strategy_evolution_cohort": "ANALYTICS_SEMANTIC_CHANGE_NEW_COHORT_REQUIRED_NO_BACKFILL",
+    "runtime_contract_suite": "IMPLEMENTATION_CORRECTION"
+  },
+  "lifecycle_status": "FIRST_GENUINE_DUAL_RUN_PENDING",
+  "authority": {
+    "order_authority": false,
+    "quantity_authority": "none",
+    "execution_quantity": null,
+    "production_champion_auto_promotion": false,
+    "evolution_5_enabled": false
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-15T05:53:49Z",
+  "status": "STRATEGY_EVOLUTION_ENGINE_VERIFIED",
+  "artifact_hashes": {
+    "champion_policy.json": "155b0c57d1ee4f4a02b2b6270fba9ed5329c911727ed65b9cac261c483b2c3e6",
+    "holding_universe_snapshot.json": "4cf92acbf8c8d7c389efa714370661c9c77dffb8e0a6babd19d1cd953cf8e536",
+    "candidate_universe_snapshot.json": "9da85c4f1d1b3b127ef15670cc8ce2caddf5c565db53e601fae13cc7ba4ae6a5",
+    "sentinel_challenger.json": "577ce38106bfa5ec67f42cf8a610296ac777363c9ea9cad94e508401d2f2640f",
+    "strategy_evolution_report.json": "70b02d36e04570ab93af008887b213879df269669bad7acc63a7ce17242f1e72",
+    "strategy_evolution_ledger.json": "df5f846ce3dfac819f8322fb75f3cdfc3048ef0de7946c4ad3db7d55532c4563",
+    "rejected_challenger_registry.json": "0bad25cf95fdde8a368a20fd9cc4d9a129a8d4d395bc5a170d2c8d8bb6a263d8"
+  },
+  "portfolio_hash": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "record_hash": "c12a225a5ad5845bea88e04c46715d2150b463f849505b76bafa2d4039d60c0f"
+}

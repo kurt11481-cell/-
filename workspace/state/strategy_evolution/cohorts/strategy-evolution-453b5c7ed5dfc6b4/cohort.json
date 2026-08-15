@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "cohort_id": "strategy-evolution-453b5c7ed5dfc6b4",
+  "status": "OBSERVATION_PENDING",
+  "started_at": "2026-08-15T04:22:56Z",
+  "backfill": false,
+  "champion_policy_id": "champion-read-only-v1",
+  "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+  "current_artifact_directory": "workspace/outputs/activation/strategy-evolution/20260815T042256Z",
+  "artifact_hashes": {
+    "champion_policy.json": "155b0c57d1ee4f4a02b2b6270fba9ed5329c911727ed65b9cac261c483b2c3e6",
+    "candidate_universe_snapshot.json": "d29d7f1164494175e41104dda23d7480a79e40008ce6377ff26e56dc2cc7fcdc",
+    "strategy_evolution_report.json": "82facb82da8ee91dc31b44ad45014cc9c31c22c27d1e2adeb23e14ff0ea7703a",
+    "strategy_evolution_ledger.json": "7aa5dcf668d0c3462353e9f885a4a03e1d0605d8ec43cb1d7d8832c5b7427d4f",
+    "rejected_challenger_registry.json": "0bad25cf95fdde8a368a20fd9cc4d9a129a8d4d395bc5a170d2c8d8bb6a263d8"
+  },
+  "champions": 1,
+  "challengers": 0,
+  "outcome_records": 0,
+  "policy_proposals": 0,
+  "evolution_authority": "EVOLUTION_4",
+  "evolution_5_enabled": false,
+  "production_auto_apply": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

@@ -1,0 +1,44 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-2.0",
+  "metric_definition_version": "strategy-evolution-metrics-2.0",
+  "scorecard_version": "portfolio-optimization-scorecard-2.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-2.0",
+  "schema_version": "1.0",
+  "artifact_type": "STRATEGY_EVOLUTION_LEDGER",
+  "cohort_id": "strategy-evolution-e40b68d58611ba34",
+  "mode": "APPEND_ONLY",
+  "entries": [
+    {
+      "entry_type": "CHAMPION_FREEZE",
+      "recorded_at": "2026-08-15T05:53:49Z",
+      "policy_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+      "hypothesis": null,
+      "scope": "CURRENT_APPROVED_READ_ONLY_POLICY",
+      "evidence_windows": [],
+      "validation_result": "CHAMPION_FROZEN",
+      "promotion_reason": "EXISTING_APPROVED_POLICY",
+      "rollback_history": [],
+      "auto_apply": false,
+      "previous_record_hash": null,
+      "record_hash": "80479f8e6d8202ea7bb761a5df4d5d85926cbd883865d68bd89ae394b8071c2f"
+    },
+    {
+      "entry_type": "NO_CHANGE_DECISION",
+      "recorded_at": "2026-08-15T05:53:49Z",
+      "reason": "NO_BASE_GENUINE_DECISION_AND_INSUFFICIENT_OUT_OF_SAMPLE_EVIDENCE",
+      "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+      "challenger_fingerprint": null,
+      "evidence_grade": "GRADE_D",
+      "evidence_sufficiency": "INSUFFICIENT_EVIDENCE",
+      "uncertainty": "INSUFFICIENT_EVIDENCE",
+      "out_of_sample_status": "INSUFFICIENT_OUT_OF_SAMPLE_EVIDENCE",
+      "auto_apply": false,
+      "previous_record_hash": "80479f8e6d8202ea7bb761a5df4d5d85926cbd883865d68bd89ae394b8071c2f",
+      "record_hash": "bea83881b46cca05fe56569a59112c544758b0f592c9843afadfe2e3891708a4"
+    }
+  ],
+  "last_record_hash": "bea83881b46cca05fe56569a59112c544758b0f592c9843afadfe2e3891708a4",
+  "order_authority": false
+}

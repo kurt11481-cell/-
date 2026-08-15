@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "runtime-contract-test-suite.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "status", "checks", "source_full_regression_status", "protected_source_only_fixtures_required", "live_order_network_calls", "execution_quantity", "quantity_authority", "order_authority", "record_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "RUNTIME_CONTRACT_TEST_SUITE"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "checks": {"type": "array", "minItems": 20},
+    "protected_source_only_fixtures_required": {"const": false},
+    "live_order_network_calls": {"const": 0},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "record_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  },
+  "additionalProperties": true
+}
