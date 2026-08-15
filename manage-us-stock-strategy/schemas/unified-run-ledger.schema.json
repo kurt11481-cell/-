@@ -6,7 +6,7 @@
   "properties": {
     "schema_version": {"const": "2.0"},
     "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
     "ledger_mode": {"const": "APPEND_ONLY_SIDECAR"},
     "improvement_analytics_cohort": {"type": "string", "minLength": 1},
     "entries": {"type": "array", "items": {"$ref": "continuous-improvement-run-record.schema.json"}},

@@ -6,7 +6,7 @@
   "properties": {
     "schema_version": {"const": "2.0"},
     "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
     "judge_mode": {"const": "INDEPENDENT_READ_ONLY"},
     "overall_status": {"enum": ["CONTINUOUS_IMPROVEMENT_PIPELINE_VERIFIED", "CONTINUOUS_IMPROVEMENT_PIPELINE_NOT_READY"]},
     "gates": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_VERIFIED"]}},

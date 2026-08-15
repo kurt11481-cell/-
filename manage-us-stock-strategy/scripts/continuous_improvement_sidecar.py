@@ -19,7 +19,7 @@ from validation_common import canonical_hash, load_json, parse_datetime, validat
 
 
 ANALYTICS_ENGINE_VERSION = "continuous-improvement-engine-2.0"
-METRIC_DEFINITION_VERSION = "continuous-improvement-metrics-2.0"
+METRIC_DEFINITION_VERSION = "continuous-improvement-metrics-2.1"
 ANALYTICS_SCHEMA_VERSION = "2.0"
 RUN_ORIGINS = {
     "SCHEDULED_GENUINE", "MANUAL", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL",
@@ -39,7 +39,7 @@ PROVENANCE_STATUSES = {
 }
 OUTCOME_HORIZONS = (1, 5, 10, 20)
 DECISION_ACTIONS = {
-    "HOLD_CORE", "HOLD_TIGHTEN_STOP", "ADD_REVIEW", "TRIM_PROFIT",
+    "HOLD_CORE", "HOLD_TIGHTEN_STOP", "HOLD_REVIEW_REQUIRED", "ADD_REVIEW", "TRIM_PROFIT",
     "TRIM_VALUATION", "TRIM_TECHNICAL", "TRIM_CONCENTRATION", "TRIM_RISK",
     "EXIT_THESIS", "EXIT_HARD_STOP", "ROTATE_REVIEW", "KEEP_CASH",
 }
@@ -607,8 +607,61 @@ def build_operational_analytics(records: list[dict[str, Any]]) -> dict[str, Any]
     }
 
 
+def build_event_resolution_analytics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build observational baselines without creating production thresholds."""
+    rows = [
+        artifact
+        for record in records
+        for artifact in (record.get("decision_artifacts") or [])
+        if artifact.get("artifact_type") in {
+            "EVENT_RESOLUTION_OBSERVATION", "EVENT_ACTIONABILITY_ORCHESTRATION_GAP",
+        }
+    ]
+    attempts = sum(int(row.get("resolution_attempt_count") or 0) for row in rows)
+    successes = sum(row.get("resolution_status") in {"RESOLVED", "RESOLVED_WITH_NONBLOCKING_GAPS"} for row in rows)
+    unresolved_by_ticker = Counter()
+    unresolved_by_category = Counter()
+    unresolved_by_source = Counter()
+    compile_modes = Counter()
+    missing_reasons = Counter()
+    for row in rows:
+        compile_modes[row.get("holding_compile_mode", "NOT_RUN")] += 1
+        for item in row.get("unresolved_categories") or []:
+            unresolved_by_ticker[str(row.get("ticker") or "UNKNOWN")] += 1
+            unresolved_by_category[str(item.get("category") or "UNKNOWN")] += 1
+            unresolved_by_source[str(item.get("source_type") or "UNKNOWN")] += 1
+            missing_reasons[str(item.get("missing_reason") or "UNRESOLVED")] += 1
+    count = len(rows)
+    return {
+        "status": "OBSERVATIONAL_BASELINE_BUILDING",
+        "sample_size": count,
+        "event_resolution_success_rate": None if count == 0 else successes / count,
+        "event_resolution_latency_seconds": None,
+        "targeted_resolution_attempt_count": attempts,
+        "unresolved_rate_by_ticker": dict(sorted(unresolved_by_ticker.items())),
+        "unresolved_rate_by_category": dict(sorted(unresolved_by_category.items())),
+        "unresolved_rate_by_source": dict(sorted(unresolved_by_source.items())),
+        "source_failure_rate": None if count == 0 else missing_reasons.get("SOURCE_UNAVAILABLE", 0) / count,
+        "parser_failure_rate": None if count == 0 else missing_reasons.get("PARSER_FAILED", 0) / count,
+        "conflict_rate": None if count == 0 else missing_reasons.get("CONFLICTING_EVIDENCE", 0) / count,
+        "cutoff_gap_rate": None if count == 0 else missing_reasons.get("CUTOFF_GAP", 0) / count,
+        "buy_blocked_by_event_count": sum(int(row.get("buy_blocked_by_event") is True) for row in rows),
+        "hold_review_required_count": sum(int(row.get("hold_review_required") is True) for row in rows),
+        "full_compile_rate": None if count == 0 else compile_modes.get("FULL", 0) / count,
+        "degraded_compile_rate": None if count == 0 else compile_modes.get("DEGRADED_EVENT_SCOPED", 0) / count,
+        "fail_closed_rate": None if count == 0 else compile_modes.get("FAIL_CLOSED", 0) / count,
+        "safe_fallback_rate": None if count == 0 else sum(int(row.get("keep_cash_state") == "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT") for row in rows) / count,
+        "optimized_keep_cash_rate": None if count == 0 else sum(int(row.get("keep_cash_state") == "OPTIMIZED_KEEP_CASH") for row in rows) / count,
+        "production_thresholds_configured": False,
+        "production_policy_mutation": False,
+        "operational_counter_mutation": False,
+        "order_authority": False,
+    }
+
+
 def build_improvement_findings(quality: dict[str, Any], blocked: dict[str, Any],
-                               stability: dict[str, Any], drift: dict[str, Any]) -> list[dict[str, Any]]:
+                               stability: dict[str, Any], drift: dict[str, Any],
+                               event_resolution: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     findings = []
     if stability["flip_count"]:
         findings.append({
@@ -642,6 +695,19 @@ def build_improvement_findings(quality: dict[str, Any], blocked: dict[str, Any],
             "evidence_hash": canonical_hash(drift),
             "status": "OBSERVATIONAL_ONLY",
             "policy_change": False,
+        })
+    event_resolution = event_resolution or {}
+    if event_resolution.get("hold_review_required_count") or event_resolution.get("buy_blocked_by_event_count"):
+        findings.append({
+            "schema_version": ANALYTICS_SCHEMA_VERSION,
+            "analytics_engine_version": ANALYTICS_ENGINE_VERSION,
+            "metric_definition_version": METRIC_DEFINITION_VERSION,
+            "finding_id": f"finding-event-orchestration-{canonical_hash(event_resolution)[:12]}",
+            "finding_type": "EVENT_ACTIONABILITY_ORCHESTRATION_GAP",
+            "evidence_hash": canonical_hash(event_resolution),
+            "status": "IMPLEMENTATION_REPAIR_REQUIRED",
+            "policy_change": False,
+            "auto_apply": False,
         })
     return findings
 
@@ -756,7 +822,8 @@ def build_report(fixture: dict[str, Any], policy: dict[str, Any]) -> tuple[dict[
     stability = build_decision_stability(fixture.get("decisions") or [])
     drift = build_drift_observation(records)
     operational = build_operational_analytics(records)
-    findings = build_improvement_findings(quality, blocked, stability, drift)
+    event_resolution = build_event_resolution_analytics(records)
+    findings = build_improvement_findings(quality, blocked, stability, drift, event_resolution)
     proposal = build_policy_change_proposal(
         exact_scope={"ticker": "TEST_ONLY", "decision_class": "TEST_ONLY"},
         current_policy={"status": "UNCHANGED"}, proposed_policy={"status": "SHADOW_CANDIDATE_ONLY"},
@@ -804,6 +871,7 @@ def build_report(fixture: dict[str, Any], policy: dict[str, Any]) -> tuple[dict[
         "decision_stability": stability,
         "drift_monitoring": drift,
         "operational_analytics": operational,
+        "event_resolution_analytics": event_resolution,
         "improvement_findings": findings,
         "policy_change_proposals": [proposal],
         "shadow_policy_experiments": [experiment],

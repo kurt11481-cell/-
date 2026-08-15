@@ -6,12 +6,13 @@
   "properties": {
     "schema_version": {"const": "2.0"},
     "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
     "finding_id": {"type": "string", "minLength": 1},
     "finding_type": {"type": "string", "minLength": 1},
     "evidence_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
-    "status": {"enum": ["OBSERVATIONAL_ONLY", "REVIEW_REQUIRED"]},
-    "policy_change": {"const": false}
+    "status": {"enum": ["OBSERVATIONAL_ONLY", "REVIEW_REQUIRED", "IMPLEMENTATION_REPAIR_REQUIRED"]},
+    "policy_change": {"const": false},
+    "auto_apply": {"const": false}
   },
   "additionalProperties": false
 }

@@ -1,28 +1,28 @@
 {
-  "schema_version": "2.0",
   "analytics_engine_version": "continuous-improvement-engine-2.0",
-  "metric_definition_version": "continuous-improvement-metrics-2.0",
-  "cohort_id": "continuous-improvement-sidecar-v2",
-  "semantic_fingerprint": "fcfad4011e615f55fb3ae8dbfcdc698a3006873e88174a1d715d946383be1e64",
-  "semantic_fingerprint_algorithm": "SHA256_CANONICAL_JSON_OF_NORMALIZED_TEXT_HASHES_V1",
-  "semantic_input_hashes": {
-    "outcome_ledger_schema": "82b64036b83fb5deb44244da6e8811dd49d1a3f867292bb9cff4136c5cb25448",
-    "outcome_schema": "9298ebec170a64ea2737f184adbff411594b3b55da35c10ac3a8f75d1f6b0986",
-    "policy": "3fd1a4fa3f89a4e2b88a764a28fcec77a95269fa48a7754b9bdd8aae6b1fba2e",
-    "report_schema": "fd807595b2f0b262f88f87095f838717c2adabe19fe1b071c88c7ec85018292b",
-    "run_ledger_schema": "878ee2c4087a42d15ded7555a936f609194f4c37ef425c2bf849fdbb6cfb24d0",
-    "run_record_schema": "12798785ebc2eceb6ac60470c9db65d4d4d609cd3698448c8a4ab011add78966",
-    "sidecar": "592a1510ec2d4e3c75904e909d66e153bc450053e95b5b06f51029f5ff50a88e"
-  },
-  "started_at": "2026-08-15T01:14:48+09:00",
-  "ingested_runs": 0,
-  "maturity_eligible_runs": 0,
   "backfill": false,
-  "production_policy_auto_apply": false,
+  "cohort_id": "continuous-improvement-sidecar-v3",
+  "execution_quantity": null,
+  "ingested_runs": 1,
+  "maturity_eligible_runs": 0,
+  "metric_definition_version": "continuous-improvement-metrics-2.1",
   "operational_counter_authority": false,
+  "order_authority": false,
   "portfolio_decision_counter_authority": false,
   "portfolio_mutation": false,
-  "execution_quantity": null,
+  "production_policy_auto_apply": false,
   "quantity_authority": "none",
-  "order_authority": false
+  "schema_version": "2.0",
+  "semantic_fingerprint": "2eb39782883e927d9378e2f3bd3bb04c3925130bd03ddd6f5ee08ed7e6129560",
+  "semantic_fingerprint_algorithm": "SHA256_CANONICAL_JSON_OF_NORMALIZED_TEXT_HASHES_V1",
+  "semantic_input_hashes": {
+    "outcome_ledger_schema": "97fa0c810faf3bbdf2acb613e87deda3494f76785996661702e415bac153afd3",
+    "outcome_schema": "9ecbb1cd99121160562f503e2e134d6606c03bd91354242207a06496343285ec",
+    "policy": "30cab54b83d060a1b84468747a239922eece56d2bbe0f5ba2e763ed3a2119b14",
+    "report_schema": "133029c2bcf4f9efa1fe8c8459d00992e5242f960cf86d9174d7a50d44edd9ef",
+    "run_ledger_schema": "2f557fb9f8e3004b8b9eb7d4a1bc82db4147b817aea902e2358eb2fb94632c32",
+    "run_record_schema": "f36764688fc40a354a07a24ee4268619179a161ba770acf6ceade032f03260bd",
+    "sidecar": "d757c897f2a0bade3baae57a5800e02e8214a3a0663a457b58c35e3fc765afa0"
+  },
+  "started_at": "2026-08-15T02:50:38Z"
 }

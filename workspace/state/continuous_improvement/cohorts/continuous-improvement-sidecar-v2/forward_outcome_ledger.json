@@ -1,0 +1,10 @@
+{
+  "schema_version": "2.0",
+  "analytics_engine_version": "continuous-improvement-engine-2.0",
+  "metric_definition_version": "continuous-improvement-metrics-2.0",
+  "ledger_mode": "APPEND_ONLY_FORWARD_OUTCOMES",
+  "improvement_analytics_cohort": "continuous-improvement-sidecar-v2",
+  "entries": [],
+  "last_record_hash": null,
+  "order_authority": false
+}

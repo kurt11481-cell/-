@@ -1,10 +1,218 @@
 {
-  "schema_version": "2.0",
   "analytics_engine_version": "continuous-improvement-engine-2.0",
-  "metric_definition_version": "continuous-improvement-metrics-2.0",
+  "entries": [
+    {
+      "analytics_engine_version": "continuous-improvement-engine-2.0",
+      "broker_cutoff": "2026-08-14T19:59:00Z",
+      "candidate_cutoff": null,
+      "decision_artifacts": [
+        {
+          "artifact_type": "EVENT_ACTIONABILITY_ORCHESTRATION_GAP",
+          "auto_apply": false,
+          "buy_blocked_by_event": true,
+          "decision_mode": "MANUAL_READ_ONLY",
+          "execution_quantity": null,
+          "hold_review_required": true,
+          "holding_compile_mode": "DEGRADED_EVENT_SCOPED",
+          "keep_cash_state": "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT",
+          "order_authority": false,
+          "original_runtime_gap": "HOLDING_AND_REALLOCATION_COMPILE_SKIPPED_BY_GENERIC_EVENT_GATE",
+          "policy_change": false,
+          "quantity_authority": "none",
+          "repaired_replay_status": "CAPITAL_REALLOCATION_SHADOW_VERIFIED",
+          "resolution_attempt_count": 0,
+          "resolution_status": "UNRESOLVED_ACTION_BLOCKING",
+          "ticker": "PORTFOLIO",
+          "unresolved_categories": [
+            {
+              "category": "sponsor_notice",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "split_reverse_split",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "liquidation_termination",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "product_structure_change",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "index_methodology_change",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "listing_halt",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "corporate_action",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "derivatives_leverage_structure_notice",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "sponsor_notice",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "split_reverse_split",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "liquidation_termination",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "product_structure_change",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "listing_halt",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "corporate_action",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "derivatives_leverage_structure_notice",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "underlying_issuer_context",
+              "missing_reason": "CATEGORY_NOT_CHECKED",
+              "source_type": null
+            },
+            {
+              "category": "earnings",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "guidance",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "financing",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "dilution",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "convertibles",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "warrants",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "material_contracts",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "M&A",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "listing_halt",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "regulatory",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            },
+            {
+              "category": "corporate_action",
+              "missing_reason": "SOURCE_STALE",
+              "source_type": null
+            }
+          ]
+        }
+      ],
+      "decision_as_of": "2026-08-15T02:18:57.8354910Z",
+      "decision_mode": "MANUAL_READ_ONLY",
+      "decision_mode_status": "DECISION_MODE_VALID",
+      "delivery_status": "NOT_APPLICABLE",
+      "evaluation_valid": true,
+      "event_cutoff": "2026-08-14T20:00:00Z",
+      "execution_origin": "MANUAL",
+      "execution_quantity": null,
+      "git_sha": "a475a43a47634506a2453c96ba26a051e8bccf6b",
+      "improvement_analytics_cohort": "continuous-improvement-sidecar-v3",
+      "market_data_cutoff": "2026-08-14T20:00:00Z",
+      "maturity_eligible": false,
+      "metric_definition_version": "continuous-improvement-metrics-2.1",
+      "operational_day_id": "2026-08-14",
+      "order_authority": false,
+      "portfolio_hash_after": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+      "portfolio_hash_before": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+      "previous_record_hash": null,
+      "provider_scope_hash": "ba010c507f6a306499a7af57dad6f5c1a67221df4f100c8e11abf5ed1b3e1ae6",
+      "quantity_authority": "none",
+      "reason_codes": [],
+      "record_hash": "33b123ebf1d94b3b2b5446153982e704616baa0bd140c0d83d85c0d08c2e2b56",
+      "run_fingerprint": "d97f4c99520f6cb26bbee4710063fbe5e4558c088e121183e0f9ba5abbae9b00",
+      "run_id": "manual-post-close-20260814-20260815T021417Z",
+      "run_provenance_status": "VERIFIED_MANUAL",
+      "runtime_manifest_hash": "3dced457478dc7b998329e53794ea15c465eb33a1c407598e86ee4b427ea845b",
+      "scheduled_run_id": null,
+      "schema_version": "2.0",
+      "semantic_cohort": "integrated-shadow-246c0aa2eb76b27f",
+      "source_artifacts": [
+        {
+          "artifact_path": "workspace\\outputs\\activation\\manual-post-close\\2026-08-14\\20260815T021417Z\\manual_post_close_result.json",
+          "effective_at": "2026-08-14T20:00:00Z",
+          "market_session_semantics": "REGULAR_COMPLETED",
+          "observed_at": "2026-08-15T02:18:57.8354910Z",
+          "provider": "LOCAL_IMMUTABLE_ARCHIVE",
+          "sha256": "75fc2eb83aa4624bec2c049ffadf81ec72cc367e6c356b43d9f9038aab8e9e7e",
+          "source_type": "MANUAL_POST_CLOSE_RESULT"
+        }
+      ],
+      "source_sha256": [
+        "75fc2eb83aa4624bec2c049ffadf81ec72cc367e6c356b43d9f9038aab8e9e7e"
+      ],
+      "temporal_evidence_status": "TEMPORAL_EVIDENCE_VALID",
+      "temporal_violations": []
+    }
+  ],
+  "improvement_analytics_cohort": "continuous-improvement-sidecar-v3",
+  "last_record_hash": "33b123ebf1d94b3b2b5446153982e704616baa0bd140c0d83d85c0d08c2e2b56",
   "ledger_mode": "APPEND_ONLY_SIDECAR",
-  "improvement_analytics_cohort": "continuous-improvement-sidecar-v2",
-  "entries": [],
-  "last_record_hash": null,
-  "order_authority": false
+  "metric_definition_version": "continuous-improvement-metrics-2.1",
+  "order_authority": false,
+  "schema_version": "2.0"
 }

@@ -21,6 +21,7 @@ from continuous_improvement_sidecar import (  # noqa: E402
     build_decision_stability,
     build_drift_observation,
     build_execution_analytics_link,
+    build_event_resolution_analytics,
     build_operational_analytics,
     build_policy_change_proposal,
     build_report,
@@ -311,6 +312,26 @@ class ContinuousImprovementSidecarTests(unittest.TestCase):
         result = build_operational_analytics(records)
         self.assertEqual(result["scheduled_denominator"], 0)
         self.assertFalse(result["manual_replay_test_shadow_in_denominator"])
+
+    def test_event_resolution_analytics_records_implementation_gap_without_policy_apply(self):
+        record = build_run_record(self.fixture["runs"][0], self.policy)
+        record["decision_artifacts"] = [{
+            "artifact_type": "EVENT_ACTIONABILITY_ORCHESTRATION_GAP",
+            "ticker": "MVLL",
+            "resolution_status": "UNRESOLVED_ACTION_BLOCKING",
+            "holding_compile_mode": "DEGRADED_EVENT_SCOPED",
+            "resolution_attempt_count": 0,
+            "buy_blocked_by_event": True,
+            "hold_review_required": True,
+            "keep_cash_state": "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT",
+            "unresolved_categories": [{"category": "sponsor_notice", "missing_reason": "SOURCE_STALE", "source_type": "ETF_SPONSOR_NOTICE"}],
+        }]
+        result = build_event_resolution_analytics([record])
+        self.assertEqual(result["sample_size"], 1)
+        self.assertEqual(result["degraded_compile_rate"], 1.0)
+        self.assertEqual(result["safe_fallback_rate"], 1.0)
+        self.assertFalse(result["production_policy_mutation"])
+        self.assertFalse(result["order_authority"])
 
     def test_policy_proposal_can_never_auto_apply(self):
         proposal = build_policy_change_proposal(

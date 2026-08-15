@@ -1,8 +1,8 @@
 {
   "schema_version": "2.0",
   "analytics_engine_version": "continuous-improvement-engine-2.0",
-  "metric_definition_version": "continuous-improvement-metrics-2.0",
-  "policy_id": "continuous-improvement-sidecar-v2",
+  "metric_definition_version": "continuous-improvement-metrics-2.1",
+  "policy_id": "continuous-improvement-sidecar-v3",
   "mode": "SIDECAR_ONLY",
   "run_origin_model": {
     "canonical": ["SCHEDULED_GENUINE", "MANUAL", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL"],
@@ -53,6 +53,29 @@
   "analytics_failure_affects_core_scheduled_run": false,
   "drift_thresholds": "NOT_CONFIGURED",
   "operational_sla_thresholds": "NOT_CONFIGURED",
+  "event_resolution_metrics": {
+    "mode": "OBSERVATIONAL_BASELINE_ONLY",
+    "production_thresholds": "NOT_CONFIGURED",
+    "metrics": [
+      "EVENT_RESOLUTION_SUCCESS_RATE",
+      "EVENT_RESOLUTION_LATENCY",
+      "UNRESOLVED_RATE_BY_TICKER",
+      "UNRESOLVED_RATE_BY_CATEGORY",
+      "UNRESOLVED_RATE_BY_SOURCE",
+      "SOURCE_FAILURE_RATE",
+      "PARSER_FAILURE_RATE",
+      "CONFLICT_RATE",
+      "CUTOFF_GAP_RATE",
+      "BUY_BLOCKED_BY_EVENT_COUNT",
+      "HOLD_REVIEW_REQUIRED_COUNT",
+      "FULL_COMPILE_RATE",
+      "DEGRADED_COMPILE_RATE",
+      "FAIL_CLOSED_RATE",
+      "SAFE_FALLBACK_RATE",
+      "OPTIMIZED_KEEP_CASH_RATE"
+    ],
+    "auto_apply": false
+  },
   "production_policy_auto_apply": false,
   "execution_analytics": {
     "artifact_types": ["ORDER_INTENT", "ACTUAL_ORDER", "BROKER_ACK", "ACTUAL_FILL", "SHADOW_FILL"],
