@@ -1,5 +1,11 @@
 # Holding Strategy Orchestration
 
+For finalized post-close portfolio reconstitution, also apply
+`portfolio-reallocation-shadow.md`. Every verified positive holding must expose
+ADD, HOLD, TRIM, and EXIT cases; a non-breached maximum-loss boundary does not
+by itself select HOLD. The selected Shadow action never creates quantity or
+order authority.
+
 ## Purpose and authority
 
 This layer answers what strategy should be reviewed for each verified positive

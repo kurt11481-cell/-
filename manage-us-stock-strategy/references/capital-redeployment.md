@@ -1,5 +1,11 @@
 # Capital Redeployment
 
+For hypothetical capital released by a holding TRIM/EXIT review, apply
+`portfolio-reallocation-shadow.md`. Expected proceeds remain `SHADOW_ONLY` and
+must not enter verified cash, execution purchasing power, or the ordinary
+funded capital-redeployment gate. Recompile the complete opportunity set and
+retain `KEEP_CASH` as a valid Shadow outcome.
+
 ## Purpose
 
 Compare the best review use of verified capital among a new tactical position,

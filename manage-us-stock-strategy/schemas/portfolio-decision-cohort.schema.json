@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision-cohort.schema.json",
+  "title": "Portfolio Decision Semantic Cohort",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cohort_id",
+    "semantic_fingerprint",
+    "policy_version",
+    "started_at",
+    "valid_decision_observations",
+    "backfill",
+    "status",
+    "scheduler_provider_operational_counters_preserved",
+    "quantity_authority",
+    "execution_quantity",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "semantic_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "started_at": {"type": "string", "format": "date-time"},
+    "valid_decision_observations": {"const": 0},
+    "backfill": {"const": false},
+    "status": {"const": "FIRST_VALID_DECISION_PENDING"},
+    "scheduler_provider_operational_counters_preserved": {"const": true},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"const": null},
+    "order_authority": {"const": false}
+  }
+}

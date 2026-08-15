@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "cohort_id": "portfolio-decision-32fb4351fc727f7e",
+  "semantic_fingerprint": "32fb4351fc727f7e086373da532edd9379bdb56d7262cebcdb75727f34ecf093",
+  "policy_version": "2026-08-15-capital-reallocation-shadow-v1",
+  "started_at": "2026-08-15T08:55:28+09:00",
+  "valid_decision_observations": 0,
+  "backfill": false,
+  "status": "FIRST_VALID_DECISION_PENDING",
+  "scheduler_provider_operational_counters_preserved": true,
+  "quantity_authority": "none",
+  "execution_quantity": null,
+  "order_authority": false
+}

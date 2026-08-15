@@ -187,3 +187,22 @@ the missing new-buy authority.
 - True v1/v2 point-in-time A/B remains unavailable.
 
 There is no `READY_FOR_AUTOMATED_TRADING` state.
+
+## Capital Reallocation Shadow Readiness
+
+The action matrix, four-case holding engine, multi-factor profit-protection
+gate, full-portfolio Shadow recompile, ten-axis state model, expected-proceeds
+separation, cycle dedup, schemas, and independent Judge are software-validated.
+The validation fixture is `TEST_ONLY`; the first genuine scheduled delivery of
+the new post-close layer remains pending. Actual execution readiness remains
+`NOT_READY`, and order authority remains false.
+
+## Continuous Improvement Sidecar Readiness
+
+The provenance, append-only ledger, temporal isolation, forward-outcome,
+decision-quality, blocked-opportunity, counterfactual, stability, drift,
+operational-measurement, finding, proposal-governance, and Shadow-policy
+components are deterministic and independently judgeable. The checked-in
+validation is `TEST_ONLY`; production ingestion and real outcome samples remain
+pending. This sidecar does not change the Stage-7 readiness or execution
+authority.

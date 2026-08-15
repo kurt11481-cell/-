@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-reallocation-context.schema.json",
+  "title": "Portfolio Reallocation Shadow Input Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_as_of",
+    "validation_mode",
+    "completed_bar_finalization_status",
+    "event_refresh_status",
+    "event_bundle_hash",
+    "market_data_cutoff",
+    "event_cutoff",
+    "broker_cutoff",
+    "portfolio_decision_semantic_cohort",
+    "portfolio_reallocation_cycle_id",
+    "canonical_positive_holding_tickers",
+    "holdings",
+    "portfolio_positions",
+    "opportunity_candidates",
+    "verified_actual_cash_usd",
+    "capital_availability_status",
+    "optimizer_input_status",
+    "order_authority"
+  ],
+  "properties": {
+    "validation_mode": {"enum": ["LIVE_READ_ONLY", "TEST_ONLY"]},
+    "completed_bar_finalization_status": {"const": "KIWOOM_COMPLETED_BAR_FINALIZED"},
+    "event_refresh_status": {"const": "POST_CLOSE_EVENT_REFRESH_VALIDATED"},
+    "event_bundle_hash": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "decision_as_of": {"type": "string", "format": "date-time"},
+    "market_data_cutoff": {"type": "string", "format": "date-time"},
+    "event_cutoff": {"type": "string", "format": "date-time"},
+    "broker_cutoff": {"type": "string", "format": "date-time"},
+    "candidate_cutoff": {"type": ["string", "null"], "format": "date-time"},
+    "evidence_timestamps": {
+      "type": "array",
+      "items": {"type": "string", "format": "date-time"},
+      "uniqueItems": true
+    },
+    "portfolio_decision_semantic_cohort": {"type": "string", "minLength": 1},
+    "portfolio_reallocation_cycle_id": {"type": "string", "minLength": 1},
+    "canonical_positive_holding_tickers": {
+      "type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"}, "uniqueItems": true
+    },
+    "prior_cycle_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "holdings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "portfolio_positions": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "opportunity_candidates": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "verified_actual_cash_usd": {"type": "number", "minimum": 0},
+    "capital_availability_status": {"type": "string", "minLength": 1},
+    "optimizer_input_status": {"type": "object", "additionalProperties": {"enum": ["AVAILABLE", "UNAVAILABLE", "NOT_APPLICABLE"]}},
+    "rotation_justification": {"type": ["string", "null"]},
+    "order_authority": {"const": false}
+  }
+}

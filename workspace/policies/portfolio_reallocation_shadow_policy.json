@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-15-capital-reallocation-shadow-v1",
+  "scope": "PORTFOLIO_DECISION_SHADOW_ONLY",
+  "event_actionability": {
+    "EVENT_COMPLETE": {
+      "NEW_BUY": "ALLOWED",
+      "ADD": "ALLOWED",
+      "HOLD": "ALLOWED",
+      "TRIM": "ALLOWED",
+      "EXIT": "ALLOWED"
+    },
+    "EVENT_PARTIAL_NONBLOCKING": {
+      "NEW_BUY": "ALLOWED",
+      "ADD": "ALLOWED",
+      "HOLD": "ALLOWED_WITH_CAUTION",
+      "TRIM": "ALLOWED_RISK_REDUCTION",
+      "EXIT": "ALLOWED_RISK_REDUCTION"
+    },
+    "EVENT_PARTIAL_BUY_BLOCKING": {
+      "NEW_BUY": "BLOCKED",
+      "ADD": "BLOCKED",
+      "HOLD": "ALLOWED_WITH_CAUTION",
+      "TRIM": "ALLOWED_RISK_REDUCTION",
+      "EXIT": "ALLOWED_IF_HARD_RISK_OR_THESIS_INVALIDATING"
+    },
+    "EVENT_STALE": {
+      "NEW_BUY": "BLOCKED",
+      "ADD": "BLOCKED",
+      "HOLD": "REVIEW_REQUIRED",
+      "TRIM": "ALLOWED_RISK_REDUCTION",
+      "EXIT": "ALLOWED_IF_HARD_RISK_OR_THESIS_INVALIDATING"
+    },
+    "EVENT_REFRESH_FAILED": {
+      "NEW_BUY": "BLOCKED",
+      "ADD": "BLOCKED",
+      "HOLD": "REVIEW_REQUIRED",
+      "TRIM": "ALLOWED_RISK_REDUCTION",
+      "EXIT": "ALLOWED_IF_HARD_RISK_OR_THESIS_INVALIDATING"
+    },
+    "EVENT_SOURCE_UNAVAILABLE": {
+      "NEW_BUY": "BLOCKED",
+      "ADD": "BLOCKED",
+      "HOLD": "REVIEW_REQUIRED",
+      "TRIM": "ALLOWED_RISK_REDUCTION",
+      "EXIT": "ALLOWED_IF_HARD_RISK_OR_THESIS_INVALIDATING"
+    }
+  },
+  "material_event_categories": [
+    "earnings",
+    "guidance",
+    "financing",
+    "dilution",
+    "convertibles",
+    "warrants",
+    "material_contracts",
+    "M&A",
+    "listing_status",
+    "halt",
+    "regulatory",
+    "ETF_split",
+    "reverse_split",
+    "liquidation",
+    "corporate_actions"
+  ],
+  "material_category_states": [
+    "VERIFIED",
+    "NOT_YET_ANNOUNCED",
+    "NO_NEW_DISCLOSURE_FOUND",
+    "SOURCE_UNAVAILABLE",
+    "REVIEW_REQUIRED"
+  ],
+  "decision_priority": [
+    "HARD_STOP_EXIT",
+    "THESIS_INVALIDATION_EXIT",
+    "RISK_REDUCING_TRIM",
+    "EVENT_COMPLETENESS",
+    "HOLD",
+    "ADD",
+    "NEW_BUY"
+  ],
+  "profit_protection": {
+    "production_numeric_thresholds_status": "NOT_CONFIGURED",
+    "upstream_policy_result_required": true,
+    "fixed_profit_auto_sell_prohibited": true,
+    "strong_profit_hold_states": {
+      "trend": "STRONG",
+      "volume": "HEALTHY"
+    }
+  },
+  "shadow_sale_ratios": {
+    "TRIM_PROFIT": null,
+    "TRIM_VALUATION": null,
+    "TRIM_TECHNICAL": null,
+    "TRIM_CONCENTRATION": null,
+    "TRIM_RISK": null,
+    "EXIT_THESIS": 1.0,
+    "EXIT_HARD_STOP": 1.0
+  },
+  "shadow_ratio_authority": "POLICY_OR_EXPLICIT_TEST_SCENARIO_ONLY",
+  "optimizer": {
+    "numeric_score_may_override_hard_gate": false,
+    "decision_order": [
+      "HARD_GATE",
+      "RISK_GATE",
+      "PORTFOLIO_FIT",
+      "RELATIVE_OPPORTUNITY"
+    ],
+    "keep_cash_is_valid": true,
+    "expected_sale_proceeds_are_funding": false
+  },
+  "turnover": {
+    "production_thresholds_status": "NOT_CONFIGURED",
+    "same_cycle_duplicate_suppression": true,
+    "entry_reentry_hysteresis_supported": true,
+    "numeric_hysteresis_values": null
+  },
+  "future_execution_states": [
+    "SELL_INTENT_CREATED",
+    "SELL_RISK_APPROVED",
+    "SELL_ORDER_SUBMITTED",
+    "SELL_ACKNOWLEDGED",
+    "SELL_PARTIALLY_FILLED",
+    "SELL_FILLED",
+    "BROKER_RECONCILIATION_REQUIRED",
+    "CASH_REVALIDATION",
+    "CASH_AVAILABLE_FOR_REALLOCATION",
+    "BUY_INTENT_CREATED",
+    "BUY_RISK_APPROVED",
+    "BUY_ORDER_SUBMITTED",
+    "BUY_ACKNOWLEDGED",
+    "BUY_PARTIALLY_FILLED",
+    "BUY_FILLED"
+  ],
+  "actual_cash_authority": "VERIFIED_KIWOOM_ORDERABLE_CASH",
+  "expected_sale_proceeds_status": "SHADOW_ONLY",
+  "portfolio_mutation_authority": false,
+  "quantity_authority": "none",
+  "execution_quantity": null,
+  "order_authority": false
+}

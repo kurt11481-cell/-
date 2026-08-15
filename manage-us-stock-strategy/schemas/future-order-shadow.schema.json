@@ -5,6 +5,18 @@
   "required": ["schema_version", "order_authority", "record_hash"],
   "properties": {
     "schema_version": {"const": "1.0"},
+    "future_state": {
+      "enum": [
+        "SELL_INTENT_CREATED", "SELL_RISK_APPROVED", "SELL_ORDER_SUBMITTED",
+        "SELL_ACKNOWLEDGED", "SELL_PARTIALLY_FILLED", "SELL_FILLED",
+        "BROKER_RECONCILIATION_REQUIRED", "CASH_REVALIDATION",
+        "CASH_AVAILABLE_FOR_REALLOCATION", "BUY_INTENT_CREATED",
+        "BUY_RISK_APPROVED", "BUY_ORDER_SUBMITTED", "BUY_ACKNOWLEDGED",
+        "BUY_PARTIALLY_FILLED", "BUY_FILLED"
+      ]
+    },
+    "expected_sale_proceeds_status": {"const": "SHADOW_ONLY"},
+    "verified_orderable_cash_from_expected_proceeds_usd": {"const": 0},
     "quantity": {"const": null},
     "quantity_authority": {"const": "none"},
     "order_authority": {"const": false},

@@ -1,5 +1,19 @@
 # Changelog
 
+## Capital Reallocation Shadow
+
+- Added action-specific event readiness for NEW_BUY, ADD, HOLD, TRIM, and EXIT.
+- Added mandatory ADD/HOLD/TRIM/EXIT cases for every verified positive holding,
+  multi-factor profit protection, and explicit rejected alternatives.
+- Added hypothetical full-portfolio recompile with `KEEP_CASH`, existing-add,
+  and new-buy comparisons; expected proceeds remain `SHADOW_ONLY` and cannot
+  become broker cash or execution purchasing power.
+- Added a separate zero-based portfolio-decision semantic cohort, ten-axis
+  state reporting, cycle dedup, future execution-state schema compatibility,
+  and an independent read-only Judge.
+- Preserved dual-run scheduler timing, provider authority, operational session
+  counters, portfolio facts, null execution quantity, and no order authority.
+
 ## Recovery and expansion hardening
 
 - Added exact Scheduled Task deployment-provenance gating before operational counting.
@@ -295,3 +309,23 @@
   quantity, leverage, short-sale, alert, or brokerage authority.
 - Private holdings, cash, cost basis, fills, and runtime state are excluded from
   external LLM stability inputs.
+
+## Continuous Improvement Evidence Sidecar
+
+### Added
+
+- Evidence-derived run provenance with Manual/Replay/Test/Shadow maturity
+  isolation.
+- Append-only Unified Run Ledger and separate immutable forward outcomes at
+  1/5/10/20 completed-session horizons.
+- Decision-quality, blocked-opportunity, counterfactual, stability, drift, and
+  genuine-scheduled-only operational analytics.
+- Non-applying policy proposals, Shadow policy experiments, and an independent
+  sidecar Judge.
+
+### Safety
+
+- The sidecar cannot mutate Stage-7 counters, portfolio or broker truth,
+  production policy, quantities, or order authority.
+- Counterfactual proceeds remain `SHADOW_ONLY`; analytics failures remain
+  isolated from core scheduled delivery.

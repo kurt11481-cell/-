@@ -199,3 +199,37 @@ schema, commit, and policy checks.
 8. Configuration, preliminary/generic post-market, manual, test, replay,
    pre-open, stale, dirty, undelivered, or finalization-pending runs do not
    count.
+
+## P. Capital Reallocation Shadow
+
+1. Run only after a finalized Kiwoom completed bar and the post-close event
+   refresh; require `event_cutoff >= market_data_cutoff`.
+2. Build a schema-valid context and run
+   `portfolio_reallocation_shadow.py`. Every positive holding must emit ADD,
+   HOLD, TRIM, and EXIT cases.
+3. Treat hypothetical quantities and expected proceeds as `SHADOW_ONLY`.
+   Never copy them into portfolio state, broker cash, or execution purchasing
+   power.
+4. Compare eligible existing-add and new-buy reviews with `KEEP_CASH` after a
+   full portfolio recompile. Keep sell and buy Risk Kernel decisions separate.
+5. Run `judge_portfolio_reallocation_shadow.py` against the report, portfolio
+   hash, scheduler hashes, report/cohort/Judge schemas, and targeted tests.
+6. A manual or `TEST_ONLY` result validates software only; it does not count as
+   a genuine scheduled pair or authorize an order.
+
+## Q. Continuous Improvement Sidecar
+
+1. Ingest only immutable archived run and decision artifacts. Derive provenance
+   from task, schedule, deployment, runtime HEAD, cohort, and manifest evidence;
+   do not trust a caller-supplied origin label.
+2. Keep `workspace/state/continuous_improvement/unified_run_ledger.json`
+   append-only. Duplicate fingerprints are idempotent and never double count.
+3. Treat Manual, Replay, Test, Shadow, and Pre-Open records as
+   maturity-ineligible. Do not update integrated Shadow counters from the
+   sidecar.
+4. Reject look-ahead evidence and append outcomes separately at completed
+   session horizons 1, 5, 10, and 20. Missing horizons remain pending.
+5. Keep findings observational. Policy proposals and Shadow experiments always
+   use `auto_apply=false` and require the existing exact-scope governance flow.
+6. If analytics fails, preserve the core scheduled result and record the
+   sidecar failure independently.

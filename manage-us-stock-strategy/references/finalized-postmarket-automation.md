@@ -38,6 +38,14 @@ decision-class-local limitation while retaining Kiwoom Raw price authority.
 Provider readiness and event readiness are separate. Missing event data may
 produce `EVENT_REVIEW_PENDING`; it does not invalidate provider infrastructure.
 
+After the completed bar is finalized, refresh and validate the post-close
+event bundle before compiling holding decisions. Then run the deterministic
+`CAPITAL_REALLOCATION_SHADOW` flow described in
+`portfolio-reallocation-shadow.md`. Every holding must expose ADD, HOLD, TRIM,
+and EXIT cases. Event insufficiency blocks ADD/new buy but cannot by itself
+block risk-reducing TRIM, and verified hard-risk or thesis exits retain higher
+priority. Hypothetical proceeds never become actual cash.
+
 ## Delivery and cohort
 
 Configuration is `FIRST_RUN_PENDING`, never `DELIVERY_VERIFIED`. Only an actual

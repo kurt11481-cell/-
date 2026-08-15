@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-reallocation-judge.schema.json",
+  "title": "Portfolio Reallocation Shadow Independent Judge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "judge_mode",
+    "overall_status",
+    "gates",
+    "schema_errors",
+    "portfolio_hash_expected",
+    "portfolio_hash_actual",
+    "scheduler_hash_before",
+    "scheduler_hash_after",
+    "test_output_hash",
+    "validation_mode",
+    "execution_quantity",
+    "quantity_authority",
+    "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "judge_mode": {"const": "INDEPENDENT_READ_ONLY"},
+    "overall_status": {"enum": ["CAPITAL_REALLOCATION_SHADOW_VERIFIED", "CAPITAL_REALLOCATION_SHADOW_NOT_READY"]},
+    "gates": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_VERIFIED"]}},
+    "schema_errors": {"type": "array", "items": {"type": "string"}},
+    "portfolio_hash_expected": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "portfolio_hash_actual": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "scheduler_hash_before": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "scheduler_hash_after": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "test_output_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "validation_mode": {"enum": ["LIVE_READ_ONLY", "TEST_ONLY"]},
+    "execution_quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}
