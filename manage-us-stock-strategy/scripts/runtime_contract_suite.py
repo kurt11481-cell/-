@@ -17,7 +17,7 @@ from validation_common import canonical_hash, file_hash, load_json, validate_ins
 
 CRITICAL_MODULES = (
     "event_resolution_engine",
-    "holding_decision_engine",
+    "build_holding_strategy_review",
     "portfolio_reallocation_shadow",
     "continuous_improvement_sidecar",
     "strategy_evolution",
