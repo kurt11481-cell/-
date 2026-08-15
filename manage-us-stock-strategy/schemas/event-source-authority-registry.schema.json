@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-source-authority-registry.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "source_types", "secondary_material_event_requires_primary_confirmation", "single_confidence_score_is_sole_gate", "search_snippet_is_final_evidence", "portfolio_mutation_authority", "quantity_authority", "execution_quantity", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "source_types": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["authority_tier"],
+        "properties": {"authority_tier": {"enum": ["PRIMARY_AUTHORITY", "SECONDARY_AUTHORITATIVE", "DIAGNOSTIC_SECONDARY"]}}
+      }
+    },
+    "secondary_material_event_requires_primary_confirmation": {"const": true},
+    "single_confidence_score_is_sole_gate": {"const": false},
+    "search_snippet_is_final_evidence": {"const": false},
+    "portfolio_mutation_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"const": null},
+    "order_authority": {"const": false}
+  }
+}

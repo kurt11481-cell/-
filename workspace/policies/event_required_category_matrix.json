@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "2026-08-15-event-required-category-matrix-v1",
+  "ticker_requirements": {
+    "SOXL": {
+      "instrument_scope": "LEVERAGED_ETF_PRODUCT",
+      "categories": {
+        "sponsor_notice": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "split_reverse_split": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "liquidation_termination": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "product_structure_change": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "index_methodology_change": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "listing_halt": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "corporate_action": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "derivatives_leverage_structure_notice": {"requirement": "OPTIONAL", "blocking_actions": []}
+      }
+    },
+    "MVLL": {
+      "instrument_scope": "LEVERAGED_ETF_PRODUCT",
+      "supplemental_underlying": "MRVL",
+      "categories": {
+        "sponsor_notice": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "split_reverse_split": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "liquidation_termination": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "product_structure_change": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "listing_halt": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "corporate_action": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "derivatives_leverage_structure_notice": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "underlying_issuer_context": {"requirement": "OPTIONAL", "blocking_actions": []}
+      }
+    },
+    "NBIS": {
+      "instrument_scope": "ISSUER_EQUITY",
+      "categories": {
+        "earnings": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "guidance": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "financing": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "dilution": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "convertibles": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "warrants": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "material_contracts": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "M&A": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "listing_halt": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "regulatory": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]},
+        "corporate_action": {"requirement": "REQUIRED", "blocking_actions": ["NEW_BUY", "ADD", "HOLD"]}
+      }
+    }
+  },
+  "product_events_may_be_replaced_by_underlying_events": false,
+  "historical_backfill_authority": false,
+  "portfolio_mutation_authority": false,
+  "quantity_authority": "none",
+  "execution_quantity": null,
+  "order_authority": false
+}

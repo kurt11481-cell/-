@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "registry_version": "2026-08-15-event-source-authority-v1",
+  "source_types": {
+    "ISSUER_IR": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "ISSUER_OFFICIAL_PRESS_RELEASE": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "SEC_FILING": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "EXCHANGE_NOTICE": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "ETF_SPONSOR_NOTICE": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "REGULATOR_NOTICE": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "GOVERNMENT_SOURCE": {"authority_tier": "PRIMARY_AUTHORITY"},
+    "APPROVED_STRUCTURED_SECONDARY": {"authority_tier": "SECONDARY_AUTHORITATIVE"},
+    "INSTITUTIONAL_DATA_PROVIDER": {"authority_tier": "SECONDARY_AUTHORITATIVE"},
+    "MAJOR_FINANCIAL_PRESS": {"authority_tier": "DIAGNOSTIC_SECONDARY"},
+    "OTHER_DIAGNOSTIC_SOURCE": {"authority_tier": "DIAGNOSTIC_SECONDARY"}
+  },
+  "secondary_material_event_requires_primary_confirmation": true,
+  "single_confidence_score_is_sole_gate": false,
+  "search_snippet_is_final_evidence": false,
+  "portfolio_mutation_authority": false,
+  "quantity_authority": "none",
+  "execution_quantity": null,
+  "order_authority": false
+}
