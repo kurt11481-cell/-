@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "cohort_id": "continuous-improvement-sidecar-v1",
+  "semantic_fingerprint": "80ef10ccb59d1057733e72db82f9db4cffdb82bd9b01e9392c226eab3a3c12b3",
+  "started_at": "2026-08-15T00:00:00+09:00",
+  "superseded_at": "2026-08-15T01:14:48+09:00",
+  "status": "COHORT_SUPERSEDED",
+  "superseded_by": "continuous-improvement-sidecar-v2",
+  "supersession_reason": "ANALYTICS_METRIC_AND_TEST_LIVE_FIREWALL_SEMANTICS_CHANGED",
+  "ingested_runs": 0,
+  "maturity_eligible_runs": 0,
+  "backfill": false,
+  "production_policy_auto_apply": false,
+  "operational_counter_authority": false,
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

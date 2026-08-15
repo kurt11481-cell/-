@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "improvement-finding.schema.json",
+  "type": "object",
+  "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "finding_id", "finding_type", "evidence_hash", "status", "policy_change"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "finding_id": {"type": "string", "minLength": 1},
+    "finding_type": {"type": "string", "minLength": 1},
+    "evidence_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "status": {"enum": ["OBSERVATIONAL_ONLY", "REVIEW_REQUIRED"]},
+    "policy_change": {"const": false}
+  },
+  "additionalProperties": false
+}

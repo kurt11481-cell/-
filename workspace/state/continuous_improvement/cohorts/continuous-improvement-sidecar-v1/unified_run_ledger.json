@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "ledger_mode": "APPEND_ONLY_SIDECAR",
+  "improvement_analytics_cohort": "continuous-improvement-sidecar-v1",
+  "entries": [],
+  "last_record_hash": null,
+  "order_authority": false
+}

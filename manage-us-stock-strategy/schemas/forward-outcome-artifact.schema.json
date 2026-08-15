@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "forward-outcome-artifact.schema.json",
+  "type": "object",
+  "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "outcome_artifact_id", "decision_id", "decision_mode", "decision_fingerprint", "selected_action", "ticker", "decision_class", "results", "original_decision_immutable", "maturity_eligible", "execution_quantity", "quantity_authority", "order_authority", "outcome_artifact_hash"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "outcome_artifact_id": {"type": "string", "minLength": 1},
+    "decision_id": {"type": "string", "minLength": 1},
+    "decision_mode": {"enum": ["LIVE_READ_ONLY", "MANUAL_READ_ONLY", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL"]},
+    "decision_fingerprint": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "selected_action": {"type": "string"},
+    "ticker": {"type": "string"},
+    "decision_class": {"type": "string"},
+    "results": {"type": "array", "minItems": 4},
+    "original_decision_immutable": {"const": true},
+    "maturity_eligible": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "outcome_artifact_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  },
+  "additionalProperties": true
+}

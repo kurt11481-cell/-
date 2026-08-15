@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "policy-change-proposal.schema.json",
+  "type": "object",
+  "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "proposal_id", "exact_scope", "current_policy", "proposed_policy", "evidence_window", "sample_size", "supporting_evidence", "counter_evidence", "expected_improvement", "known_risks", "overfitting_risk", "multiple_hypothesis_risk", "semantic_impact", "rollback_plan", "auto_apply", "approval_status", "order_authority", "proposal_hash"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "proposal_id": {"type": "string"},
+    "exact_scope": {"type": "object"},
+    "current_policy": {"type": "object"},
+    "proposed_policy": {"type": "object"},
+    "evidence_window": {"type": "object"},
+    "sample_size": {"type": "integer", "minimum": 0},
+    "supporting_evidence": {"type": "array"},
+    "counter_evidence": {"type": "array"},
+    "expected_improvement": {"type": "string"},
+    "known_risks": {"type": "array"},
+    "overfitting_risk": {"type": "string"},
+    "multiple_hypothesis_risk": {"type": "string"},
+    "semantic_impact": {"type": "string"},
+    "rollback_plan": {"type": "string"},
+    "auto_apply": {"const": false},
+    "approval_status": {"const": "EXPLICIT_USER_APPROVAL_REQUIRED"},
+    "order_authority": {"const": false},
+    "proposal_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  },
+  "additionalProperties": false
+}

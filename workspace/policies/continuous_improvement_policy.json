@@ -1,0 +1,67 @@
+{
+  "schema_version": "2.0",
+  "analytics_engine_version": "continuous-improvement-engine-2.0",
+  "metric_definition_version": "continuous-improvement-metrics-2.0",
+  "policy_id": "continuous-improvement-sidecar-v2",
+  "mode": "SIDECAR_ONLY",
+  "run_origin_model": {
+    "canonical": ["SCHEDULED_GENUINE", "MANUAL", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL"],
+    "legacy_aliases": {"TEST": "TEST_ONLY", "SHADOW": "SHADOW_COUNTERFACTUAL"},
+    "caller_declaration_is_authority": false
+  },
+  "decision_mode_model": {
+    "SCHEDULED_GENUINE": "LIVE_READ_ONLY",
+    "MANUAL": "MANUAL_READ_ONLY",
+    "REPLAY": "REPLAY",
+    "TEST_ONLY": "TEST_ONLY",
+    "SHADOW_COUNTERFACTUAL": "SHADOW_COUNTERFACTUAL",
+    "production_consumer_allowed": ["LIVE_READ_ONLY"]
+  },
+  "scheduled_provenance": {
+    "allowed_task_ids": [
+      "PRE_OPEN_T_MINUS_30",
+      "REGULAR_CLOSE_T_PLUS_30"
+    ],
+    "allowed_phases": [
+      "PRE_OPEN_T_MINUS_30",
+      "REGULAR_CLOSE_T_PLUS_30",
+      "POST_MARKET_FINALIZED"
+    ],
+    "maturity_eligible_phases": [
+      "REGULAR_CLOSE_T_PLUS_30",
+      "POST_MARKET_FINALIZED"
+    ],
+    "required_evidence": [
+      "scheduled_run_id",
+      "expected_trading_day",
+      "deployment_provenance_valid",
+      "runtime_head_matches",
+      "semantic_cohort_matches",
+      "schedule_provenance_valid",
+      "runtime_manifest_hash",
+      "clean_committed_main"
+    ]
+  },
+  "forward_outcome_horizons": [1, 5, 10, 20],
+  "completed_trading_sessions_only": true,
+  "archived_evidence_preferred": true,
+  "live_api_usage": {
+    "allowed_for_historical_reconstruction": false,
+    "scheduled_run_priority": true,
+    "maximum_sidecar_live_calls_per_run": 0
+  },
+  "analytics_failure_affects_core_scheduled_run": false,
+  "drift_thresholds": "NOT_CONFIGURED",
+  "operational_sla_thresholds": "NOT_CONFIGURED",
+  "production_policy_auto_apply": false,
+  "execution_analytics": {
+    "artifact_types": ["ORDER_INTENT", "ACTUAL_ORDER", "BROKER_ACK", "ACTUAL_FILL", "SHADOW_FILL"],
+    "actual_event_namespace": "ACTUAL_BROKER_EVENT",
+    "shadow_event_namespace": "SHADOW_SIMULATION_EVENT",
+    "shadow_may_update_broker_truth": false
+  },
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

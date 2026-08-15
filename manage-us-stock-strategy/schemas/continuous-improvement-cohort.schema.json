@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "continuous-improvement-cohort.schema.json",
+  "type": "object",
+  "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "cohort_id", "semantic_fingerprint", "semantic_fingerprint_algorithm", "semantic_input_hashes", "started_at", "ingested_runs", "maturity_eligible_runs", "backfill", "production_policy_auto_apply", "operational_counter_authority", "portfolio_decision_counter_authority", "portfolio_mutation", "execution_quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-2.0"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "semantic_fingerprint": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "semantic_fingerprint_algorithm": {"const": "SHA256_CANONICAL_JSON_OF_NORMALIZED_TEXT_HASHES_V1"},
+    "semantic_input_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "[0-9a-f]{64}"}},
+    "started_at": {"type": "string", "format": "date-time"},
+    "ingested_runs": {"type": "integer", "minimum": 0},
+    "maturity_eligible_runs": {"type": "integer", "minimum": 0},
+    "backfill": {"const": false},
+    "production_policy_auto_apply": {"const": false},
+    "operational_counter_authority": {"const": false},
+    "portfolio_decision_counter_authority": {"const": false},
+    "portfolio_mutation": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": false
+}
