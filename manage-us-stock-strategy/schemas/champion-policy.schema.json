@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "champion-policy.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "champion_policy_id", "semantic_fingerprint", "git_tree_hash", "provider_scope_hash", "event_policy_hash", "portfolio_decision_policy_hash", "reallocation_policy_hash", "activated_at", "status", "champion_fingerprint", "auto_apply", "execution_quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "CHAMPION_POLICY"},
+    "champion_policy_id": {"type": "string", "minLength": 1},
+    "champion_fingerprint": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "auto_apply": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

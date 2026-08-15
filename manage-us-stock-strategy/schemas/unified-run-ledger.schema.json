@@ -4,9 +4,9 @@
   "type": "object",
   "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "ledger_mode", "improvement_analytics_cohort", "entries", "last_record_hash", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.0"},
-    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
+    "schema_version": {"const": "3.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-3.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-3.0"},
     "ledger_mode": {"const": "APPEND_ONLY_SIDECAR"},
     "improvement_analytics_cohort": {"type": "string", "minLength": 1},
     "entries": {"type": "array", "items": {"$ref": "continuous-improvement-run-record.schema.json"}},

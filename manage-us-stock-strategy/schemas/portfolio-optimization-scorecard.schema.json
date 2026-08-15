@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-optimization-scorecard.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "scorecard_version", "evaluation_order", "single_composite_score_authority", "data_integrity_status", "hard_safety_status", "executability_status", "axes", "evidence_sample_size", "policy_thresholds_invented", "dominance_status", "scorecard_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "PORTFOLIO_OPTIMIZATION_SCORECARD"},
+    "scorecard_version": {"const": "portfolio-optimization-scorecard-1.0"},
+    "evaluation_order": {"type": "array", "minItems": 7},
+    "single_composite_score_authority": {"const": false},
+    "axes": {"type": "object"},
+    "evidence_sample_size": {"type": "integer", "minimum": 0},
+    "policy_thresholds_invented": {"const": false},
+    "dominance_status": {"enum": ["DOMINATES_CHAMPION", "NON_DOMINATED_DIFFERENT_PROFILE", "UNDERPERFORMS_CHAMPION", "INSUFFICIENT_EVIDENCE", "SAFETY_REJECTED", "EXECUTION_REJECTED"]},
+    "scorecard_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

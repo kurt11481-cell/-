@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evolution-ledger.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "cohort_id", "mode", "entries", "last_record_hash", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "STRATEGY_EVOLUTION_LEDGER"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "mode": {"const": "APPEND_ONLY"},
+    "entries": {"type": "array"},
+    "last_record_hash": {"type": ["string", "null"]},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

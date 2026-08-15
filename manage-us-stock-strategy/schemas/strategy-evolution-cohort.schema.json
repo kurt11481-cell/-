@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evolution-cohort.schema.json",
+  "type": "object",
+  "required": ["schema_version", "cohort_id", "status", "started_at", "backfill", "champion_policy_id", "champion_fingerprint", "current_artifact_directory", "artifact_hashes", "champions", "challengers", "outcome_records", "policy_proposals", "evolution_authority", "evolution_5_enabled", "production_auto_apply", "execution_quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["OBSERVATION_PENDING", "OBSERVING", "SUPERSEDED"]},
+    "backfill": {"const": false},
+    "champions": {"const": 1},
+    "challengers": {"type": "integer", "minimum": 0},
+    "outcome_records": {"type": "integer", "minimum": 0},
+    "policy_proposals": {"type": "integer", "minimum": 0},
+    "evolution_authority": {"const": "EVOLUTION_4"},
+    "evolution_5_enabled": {"const": false},
+    "production_auto_apply": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

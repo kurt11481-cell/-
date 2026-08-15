@@ -1,8 +1,8 @@
 {
-  "schema_version": "2.0",
-  "analytics_engine_version": "continuous-improvement-engine-2.0",
-  "metric_definition_version": "continuous-improvement-metrics-2.1",
-  "policy_id": "continuous-improvement-sidecar-v3",
+  "schema_version": "3.0",
+  "analytics_engine_version": "continuous-improvement-engine-3.0",
+  "metric_definition_version": "continuous-improvement-metrics-3.0",
+  "policy_id": "continuous-improvement-sidecar-v4",
   "mode": "SIDECAR_ONLY",
   "run_origin_model": {
     "canonical": ["SCHEDULED_GENUINE", "MANUAL", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL"],
@@ -44,6 +44,19 @@
   },
   "forward_outcome_horizons": [1, 5, 10, 20],
   "completed_trading_sessions_only": true,
+  "evidence_grades": {
+    "VERIFIED_SCHEDULED": "GRADE_A",
+    "VERIFIED_MANUAL": "GRADE_B",
+    "VERIFIED_REPLAY": "GRADE_C",
+    "VERIFIED_TEST": "GRADE_D",
+    "VERIFIED_SHADOW": "GRADE_D"
+  },
+  "eligibility_axes": [
+    "operational_maturity_eligible",
+    "decision_quality_eligible",
+    "counterfactual_eligible",
+    "policy_evolution_eligible"
+  ],
   "archived_evidence_preferred": true,
   "live_api_usage": {
     "allowed_for_historical_reconstruction": false,
@@ -54,7 +67,7 @@
   "drift_thresholds": "NOT_CONFIGURED",
   "operational_sla_thresholds": "NOT_CONFIGURED",
   "event_resolution_metrics": {
-    "mode": "OBSERVATIONAL_BASELINE_ONLY",
+    "mode": "RUN_AND_TICKER_CATEGORY_ACTION_OBSERVATIONAL_BASELINE",
     "production_thresholds": "NOT_CONFIGURED",
     "metrics": [
       "EVENT_RESOLUTION_SUCCESS_RATE",

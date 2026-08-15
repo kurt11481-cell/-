@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evolution-policy.schema.json",
+  "type": "object",
+  "required": ["schema_version", "policy_id", "evolution_authority_ceiling", "evolution_5_enabled", "scorecard_axes", "evaluation_order", "evidence_grades", "eligibility_axes", "outcome_horizons", "safe_fallback_reasons", "production_auto_apply", "execution_quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "policy_id": {"const": "strategy-evolution-v2"},
+    "evolution_authority_ceiling": {"const": "EVOLUTION_4"},
+    "evolution_5_enabled": {"const": false},
+    "scorecard_axes": {"type": "array", "minItems": 6},
+    "evaluation_order": {"type": "array", "minItems": 7},
+    "evidence_grades": {"type": "object"},
+    "eligibility_axes": {"type": "array", "minItems": 4},
+    "outcome_horizons": {"type": "array", "minItems": 4},
+    "safe_fallback_reasons": {"type": "array", "minItems": 6},
+    "production_auto_apply": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  },
+  "additionalProperties": true
+}

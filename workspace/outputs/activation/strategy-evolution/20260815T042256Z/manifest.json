@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-15T04:22:56Z",
+  "status": "STRATEGY_EVOLUTION_ENGINE_VERIFIED",
+  "artifact_hashes": {
+    "champion_policy.json": "155b0c57d1ee4f4a02b2b6270fba9ed5329c911727ed65b9cac261c483b2c3e6",
+    "candidate_universe_snapshot.json": "d29d7f1164494175e41104dda23d7480a79e40008ce6377ff26e56dc2cc7fcdc",
+    "strategy_evolution_report.json": "82facb82da8ee91dc31b44ad45014cc9c31c22c27d1e2adeb23e14ff0ea7703a",
+    "strategy_evolution_ledger.json": "7aa5dcf668d0c3462353e9f885a4a03e1d0605d8ec43cb1d7d8832c5b7427d4f",
+    "rejected_challenger_registry.json": "0bad25cf95fdde8a368a20fd9cc4d9a129a8d4d395bc5a170d2c8d8bb6a263d8"
+  },
+  "portfolio_hash": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "record_hash": "4753a700c66477462d8a039408f9953771d12c7fc35e1ef9ddc908d455b088d5"
+}

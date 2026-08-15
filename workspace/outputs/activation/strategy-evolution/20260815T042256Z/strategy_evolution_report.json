@@ -1,0 +1,187 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-1.0",
+  "metric_definition_version": "strategy-evolution-metrics-1.0",
+  "scorecard_version": "portfolio-optimization-scorecard-1.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-1.0",
+  "schema_version": "1.0",
+  "artifact_type": "STRATEGY_EVOLUTION_CURRENT_STATE",
+  "generated_at": "2026-08-15T04:22:56Z",
+  "status": "STRATEGY_EVOLUTION_ENGINE_VERIFIED",
+  "lifecycle_status": "FIRST_GENUINE_DUAL_RUN_PENDING",
+  "champion_policy_id": "champion-read-only-v1",
+  "champion_fingerprint": "52879490ef577a516a2c839305e93a97eb37b01b743e34ce977450d7e0124a8e",
+  "candidate_universe_hash": "2d1836725dd5c4b798bc6e5629f137a82a223940fafdac808a058c089728e681",
+  "live_event_resolution_status": "NOT_EXERCISED",
+  "safe_fallback_reasons": [
+    "SAFE_FALLBACK_BROKER_VISIBILITY",
+    "SAFE_FALLBACK_EVENT_UNRESOLVED",
+    "SAFE_FALLBACK_EXECUTION_FEASIBILITY",
+    "SAFE_FALLBACK_INSUFFICIENT_VERIFIED_CASH",
+    "SAFE_FALLBACK_NO_ELIGIBLE_CANDIDATE",
+    "SAFE_FALLBACK_PORTFOLIO_RISK"
+  ],
+  "forward_outcomes": {
+    "1": {
+      "status": "OUTCOME_PENDING",
+      "completed_trading_sessions_required": 1
+    },
+    "5": {
+      "status": "OUTCOME_PENDING",
+      "completed_trading_sessions_required": 5
+    },
+    "10": {
+      "status": "OUTCOME_PENDING",
+      "completed_trading_sessions_required": 10
+    },
+    "20": {
+      "status": "OUTCOME_PENDING",
+      "completed_trading_sessions_required": 20
+    }
+  },
+  "portfolio_optimization_scorecard": {
+    "analytics_engine_version": "strategy-evolution-engine-1.0",
+    "metric_definition_version": "strategy-evolution-metrics-1.0",
+    "scorecard_version": "portfolio-optimization-scorecard-1.0",
+    "regime_definition_version": "NOT_CONFIGURED",
+    "transaction_cost_model_version": "NOT_CONFIGURED",
+    "policy_evaluation_version": "champion-challenger-evaluation-1.0",
+    "schema_version": "1.0",
+    "artifact_type": "PORTFOLIO_OPTIMIZATION_SCORECARD",
+    "evaluation_order": [
+      "DATA_INTEGRITY",
+      "HARD_SAFETY",
+      "EXECUTABILITY",
+      "STABILITY",
+      "OPTIMIZATION",
+      "RETURN",
+      "EFFICIENCY"
+    ],
+    "single_composite_score_authority": false,
+    "data_integrity_status": "PASS",
+    "hard_safety_status": "PASS",
+    "executability_status": "NOT_READY",
+    "axes": {
+      "RETURN": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "STABILITY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "OPTIMIZATION": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "EFFICIENCY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "ROBUSTNESS": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      },
+      "EXECUTABILITY": {
+        "status": "INSUFFICIENT_EVIDENCE",
+        "metrics": {
+          "champion": {},
+          "challenger": {}
+        },
+        "reason_codes": []
+      }
+    },
+    "evidence_sample_size": 0,
+    "policy_thresholds_invented": false,
+    "order_authority": false,
+    "dominance_status": "EXECUTION_REJECTED",
+    "scorecard_hash": "f38e289965464440199c8cca1775dbd74eb042c63ee1f41fa30917ef83e9348c"
+  },
+  "paired_evaluation_status": "INSUFFICIENT_EVIDENCE",
+  "uncertainty": {
+    "evidence_uncertainty_status": "INSUFFICIENT_EVIDENCE",
+    "paired_sample_size": 0,
+    "confidence_interval": null,
+    "bootstrap_uncertainty": null,
+    "out_of_sample_status": "INSUFFICIENT_OUT_OF_SAMPLE_EVIDENCE",
+    "significance_threshold_configured": false
+  },
+  "decision_attribution": {
+    "status": "INSUFFICIENT_EVIDENCE",
+    "attributions": []
+  },
+  "improvement_findings": [],
+  "challenger_hypotheses": [],
+  "six_axis_dominance": "INSUFFICIENT_EVIDENCE",
+  "evidence_sufficiency_status": "INSUFFICIENT_EVIDENCE",
+  "evolution_budget_status": "OBSERVATIONAL_NO_NUMERIC_LIMIT",
+  "policy_stability_status": {
+    "fast_loop": "READY",
+    "medium_loop": "OUTCOME_PENDING",
+    "slow_loop": "NO_CHANGE_PROPOSED"
+  },
+  "policy_change_proposals": [],
+  "auto_apply": false,
+  "evolution_authority": "EVOLUTION_4",
+  "evolution_5_enabled": false,
+  "execution_authority_status": "NONE",
+  "core_counters": {
+    "valid_finalized_sessions": 0,
+    "valid_paired_operational_days": 0,
+    "preopen_success_count": 0,
+    "postclose_success_count": 0
+  },
+  "portfolio_decision_counters": {
+    "genuine_decision_observations": 0,
+    "genuine_full_compile_observations": 0,
+    "genuine_degraded_compile_observations": 0,
+    "genuine_actionable_decisions": 0,
+    "genuine_review_required_decisions": 0
+  },
+  "analytics_counters": {
+    "scheduled_genuine_ingested": 0,
+    "manual_ingested": 0,
+    "replay_ingested": 0,
+    "shadow_ingested": 0,
+    "outcome_records": 0
+  },
+  "event_resolution_counters": {
+    "live_resolution_exercised": 0,
+    "live_resolution_success": 0,
+    "live_resolution_partial": 0,
+    "live_resolution_failed": 0
+  },
+  "strategy_evolution_counters": {
+    "champions": 1,
+    "challengers": 0,
+    "outcomes": 0,
+    "proposals": 0
+  },
+  "strategy_evolution_cohort": "strategy-evolution-453b5c7ed5dfc6b4",
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false,
+  "report_hash": "0d9a73e43b95b296d9f276e48d04733bf829115fb95fd8f1929a23f276052046"
+}

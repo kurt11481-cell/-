@@ -519,12 +519,26 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         "EVENT_ACTIONABILITY_BLOCKED" in row["blockers"] for row in candidates
     ) or not optimizer_complete
     keep_cash_state = "ELIGIBLE_NOT_SELECTED"
+    safe_fallback_reason = None
     if best is None:
         best_decision, rationale = "KEEP_CASH", "NO_CANDIDATE_PASSED_HARD_RISK_PORTFOLIO_AND_EVENT_GATES"
         keep_cash_state = (
             "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT"
             if event_or_evidence_blocked else "OPTIMIZED_KEEP_CASH"
         )
+        if event_or_evidence_blocked:
+            if any("EVENT_ACTIONABILITY_BLOCKED" in row["blockers"] for row in candidates):
+                safe_fallback_reason = "SAFE_FALLBACK_EVENT_UNRESOLVED"
+            elif optimizer_inputs.get("verified_cash") not in {"AVAILABLE", "NOT_APPLICABLE"}:
+                safe_fallback_reason = "SAFE_FALLBACK_INSUFFICIENT_VERIFIED_CASH"
+            elif optimizer_inputs.get("broker_visibility") not in {"AVAILABLE", "NOT_APPLICABLE"}:
+                safe_fallback_reason = "SAFE_FALLBACK_BROKER_VISIBILITY"
+            elif optimizer_inputs.get("portfolio_risk") not in {"AVAILABLE", "NOT_APPLICABLE"}:
+                safe_fallback_reason = "SAFE_FALLBACK_PORTFOLIO_RISK"
+            else:
+                safe_fallback_reason = "SAFE_FALLBACK_EXECUTION_FEASIBILITY"
+        elif not candidates:
+            safe_fallback_reason = None
     elif any(row["selected_holding_action"] == "ROTATE_REVIEW" for row in holdings):
         best_decision, rationale = "ROTATE_REVIEW", "ROTATION_REQUIRES_FULL_PORTFOLIO_RECOMPILE_AND_HUMAN_REVIEW"
     elif best.get("type") == "EXISTING_HOLDING_ADD":
@@ -537,6 +551,7 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
     if duplicate:
         best_decision, rationale = "KEEP_CASH", "SAME_CYCLE_DUPLICATE_SUPPRESSED"
         keep_cash_state = "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT"
+        safe_fallback_reason = "SAFE_FALLBACK_EXECUTION_FEASIBILITY"
     degraded_path_status = (
         "EVALUATED" if sale_candidates
         else "NOT_APPLICABLE" if context["holding_compile_mode"] == "DEGRADED_EVENT_SCOPED"
@@ -585,6 +600,7 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         "candidate_comparison": candidates,
         "keep_cash_alternative": {"status": "ELIGIBLE", "actual_cash_usd": actual_cash},
         "keep_cash_state": keep_cash_state,
+        "safe_fallback_reason": safe_fallback_reason,
         "best_shadow_decision": best_decision,
         "best_shadow_candidate": best.get("ticker") if best else None,
         "decision_rationale": rationale,

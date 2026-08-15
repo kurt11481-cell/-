@@ -4,9 +4,9 @@
   "type": "object",
   "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "judge_mode", "overall_status", "gates", "schema_errors", "portfolio_hash_expected", "portfolio_hash_actual", "operational_progress_hash_expected", "operational_progress_hash_actual", "scheduler_hash_before", "scheduler_hash_after", "test_output_hash", "execution_quantity", "quantity_authority", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.0"},
-    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
+    "schema_version": {"const": "3.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-3.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-3.0"},
     "judge_mode": {"const": "INDEPENDENT_READ_ONLY"},
     "overall_status": {"enum": ["CONTINUOUS_IMPROVEMENT_PIPELINE_VERIFIED", "CONTINUOUS_IMPROVEMENT_PIPELINE_NOT_READY"]},
     "gates": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_VERIFIED"]}},

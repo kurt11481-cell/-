@@ -1,0 +1,37 @@
+{
+  "analytics_engine_version": "strategy-evolution-engine-1.0",
+  "metric_definition_version": "strategy-evolution-metrics-1.0",
+  "scorecard_version": "portfolio-optimization-scorecard-1.0",
+  "regime_definition_version": "NOT_CONFIGURED",
+  "transaction_cost_model_version": "NOT_CONFIGURED",
+  "policy_evaluation_version": "champion-challenger-evaluation-1.0",
+  "schema_version": "1.0",
+  "artifact_type": "CANDIDATE_UNIVERSE_SNAPSHOT",
+  "candidate_universe_as_of": "2026-08-15T04:22:56Z",
+  "instrument_identities": [
+    {
+      "ticker": "MVLL",
+      "security_identity": "MVLL-US",
+      "eligibility_state": "ACTIVE_HOLDING",
+      "observed_at": "2026-08-15T04:22:56Z",
+      "source_sha256": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a"
+    },
+    {
+      "ticker": "NBIS",
+      "security_identity": "NBIS-US",
+      "eligibility_state": "ACTIVE_HOLDING",
+      "observed_at": "2026-08-15T04:22:56Z",
+      "source_sha256": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a"
+    },
+    {
+      "ticker": "SOXL",
+      "security_identity": "SOXL-US",
+      "eligibility_state": "ACTIVE_HOLDING",
+      "observed_at": "2026-08-15T04:22:56Z",
+      "source_sha256": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a"
+    }
+  ],
+  "survivorship_reconstruction_forbidden": true,
+  "order_authority": false,
+  "candidate_universe_hash": "2d1836725dd5c4b798bc6e5629f137a82a223940fafdac808a058c089728e681"
+}

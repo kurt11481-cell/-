@@ -4,9 +4,9 @@
   "type": "object",
   "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "status", "current_production_policy_hash", "shadow_policy_candidate_hash", "eligible_evidence_hashes", "out_of_sample_evidence_hashes", "identical_evidence_required", "production_policy_mutation", "portfolio_mutation", "operational_counter_mutation", "auto_apply", "execution_quantity", "quantity_authority", "order_authority"],
   "properties": {
-    "schema_version": {"const": "2.0"},
-    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
+    "schema_version": {"const": "3.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-3.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-3.0"},
     "status": {"const": "SHADOW_POLICY_EXPERIMENT_VERIFIED"},
     "current_production_policy_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
     "shadow_policy_candidate_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},

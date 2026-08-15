@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "strategy-evolution-report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "status", "lifecycle_status", "champion_policy_id", "champion_fingerprint", "candidate_universe_hash", "live_event_resolution_status", "safe_fallback_reasons", "forward_outcomes", "portfolio_optimization_scorecard", "paired_evaluation_status", "uncertainty", "decision_attribution", "improvement_findings", "challenger_hypotheses", "six_axis_dominance", "evidence_sufficiency_status", "evolution_budget_status", "policy_stability_status", "policy_change_proposals", "auto_apply", "evolution_authority", "evolution_5_enabled", "execution_authority_status", "core_counters", "portfolio_decision_counters", "analytics_counters", "event_resolution_counters", "strategy_evolution_counters", "strategy_evolution_cohort", "portfolio_mutation", "execution_quantity", "quantity_authority", "order_authority", "report_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "artifact_type": {"const": "STRATEGY_EVOLUTION_CURRENT_STATE"},
+    "status": {"const": "STRATEGY_EVOLUTION_ENGINE_VERIFIED"},
+    "lifecycle_status": {"enum": ["FIRST_GENUINE_DUAL_RUN_PENDING", "OUTCOME_HORIZON_PENDING", "INSUFFICIENT_OUT_OF_SAMPLE_EVIDENCE", "POLICY_APPROVAL_REQUIRED"]},
+    "live_event_resolution_status": {"enum": ["NOT_EXERCISED", "SUCCESS", "PARTIAL", "FAILED"]},
+    "auto_apply": {"const": false},
+    "evolution_authority": {"const": "EVOLUTION_4"},
+    "evolution_5_enabled": {"const": false},
+    "execution_authority_status": {"const": "NONE"},
+    "portfolio_mutation": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false},
+    "report_hash": {"type": "string", "pattern": "[0-9a-f]{64}"}
+  },
+  "additionalProperties": true
+}

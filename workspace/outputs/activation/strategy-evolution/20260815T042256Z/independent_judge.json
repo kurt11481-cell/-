@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "INDEPENDENT_STRATEGY_EVOLUTION_JUDGE",
+  "status": "PASS",
+  "gates": [
+    {
+      "gate": "CORE_OPERATIONAL_ISOLATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "EVENT_RESOLUTION_LIVE_STATUS_MODEL",
+      "status": "PASS"
+    },
+    {
+      "gate": "PORTFOLIO_DECISION_EVIDENCE",
+      "status": "PASS"
+    },
+    {
+      "gate": "CAPITAL_REALLOCATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "OPTIMIZATION_SCORECARD",
+      "status": "PASS"
+    },
+    {
+      "gate": "EVIDENCE_ELIGIBILITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "CHAMPION_FINGERPRINT",
+      "status": "PASS"
+    },
+    {
+      "gate": "CANDIDATE_UNIVERSE_INTEGRITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "FORWARD_OUTCOMES",
+      "status": "PASS"
+    },
+    {
+      "gate": "PAIRED_EVALUATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "UNCERTAINTY_HANDLING",
+      "status": "PASS"
+    },
+    {
+      "gate": "DECISION_ATTRIBUTION",
+      "status": "PASS"
+    },
+    {
+      "gate": "FINDINGS",
+      "status": "PASS"
+    },
+    {
+      "gate": "MULTI_HYPOTHESIS_GENERATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "REPLAY_TEMPORAL_ISOLATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "OOS_ISOLATION",
+      "status": "PASS"
+    },
+    {
+      "gate": "SIX_AXIS_DOMINANCE",
+      "status": "PASS"
+    },
+    {
+      "gate": "EVOLUTION_LEDGER",
+      "status": "PASS"
+    },
+    {
+      "gate": "REJECTED_CHALLENGER_MEMORY",
+      "status": "PASS"
+    },
+    {
+      "gate": "EVOLUTION_BUDGET",
+      "status": "PASS"
+    },
+    {
+      "gate": "POLICY_STABILITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "POLICY_PROPOSAL_GOVERNANCE",
+      "status": "PASS"
+    },
+    {
+      "gate": "EVOLUTION_AUTHORITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "EXECUTION_AUTHORITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "PORTFOLIO_IMMUTABILITY",
+      "status": "PASS"
+    },
+    {
+      "gate": "TESTS",
+      "status": "PASS"
+    }
+  ],
+  "schema_errors": {
+    "report": [],
+    "champion": [],
+    "universe": [],
+    "ledger": []
+  },
+  "validation_summary": {
+    "schema_version": "1.0",
+    "validated_at": "2026-08-15T04:22:56Z",
+    "targeted_tests": 86,
+    "targeted_failures": 0,
+    "full_suite_tests": 904,
+    "full_suite_failures": 0,
+    "schemas": "PASS",
+    "compile": "PASS",
+    "json_parse": "PASS",
+    "semantic_validation": "PASS",
+    "registry": "PASS",
+    "web_route_registry": "PASS",
+    "git_diff_check": "PASS",
+    "secret_scan": "PASS",
+    "pii_scan": "PASS",
+    "authority_scan": "PASS_WITH_INTENTIONAL_FAULT_FIXTURE_EXCLUDED",
+    "intentional_fault_fixture": "run_kiwoom_replay_fault_injection.py:NESTED_ORDER_AUTHORITY_TRUE",
+    "live_order_api_calls": 0,
+    "portfolio_hash_before": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+    "portfolio_hash_after": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+    "portfolio_mutation": false,
+    "execution_quantity": null,
+    "quantity_authority": "none",
+    "order_authority": false
+  },
+  "portfolio_hash_before": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+  "portfolio_hash_after": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+  "order_authority": false,
+  "record_hash": "cbced40a9ad622a05853ac18b5782a96780546f52d507c4c29880f242d8c9d7b"
+}

@@ -18,9 +18,9 @@ from typing import Any, Iterable
 from validation_common import canonical_hash, load_json, parse_datetime, validate_instance
 
 
-ANALYTICS_ENGINE_VERSION = "continuous-improvement-engine-2.0"
-METRIC_DEFINITION_VERSION = "continuous-improvement-metrics-2.1"
-ANALYTICS_SCHEMA_VERSION = "2.0"
+ANALYTICS_ENGINE_VERSION = "continuous-improvement-engine-3.0"
+METRIC_DEFINITION_VERSION = "continuous-improvement-metrics-3.0"
+ANALYTICS_SCHEMA_VERSION = "3.0"
 RUN_ORIGINS = {
     "SCHEDULED_GENUINE", "MANUAL", "REPLAY", "TEST_ONLY", "SHADOW_COUNTERFACTUAL",
 }
@@ -220,12 +220,26 @@ def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[s
         if maturity_eligible and run.get("delivery_status") != "DELIVERED":
             maturity_eligible = False
             reasons.append("DELIVERY_NOT_VERIFIED")
+    evidence_grade = {
+        "VERIFIED_SCHEDULED": "GRADE_A",
+        "VERIFIED_MANUAL": "GRADE_B",
+        "VERIFIED_REPLAY": "GRADE_C",
+        "VERIFIED_TEST": "GRADE_D",
+        "VERIFIED_SHADOW": "GRADE_D",
+    }.get(status, "UNVERIFIED")
+    temporal_valid = run.get("temporal_evidence_status", "TEMPORAL_EVIDENCE_VALID") == "TEMPORAL_EVIDENCE_VALID"
+    decision_observation = status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY"} and temporal_valid
     return {
         "execution_origin": origin if origin in RUN_ORIGINS else "UNVERIFIED",
         "decision_mode": run.get("decision_mode"),
         "decision_mode_status": mode["status"],
         "run_provenance_status": status,
         "maturity_eligible": maturity_eligible,
+        "operational_maturity_eligible": maturity_eligible,
+        "decision_quality_eligible": decision_observation,
+        "counterfactual_eligible": status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY", "VERIFIED_SHADOW"} and temporal_valid,
+        "policy_evolution_eligible": status == "VERIFIED_SCHEDULED" and temporal_valid,
+        "evidence_grade": evidence_grade,
         "reason_codes": reasons,
     }
 
@@ -305,6 +319,10 @@ def build_run_record(run: dict[str, Any], policy: dict[str, Any]) -> dict[str, A
         record["reason_codes"].append("DECISION_ARTIFACT_MODE_MISMATCH")
     if not record["evaluation_valid"]:
         record["maturity_eligible"] = False
+        record["operational_maturity_eligible"] = False
+        record["decision_quality_eligible"] = False
+        record["counterfactual_eligible"] = False
+        record["policy_evolution_eligible"] = False
     return record
 
 
@@ -624,15 +642,42 @@ def build_event_resolution_analytics(records: list[dict[str, Any]]) -> dict[str,
     unresolved_by_source = Counter()
     compile_modes = Counter()
     missing_reasons = Counter()
+    origin_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    detail_rows: list[dict[str, Any]] = []
+    record_origin = {artifact.get("artifact_hash") or artifact.get("event_id") or id(artifact): record.get("execution_origin", "UNVERIFIED")
+                     for record in records for artifact in (record.get("decision_artifacts") or [])}
     for row in rows:
+        row_key = row.get("artifact_hash") or row.get("event_id") or id(row)
+        origin = record_origin.get(row_key, "UNVERIFIED")
+        origin_rows[origin].append(row)
         compile_modes[row.get("holding_compile_mode", "NOT_RUN")] += 1
         for item in row.get("unresolved_categories") or []:
             unresolved_by_ticker[str(row.get("ticker") or "UNKNOWN")] += 1
             unresolved_by_category[str(item.get("category") or "UNKNOWN")] += 1
             unresolved_by_source[str(item.get("source_type") or "UNKNOWN")] += 1
             missing_reasons[str(item.get("missing_reason") or "UNRESOLVED")] += 1
+            detail_rows.append({
+                "execution_origin": origin,
+                "ticker": str(row.get("ticker") or "UNKNOWN"),
+                "category": str(item.get("category") or "UNKNOWN"),
+                "action": str(item.get("action") or row.get("action") or "UNKNOWN"),
+                "requirement_level": str(item.get("requirement_level") or "UNKNOWN"),
+                "missing_reason": str(item.get("missing_reason") or "UNRESOLVED"),
+                "resolution_status": str(item.get("resolution_status") or row.get("resolution_status") or "UNRESOLVED"),
+                "source_authority": str(item.get("source_authority") or "UNKNOWN"),
+            })
     count = len(rows)
-    return {
+    run_level = {
+        origin: {
+            "sample_size": len(origin_specific),
+            "required_categories_checked": sum(int(row.get("required_categories_checked") or 0) for row in origin_specific),
+            "resolved_categories": sum(int(row.get("resolved_categories") or 0) for row in origin_specific),
+            "resolved_with_nonblocking_gap": sum(int(row.get("resolved_with_nonblocking_gap") or 0) for row in origin_specific),
+            "action_blocking_categories": sum(len(row.get("unresolved_categories") or []) for row in origin_specific),
+        }
+        for origin, origin_specific in sorted(origin_rows.items())
+    }
+    result = {
         "status": "OBSERVATIONAL_BASELINE_BUILDING",
         "sample_size": count,
         "event_resolution_success_rate": None if count == 0 else successes / count,
@@ -652,11 +697,15 @@ def build_event_resolution_analytics(records: list[dict[str, Any]]) -> dict[str,
         "fail_closed_rate": None if count == 0 else compile_modes.get("FAIL_CLOSED", 0) / count,
         "safe_fallback_rate": None if count == 0 else sum(int(row.get("keep_cash_state") == "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT") for row in rows) / count,
         "optimized_keep_cash_rate": None if count == 0 else sum(int(row.get("keep_cash_state") == "OPTIMIZED_KEEP_CASH") for row in rows) / count,
+        "run_level": run_level,
+        "ticker_category_action_level": detail_rows,
+        "live_scheduled_quality_excludes_replay": True,
         "production_thresholds_configured": False,
         "production_policy_mutation": False,
         "operational_counter_mutation": False,
         "order_authority": False,
     }
+    return result
 
 
 def build_improvement_findings(quality: dict[str, Any], blocked: dict[str, Any],
@@ -853,6 +902,13 @@ def build_report(fixture: dict[str, Any], policy: dict[str, Any]) -> tuple[dict[
         "analytics_as_of": fixture["analytics_as_of"],
         "run_counts": _origin_counts(records),
         "maturity_eligible_count": sum(item["maturity_eligible"] for item in records),
+        "eligibility_counts": {
+            "operational_maturity_eligible": sum(item["operational_maturity_eligible"] for item in records),
+            "decision_quality_eligible": sum(item["decision_quality_eligible"] for item in records),
+            "counterfactual_eligible": sum(item["counterfactual_eligible"] for item in records),
+            "policy_evolution_eligible": sum(item["policy_evolution_eligible"] for item in records),
+        },
+        "evidence_grade_counts": dict(sorted(Counter(item["evidence_grade"] for item in records).items())),
         "unverified_run_count": sum(item["run_provenance_status"] == "UNVERIFIED" for item in records),
         "duplicate_ingestion_count": duplicate_count,
         "ledger_chain_valid": validate_ledger_chain(ledger),

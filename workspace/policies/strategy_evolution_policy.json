@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "strategy-evolution-v2",
+  "mode": "READ_ONLY_CHAMPION_CHALLENGER",
+  "evolution_authority_ceiling": "EVOLUTION_4",
+  "evolution_5_enabled": false,
+  "scorecard_axes": ["RETURN", "STABILITY", "OPTIMIZATION", "EFFICIENCY", "ROBUSTNESS", "EXECUTABILITY"],
+  "evaluation_order": ["DATA_INTEGRITY", "HARD_SAFETY", "EXECUTABILITY", "STABILITY", "OPTIMIZATION", "RETURN", "EFFICIENCY"],
+  "single_composite_score_authority": false,
+  "evidence_grades": {
+    "VERIFIED_SCHEDULED": "GRADE_A",
+    "VERIFIED_MANUAL": "GRADE_B",
+    "VERIFIED_REPLAY": "GRADE_C",
+    "VERIFIED_TEST": "GRADE_D",
+    "VERIFIED_SHADOW": "GRADE_D"
+  },
+  "eligibility_axes": ["operational_maturity_eligible", "decision_quality_eligible", "counterfactual_eligible", "policy_evolution_eligible"],
+  "outcome_horizons": [1, 5, 10, 20],
+  "completed_trading_sessions_only": true,
+  "candidate_universe_point_in_time_required": true,
+  "paired_evidence_identity_required": true,
+  "discovery_validation_oos_separation_required": true,
+  "safe_fallback_reasons": [
+    "SAFE_FALLBACK_EVENT_UNRESOLVED",
+    "SAFE_FALLBACK_NO_ELIGIBLE_CANDIDATE",
+    "SAFE_FALLBACK_INSUFFICIENT_VERIFIED_CASH",
+    "SAFE_FALLBACK_BROKER_VISIBILITY",
+    "SAFE_FALLBACK_PORTFOLIO_RISK",
+    "SAFE_FALLBACK_EXECUTION_FEASIBILITY"
+  ],
+  "dominance_statuses": ["DOMINATES_CHAMPION", "NON_DOMINATED_DIFFERENT_PROFILE", "UNDERPERFORMS_CHAMPION", "INSUFFICIENT_EVIDENCE", "SAFETY_REJECTED", "EXECUTION_REJECTED"],
+  "uncertainty_thresholds": "NOT_CONFIGURED",
+  "evolution_budget_numeric_limit": "NOT_CONFIGURED",
+  "transaction_cost_model": "NOT_CONFIGURED",
+  "production_auto_apply": false,
+  "production_promotion_requires_explicit_user_approval": true,
+  "execution_authority_status": "NONE",
+  "portfolio_mutation": false,
+  "execution_quantity": null,
+  "quantity_authority": "none",
+  "order_authority": false
+}

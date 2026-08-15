@@ -1,0 +1,28 @@
+{
+  "analytics_engine_version": "continuous-improvement-engine-2.0",
+  "backfill": false,
+  "cohort_id": "continuous-improvement-sidecar-v3",
+  "execution_quantity": null,
+  "ingested_runs": 1,
+  "maturity_eligible_runs": 0,
+  "metric_definition_version": "continuous-improvement-metrics-2.1",
+  "operational_counter_authority": false,
+  "order_authority": false,
+  "portfolio_decision_counter_authority": false,
+  "portfolio_mutation": false,
+  "production_policy_auto_apply": false,
+  "quantity_authority": "none",
+  "schema_version": "2.0",
+  "semantic_fingerprint": "2eb39782883e927d9378e2f3bd3bb04c3925130bd03ddd6f5ee08ed7e6129560",
+  "semantic_fingerprint_algorithm": "SHA256_CANONICAL_JSON_OF_NORMALIZED_TEXT_HASHES_V1",
+  "semantic_input_hashes": {
+    "outcome_ledger_schema": "97fa0c810faf3bbdf2acb613e87deda3494f76785996661702e415bac153afd3",
+    "outcome_schema": "9ecbb1cd99121160562f503e2e134d6606c03bd91354242207a06496343285ec",
+    "policy": "30cab54b83d060a1b84468747a239922eece56d2bbe0f5ba2e763ed3a2119b14",
+    "report_schema": "133029c2bcf4f9efa1fe8c8459d00992e5242f960cf86d9174d7a50d44edd9ef",
+    "run_ledger_schema": "2f557fb9f8e3004b8b9eb7d4a1bc82db4147b817aea902e2358eb2fb94632c32",
+    "run_record_schema": "f36764688fc40a354a07a24ee4268619179a161ba770acf6ceade032f03260bd",
+    "sidecar": "d757c897f2a0bade3baae57a5800e02e8214a3a0663a457b58c35e3fc765afa0"
+  },
+  "started_at": "2026-08-15T02:50:38Z"
+}

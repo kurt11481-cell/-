@@ -4,9 +4,9 @@
   "type": "object",
   "required": ["schema_version", "analytics_engine_version", "metric_definition_version", "proposal_id", "exact_scope", "current_policy", "proposed_policy", "evidence_window", "sample_size", "supporting_evidence", "counter_evidence", "expected_improvement", "known_risks", "overfitting_risk", "multiple_hypothesis_risk", "semantic_impact", "rollback_plan", "auto_apply", "approval_status", "order_authority", "proposal_hash"],
   "properties": {
-    "schema_version": {"const": "2.0"},
-    "analytics_engine_version": {"const": "continuous-improvement-engine-2.0"},
-    "metric_definition_version": {"const": "continuous-improvement-metrics-2.1"},
+    "schema_version": {"const": "3.0"},
+    "analytics_engine_version": {"const": "continuous-improvement-engine-3.0"},
+    "metric_definition_version": {"const": "continuous-improvement-metrics-3.0"},
     "proposal_id": {"type": "string"},
     "exact_scope": {"type": "object"},
     "current_policy": {"type": "object"},

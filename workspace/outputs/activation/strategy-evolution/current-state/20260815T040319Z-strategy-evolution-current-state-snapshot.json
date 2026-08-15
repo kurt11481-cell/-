@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "STRATEGY_EVOLUTION_CURRENT_STATE_SNAPSHOT",
+  "captured_at": "2026-08-15T04:03:19.927Z",
+  "status": "STRATEGY_EVOLUTION_BASELINE_FROZEN_WITH_DEPLOYMENT_DRIFT",
+  "repository": {
+    "branch": "codex/master-recovery-expansion",
+    "head": "6f8883cdd799cb005312b1aa6874d450367a9fdf",
+    "tree": "5c0f3944d5304e8930f117e3be56cab759609e0e",
+    "origin_main": "d5743791486380394b90d1f95e68a01bcc56ebc2",
+    "ahead": 18,
+    "behind": 0,
+    "preexisting_dirty_paths": [
+      "AGENTS.md",
+      "manage-us-stock-strategy/SKILL.md",
+      "manage-us-stock-strategy/scripts/finalized_postmarket_automation.py",
+      "manage-us-stock-strategy/tests/test_v2_6_8_finalized_postmarket_automation.py",
+      "manage-us-stock-strategy/tests/test_v2_6_9_current_event_risk.py",
+      "stock-strategy-system/alert_policy.json",
+      "docs/chatgpt-define-goal-workflow.md"
+    ]
+  },
+  "scheduled_runtime": {
+    "head": "be3b54fcd7f7cb84cf72adf44bbcb757c79f2908",
+    "tree": "5c0f3944d5304e8930f117e3be56cab759609e0e",
+    "clean": true,
+    "source_tree_match": true
+  },
+  "deployment_manifest": {
+    "status": "DEPLOYMENT_PROVENANCE_VERIFIED",
+    "sha256": "49698d37956bdbaeb5d829639199d958aaca035dcfb1108742edbef0ae848eba"
+  },
+  "scheduler": {
+    "runtime_head": "be3b54fcd7f7cb84cf72adf44bbcb757c79f2908",
+    "configured_expected_head": "a475a43a47634506a2453c96ba26a051e8bccf6b",
+    "expected_head_matches_runtime": false,
+    "preopen_task_sha256": "5dc5b59f6b8b15804a6e2f89697d155044701ac81d31dc38e2d8f70b9f927392",
+    "postclose_task_sha256": "9cb7f55287cd889c3812d4e4ed901b9aaf837ef56d3e1c7f26ba56acae9562cf",
+    "drift_classification": "DEPLOYMENT_EXPECTED_HEAD_DRIFT"
+  },
+  "cohorts": {
+    "core_operational": "integrated-shadow-246c0aa2eb76b27f",
+    "portfolio_decision": "portfolio-decision-32fb4351fc727f7e",
+    "improvement_analytics": "continuous-improvement-sidecar-v3",
+    "strategy_evolution": null
+  },
+  "counters": {
+    "core": {
+      "valid_finalized_sessions": 0,
+      "valid_paired_operational_days": 0,
+      "preopen_success_count": 0,
+      "postclose_success_count": 0
+    },
+    "portfolio_decision": {
+      "valid_decision_observations": 0
+    },
+    "analytics": {
+      "ingested_runs": 1,
+      "maturity_eligible_runs": 0,
+      "manual": 1,
+      "scheduled_genuine": 0,
+      "replay": 0,
+      "shadow": 0
+    }
+  },
+  "protected_hashes": {
+    "portfolio_state": "017225ec657c3fd3e6a6be7de9bb92296839411e98d74cb4627a4b0de605192a",
+    "alert_policy": "255ca47ecdf3d8036f7b7dd996a49f09c826c4c5c103a58c932b98fe04ec349f",
+    "provider_scope": "ba010c507f6a306499a7af57dad6f5c1a67221df4f100c8e11abf5ed1b3e1ae6",
+    "event_policy": "45a7e4e38f5accad347fe8e1883c106b86f3ae775311b304cc8519ecd26fbe98",
+    "portfolio_decision_policy": "36bf95219ecf5246068fddc179a1c85b3583a4cbf78f587561930690b7f35d77",
+    "analytics_policy": "30cab54b83d060a1b84468747a239922eece56d2bbe0f5ba2e763ed3a2119b14",
+    "event_resolution_judge": "2f4f22e5834f303daceb66d60ab55cb051f82134afafd77a211555a74a79b0de"
+  },
+  "current_lifecycle": "FIRST_GENUINE_DUAL_RUN_PENDING",
+  "operational_maturity_eligible": false,
+  "portfolio_mutation": false,
+  "quantity_authority": "none",
+  "execution_quantity": null,
+  "order_authority": false,
+  "record_hash": "9b18558134327c37d215b54dd66318123aa2a9af9dc496175089e8d1194238b5"
+}
