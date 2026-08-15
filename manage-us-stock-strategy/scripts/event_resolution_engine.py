@@ -287,4 +287,3 @@ def resolution_to_event_readiness(result: dict[str, Any]) -> str:
     if status == "UNRESOLVED_ACTION_BLOCKING":
         return "EVENT_PARTIAL_BUY_BLOCKING"
     return "EVENT_REFRESH_FAILED"
-
