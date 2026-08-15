@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-resolution-integration-judge.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "judge_type", "gates", "overall_status", "test_output_hash", "portfolio_hash", "core_counter_mutation", "portfolio_decision_counter_mutation", "execution_quantity", "quantity_authority", "order_authority"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "judge_type": {"const": "EVENT_RESOLUTION_INTEGRATION_INDEPENDENT_JUDGE"},
+    "gates": {"type": "object", "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_VERIFIED"]}},
+    "overall_status": {"enum": ["PORTFOLIO_LEARNING_INTEGRATION_VERIFIED", "EVENT_RESOLUTION_INTEGRATION_NOT_READY"]},
+    "test_output_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "portfolio_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "core_counter_mutation": {"const": false},
+    "portfolio_decision_counter_mutation": {"const": false},
+    "execution_quantity": {"const": null},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}

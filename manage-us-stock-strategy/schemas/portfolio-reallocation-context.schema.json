@@ -9,6 +9,8 @@
     "validation_mode",
     "completed_bar_finalization_status",
     "event_refresh_status",
+    "event_resolution_status",
+    "holding_compile_mode",
     "event_bundle_hash",
     "market_data_cutoff",
     "event_cutoff",
@@ -25,9 +27,11 @@
     "order_authority"
   ],
   "properties": {
-    "validation_mode": {"enum": ["LIVE_READ_ONLY", "TEST_ONLY"]},
+    "validation_mode": {"enum": ["LIVE_READ_ONLY", "MANUAL_READ_ONLY", "REPLAY", "TEST_ONLY"]},
     "completed_bar_finalization_status": {"const": "KIWOOM_COMPLETED_BAR_FINALIZED"},
-    "event_refresh_status": {"const": "POST_CLOSE_EVENT_REFRESH_VALIDATED"},
+    "event_refresh_status": {"enum": ["POST_CLOSE_EVENT_REFRESH_VALIDATED", "POST_CLOSE_EVENT_RESOLUTION_COMPLETED"]},
+    "event_resolution_status": {"enum": ["RESOLVED", "RESOLVED_WITH_NONBLOCKING_GAPS", "UNRESOLVED_ACTION_BLOCKING", "UNRESOLVED_NONBLOCKING"]},
+    "holding_compile_mode": {"enum": ["FULL", "DEGRADED_EVENT_SCOPED"]},
     "event_bundle_hash": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
     "decision_as_of": {"type": "string", "format": "date-time"},
     "market_data_cutoff": {"type": "string", "format": "date-time"},

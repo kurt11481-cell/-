@@ -31,15 +31,25 @@ EVENT_STATES = {
 }
 EVENT_ACTIONS = {"NEW_BUY", "ADD", "HOLD", "TRIM", "EXIT"}
 HOLDING_ACTIONS = {
-    "HOLD_CORE", "HOLD_TIGHTEN_STOP", "ADD_REVIEW",
+    "HOLD_CORE", "HOLD_TIGHTEN_STOP", "HOLD_REVIEW_REQUIRED", "ADD_REVIEW",
     "TRIM_PROFIT", "TRIM_VALUATION", "TRIM_TECHNICAL",
     "TRIM_CONCENTRATION", "TRIM_RISK", "EXIT_THESIS",
     "EXIT_HARD_STOP", "ROTATE_REVIEW",
 }
 MATERIAL_CATEGORY_STATES = {
     "VERIFIED", "NOT_YET_ANNOUNCED", "NO_NEW_DISCLOSURE_FOUND",
+    "NO_NEW_DISCLOSURE_FOUND_AS_OF_CUTOFF",
     "SOURCE_UNAVAILABLE", "REVIEW_REQUIRED",
 }
+VALID_EVENT_REFRESH_STATUSES = {
+    "POST_CLOSE_EVENT_REFRESH_VALIDATED",
+    "POST_CLOSE_EVENT_RESOLUTION_COMPLETED",
+}
+VALID_EVENT_RESOLUTION_STATUSES = {
+    "RESOLVED", "RESOLVED_WITH_NONBLOCKING_GAPS",
+    "UNRESOLVED_ACTION_BLOCKING", "UNRESOLVED_NONBLOCKING",
+}
+HOLDING_COMPILE_MODES = {"FULL", "DEGRADED_EVENT_SCOPED", "FAIL_CLOSED", "NOT_RUN"}
 TEN_AXES = (
     "PRICE_AUTHORITY_STATUS", "VOLUME_AUTHORITY_STATUS",
     "TECHNICAL_CONDITION_STATUS", "EVENT_READINESS_STATUS",
@@ -108,15 +118,25 @@ def validate_post_close_ordering(*, decision_as_of: str, market_data_cutoff: str
                                  event_cutoff: str, broker_cutoff: str,
                                  candidate_cutoff: str | None = None,
                                  evidence_timestamps: list[str] | None = None,
-                                 completed_bar_finalization_status: str = "KIWOOM_COMPLETED_BAR_FINALIZED",
-                                 event_refresh_status: str = "POST_CLOSE_EVENT_REFRESH_VALIDATED",
-                                 event_bundle_hash: str | None = None) -> list[str]:
+                                  completed_bar_finalization_status: str = "KIWOOM_COMPLETED_BAR_FINALIZED",
+                                  event_refresh_status: str = "POST_CLOSE_EVENT_REFRESH_VALIDATED",
+                                  event_resolution_status: str = "RESOLVED",
+                                  holding_compile_mode: str = "FULL",
+                                  event_bundle_hash: str | None = None) -> list[str]:
     """Enforce completed-bar -> event-refresh -> strategy decision ordering."""
     errors: list[str] = []
     if completed_bar_finalization_status != "KIWOOM_COMPLETED_BAR_FINALIZED":
         errors.append("COMPLETED_BAR_NOT_FINALIZED")
-    if event_refresh_status != "POST_CLOSE_EVENT_REFRESH_VALIDATED":
+    if event_refresh_status not in VALID_EVENT_REFRESH_STATUSES:
         errors.append("POST_CLOSE_EVENT_REFRESH_NOT_VALIDATED")
+    if event_resolution_status not in VALID_EVENT_RESOLUTION_STATUSES:
+        errors.append("EVENT_RESOLUTION_NOT_ACTIONABLE")
+    if holding_compile_mode not in {"FULL", "DEGRADED_EVENT_SCOPED"}:
+        errors.append("HOLDING_COMPILE_MODE_NOT_ACTIONABLE")
+    if event_resolution_status == "RESOLVED" and holding_compile_mode != "FULL":
+        errors.append("RESOLVED_EVENT_REQUIRES_FULL_COMPILE")
+    if event_resolution_status != "RESOLVED" and holding_compile_mode != "DEGRADED_EVENT_SCOPED":
+        errors.append("UNRESOLVED_EVENT_REQUIRES_DEGRADED_COMPILE")
     if not isinstance(event_bundle_hash, str) or len(event_bundle_hash) != 64 or any(ch not in "0123456789abcdefABCDEF" for ch in event_bundle_hash):
         errors.append("EVENT_BUNDLE_HASH_INVALID")
     try:
@@ -207,7 +227,9 @@ def _event_checks(event_state: str, policy: dict[str, Any], *, hard_exit: bool,
 
 
 def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *,
-                              validation_mode: str = "LIVE_READ_ONLY") -> dict[str, Any]:
+                              validation_mode: str = "LIVE_READ_ONLY",
+                              holding_compile_mode: str = "FULL",
+                              event_resolution_status: str = "RESOLVED") -> dict[str, Any]:
     ticker = str(context["ticker"])
     shares = context.get("current_broker_holding")
     average_cost = context.get("current_average_cost")
@@ -220,7 +242,11 @@ def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *
         raise ValueError(f"{ticker}:VALID_CANONICAL_PRICE_REQUIRED")
     event_state = str(context.get("event_readiness_status"))
     hard_exit = context.get("hard_risk_status") == "BREACH" and context.get("hard_risk_exit_authorized") is True
-    thesis_exit = context.get("thesis_status") == "INVALIDATED" and context.get("thesis_invalidation_validated") is True
+    thesis_exit = (
+        context.get("thesis_status") == "INVALIDATED"
+        and context.get("thesis_invalidation_validated") is True
+        and context.get("thesis_invalidation_event_verified") is True
+    )
     event_checks = _event_checks(event_state, policy, hard_exit=hard_exit, thesis_exit=thesis_exit)
 
     exit_reasons: list[str] = []
@@ -261,6 +287,12 @@ def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *
         "ADD_REVIEW_REQUESTED": context.get("add_review_requested") is True,
     }
     add_reasons.extend(key for key, passed in add_required.items() if not passed)
+    technical_scope = context.get("technical_condition_decision_class")
+    technical_status = context.get("technical_condition_status")
+    if ticker == "MVLL" and technical_status == "RVOL20_NOT_MET":
+        if technical_scope != "EMA10_RECLAIM_RVOL20":
+            raise ValueError("MVLL_RVOL20_SCOPE_UNVERIFIED")
+        add_reasons.append("EMA10_RECLAIM_RVOL20_CONDITION_NOT_MET")
     if not event_checks["ADD"]["allowed"]:
         add_reasons.append("EVENT_READINESS_ADD_BLOCKED")
     add_case = _case("PASS" if not add_reasons else "BLOCKED", add_reasons or ["ADD_GATES_PASSED"],
@@ -271,7 +303,8 @@ def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *
     if not hold_valid:
         hold_reasons.append("VALID_HOLD_THESIS_REQUIRED")
     hold_event = event_checks["HOLD"]
-    if hold_event["decision"] == "REVIEW_REQUIRED":
+    hold_review_required = hold_event["decision"] == "REVIEW_REQUIRED"
+    if hold_review_required:
         hold_reasons.append("EVENT_REFRESH_REQUIRED_FOR_HOLD_CONFIDENCE")
     strong_profit_hold = bool(
         context.get("unrealized_return_status") == "LARGE_PROFIT"
@@ -279,8 +312,11 @@ def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *
         and context.get("volume_health_status") == "HEALTHY"
         and context.get("profit_protection_policy_result") != "TRIGGERED"
     )
-    hold_action = "HOLD_TIGHTEN_STOP" if strong_profit_hold or hold_reasons else "HOLD_CORE"
-    hold_case = _case("PASS" if hold_valid else "REVIEW_REQUIRED",
+    if hold_review_required:
+        hold_action = "HOLD_REVIEW_REQUIRED"
+    else:
+        hold_action = "HOLD_TIGHTEN_STOP" if strong_profit_hold or hold_reasons else "HOLD_CORE"
+    hold_case = _case("PASS" if hold_valid and not hold_review_required else "REVIEW_REQUIRED",
                       hold_reasons or (["STRONG_PROFIT_TREND_INTACT"] if strong_profit_hold else ["HOLD_CASE_VALIDATED"]),
                       proposed_action=hold_action)
 
@@ -355,6 +391,9 @@ def evaluate_holding_decision(context: dict[str, Any], policy: dict[str, Any], *
         ),
         "rejected_alternative_cases": rejected,
         "event_actionability": event_checks,
+        "event_resolution_status": event_resolution_status,
+        "holding_compile_mode": holding_compile_mode,
+        "decision_mode": validation_mode,
         "technical_condition": axes["TECHNICAL_CONDITION_STATUS"],
         "valuation_condition": str(context.get("valuation_condition") or "UNCLASSIFIED"),
         "hypothetical_trim_ratio": float(ratio) if ratio_valid else None,
@@ -422,6 +461,8 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         evidence_timestamps=list(context.get("evidence_timestamps") or []),
         completed_bar_finalization_status=context["completed_bar_finalization_status"],
         event_refresh_status=context["event_refresh_status"],
+        event_resolution_status=context["event_resolution_status"],
+        holding_compile_mode=context["holding_compile_mode"],
         event_bundle_hash=context["event_bundle_hash"],
     )
     expected_tickers = [str(item) for item in context.get("canonical_positive_holding_tickers", [])]
@@ -434,7 +475,11 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
     if set(optimizer_inputs) != set(OPTIMIZER_INPUTS):
         raise ValueError("PORTFOLIO_OPTIMIZER_INPUT_STATUS_INCOMPLETE")
     holdings = [
-        evaluate_holding_decision(row, policy, validation_mode=context["validation_mode"])
+        evaluate_holding_decision(
+            row, policy, validation_mode=context["validation_mode"],
+            holding_compile_mode=context["holding_compile_mode"],
+            event_resolution_status=context["event_resolution_status"],
+        )
         for row in context.get("holdings", [])
     ]
     decision_provenance = {
@@ -444,6 +489,8 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         "broker_cutoff": context["broker_cutoff"],
         "candidate_cutoff": context.get("candidate_cutoff"),
         "event_bundle_hash": context["event_bundle_hash"],
+        "event_resolution_status": context["event_resolution_status"],
+        "holding_compile_mode": context["holding_compile_mode"],
         "policy_version": policy["policy_version"],
     }
     for row in holdings:
@@ -467,21 +514,37 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
     eligible = [row for row in candidates if row["eligible_for_shadow_comparison"]]
     eligible.sort(key=lambda row: (int(row.get("relative_opportunity_rank", 10**9)), str(row.get("ticker"))))
     best = eligible[0] if eligible else None
+    optimizer_complete = all(value in {"AVAILABLE", "NOT_APPLICABLE"} for value in optimizer_inputs.values())
+    event_or_evidence_blocked = any(
+        "EVENT_ACTIONABILITY_BLOCKED" in row["blockers"] for row in candidates
+    ) or not optimizer_complete
+    keep_cash_state = "ELIGIBLE_NOT_SELECTED"
     if best is None:
         best_decision, rationale = "KEEP_CASH", "NO_CANDIDATE_PASSED_HARD_RISK_PORTFOLIO_AND_EVENT_GATES"
+        keep_cash_state = (
+            "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT"
+            if event_or_evidence_blocked else "OPTIMIZED_KEEP_CASH"
+        )
     elif any(row["selected_holding_action"] == "ROTATE_REVIEW" for row in holdings):
         best_decision, rationale = "ROTATE_REVIEW", "ROTATION_REQUIRES_FULL_PORTFOLIO_RECOMPILE_AND_HUMAN_REVIEW"
     elif best.get("type") == "EXISTING_HOLDING_ADD":
         best_decision, rationale = "ADD_EXISTING_REVIEW", "BEST_ELIGIBLE_EXISTING_HOLDING_SHADOW_USE"
     else:
         best_decision, rationale = "NEW_BUY_REVIEW", "BEST_ELIGIBLE_NEW_BUY_SHADOW_USE"
+        keep_cash_state = "ELIGIBLE_NOT_SELECTED"
     cycle_id = str(context["portfolio_reallocation_cycle_id"])
     duplicate = cycle_id in set(context.get("prior_cycle_ids") or [])
     if duplicate:
         best_decision, rationale = "KEEP_CASH", "SAME_CYCLE_DUPLICATE_SUPPRESSED"
+        keep_cash_state = "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT"
+    degraded_path_status = (
+        "EVALUATED" if sale_candidates
+        else "NOT_APPLICABLE" if context["holding_compile_mode"] == "DEGRADED_EVENT_SCOPED"
+        else "EVALUATED_NO_SALE_CANDIDATE"
+    )
     status = "INVALID" if ordering_errors else "CAPITAL_REALLOCATION_SHADOW_VERIFIED"
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "mode": "CAPITAL_REALLOCATION_SHADOW",
         "validation_mode": context["validation_mode"],
         "status": status,
@@ -493,6 +556,9 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         "decision_as_of": context["decision_as_of"],
         "completed_bar_finalization_status": context["completed_bar_finalization_status"],
         "event_refresh_status": context["event_refresh_status"],
+        "event_resolution_status": context["event_resolution_status"],
+        "holding_compile_mode": context["holding_compile_mode"],
+        "capital_reallocation_degraded_path_status": degraded_path_status,
         "event_bundle_hash": context["event_bundle_hash"],
         "decision_provenance": decision_provenance,
         "market_data_cutoff": context["market_data_cutoff"],
@@ -518,6 +584,7 @@ def build_capital_reallocation_shadow(context: dict[str, Any], policy: dict[str,
         "hypothetical_post_sale_portfolio": after_positions,
         "candidate_comparison": candidates,
         "keep_cash_alternative": {"status": "ELIGIBLE", "actual_cash_usd": actual_cash},
+        "keep_cash_state": keep_cash_state,
         "best_shadow_decision": best_decision,
         "best_shadow_candidate": best.get("ticker") if best else None,
         "decision_rationale": rationale,

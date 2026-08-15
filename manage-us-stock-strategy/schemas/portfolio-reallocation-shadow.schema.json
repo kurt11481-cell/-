@@ -10,6 +10,9 @@
     "validation_mode",
     "completed_bar_finalization_status",
     "event_refresh_status",
+    "event_resolution_status",
+    "holding_compile_mode",
+    "capital_reallocation_degraded_path_status",
     "event_bundle_hash",
     "decision_provenance",
     "status",
@@ -42,6 +45,7 @@
     "hypothetical_post_sale_portfolio",
     "candidate_comparison",
     "keep_cash_alternative",
+    "keep_cash_state",
     "best_shadow_decision",
     "best_shadow_candidate",
     "decision_rationale",
@@ -57,11 +61,14 @@
     "portfolio_mutation"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"enum": ["1.0", "1.1"]},
     "mode": {"const": "CAPITAL_REALLOCATION_SHADOW"},
-    "validation_mode": {"enum": ["LIVE_READ_ONLY", "TEST_ONLY"]},
+    "validation_mode": {"enum": ["LIVE_READ_ONLY", "MANUAL_READ_ONLY", "REPLAY", "TEST_ONLY"]},
     "completed_bar_finalization_status": {"const": "KIWOOM_COMPLETED_BAR_FINALIZED"},
-    "event_refresh_status": {"const": "POST_CLOSE_EVENT_REFRESH_VALIDATED"},
+    "event_refresh_status": {"enum": ["POST_CLOSE_EVENT_REFRESH_VALIDATED", "POST_CLOSE_EVENT_RESOLUTION_COMPLETED"]},
+    "event_resolution_status": {"enum": ["RESOLVED", "RESOLVED_WITH_NONBLOCKING_GAPS", "UNRESOLVED_ACTION_BLOCKING", "UNRESOLVED_NONBLOCKING"]},
+    "holding_compile_mode": {"enum": ["FULL", "DEGRADED_EVENT_SCOPED"]},
+    "capital_reallocation_degraded_path_status": {"enum": ["EVALUATED", "NOT_APPLICABLE", "EVALUATED_NO_SALE_CANDIDATE"]},
     "event_bundle_hash": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
     "decision_provenance": {"type": "object"},
     "status": {"enum": ["CAPITAL_REALLOCATION_SHADOW_VERIFIED", "INVALID"]},
@@ -109,7 +116,7 @@
           "EXIT_CASE": {"type": "object"},
           "selected_holding_action": {
             "enum": [
-              "HOLD_CORE", "HOLD_TIGHTEN_STOP", "ADD_REVIEW",
+              "HOLD_CORE", "HOLD_TIGHTEN_STOP", "HOLD_REVIEW_REQUIRED", "ADD_REVIEW",
               "TRIM_PROFIT", "TRIM_VALUATION", "TRIM_TECHNICAL",
               "TRIM_CONCENTRATION", "TRIM_RISK", "EXIT_THESIS",
               "EXIT_HARD_STOP", "ROTATE_REVIEW"
@@ -142,6 +149,7 @@
     "hypothetical_post_sale_portfolio": {"type": "array", "items": {"type": "object"}},
     "candidate_comparison": {"type": "array", "items": {"type": "object"}},
     "keep_cash_alternative": {"type": "object"},
+    "keep_cash_state": {"enum": ["OPTIMIZED_KEEP_CASH", "SAFE_FALLBACK_NO_NEW_CAPITAL_DEPLOYMENT", "ELIGIBLE_NOT_SELECTED"]},
     "best_shadow_decision": {"enum": ["ADD_EXISTING_REVIEW", "NEW_BUY_REVIEW", "KEEP_CASH", "ROTATE_REVIEW"]},
     "best_shadow_candidate": {"type": ["string", "null"]},
     "decision_rationale": {"type": "string", "minLength": 1},

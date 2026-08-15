@@ -79,6 +79,8 @@ def context(*, holdings: list[dict] | None = None, candidates: list[dict] | None
         "validation_mode": "TEST_ONLY",
         "completed_bar_finalization_status": "KIWOOM_COMPLETED_BAR_FINALIZED",
         "event_refresh_status": "POST_CLOSE_EVENT_REFRESH_VALIDATED",
+        "event_resolution_status": "RESOLVED",
+        "holding_compile_mode": "FULL",
         "event_bundle_hash": "e" * 64,
         "decision_as_of": "2026-08-15T00:30:00Z",
         "market_data_cutoff": "2026-08-14T20:00:00Z",
@@ -143,6 +145,7 @@ class PortfolioReallocationShadowTests(unittest.TestCase):
     def test_thesis_invalidation_exit(self):
         row = holding()
         row.update({"thesis_status": "INVALIDATED", "thesis_invalidation_validated": True,
+                    "thesis_invalidation_event_verified": True,
                     "event_readiness_status": "EVENT_REFRESH_FAILED"})
         self.assertEqual(evaluate_holding_decision(row, self.policy)["selected_holding_action"], "EXIT_THESIS")
 
