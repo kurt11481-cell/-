@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-calendar-activation.schema.json",
+  "title": "US Equities Core Session Calendar Activation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "activation_schema_version",
+    "activation_status",
+    "activation_reason_code",
+    "activation_reason",
+    "calendar_policy_identity",
+    "active_calendar_hash",
+    "active_calendar_version",
+    "timezone_identity",
+    "operating_mic_scope",
+    "source_families",
+    "coverage_start",
+    "coverage_end",
+    "source_bundle_id",
+    "source_bundle_hash",
+    "authority_as_of",
+    "activated_at",
+    "authority_modes_allowed",
+    "activation_cohort_id"
+  ],
+  "properties": {
+    "activation_schema_version": {"const": "2.0"},
+    "activation_status": {"enum": ["ACTIVE", "INACTIVE"]},
+    "activation_reason_code": {
+      "enum": [
+        "INITIAL_BOOTSTRAP",
+        "CALENDAR_REFRESH",
+        "SPECIAL_OR_EMERGENCY_UPDATE",
+        "MANUAL_DEACTIVATION",
+        "CONFLICTING_CALENDAR"
+      ]
+    },
+    "activation_reason": {"type": "string", "minLength": 1},
+    "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+    "active_calendar_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "active_calendar_version": {"type": "string", "minLength": 1},
+    "timezone_identity": {"const": "America/New_York"},
+    "operating_mic_scope": {
+      "type": "array",
+      "const": ["XNYS", "XNAS", "XCBO"],
+      "items": {"enum": ["XNYS", "XNAS", "XCBO"]},
+      "uniqueItems": true
+    },
+    "source_families": {
+      "type": "array",
+      "const": ["NYSE_GROUP", "NASDAQ", "CBOE"],
+      "items": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+      "uniqueItems": true
+    },
+    "coverage_start": {"type": "string", "format": "date"},
+    "coverage_end": {"type": "string", "format": "date"},
+    "source_bundle_id": {"type": "string", "minLength": 1},
+    "source_bundle_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "authority_as_of": {"type": "string", "format": "date-time"},
+    "activated_at": {"type": "string", "format": "date-time"},
+    "authority_modes_allowed": {
+      "type": "array",
+      "const": ["CURRENT"],
+      "items": {"const": "CURRENT"},
+      "uniqueItems": true
+    },
+    "activation_cohort_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "instrument-identity-artifact.schema.json",
+  "title": "US Equity Instrument Identity Current Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_schema_version",
+    "authority_id",
+    "registry_version",
+    "ticker_namespace",
+    "scope",
+    "generated_at",
+    "authority_as_of",
+    "source_packet_id",
+    "source_packet_hash",
+    "order_authority",
+    "records"
+  ],
+  "properties": {
+    "artifact_schema_version": {"const": "1.0"},
+    "authority_id": {"const": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
+    "scope": {
+      "type": "array",
+      "const": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+      "items": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+      "uniqueItems": true
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority_as_of": {"type": "string", "format": "date-time"},
+    "source_packet_id": {"type": "string", "minLength": 1},
+    "source_packet_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "order_authority": {"const": false},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_status",
+          "ticker",
+          "security_name",
+          "instrument_type",
+          "security_class",
+          "primary_listing_venue_name",
+          "primary_listing_segment_mic",
+          "primary_listing_operating_mic",
+          "effective_from",
+          "effective_from_basis",
+          "effective_to",
+          "source_ref_ids"
+        ],
+        "properties": {
+          "record_status": {"const": "VERIFIED"},
+          "ticker": {"type": "string", "pattern": "[A-Z][A-Z0-9.]{0,9}"},
+          "security_name": {"type": "string", "minLength": 1},
+          "instrument_type": {"enum": ["EQUITY", "ETF"]},
+          "security_class": {
+            "enum": [
+              "COMMON_STOCK",
+              "CLASS_A_COMMON_STOCK",
+              "CLASS_A_ORDINARY_SHARES",
+              "ACTIVELY_MANAGED_ETF",
+              "LEVERAGED_ETF"
+            ]
+          },
+          "primary_listing_venue_name": {"type": "string", "minLength": 1},
+          "primary_listing_segment_mic": {"type": "string", "pattern": "[A-Z]{4}"},
+          "primary_listing_operating_mic": {"enum": ["XNYS", "XNAS", "XCBO"]},
+          "effective_from": {"type": ["string", "null"], "format": "date"},
+          "effective_from_basis": {"enum": ["VERIFIED_DATE", "CURRENT_AS_OF_ONLY"]},
+          "effective_to": {"type": ["string", "null"], "format": "date"},
+          "source_ref_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  }
+}

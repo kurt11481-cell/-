@@ -1,0 +1,402 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manual-portfolio-analysis.schema.json",
+  "title": "M1 Manual Portfolio Analysis Preflight Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_type",
+    "manual_run_id",
+    "run_mode",
+    "trigger_type",
+    "operator_initiated",
+    "decision_as_of",
+    "observed_at",
+    "market_phase",
+    "trading_date",
+    "run_provenance_status",
+    "evidence_grade",
+    "maturity_eligible",
+    "operational_maturity_eligible",
+    "policy_evolution_eligible",
+    "provenance",
+    "manual_data_verification_status",
+    "kiwoom_capability_status",
+    "kiwoom_capabilities_checked",
+    "kiwoom_health_status",
+    "broker_snapshot_status",
+    "broker_snapshot_as_of",
+    "broker_diff_status",
+    "broker_diff_details",
+    "orderable_cash_status",
+    "verified_orderable_cash_usd",
+    "current_price_status",
+    "historical_daily_evidence_status",
+    "identity_authority_status",
+    "identity_authority_reasons",
+    "identity_authority_id",
+    "identity_registry_version",
+    "identity_registry_hash",
+    "identity_activation_cohort_id",
+    "session_authority_status",
+    "session_authority_reasons",
+    "session_authority_market_phase",
+    "calendar_policy_identity",
+    "calendar_hash",
+    "session_activation_cohort_id",
+    "integrated_authority_cohort_status",
+    "expected_completed_us_session",
+    "finalized_bar_preflight_status",
+    "current_session_finalization_status",
+    "last_verified_finalized_bar_status",
+    "last_verified_finalized_bar_date",
+    "preflight_status",
+    "hard_fail_reasons",
+    "partial_reasons",
+    "unknowns",
+    "order_authority",
+    "quantity_authority",
+    "execution_quantity",
+    "backfill",
+    "scheduled_occurrence_id",
+    "scheduled_pair_eligible",
+    "mutation_status",
+    "broker_observed_state",
+    "system_portfolio_state",
+    "manual_analysis_view",
+    "current_price_evidence",
+    "historical_daily_evidence",
+    "last_verified_finalized_bars",
+    "event_evidence_status",
+    "technical_evidence_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "report_type": {"const": "MANUAL_PORTFOLIO_ANALYSIS_PREFLIGHT"},
+    "manual_run_id": {
+      "type": "string",
+      "minLength": 8,
+      "pattern": "[A-Za-z0-9][A-Za-z0-9._-]{7,127}"
+    },
+    "run_mode": {"const": "MANUAL_READ_ONLY"},
+    "trigger_type": {"const": "USER_INITIATED"},
+    "operator_initiated": {"const": true},
+    "decision_as_of": {"type": "string", "format": "date-time"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "market_phase": {
+      "enum": [
+        "PRE_MARKET",
+        "REGULAR_INTRADAY",
+        "REGULAR_COMPLETED",
+        "AFTER_HOURS",
+        "DAY_MARKET",
+        "OVERNIGHT",
+        "MARKET_CLOSED",
+        "UNKNOWN"
+      ]
+    },
+    "trading_date": {"type": "string", "format": "date"},
+    "run_provenance_status": {"const": "VERIFIED_MANUAL"},
+    "evidence_grade": {"const": "GRADE_B"},
+    "maturity_eligible": {"const": false},
+    "operational_maturity_eligible": {"const": false},
+    "policy_evolution_eligible": {"const": false},
+    "provenance": {
+      "type": "object",
+      "required": [
+        "execution_origin",
+        "decision_mode",
+        "run_provenance_status",
+        "evidence_grade",
+        "maturity_eligible",
+        "operational_maturity_eligible",
+        "policy_evolution_eligible"
+      ],
+      "properties": {
+        "execution_origin": {"const": "MANUAL"},
+        "decision_mode": {"const": "MANUAL_READ_ONLY"},
+        "run_provenance_status": {"const": "VERIFIED_MANUAL"},
+        "evidence_grade": {"const": "GRADE_B"},
+        "maturity_eligible": {"const": false},
+        "operational_maturity_eligible": {"const": false},
+        "policy_evolution_eligible": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "manual_data_verification_status": {
+      "enum": ["VERIFIED_REAL_DATA", "PARTIAL", "FAILED", "NOT_VERIFIED"]
+    },
+    "kiwoom_capability_status": {"const": "VERIFIED_READ_ONLY"},
+    "kiwoom_capabilities_checked": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "OAUTH_HEALTH",
+          "ACCOUNT_DEPOSIT_READ",
+          "ACCOUNT_HOLDINGS_READ",
+          "MARKET_QUOTE_READ",
+          "DAILY_CHART_READ"
+        ]
+      }
+    },
+    "kiwoom_health_status": {
+      "enum": ["HEALTHY", "AUTHENTICATION_FAILED", "UNAVAILABLE"]
+    },
+    "broker_snapshot_status": {"enum": ["AVAILABLE", "INCOMPLETE", "UNAVAILABLE"]},
+    "broker_snapshot_as_of": {"type": ["string", "null"], "format": "date-time"},
+    "broker_diff_status": {"enum": ["MATCH", "DIFFERENT", "UNKNOWN"]},
+    "broker_diff_details": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "orderable_cash_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+    "verified_orderable_cash_usd": {"type": ["number", "null"], "minimum": 0},
+    "current_price_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE", "NOT_REQUIRED"]},
+    "historical_daily_evidence_status": {"enum": ["AVAILABLE", "PARTIAL", "UNAVAILABLE", "NOT_REQUIRED"]},
+    "identity_authority_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+    "identity_authority_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "OK",
+          "INVALID_INPUT",
+          "ARTIFACT_NOT_ACTIVATED",
+          "UNKNOWN_SYMBOL",
+          "AMBIGUOUS_SECURITY",
+          "OUT_OF_EFFECTIVE_RANGE",
+          "PRIMARY_MIC_NOT_VERIFIED",
+          "INTEGRITY_FAILURE",
+          "TEMPORAL_VIOLATION"
+        ]
+      }
+    },
+    "identity_authority_id": {"type": ["string", "null"]},
+    "identity_registry_version": {"type": ["string", "null"]},
+    "identity_registry_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+    "identity_activation_cohort_id": {"type": ["string", "null"]},
+    "session_authority_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+    "session_authority_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "OK",
+          "INVALID_INPUT",
+          "TEMPORAL_VIOLATION",
+          "ARTIFACT_NOT_ACTIVATED",
+          "INTEGRITY_FAILURE",
+          "OUT_OF_COVERAGE",
+          "WRONG_EXCHANGE_SCOPE",
+          "TIMEZONE_NOT_VERIFIED",
+          "CONFLICTING_CALENDAR"
+        ]
+      }
+    },
+    "session_authority_market_phase": {
+      "enum": [null, "NON_TRADING_DATE", "PRE_CORE", "CORE_OPEN", "POST_CORE"]
+    },
+    "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+    "calendar_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+    "session_activation_cohort_id": {"type": ["string", "null"]},
+    "integrated_authority_cohort_status": {"enum": ["MATCHED", "NOT_VERIFIED"]},
+    "expected_completed_us_session": {"type": ["string", "null"], "format": "date"},
+    "finalized_bar_preflight_status": {"enum": ["PASS", "FAIL"]},
+    "current_session_finalization_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+    "last_verified_finalized_bar_status": {"enum": ["VERIFIED", "PARTIAL", "NOT_VERIFIED"]},
+    "last_verified_finalized_bar_date": {"type": ["string", "null"], "format": "date"},
+    "preflight_status": {"enum": ["PASS", "PARTIAL", "FAIL"]},
+    "hard_fail_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "partial_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "unknowns": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"},
+    "backfill": {"const": false},
+    "scheduled_occurrence_id": {"type": "null"},
+    "scheduled_pair_eligible": {"const": false},
+    "mutation_status": {"const": "REPORT_ONLY_CREATE_ONLY"},
+    "broker_observed_state": {
+      "type": "object",
+      "required": [
+        "state_type",
+        "status",
+        "holdings",
+        "cash",
+        "canonical_apply",
+        "portfolio_mutation",
+        "quantity_authority",
+        "order_authority"
+      ],
+      "properties": {
+        "state_type": {"const": "BROKER_OBSERVED_STATE"},
+        "status": {"enum": ["AVAILABLE", "INCOMPLETE", "UNAVAILABLE"]},
+        "holdings": {"type": "array", "items": {"type": "object"}},
+        "cash": {"type": "object"},
+        "canonical_apply": {"const": false},
+        "portfolio_mutation": {"const": false},
+        "quantity_authority": {"const": "none"},
+        "order_authority": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "system_portfolio_state": {
+      "type": "object",
+      "required": [
+        "state_type",
+        "source_path",
+        "source_sha256",
+        "holdings",
+        "average_cost_usd",
+        "portfolio_mutation",
+        "order_authority"
+      ],
+      "properties": {
+        "state_type": {"const": "SYSTEM_PORTFOLIO_STATE"},
+        "source_path": {"type": "string", "minLength": 1},
+        "source_sha256": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "holdings": {"type": "object"},
+        "average_cost_usd": {"type": "object"},
+        "portfolio_mutation": {"const": false},
+        "order_authority": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "manual_analysis_view": {
+      "type": "object",
+      "required": [
+        "state_type",
+        "ephemeral",
+        "memory_only",
+        "compatibility_projection",
+        "holdings",
+        "full_holding_analysis_performed",
+        "portfolio_mutation",
+        "quantity_authority",
+        "execution_quantity",
+        "order_authority"
+      ],
+      "properties": {
+        "state_type": {"const": "MANUAL_ANALYSIS_VIEW"},
+        "ephemeral": {"const": true},
+        "memory_only": {"const": true},
+        "compatibility_projection": {"const": true},
+        "holdings": {"type": "object"},
+        "full_holding_analysis_performed": {"const": false},
+        "portfolio_mutation": {"const": false},
+        "quantity_authority": {"const": "none"},
+        "execution_quantity": {"type": "null"},
+        "order_authority": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "current_price_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "status", "record"],
+        "properties": {
+          "ticker": {"type": "string", "minLength": 1},
+          "status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+          "record": {"type": ["object", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "historical_daily_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "status", "provider", "source_api_id", "retrieved_at", "pagination_status", "records"],
+        "properties": {
+          "ticker": {"type": "string", "minLength": 1},
+          "status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+          "provider": {"const": "KIWOOM_REST"},
+          "source_api_id": {"const": "usa06012"},
+          "retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+          "pagination_status": {"type": ["string", "null"]},
+          "records": {"type": "array", "items": {"type": "object"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "last_verified_finalized_bars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ticker",
+          "identity_authority_status",
+          "identity_authority_reason",
+          "primary_listing_segment_mic",
+          "primary_listing_operating_mic",
+          "session_authority_status",
+          "session_authority_reason",
+          "status",
+          "bar_date",
+          "bar",
+          "technical_authority",
+          "reason"
+        ],
+        "properties": {
+          "ticker": {"type": "string", "minLength": 1},
+          "identity_authority_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+          "identity_authority_reason": {
+            "enum": [
+              "OK",
+              "INVALID_INPUT",
+              "ARTIFACT_NOT_ACTIVATED",
+              "UNKNOWN_SYMBOL",
+              "AMBIGUOUS_SECURITY",
+              "OUT_OF_EFFECTIVE_RANGE",
+              "PRIMARY_MIC_NOT_VERIFIED",
+              "INTEGRITY_FAILURE",
+              "TEMPORAL_VIOLATION"
+            ]
+          },
+          "primary_listing_segment_mic": {"type": ["string", "null"]},
+          "primary_listing_operating_mic": {"type": ["string", "null"]},
+          "session_authority_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+          "session_authority_reason": {
+            "enum": [
+              "OK",
+              "INVALID_INPUT",
+              "TEMPORAL_VIOLATION",
+              "ARTIFACT_NOT_ACTIVATED",
+              "INTEGRITY_FAILURE",
+              "OUT_OF_COVERAGE",
+              "WRONG_EXCHANGE_SCOPE",
+              "TIMEZONE_NOT_VERIFIED",
+              "CONFLICTING_CALENDAR",
+              "UPSTREAM_IDENTITY_NOT_VERIFIED"
+            ]
+          },
+          "status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
+          "bar_date": {"type": ["string", "null"], "format": "date"},
+          "bar": {"type": ["object", "null"]},
+          "technical_authority": {"type": "boolean"},
+          "reason": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "event_evidence_status": {"const": "NOT_EVALUATED_M1"},
+    "technical_evidence_status": {"const": "REPORT_ONLY_M1"}
+  }
+}

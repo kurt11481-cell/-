@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-calendar-artifact.schema.json",
+  "title": "US Equities Core Session Calendar Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_schema_version",
+    "calendar_policy_identity",
+    "timezone_identity",
+    "operating_mic_scope",
+    "source_families",
+    "coverage_start",
+    "coverage_end",
+    "source_bundle_id",
+    "source_bundle_hash",
+    "calendar_version",
+    "generated_at",
+    "authority_as_of",
+    "operating_mic_agreement_status",
+    "sessions",
+    "closures"
+  ],
+  "properties": {
+    "artifact_schema_version": {"const": "2.0"},
+    "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+    "timezone_identity": {"const": "America/New_York"},
+    "operating_mic_scope": {
+      "type": "array",
+      "const": ["XNYS", "XNAS", "XCBO"],
+      "items": {"enum": ["XNYS", "XNAS", "XCBO"]},
+      "uniqueItems": true
+    },
+    "source_families": {
+      "type": "array",
+      "const": ["NYSE_GROUP", "NASDAQ", "CBOE"],
+      "items": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+      "uniqueItems": true
+    },
+    "coverage_start": {"type": "string", "format": "date"},
+    "coverage_end": {"type": "string", "format": "date"},
+    "source_bundle_id": {"type": "string", "minLength": 1},
+    "source_bundle_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "calendar_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority_as_of": {"type": "string", "format": "date-time"},
+    "operating_mic_agreement_status": {"const": "VERIFIED"},
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["session_date", "core_open_at", "core_close_at", "close_type"],
+        "properties": {
+          "session_date": {"type": "string", "format": "date"},
+          "core_open_at": {"type": "string", "format": "date-time"},
+          "core_close_at": {"type": "string", "format": "date-time"},
+          "close_type": {"enum": ["REGULAR", "EARLY"]}
+        }
+      }
+    },
+    "closures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["closure_date"],
+        "properties": {
+          "closure_date": {"type": "string", "format": "date"}
+        }
+      }
+    }
+  }
+}

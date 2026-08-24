@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "instrument-identity-activation.schema.json",
+  "title": "US Equity Instrument Identity Activation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "activation_schema_version",
+    "activation_status",
+    "activation_reason_code",
+    "activation_reason",
+    "authority_id",
+    "active_registry_hash",
+    "active_registry_version",
+    "ticker_namespace",
+    "scope",
+    "source_packet_id",
+    "source_packet_hash",
+    "authority_as_of",
+    "activated_at",
+    "authority_modes_allowed",
+    "activation_cohort_id"
+  ],
+  "properties": {
+    "activation_schema_version": {"const": "1.0"},
+    "activation_status": {"enum": ["ACTIVE", "INACTIVE"]},
+    "activation_reason_code": {
+      "enum": ["INITIAL_BOOTSTRAP", "REGISTRY_REFRESH", "MANUAL_DEACTIVATION", "IDENTITY_CONFLICT"]
+    },
+    "activation_reason": {"type": "string", "minLength": 1},
+    "authority_id": {"const": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"},
+    "active_registry_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "active_registry_version": {"type": "string", "minLength": 1},
+    "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
+    "scope": {
+      "type": "array",
+      "const": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+      "items": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+      "uniqueItems": true
+    },
+    "source_packet_id": {"type": "string", "minLength": 1},
+    "source_packet_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+    "authority_as_of": {"type": "string", "format": "date-time"},
+    "activated_at": {"type": "string", "format": "date-time"},
+    "authority_modes_allowed": {
+      "type": "array",
+      "const": ["CURRENT"],
+      "items": {"const": "CURRENT"},
+      "uniqueItems": true
+    },
+    "activation_cohort_id": {"type": "string", "minLength": 1}
+  }
+}
