@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -8,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "manage-us-stock-strategy/scripts"))
 
 from kiwoom_candidate_discovery_bridge import (
-    blocked_api_target, classify_instrument, classify_liquidity, deduplicate_candidates, validate_request,
+    blocked_api_target, classify_instrument, classify_liquidity,
+    deduplicate_candidates, invoke_discovery_bridge_batch, validate_request,
 )
 from kiwoom_runtime_bridge import BridgeError
 from run_kiwoom_candidate_discovery import build_artifact
@@ -19,6 +22,22 @@ class KiwoomCandidateDiscoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.policy = load_json(ROOT / "workspace/policies/kiwoom-candidate-discovery-readonly-policy.json")
+        cls.rate_policy = {
+            "external_python_relative_path": "manage-us-stock-strategy/scripts/kiwoom_candidate_discovery_bridge.py",
+        }
+
+    def invoke_with(self, runner):
+        return invoke_discovery_bridge_batch(
+            [{"operation": "volume_rank_stock"}],
+            runtime=ROOT,
+            policy=self.policy,
+            rate_policy=self.rate_policy,
+            runner=runner,
+        )[0]
+
+    @staticmethod
+    def completed(stdout: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args=[], returncode=0, stdout=stdout, stderr="")
 
     def test_readonly_allowlist_and_order_denylist(self):
         self.assertEqual(validate_request({"operation": "volume_rank_stock"}, self.policy)["operation"], "volume_rank_stock")
@@ -65,6 +84,64 @@ class KiwoomCandidateDiscoveryTests(unittest.TestCase):
         self.assertFalse(value["order_authority"])
         errors = validate_instance(value, ROOT / "manage-us-stock-strategy/schemas/kiwoom-candidate-discovery-acceptance.schema.json")
         self.assertEqual(errors, [])
+
+    def test_malformed_final_line_is_local_protocol_failure(self):
+        prior = {"results": [{"bridge_status": "PASS", "operation": "volume_rank_stock"}]}
+        result = self.invoke_with(lambda *args, **kwargs: self.completed(
+            json.dumps(prior) + "\n{malformed\n"
+        ))
+        self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+        self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+
+    def test_previous_provider_failure_plus_malformed_final_is_local_protocol_failure(self):
+        prior = {"results": [{
+            "bridge_status": "KIWOOM_API_UNAVAILABLE",
+            "failure_type": "HTTP_429",
+            "operation": "volume_rank_stock",
+        }]}
+        result = self.invoke_with(lambda *args, **kwargs: self.completed(
+            json.dumps(prior) + "\nnot-json\n"
+        ))
+        self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+        self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+
+    def test_actual_subprocess_timeout_remains_timeout(self):
+        def timeout_runner(*args, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs["timeout"])
+
+        result = self.invoke_with(timeout_runner)
+        self.assertEqual("KIWOOM_API_UNAVAILABLE", result["bridge_status"])
+        self.assertEqual("TIMEOUT", result["failure_type"])
+
+    def test_local_subprocess_failure_is_local_transport_failure(self):
+        def transport_runner(*args, **kwargs):
+            raise OSError("test-only local launch failure")
+
+        result = self.invoke_with(transport_runner)
+        self.assertEqual("BRIDGE_TRANSPORT_FAILURE", result["bridge_status"])
+        self.assertEqual("LOCAL_TRANSPORT_FAILURE", result["failure_type"])
+
+    def test_clean_provider_failure_is_preserved(self):
+        payload = {"results": [{
+            "bridge_status": "KIWOOM_API_UNAVAILABLE",
+            "failure_type": "HTTP_429",
+            "operation": "volume_rank_stock",
+        }]}
+        result = self.invoke_with(lambda *args, **kwargs: self.completed(json.dumps(payload)))
+        self.assertEqual("KIWOOM_API_UNAVAILABLE", result["bridge_status"])
+        self.assertEqual("HTTP_429", result["failure_type"])
+
+    def test_clean_success_is_preserved(self):
+        payload = {"results": [{
+            "bridge_status": "PASS",
+            "operation": "volume_rank_stock",
+            "data": [],
+            "ticker_failures": [],
+            "order_authority": False,
+        }]}
+        result = self.invoke_with(lambda *args, **kwargs: self.completed(json.dumps(payload)))
+        self.assertEqual("PASS", result["bridge_status"])
+        self.assertFalse(result["order_authority"])
 
 
 if __name__ == "__main__":

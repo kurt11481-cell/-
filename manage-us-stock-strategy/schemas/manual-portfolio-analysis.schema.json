@@ -98,7 +98,7 @@
     },
     "trading_date": {"type": "string", "format": "date"},
     "run_provenance_status": {"const": "VERIFIED_MANUAL"},
-    "evidence_grade": {"const": "GRADE_B"},
+    "evidence_grade": {"enum": ["GRADE_B", "UNVERIFIED"]},
     "maturity_eligible": {"const": false},
     "operational_maturity_eligible": {"const": false},
     "policy_evolution_eligible": {"const": false},
@@ -117,7 +117,7 @@
         "execution_origin": {"const": "MANUAL"},
         "decision_mode": {"const": "MANUAL_READ_ONLY"},
         "run_provenance_status": {"const": "VERIFIED_MANUAL"},
-        "evidence_grade": {"const": "GRADE_B"},
+        "evidence_grade": {"enum": ["GRADE_B", "UNVERIFIED"]},
         "maturity_eligible": {"const": false},
         "operational_maturity_eligible": {"const": false},
         "policy_evolution_eligible": {"const": false}

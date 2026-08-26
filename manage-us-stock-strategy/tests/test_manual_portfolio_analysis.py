@@ -29,7 +29,9 @@ import run_manual_portfolio_analysis as manual_preflight_module  # noqa: E402
 from instrument_identity_authority import InstrumentIdentityView  # noqa: E402
 from run_manual_portfolio_analysis import (  # noqa: E402
     ACCOUNT_READ_OPERATIONS,
+    _acquisition_complete_cutoff,
     _select_last_verified_finalized_bar,
+    _temporal_evidence_valid,
     _write_immutable_report,
     run_manual_preflight,
     select_last_verified_finalized_bar,
@@ -44,6 +46,12 @@ from validation_common import validate_instance  # noqa: E402
 
 
 OBSERVED_AT = "2026-08-21T22:00:00+00:00"
+ACCOUNT_RETRIEVED_AT = "2026-08-21T22:00:02+00:00"
+HEALTH_RETRIEVED_AT = "2026-08-21T22:00:03+00:00"
+QUOTE_RETRIEVED_AT = "2026-08-21T22:00:04+00:00"
+HISTORY_RETRIEVED_AT = "2026-08-21T22:00:06+00:00"
+POST_CUTOFF_RETRIEVED_AT = "2026-08-21T22:00:07+00:00"
+ROLLOVER_RETRIEVED_AT = "2026-08-22T04:01:00+00:00"
 SAME_DAY = "2026-08-21"
 PREVIOUS_DAY = "2026-08-20"
 AUTHORITY_COHORT = "synthetic-shared-authority-cohort"
@@ -219,6 +227,7 @@ def account_reader_for(
     holdings_status: str = "PASS",
     holdings_complete: bool = True,
     orderable_cash: float | None = 25.0,
+    retrieved_at: str | None = OBSERVED_AT,
 ):
     def reader(requests):
         results = []
@@ -257,7 +266,7 @@ def account_reader_for(
                 }]
             elif operation == "account_deposit_detail_read":
                 data = [{}]
-            results.append({
+            result = {
                 "bridge_status": status,
                 "operation": operation,
                 "data": data,
@@ -266,11 +275,13 @@ def account_reader_for(
                     "complete": complete,
                     "exhausted": complete,
                 },
-                "retrieved_at": OBSERVED_AT,
                 "portfolio_mutation": False,
                 "quantity_authority": "none",
                 "order_authority": False,
-            })
+            }
+            if retrieved_at is not None:
+                result["retrieved_at"] = retrieved_at
+            results.append(result)
         return results
 
     return reader
@@ -284,52 +295,62 @@ def market_reader_for(
     include_same_day: set[str] | None = None,
     include_previous: set[str] | None = None,
     request_log: list[dict] | None = None,
+    call_log: list[list[dict]] | None = None,
+    retrieved_at_by_operation: dict[str, str | None] | None = None,
 ):
     quote_missing = set(quote_missing or set())
     same_day = set(tickers) if include_same_day is None else set(include_same_day)
     previous = set(tickers) if include_previous is None else set(include_previous)
+    retrieved_at_by_operation = dict(retrieved_at_by_operation or {})
 
     def reader(requests):
         if request_log is not None:
             request_log.extend(dict(request) for request in requests)
+        if call_log is not None:
+            call_log.append([dict(request) for request in requests])
         results = []
         for request in requests:
             operation = request["operation"]
             ticker = request.get("ticker")
             if operation == "oauth_health":
-                results.append({
+                result = {
                     "bridge_status": "PASS" if health else "KIWOOM_API_UNAVAILABLE",
                     "failure_type": None if health else "AUTHENTICATION_FAILURE",
                     "authenticated": health,
                     "operation": operation,
-                    "retrieved_at": OBSERVED_AT,
                     "order_authority": False,
-                })
+                }
             elif operation == "market_quote":
                 missing = ticker in quote_missing
-                results.append({
+                result = {
                     "bridge_status": "KIWOOM_API_UNAVAILABLE" if missing else "PASS",
                     "operation": operation,
                     "ticker": ticker,
                     "data": [] if missing else [{"cur_prc": 100.0}],
-                    "retrieved_at": OBSERVED_AT,
                     "order_authority": False,
-                })
+                }
             elif operation == "daily_chart":
                 rows = []
                 if ticker in same_day:
                     rows.append({"dt": "20260821", "cur_prc": 101.0})
                 if ticker in previous:
                     rows.append({"dt": "20260820", "cur_prc": 99.0})
-                results.append({
+                result = {
                     "bridge_status": "PASS",
                     "operation": operation,
                     "ticker": ticker,
                     "data": rows,
                     "pagination": {"api_id": "usa06012", "status": "SUFFICIENT"},
-                    "retrieved_at": OBSERVED_AT,
                     "order_authority": False,
-                })
+                }
+            timestamp_key = f"{operation}:{ticker}" if ticker is not None else operation
+            retrieved_at = retrieved_at_by_operation.get(
+                timestamp_key,
+                retrieved_at_by_operation.get(operation, OBSERVED_AT),
+            )
+            if retrieved_at is not None:
+                result["retrieved_at"] = retrieved_at
+            results.append(result)
         return results
 
     return reader
@@ -356,6 +377,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
 
     def setUp(self):
         self.authority_expected_session = PREVIOUS_DAY
+        self.authority_expected_session_by_boundary = {}
         self.authority_forced_reason = None
         self.identity_forced_reason = None
         self.identity_operating_mics = {"AAA": "XNAS"}
@@ -389,7 +411,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             observed_at, *, primary_listing_operating_mic,
             decision_as_of=None, authority_mode="CURRENT",
         ):
-            del observed_at, decision_as_of, authority_mode
+            del authority_mode
             if self.authority_forced_reason is not None:
                 return synthetic_authority_view(
                     mic=primary_listing_operating_mic,
@@ -406,7 +428,10 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
                 )
             return synthetic_authority_view(
                 mic=primary_listing_operating_mic,
-                expected_session=self.authority_expected_session,
+                expected_session=self.authority_expected_session_by_boundary.get(
+                    decision_as_of or observed_at,
+                    self.authority_expected_session,
+                ),
                 cohort=self.session_cohort,
             )
 
@@ -440,6 +465,11 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         manual_run_id: str = "manual-test-run-0001",
         identity_operating_mics: dict[str, str] | None = None,
         market_request_log: list[dict] | None = None,
+        market_call_log: list[list[dict]] | None = None,
+        account_retrieved_at: str | None = OBSERVED_AT,
+        market_retrieved_at_by_operation: dict[str, str | None] | None = None,
+        observed_at: str = OBSERVED_AT,
+        decision_as_of: str = OBSERVED_AT,
     ) -> dict:
         self.authority_expected_session = expected_completed_session
         state = portfolio or system_portfolio()
@@ -463,6 +493,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
                 holdings_status=holdings_status,
                 holdings_complete=holdings_complete,
                 orderable_cash=orderable_cash,
+                retrieved_at=account_retrieved_at,
             ),
             market_reader=market_reader_for(
                 tickers,
@@ -471,10 +502,12 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
                 include_same_day=include_same_day,
                 include_previous=include_previous,
                 request_log=market_request_log,
+                call_log=market_call_log,
+                retrieved_at_by_operation=market_retrieved_at_by_operation,
             ),
             maximum_broker_age_seconds=900,
-            decision_as_of=OBSERVED_AT,
-            observed_at=OBSERVED_AT,
+            decision_as_of=decision_as_of,
+            observed_at=observed_at,
         )
 
     def test_01_same_day_usa06012_is_current_candidate_not_finalized(self):
@@ -665,7 +698,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             wraps=manual_preflight_module._select_last_verified_finalized_bar,
         ) as selector:
             report = self.build_report()
-        self.assertEqual(1, self.authority_mock.call_count)
+        self.assertEqual(2, self.authority_mock.call_count)
         self.assertEqual(1, selector.call_count)
         self.assertEqual("MATCHED", report["integrated_authority_cohort_status"])
         self.assertEqual("VERIFIED", report["last_verified_finalized_bar_status"])
@@ -682,7 +715,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
                     manual_preflight_module, "_select_last_verified_finalized_bar"
                 ) as selector:
                     report = self.build_report(market_request_log=requests)
-                self.assertEqual(1, self.identity_mock.call_count)
+                self.assertEqual(2, self.identity_mock.call_count)
                 self.authority_mock.assert_not_called()
                 selector.assert_not_called()
                 self.assertFalse(any(item["operation"] == "daily_chart" for item in requests))
@@ -715,7 +748,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             manual_preflight_module, "_select_last_verified_finalized_bar"
         ) as selector:
             report = self.build_report(market_request_log=requests)
-        self.assertEqual(1, self.authority_mock.call_count)
+        self.assertEqual(2, self.authority_mock.call_count)
         selector.assert_not_called()
         self.assertEqual("NOT_VERIFIED", report["integrated_authority_cohort_status"])
         self.assertEqual("FAIL", report["finalized_bar_preflight_status"])
@@ -855,6 +888,148 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertEqual(PREVIOUS_DAY, report["expected_completed_us_session"])
         self.assertEqual("PASS", report["finalized_bar_preflight_status"])
         self.assertEqual(PREVIOUS_DAY, report["last_verified_finalized_bars"][0]["bar_date"])
+
+    def test_02o_normal_latency_uses_acquisition_complete_cutoff(self):
+        requests = []
+        report = self.build_report(
+            account_retrieved_at=ACCOUNT_RETRIEVED_AT,
+            market_retrieved_at_by_operation={
+                "oauth_health": HEALTH_RETRIEVED_AT,
+                "market_quote": QUOTE_RETRIEVED_AT,
+                "daily_chart": HISTORY_RETRIEVED_AT,
+            },
+            market_request_log=requests,
+        )
+        self.assertEqual(HISTORY_RETRIEVED_AT, report["decision_as_of"])
+        self.assertNotIn("TEMPORAL_EVIDENCE_VIOLATION", report["hard_fail_reasons"])
+        self.assertNotIn("ACQUISITION_SESSION_ROLLOVER", report["hard_fail_reasons"])
+        self.assertEqual("PASS", report["preflight_status"])
+        self.assertEqual("PASS", report["finalized_bar_preflight_status"])
+        self.assertEqual("GRADE_B", report["evidence_grade"])
+        self.assertEqual(
+            [OBSERVED_AT, HISTORY_RETRIEVED_AT],
+            [call.kwargs["decision_as_of"] for call in self.identity_mock.call_args_list],
+        )
+        self.assertEqual(
+            [OBSERVED_AT, HISTORY_RETRIEVED_AT],
+            [call.args[0] for call in self.authority_mock.call_args_list],
+        )
+        daily = [request for request in requests if request["operation"] == "daily_chart"]
+        self.assertEqual([PREVIOUS_DAY], [request["completed_session"] for request in daily])
+
+    def test_02p_old_preacquisition_cutoff_would_reject_same_evidence(self):
+        account_results = [{"retrieved_at": ACCOUNT_RETRIEVED_AT}]
+        market_results = [
+            {"retrieved_at": HEALTH_RETRIEVED_AT},
+            {"retrieved_at": QUOTE_RETRIEVED_AT},
+            {"retrieved_at": HISTORY_RETRIEVED_AT},
+        ]
+        cutoff = _acquisition_complete_cutoff(account_results, market_results)
+        self.assertEqual(HISTORY_RETRIEVED_AT, cutoff)
+        self.assertFalse(_temporal_evidence_valid(OBSERVED_AT, account_results, market_results))
+        self.assertTrue(_temporal_evidence_valid(cutoff, account_results, market_results))
+
+    def test_02q_frozen_cutoff_rejects_later_evidence(self):
+        account_results = [{"retrieved_at": ACCOUNT_RETRIEVED_AT}]
+        market_results = [{"retrieved_at": HISTORY_RETRIEVED_AT}]
+        cutoff = _acquisition_complete_cutoff(account_results, market_results)
+        self.assertEqual(HISTORY_RETRIEVED_AT, cutoff)
+        market_results.append({"retrieved_at": POST_CUTOFF_RETRIEVED_AT})
+        self.assertFalse(_temporal_evidence_valid(cutoff, account_results, market_results))
+
+    def test_02r_missing_or_invalid_required_retrieved_at_fails_closed(self):
+        for retrieved_at in (None, "not-a-timestamp"):
+            with self.subTest(retrieved_at=retrieved_at):
+                report = self.build_report(account_retrieved_at=retrieved_at)
+                self.assertEqual(OBSERVED_AT, report["decision_as_of"])
+                self.assertIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+                self.assertIn("TEMPORAL_EVIDENCE_VIOLATION", report["hard_fail_reasons"])
+                self.assertEqual("FAIL", report["preflight_status"])
+                self.assertEqual("UNVERIFIED", report["evidence_grade"])
+
+    def test_02s_finalized_selector_uses_same_latency_boundary(self):
+        candidate = kiwoom_daily_observation(
+            ticker="AAA",
+            reported_session=PREVIOUS_DAY,
+            close=99.0,
+            provider_timestamp=HISTORY_RETRIEVED_AT,
+        )
+        accepted = _select_last_verified_finalized_bar(
+            [candidate],
+            observed_at=HISTORY_RETRIEVED_AT,
+            expected_ticker="AAA",
+            expected_completed_session=PREVIOUS_DAY,
+        )
+        rejected_by_old_boundary = _select_last_verified_finalized_bar(
+            [candidate],
+            observed_at=OBSERVED_AT,
+            expected_ticker="AAA",
+            expected_completed_session=PREVIOUS_DAY,
+        )
+        self.assertEqual("VERIFIED", accepted["status"])
+        self.assertEqual("NOT_VERIFIED", rejected_by_old_boundary["status"])
+
+    def test_02t_et_date_rollover_changes_expected_session_and_fails_closed(self):
+        self.authority_expected_session_by_boundary[ROLLOVER_RETRIEVED_AT] = SAME_DAY
+        market_calls = []
+        report = self.build_report(
+            account_retrieved_at=ACCOUNT_RETRIEVED_AT,
+            market_retrieved_at_by_operation={
+                "oauth_health": ROLLOVER_RETRIEVED_AT,
+                "market_quote": ROLLOVER_RETRIEVED_AT,
+                "daily_chart": ROLLOVER_RETRIEVED_AT,
+            },
+            market_call_log=market_calls,
+        )
+        self.assertEqual(ROLLOVER_RETRIEVED_AT, report["decision_as_of"])
+        self.assertEqual(SAME_DAY, report["expected_completed_us_session"])
+        self.assertIn("ACQUISITION_SESSION_ROLLOVER", report["hard_fail_reasons"])
+        self.assertEqual("FAIL", report["finalized_bar_preflight_status"])
+        self.assertEqual(1, len(market_calls))
+        daily = [request for request in market_calls[0] if request["operation"] == "daily_chart"]
+        self.assertEqual([PREVIOUS_DAY], [request["completed_session"] for request in daily])
+
+    def test_02u_calendar_session_identity_change_same_et_date_fails_closed(self):
+        self.authority_expected_session_by_boundary[HISTORY_RETRIEVED_AT] = "2026-08-19"
+        report = self.build_report(
+            account_retrieved_at=ACCOUNT_RETRIEVED_AT,
+            market_retrieved_at_by_operation={
+                "oauth_health": HEALTH_RETRIEVED_AT,
+                "market_quote": QUOTE_RETRIEVED_AT,
+                "daily_chart": HISTORY_RETRIEVED_AT,
+            },
+        )
+        self.assertEqual(SAME_DAY, report["trading_date"])
+        self.assertEqual("2026-08-19", report["expected_completed_us_session"])
+        self.assertIn("ACQUISITION_SESSION_ROLLOVER", report["hard_fail_reasons"])
+        self.assertEqual("FAIL", report["finalized_bar_preflight_status"])
+
+    def test_02v_temporal_and_finalized_gates_are_independent(self):
+        finalized = kiwoom_daily_observation(
+            ticker="AAA", reported_session=PREVIOUS_DAY, close=99.0,
+            provider_timestamp=OBSERVED_AT,
+        )
+        finalized_pass = _select_last_verified_finalized_bar(
+            [finalized], observed_at=OBSERVED_AT, expected_ticker="AAA",
+            expected_completed_session=PREVIOUS_DAY,
+        )
+        self.assertEqual("VERIFIED", finalized_pass["status"])
+        self.assertFalse(_temporal_evidence_valid(
+            OBSERVED_AT, [{"retrieved_at": POST_CUTOFF_RETRIEVED_AT}],
+        ))
+
+        wrong_session = kiwoom_daily_observation(
+            ticker="AAA", reported_session="2026-08-19", close=98.0,
+            provider_timestamp=OBSERVED_AT,
+        )
+        finalized_fail = _select_last_verified_finalized_bar(
+            [wrong_session], observed_at=OBSERVED_AT, expected_ticker="AAA",
+            expected_completed_session=PREVIOUS_DAY,
+        )
+        self.assertTrue(_temporal_evidence_valid(
+            OBSERVED_AT, [{"retrieved_at": OBSERVED_AT}],
+        ))
+        self.assertEqual("NOT_VERIFIED", finalized_fail["status"])
 
     def test_03_broker_system_divergence_is_ephemeral_and_canonical_unchanged(self):
         canonical = ROOT / "stock-strategy-system/portfolio_state.json"
@@ -1026,11 +1201,23 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertEqual("FAIL", report["preflight_status"])
         self.assertIn("KIWOOM_UNAVAILABLE", report["hard_fail_reasons"])
         self.assertEqual("FAILED", report["manual_data_verification_status"])
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
+        self.assertEqual("UNVERIFIED", report["provenance"]["evidence_grade"])
+        self.assertFalse(report["provenance"]["decision_quality_eligible"])
 
     def test_07b_broker_holdings_unavailable_is_fail(self):
         report = self.build_report(holdings_status="KIWOOM_ACCOUNT_UNAVAILABLE")
         self.assertEqual("FAIL", report["preflight_status"])
         self.assertIn("BROKER_HOLDINGS_UNAVAILABLE", report["hard_fail_reasons"])
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
+        fallback = report["manual_analysis_view"]
+        self.assertEqual("SYSTEM_PORTFOLIO_STATE_FALLBACK", fallback["holding_source"])
+        self.assertTrue(fallback["ephemeral"])
+        self.assertTrue(fallback["memory_only"])
+        self.assertFalse(fallback["portfolio_mutation"])
+        self.assertFalse(fallback["order_authority"])
+        self.assertEqual("none", fallback["quantity_authority"])
+        self.assertIsNone(fallback["execution_quantity"])
 
     def test_07b2_broker_holdings_incomplete_is_fail(self):
         report = self.build_report(holdings_status="PARTIAL", holdings_complete=False)
@@ -1043,6 +1230,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertIn("ORDERABLE_CASH_NOT_VERIFIED", report["partial_reasons"])
         self.assertEqual("NOT_VERIFIED", report["orderable_cash_status"])
         self.assertIsNone(report["manual_analysis_view"]["verified_orderable_cash_usd"])
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
 
     def test_07d_some_current_prices_unavailable_is_partial(self):
         portfolio = system_portfolio(
@@ -1059,14 +1247,31 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertEqual("PARTIAL", report["preflight_status"])
         self.assertIn("CURRENT_PRICE_UNAVAILABLE:BBB", report["partial_reasons"])
 
-    def test_07e_current_session_finalization_unavailable_is_partial(self):
+    def test_07e_current_session_finalization_unavailable_is_visible_unknown(self):
         report = self.build_report()
         self.assertEqual("VERIFIED_REAL_DATA", report["manual_data_verification_status"])
         self.assertEqual("NOT_VERIFIED", report["current_session_finalization_status"])
         self.assertEqual("VERIFIED", report["last_verified_finalized_bar_status"])
-        self.assertEqual("PARTIAL", report["preflight_status"])
-        self.assertIn("CURRENT_SESSION_FINALIZATION_NOT_VERIFIED", report["partial_reasons"])
+        self.assertEqual("PASS", report["preflight_status"])
+        self.assertNotIn("CURRENT_SESSION_FINALIZATION_NOT_VERIFIED", report["partial_reasons"])
+        self.assertIn("CURRENT_SESSION_FINALIZATION_NOT_VERIFIED", report["unknowns"])
         self.assertEqual(PREVIOUS_DAY, report["last_verified_finalized_bar_date"])
+        self.assertEqual("GRADE_B", report["evidence_grade"])
+
+    def test_07e1_generator_partial_preflight_cannot_receive_grade_b(self):
+        report = self.build_report(orderable_cash=None)
+        self.assertEqual("PARTIAL", report["preflight_status"])
+        self.assertIn("ORDERABLE_CASH_NOT_VERIFIED", report["partial_reasons"])
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
+        self.assertFalse(report["provenance"]["decision_quality_eligible"])
+
+    def test_07e2_finalized_bar_failure_cannot_receive_grade_b(self):
+        report = self.build_report(include_previous=set())
+        self.assertEqual("AVAILABLE", report["historical_daily_evidence_status"])
+        self.assertEqual("FAIL", report["finalized_bar_preflight_status"])
+        self.assertEqual("NOT_VERIFIED", report["last_verified_finalized_bar_status"])
+        self.assertEqual("NOT_VERIFIED", report["manual_data_verification_status"])
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
 
     def test_07f_missing_mic_fails_finalized_bar_preflight(self):
         requests = []
@@ -1079,6 +1284,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             report["last_verified_finalized_bars"][0]["reason"],
         )
         self.assertFalse(any(request["operation"] == "daily_chart" for request in requests))
+        self.assertEqual("UNVERIFIED", report["evidence_grade"])
 
     def test_07g_mixed_ticker_authority_fails_finalized_bar_preflight(self):
         portfolio = system_portfolio(
@@ -1102,6 +1308,10 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertEqual("VERIFIED", report["session_authority_status"])
         self.assertEqual(PREVIOUS_DAY, report["expected_completed_us_session"])
         self.assertEqual("PASS", report["finalized_bar_preflight_status"])
+        self.assertEqual("PASS", report["preflight_status"])
+        self.assertEqual("VERIFIED", report["identity_authority_status"])
+        self.assertEqual("VERIFIED", report["session_authority_status"])
+        self.assertEqual("MATCHED", report["integrated_authority_cohort_status"])
         self.assertTrue(all(
             item["bar_date"] == PREVIOUS_DAY
             for item in report["last_verified_finalized_bars"]
@@ -1173,6 +1383,12 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertEqual("MATCHED", report["integrated_authority_cohort_status"])
         self.assertEqual("VERIFIED_MANUAL", report["run_provenance_status"])
         self.assertEqual("GRADE_B", report["evidence_grade"])
+        self.assertEqual("GRADE_B", report["provenance"]["evidence_grade"])
+        self.assertEqual("VERIFIED_REAL_DATA", report["manual_data_verification_status"])
+        self.assertEqual("HEALTHY", report["kiwoom_health_status"])
+        self.assertEqual("AVAILABLE", report["broker_snapshot_status"])
+        self.assertEqual("VERIFIED", report["orderable_cash_status"])
+        self.assertEqual("PASS", report["finalized_bar_preflight_status"])
         self.assertTrue(report["operator_initiated"])
         self.assertEqual("VERIFIED_READ_ONLY", report["kiwoom_capability_status"])
         self.assertFalse(report["maturity_eligible"])

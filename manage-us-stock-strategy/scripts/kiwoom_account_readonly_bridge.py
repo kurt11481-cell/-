@@ -12,8 +12,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 from kiwoom_runtime_bridge import (
-    BridgeError, _continuation, _exception_failure, _load_env_without_echo,
-    _parse_last_json, _return_code_ok, _runtime_session, utc_now,
+    BridgeError, _classify_bridge_invocation_failure, _continuation,
+    _exception_failure, _load_env_without_echo, _parse_last_json,
+    _return_code_ok, _runtime_session, utc_now,
 )
 
 ACCOUNT_APIS = {
@@ -178,7 +179,7 @@ def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path
     sanitized = [validate_request(item) for item in requests]
     python_path = runtime / str(policy["external_python_relative_path"])
     if not python_path.is_file():
-        return [{"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "EMPTY_RESPONSE",
+        return [{"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "LOCAL_RUNTIME_UNAVAILABLE",
                  "operation": item["operation"], "order_authority": False} for item in sanitized]
     try:
         completed = runner(
@@ -187,7 +188,7 @@ def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path
              "--maximum-attempts", str(policy.get("maximum_attempts", 1)),
              "--maximum-pages", str((policy.get("history_policy") or {}).get("maximum_pages", 10))],
             input=json.dumps(sanitized, separators=(",", ":")), cwd=str(runtime),
-            capture_output=True, text=True, encoding="utf-8",
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=int(policy["request_timeout_seconds"]) * max(1, len(sanitized)), check=False,
         )
         payload = _parse_last_json(completed.stdout)
@@ -196,9 +197,9 @@ def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path
             raise BridgeError("BRIDGE_BATCH_OUTPUT_INVALID")
         return [_sanitize(value if isinstance(value, dict) else {}, request["operation"])
                 for value, request in zip(raw_results, sanitized)]
-    except (OSError, subprocess.TimeoutExpired, BridgeError):
-        return [{"bridge_status": "KIWOOM_API_UNAVAILABLE", "failure_type": "TIMEOUT",
-                 "operation": item["operation"], "order_authority": False} for item in sanitized]
+    except (OSError, subprocess.TimeoutExpired, BridgeError) as exc:
+        failure = _classify_bridge_invocation_failure(exc)
+        return [{**failure, "operation": item["operation"]} for item in sanitized]
 
 
 def main() -> int:

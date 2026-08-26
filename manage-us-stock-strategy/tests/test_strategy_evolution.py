@@ -51,6 +51,32 @@ REALLOCATION_POLICY = ROOT / "workspace/policies/portfolio_reallocation_shadow_p
 REALLOCATION_CONTEXT = ROOT / "manage-us-stock-strategy/tests/fixtures/portfolio-reallocation-shadow.context.json"
 
 
+def verified_manual_contract() -> dict:
+    return {
+        "evidence_grade": "GRADE_B",
+        "manual_data_verification_status": "VERIFIED_REAL_DATA",
+        "kiwoom_health_status": "HEALTHY",
+        "broker_snapshot_status": "AVAILABLE",
+        "orderable_cash_status": "VERIFIED",
+        "current_price_status": "AVAILABLE",
+        "historical_daily_evidence_status": "AVAILABLE",
+        "finalized_bar_preflight_status": "PASS",
+        "identity_authority_status": "VERIFIED",
+        "session_authority_status": "VERIFIED",
+        "integrated_authority_cohort_status": "MATCHED",
+        "preflight_status": "PASS",
+        "manual_analysis_view": {
+            "holding_source": "BROKER_OBSERVED_STATE",
+            "ephemeral": True,
+            "memory_only": True,
+            "portfolio_mutation": False,
+            "order_authority": False,
+            "quantity_authority": "none",
+            "execution_quantity": None,
+        },
+    }
+
+
 class StrategyEvolutionTests(unittest.TestCase):
     def test_deployment_prompt_expected_head_is_explicit(self):
         self.assertEqual(extract_prompt_expected_head("expected HEAD: `" + "a" * 40 + "`"), "a" * 40)
@@ -67,6 +93,7 @@ class StrategyEvolutionTests(unittest.TestCase):
         manual = classify_evidence_eligibility(
             run_provenance_status="VERIFIED_MANUAL", temporal_evidence_valid=True,
             decision_artifact_valid=True, actionable_decision=True,
+            **verified_manual_contract(),
         )
         self.assertEqual(manual["evidence_grade"], "GRADE_B")
         self.assertFalse(manual["operational_maturity_eligible"])
@@ -85,9 +112,48 @@ class StrategyEvolutionTests(unittest.TestCase):
             "execution_origin": "MANUAL", "decision_mode": "MANUAL_READ_ONLY",
             "provenance_evidence": {"manual_run_id": "manual-1", "operator_initiated": True},
         }, policy)
-        self.assertEqual(manual["evidence_grade"], "GRADE_B")
+        self.assertEqual(manual["evidence_grade"], "UNVERIFIED")
         self.assertFalse(manual["operational_maturity_eligible"])
         self.assertFalse(manual["policy_evolution_eligible"])
+
+        verified = build_run_record(fixture["runs"][0] | {
+            "execution_origin": "MANUAL", "decision_mode": "MANUAL_READ_ONLY",
+            "provenance_evidence": {"manual_run_id": "manual-1", "operator_initiated": True},
+            **verified_manual_contract(),
+        }, policy)
+        self.assertEqual("GRADE_B", verified["evidence_grade"])
+
+    def test_strategy_evolution_manual_grade_fails_closed(self):
+        base = {
+            "run_provenance_status": "VERIFIED_MANUAL",
+            "temporal_evidence_valid": True,
+            "decision_artifact_valid": True,
+            "actionable_decision": True,
+            **verified_manual_contract(),
+        }
+        for mutation in (
+            {"evidence_grade": "UNVERIFIED"},
+            {"evidence_grade": None},
+            {"manual_data_verification_status": "FAILED"},
+            {"identity_authority_status": "NOT_VERIFIED"},
+            {"session_authority_status": "NOT_VERIFIED"},
+            {"integrated_authority_cohort_status": "NOT_VERIFIED"},
+            {"preflight_status": "PARTIAL"},
+            {"preflight_status": "FAIL"},
+            {"manual_analysis_view": {
+                **base["manual_analysis_view"],
+                "holding_source": "SYSTEM_PORTFOLIO_STATE_FALLBACK",
+            }},
+        ):
+            result = classify_evidence_eligibility(**(base | mutation))
+            self.assertEqual("UNVERIFIED", result["evidence_grade"])
+            self.assertFalse(result["decision_quality_eligible"])
+            self.assertFalse(result["actionable_decision"])
+
+        valid = classify_evidence_eligibility(**base)
+        self.assertEqual("GRADE_B", valid["evidence_grade"])
+        self.assertTrue(valid["decision_quality_eligible"])
+        self.assertTrue(valid["actionable_decision"])
 
     def test_candidate_universe_is_point_in_time_and_rejects_survivorship_lookahead(self):
         snapshot = build_candidate_universe_snapshot(

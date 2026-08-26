@@ -21,6 +21,7 @@ if str(SCRIPTS) not in sys.path:
 
 from build_kiwoom_market_snapshot import build_preflight_blocked_snapshot, build_snapshot, build_snapshot_with_batch, normalize_series
 from compare_kiwoom_yfinance import compare_snapshots
+from kiwoom_account_readonly_bridge import invoke_account_bridge_batch
 from kiwoom_provider_preflight import run_preflight
 from kiwoom_adapter_io import validate_shadow_output_path
 from kiwoom_runtime_bridge import _request, blocked_api_target, invoke_bridge, invoke_bridge_batch, validate_bridge_request
@@ -79,6 +80,33 @@ class FakeBridge:
 
 
 class KiwoomAdapterTests(unittest.TestCase):
+    def _market_batch_stdout(self, stdout: str) -> dict:
+        runtime = Path("X:/offline-kiwoom-runtime")
+        runner = lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, stdout, "")
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            return invoke_bridge_batch(
+                [{"operation": "stock_list", "ticker": "SOXL", "fx_applied": False}],
+                runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )[0]
+
+    def _account_batch_stdout(self, stdout: str) -> dict:
+        runtime = Path("X:/offline-kiwoom-runtime")
+        runner = lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, stdout, "")
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            return invoke_account_bridge_batch(
+                [{"operation": "account_holdings_read"}], runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )[0]
+
     def test_soxl_mapping_comes_from_kiwoom_stock_evidence(self) -> None:
         result = resolve_instrument(
             "SOXL", stock_rows=[identity("SOXL", "NY", "Y")], exchange_rows=[],
@@ -200,6 +228,247 @@ class KiwoomAdapterTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertNotIn("token", json.dumps(results))
         self.assertTrue(all(item["order_authority"] is False for item in results))
+
+    def test_batch_bridge_accepts_valid_final_json_after_cp949_diagnostics(self) -> None:
+        runtime = Path("X:/offline-kiwoom-runtime")
+        request = {"operation": "stock_list", "ticker": "SOXL", "fx_applied": False}
+        payload = {
+            "bridge_status": "PASS",
+            "results": [{
+                "bridge_status": "PASS", "runtime_commit": COMMIT,
+                "retrieved_at": NOW, "data": [identity("SOXL")],
+            }],
+            "order_authority": False,
+        }
+        raw_stdout = "진단 메시지".encode("cp949") + b"\n" + json.dumps(payload).encode("ascii")
+        raw_stderr = "경고".encode("cp949")
+
+        def runner(*args, **kwargs):
+            self.assertEqual("utf-8", kwargs["encoding"])
+            self.assertEqual("replace", kwargs["errors"])
+            return subprocess.CompletedProcess(
+                args[0], 0,
+                raw_stdout.decode(kwargs["encoding"], errors=kwargs["errors"]),
+                raw_stderr.decode(kwargs["encoding"], errors=kwargs["errors"]),
+            )
+
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            result = invoke_bridge_batch(
+                [request], runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )
+        self.assertEqual("PASS", result[0]["bridge_status"])
+        self.assertEqual("SOXL", result[0]["data"][0]["stk_cd"])
+
+    def test_account_bridge_accepts_valid_final_json_after_cp949_diagnostics(self) -> None:
+        runtime = Path("X:/offline-kiwoom-runtime")
+        payload = {
+            "bridge_status": "PASS",
+            "results": [{
+                "bridge_status": "PASS", "runtime_commit": COMMIT,
+                "retrieved_at": NOW, "data": [],
+                "pagination": {
+                    "api_id": "ust21070", "pages": 1, "exhausted": True,
+                    "complete": True, "secret_fields_retained": False,
+                },
+            }],
+            "order_authority": False,
+        }
+        raw_stdout = "계좌 진단".encode("cp949") + b"\n" + json.dumps(payload).encode("ascii")
+
+        def runner(*args, **kwargs):
+            self.assertEqual("replace", kwargs["errors"])
+            return subprocess.CompletedProcess(
+                args[0], 0,
+                raw_stdout.decode(kwargs["encoding"], errors=kwargs["errors"]), "",
+            )
+
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            result = invoke_account_bridge_batch(
+                [{"operation": "account_holdings_read"}], runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )
+        self.assertEqual("PASS", result[0]["bridge_status"])
+        self.assertTrue(result[0]["pagination"]["complete"])
+
+    def test_replacement_tainted_pass_json_is_local_protocol_failure(self) -> None:
+        market_payload = {
+            "bridge_status": "PASS", "diagnostic": "TAINT",
+            "results": [{"bridge_status": "PASS", "data": [identity("SOXL")]}],
+        }
+        account_payload = {
+            "bridge_status": "PASS", "diagnostic": "TAINT",
+            "results": [{"bridge_status": "PASS", "data": []}],
+        }
+        for invoke, payload in (
+            (self._market_batch_stdout, market_payload),
+            (self._account_batch_stdout, account_payload),
+        ):
+            raw = json.dumps(payload, separators=(",", ":")).encode("ascii")
+            tainted = raw.replace(b"TAINT", b"\x81").decode("utf-8", errors="replace")
+            self.assertIn("\ufffd", tainted)
+            result = invoke(tainted)
+            self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+            self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+            self.assertNotEqual("PASS", result["bridge_status"])
+
+    def test_replacement_tainted_provider_failure_is_not_provider_evidence(self) -> None:
+        payload = {
+            "bridge_status": "PASS", "diagnostic": "TAINT",
+            "results": [{
+                "bridge_status": "KIWOOM_API_UNAVAILABLE",
+                "failure_type": "HTTP_429", "data": [],
+            }],
+        }
+        raw = json.dumps(payload, separators=(",", ":")).encode("ascii")
+        tainted = raw.replace(b"TAINT", b"\x81").decode("utf-8", errors="replace")
+        for invoke in (self._market_batch_stdout, self._account_batch_stdout):
+            result = invoke(tainted)
+            self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+            self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+            self.assertNotEqual("HTTP_429", result["failure_type"])
+
+    def test_ascii_escaped_replacement_character_remains_valid_json(self) -> None:
+        market_payload = {
+            "bridge_status": "PASS", "diagnostic": "\ufffd",
+            "results": [{"bridge_status": "PASS", "data": [identity("SOXL")]}],
+        }
+        account_payload = {
+            "bridge_status": "PASS", "diagnostic": "\ufffd",
+            "results": [{"bridge_status": "PASS", "data": []}],
+        }
+        for invoke, payload in (
+            (self._market_batch_stdout, market_payload),
+            (self._account_batch_stdout, account_payload),
+        ):
+            stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+            self.assertIn("\\ufffd", stdout)
+            self.assertNotIn("\ufffd", stdout)
+            result = invoke(stdout)
+            self.assertEqual("PASS", result["bridge_status"])
+
+    def test_malformed_final_line_never_backtracks_to_previous_pass(self) -> None:
+        market_payload = {
+            "bridge_status": "PASS",
+            "results": [{"bridge_status": "PASS", "data": [identity("SOXL")]}],
+        }
+        account_payload = {
+            "bridge_status": "PASS",
+            "results": [{"bridge_status": "PASS", "data": []}],
+        }
+        for invoke, payload in (
+            (self._market_batch_stdout, market_payload),
+            (self._account_batch_stdout, account_payload),
+        ):
+            stdout = json.dumps(payload, ensure_ascii=True) + "\n{malformed-final"
+            result = invoke(stdout)
+            self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+            self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+            self.assertNotEqual("PASS", result["bridge_status"])
+
+    def test_malformed_final_line_never_backtracks_to_provider_failure(self) -> None:
+        payload = {
+            "bridge_status": "PASS",
+            "results": [{
+                "bridge_status": "KIWOOM_API_UNAVAILABLE",
+                "failure_type": "HTTP_429", "data": [],
+            }],
+        }
+        stdout = json.dumps(payload, ensure_ascii=True) + "\nnot-json-final"
+        for invoke in (self._market_batch_stdout, self._account_batch_stdout):
+            result = invoke(stdout)
+            self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+            self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+            self.assertNotEqual("HTTP_429", result["failure_type"])
+
+    def test_trailing_nonempty_diagnostic_is_protocol_failure(self) -> None:
+        payload = {
+            "bridge_status": "PASS",
+            "results": [{"bridge_status": "PASS", "data": []}],
+        }
+        stdout = json.dumps(payload, ensure_ascii=True) + "\nhuman diagnostic after machine output"
+        for invoke in (self._market_batch_stdout, self._account_batch_stdout):
+            result = invoke(stdout)
+            self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+            self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+
+    def test_preceding_diagnostics_and_trailing_blank_lines_are_supported(self) -> None:
+        market_payload = {
+            "bridge_status": "PASS",
+            "results": [{"bridge_status": "PASS", "data": [identity("SOXL")]}],
+        }
+        account_payload = {
+            "bridge_status": "PASS",
+            "results": [{"bridge_status": "PASS", "data": []}],
+        }
+        for invoke, payload in (
+            (self._market_batch_stdout, market_payload),
+            (self._account_batch_stdout, account_payload),
+        ):
+            stdout = "diagnostic one\ndiagnostic two\n" + json.dumps(
+                payload, ensure_ascii=True,
+            ) + "\n  \n\t\n"
+            result = invoke(stdout)
+            self.assertEqual("PASS", result["bridge_status"])
+
+    def test_malformed_worker_output_is_local_protocol_failure_not_timeout(self) -> None:
+        runtime = Path("X:/offline-kiwoom-runtime")
+        runner = lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 0, "not-json\nstill-not-json", "",
+        )
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            result = invoke_bridge_batch(
+                [{"operation": "stock_list", "ticker": "SOXL", "fx_applied": False}],
+                runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )[0]
+        self.assertEqual("BRIDGE_OUTPUT_INVALID", result["bridge_status"])
+        self.assertEqual("LOCAL_PROTOCOL_FAILURE", result["failure_type"])
+        self.assertNotEqual("TIMEOUT", result["failure_type"])
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            account_result = invoke_account_bridge_batch(
+                [{"operation": "account_holdings_read"}], runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )[0]
+        self.assertEqual("BRIDGE_OUTPUT_INVALID", account_result["bridge_status"])
+        self.assertEqual("LOCAL_PROTOCOL_FAILURE", account_result["failure_type"])
+        self.assertNotEqual("TIMEOUT", account_result["failure_type"])
+
+    def test_local_worker_launch_failure_is_not_provider_failure(self) -> None:
+        runtime = Path("X:/offline-kiwoom-runtime")
+
+        def runner(*args, **kwargs):
+            raise OSError("test-only local launch failure")
+
+        with mock.patch("pathlib.Path.is_file", return_value=True):
+            result = invoke_bridge_batch(
+                [{"operation": "stock_list", "ticker": "SOXL", "fx_applied": False}],
+                runtime=runtime,
+                policy={
+                    "external_python_relative_path": ".venv\\Scripts\\python.exe",
+                    "request_timeout_seconds": 2,
+                },
+                runner=runner,
+            )[0]
+        self.assertEqual("BRIDGE_TRANSPORT_FAILURE", result["bridge_status"])
+        self.assertEqual("LOCAL_TRANSPORT_FAILURE", result["failure_type"])
+        self.assertNotEqual("KIWOOM_API_UNAVAILABLE", result["bridge_status"])
 
     def test_worker_request_uses_policy_bounded_retry(self) -> None:
         class Response:

@@ -512,14 +512,39 @@ def external_worker(
 
 
 def _parse_last_json(stdout: str) -> dict[str, Any]:
-    for line in reversed(stdout.splitlines()):
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            return value
-    raise BridgeError("BRIDGE_OUTPUT_INVALID")
+    lines = stdout.splitlines()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines or "\ufffd" in lines[-1]:
+        raise BridgeError("BRIDGE_OUTPUT_INVALID")
+    try:
+        value = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise BridgeError("BRIDGE_OUTPUT_INVALID") from exc
+    if not isinstance(value, dict):
+        raise BridgeError("BRIDGE_OUTPUT_INVALID")
+    return value
+
+
+def _classify_bridge_invocation_failure(exc: Exception) -> dict[str, Any]:
+    """Keep local worker failures separate from provider failure evidence."""
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return {
+            "bridge_status": "KIWOOM_API_UNAVAILABLE",
+            "failure_type": "TIMEOUT",
+            "order_authority": False,
+        }
+    if isinstance(exc, BridgeError):
+        return {
+            "bridge_status": exc.status,
+            "failure_type": "LOCAL_PROTOCOL_FAILURE",
+            "order_authority": False,
+        }
+    return {
+        "bridge_status": "BRIDGE_TRANSPORT_FAILURE",
+        "failure_type": "LOCAL_TRANSPORT_FAILURE",
+        "order_authority": False,
+    }
 
 
 def sanitize_bridge_response(value: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
@@ -588,7 +613,7 @@ def invoke_bridge(
     sanitized = validate_bridge_request(request)
     python_path = runtime / str(policy["external_python_relative_path"])
     if not python_path.is_file():
-        return {"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "EMPTY_RESPONSE", "order_authority": False}
+        return {"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "LOCAL_RUNTIME_UNAVAILABLE", "order_authority": False}
     attempts = int(policy["maximum_attempts"])
     timeout = int(policy["request_timeout_seconds"])
     delays = list(policy.get("retry_backoff_seconds", []))
@@ -604,14 +629,14 @@ def invoke_bridge(
                  "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", [])),
                  *_history_cli_args(policy)],
                 input=json.dumps(sanitized, separators=(",", ":")),
-                cwd=str(runtime), capture_output=True, text=True, encoding="utf-8",
+                cwd=str(runtime), capture_output=True, text=True, encoding="utf-8", errors="replace",
                 timeout=timeout, check=False,
             )
             last = sanitize_bridge_response(_parse_last_json(completed.stdout), sanitized)
-        except subprocess.TimeoutExpired:
-            last = {"bridge_status": "KIWOOM_API_UNAVAILABLE", "failure_type": "TIMEOUT", "order_authority": False}
-        except (OSError, BridgeError):
-            last = {"bridge_status": "KIWOOM_API_UNAVAILABLE", "failure_type": "EMPTY_RESPONSE", "order_authority": False}
+        except (OSError, subprocess.TimeoutExpired, BridgeError) as exc:
+            last = _classify_bridge_invocation_failure(exc)
+        if last.get("failure_type") in {"LOCAL_PROTOCOL_FAILURE", "LOCAL_TRANSPORT_FAILURE"}:
+            return last
         if last.get("bridge_status") == "PASS" or last.get("bridge_status") in {"NOT_FOUND", "AMBIGUOUS", "IDENTITY_MISMATCH", "KIWOOM_ORDER_ENDPOINT_BLOCKED"}:
             return last
         if last.get("failure_type") in {"HTTP_429", "AUTHENTICATION_FAILURE"}:
@@ -629,7 +654,7 @@ def invoke_bridge_batch(
     python_path = runtime / str(policy["external_python_relative_path"])
     if not python_path.is_file():
         return [
-            {"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "EMPTY_RESPONSE", "operation": item["operation"], "ticker": item.get("ticker"), "order_authority": False}
+            {"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "LOCAL_RUNTIME_UNAVAILABLE", "operation": item["operation"], "ticker": item.get("ticker"), "order_authority": False}
             for item in sanitized
         ]
     try:
@@ -642,7 +667,7 @@ def invoke_bridge_batch(
              "--immediate-open-failure-types", ",".join(policy.get("immediate_open_failure_types", [])),
              *_history_cli_args(policy)],
             input=json.dumps(sanitized, separators=(",", ":")), cwd=str(runtime),
-            capture_output=True, text=True, encoding="utf-8",
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=int(policy["request_timeout_seconds"]) * max(1, len(sanitized)), check=False,
         )
         payload = _parse_last_json(completed.stdout)
@@ -650,9 +675,10 @@ def invoke_bridge_batch(
         if not isinstance(raw_results, list) or len(raw_results) != len(sanitized):
             raise BridgeError("BRIDGE_BATCH_OUTPUT_INVALID")
         return [sanitize_bridge_response(value if isinstance(value, dict) else {}, request) for value, request in zip(raw_results, sanitized)]
-    except (OSError, subprocess.TimeoutExpired, BridgeError):
+    except (OSError, subprocess.TimeoutExpired, BridgeError) as exc:
+        failure = _classify_bridge_invocation_failure(exc)
         return [
-            {"bridge_status": "KIWOOM_API_UNAVAILABLE", "failure_type": "TIMEOUT", "operation": item["operation"], "ticker": item.get("ticker"), "order_authority": False}
+            {**failure, "operation": item["operation"], "ticker": item.get("ticker")}
             for item in sanitized
         ]
 

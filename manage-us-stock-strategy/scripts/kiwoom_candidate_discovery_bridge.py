@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 from kiwoom_runtime_bridge import (
-    BridgeError, _continuation, _exception_failure, _load_env_without_echo,
-    _parse_last_json, _return_code_ok, _runtime_session, utc_now,
+    BridgeError, _classify_bridge_invocation_failure, _continuation,
+    _exception_failure, _load_env_without_echo, _parse_last_json,
+    _return_code_ok, _runtime_session, utc_now,
 )
 
 
@@ -241,7 +242,7 @@ def invoke_discovery_bridge_batch(requests: list[dict[str, Any]], *, runtime: Pa
         completed = runner(
             [str(python_path), str(Path(__file__).resolve()), "--external-worker"],
             input=json.dumps({"policy": policy, "requests": safe_requests}, separators=(",", ":")),
-            cwd=str(runtime), capture_output=True, text=True, encoding="utf-8",
+            cwd=str(runtime), capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=int(policy["request_timeout_seconds"]) * max(1, len(safe_requests)), check=False,
         )
         payload = _parse_last_json(completed.stdout)
@@ -249,10 +250,10 @@ def invoke_discovery_bridge_batch(requests: list[dict[str, Any]], *, runtime: Pa
         if not isinstance(values, list) or len(values) != len(safe_requests):
             raise BridgeError("BRIDGE_BATCH_OUTPUT_INVALID")
         return values
-    except (OSError, subprocess.TimeoutExpired, BridgeError):
-        return [{"bridge_status": "KIWOOM_API_UNAVAILABLE", "failure_type": "TIMEOUT",
-                 "operation": item["operation"], "data": [], "ticker_failures": [],
-                 "order_authority": False} for item in safe_requests]
+    except (OSError, subprocess.TimeoutExpired, BridgeError) as exc:
+        failure = _classify_bridge_invocation_failure(exc)
+        return [{**failure, "operation": item["operation"], "data": [],
+                 "ticker_failures": []} for item in safe_requests]
 
 
 def main() -> int:

@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 from typing import Any
 
+from continuous_improvement_sidecar import manual_grade_b_eligible
 from validation_common import canonical_hash, parse_datetime
 
 
@@ -160,14 +161,43 @@ def build_holding_universe_snapshot(*, decision_as_of: str,
 def classify_evidence_eligibility(*, run_provenance_status: str,
                                   temporal_evidence_valid: bool,
                                   decision_artifact_valid: bool,
-                                  actionable_decision: bool) -> dict[str, Any]:
-    grade = {
-        "VERIFIED_SCHEDULED": "GRADE_A",
-        "VERIFIED_MANUAL": "GRADE_B",
-        "VERIFIED_REPLAY": "GRADE_C",
-        "VERIFIED_TEST": "GRADE_D",
-        "VERIFIED_SHADOW": "GRADE_D",
-    }.get(run_provenance_status, "UNVERIFIED")
+                                  actionable_decision: bool,
+                                  evidence_grade: str | None = None,
+                                  manual_data_verification_status: str | None = None,
+                                  kiwoom_health_status: str | None = None,
+                                  broker_snapshot_status: str | None = None,
+                                  orderable_cash_status: str | None = None,
+                                  current_price_status: str | None = None,
+                                  historical_daily_evidence_status: str | None = None,
+                                  finalized_bar_preflight_status: str | None = None,
+                                  identity_authority_status: str | None = None,
+                                  session_authority_status: str | None = None,
+                                  integrated_authority_cohort_status: str | None = None,
+                                  preflight_status: str | None = None,
+                                  manual_analysis_view: dict[str, Any] | None = None) -> dict[str, Any]:
+    if run_provenance_status == "VERIFIED_MANUAL":
+        grade = "GRADE_B" if manual_grade_b_eligible({
+            "evidence_grade": evidence_grade,
+            "manual_data_verification_status": manual_data_verification_status,
+            "kiwoom_health_status": kiwoom_health_status,
+            "broker_snapshot_status": broker_snapshot_status,
+            "orderable_cash_status": orderable_cash_status,
+            "current_price_status": current_price_status,
+            "historical_daily_evidence_status": historical_daily_evidence_status,
+            "finalized_bar_preflight_status": finalized_bar_preflight_status,
+            "identity_authority_status": identity_authority_status,
+            "session_authority_status": session_authority_status,
+            "integrated_authority_cohort_status": integrated_authority_cohort_status,
+            "preflight_status": preflight_status,
+            "manual_analysis_view": manual_analysis_view,
+        }) else "UNVERIFIED"
+    else:
+        grade = {
+            "VERIFIED_SCHEDULED": "GRADE_A",
+            "VERIFIED_REPLAY": "GRADE_C",
+            "VERIFIED_TEST": "GRADE_D",
+            "VERIFIED_SHADOW": "GRADE_D",
+        }.get(run_provenance_status, "UNVERIFIED")
     valid = temporal_evidence_valid and decision_artifact_valid and grade != "UNVERIFIED"
     genuine = run_provenance_status == "VERIFIED_SCHEDULED" and valid
     return {

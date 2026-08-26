@@ -498,63 +498,52 @@ def _evidence_timestamps(*result_sets: list[dict[str, Any]]) -> list[str]:
     return values
 
 
-def run_manual_preflight(
-    *,
-    manual_run_id: str,
-    system_portfolio: dict[str, Any],
-    system_portfolio_source: str,
-    system_portfolio_sha256: str,
-    provenance_policy: dict[str, Any],
-    account_reader: AccountReader,
-    market_reader: MarketReader,
-    maximum_broker_age_seconds: int,
-    decision_as_of: str | None = None,
-    observed_at: str | None = None,
-    extra_tickers: list[str] | None = None,
-) -> dict[str, Any]:
-    """Collect and validate M1 evidence without writing or invoking strategy logic."""
-    run_id = validate_manual_run_id(manual_run_id)
-    initial_observation = observed_at or _utc_now()
-    observed_dt = _timestamp(initial_observation)
-    trading_date = observed_dt.astimezone(ET).date().isoformat()
-    market_phase = market_session_at(initial_observation)
-    cutoff = decision_as_of or initial_observation
-    cutoff_dt = _timestamp(cutoff)
+def _acquisition_complete_cutoff(
+    *result_sets: list[dict[str, Any]],
+) -> str | None:
+    """Freeze Tc at the latest required result-level evidence timestamp."""
+    values = _evidence_timestamps(*result_sets)
+    required_count = sum(len(results) for results in result_sets)
+    if required_count == 0 or len(values) != required_count:
+        return None
+    parsed: list[tuple[datetime, str]] = []
+    try:
+        for value in values:
+            parsed.append((_timestamp(value), value))
+    except (TypeError, ValueError):
+        return None
+    return max(parsed, key=lambda item: item[0])[1]
 
-    account_requests = [{"operation": operation} for operation in ACCOUNT_READ_OPERATIONS]
-    account_results = _safe_reader_call(
-        account_reader, account_requests, unavailable_status="KIWOOM_ACCOUNT_UNAVAILABLE",
-    )
-    broker_state, broker_status = _normalize_broker_state(
-        account_results,
-        observed_at=initial_observation,
-        maximum_age_seconds=maximum_broker_age_seconds,
-    )
-    system_state = _system_portfolio_projection(
-        system_portfolio,
-        source_path=system_portfolio_source,
-        source_sha256=system_portfolio_sha256,
-    )
-    tickers = sorted({
-        item
-        for item in (
-            [_ticker(value) for value in (extra_tickers or [])]
-            + [_ticker(value) for value in (system_state.get("holdings") or {})]
-            + [_ticker(item.get("ticker")) for item in broker_state.get("holdings", []) if isinstance(item, dict)]
-        )
-        if item is not None
-    })
+
+def _temporal_evidence_valid(
+    cutoff: str, *result_sets: list[dict[str, Any]],
+) -> bool:
+    """Validate a frozen cutoff without advancing it for later evidence."""
+    values = _evidence_timestamps(*result_sets)
+    if len(values) != sum(len(results) for results in result_sets):
+        return False
+    try:
+        cutoff_dt = _timestamp(cutoff)
+        return bool(values) and all(_timestamp(value) <= cutoff_dt for value in values)
+    except (TypeError, ValueError):
+        return False
+
+
+def _authority_context(
+    tickers: list[str], *, observed_at: str, decision_as_of: str,
+) -> dict[str, Any]:
+    """Resolve the existing Identity/Calendar authority contract at one boundary."""
     identity_views = {}
     authority_views = {}
     for ticker in tickers:
-        identity_view = resolve_instrument_identity(ticker, decision_as_of=cutoff)
+        identity_view = resolve_instrument_identity(ticker, decision_as_of=decision_as_of)
         identity_views[ticker] = identity_view
         if identity_view.authority_status != "VERIFIED":
             continue
         authority_views[ticker] = derive_us_market_session_authority(
-            initial_observation,
+            observed_at,
             primary_listing_operating_mic=identity_view.primary_listing_operating_mic,
-            decision_as_of=cutoff,
+            decision_as_of=decision_as_of,
         )
     verified_identity_views = [
         view for view in identity_views.values() if view.authority_status == "VERIFIED"
@@ -655,6 +644,89 @@ def run_manual_preflight(
     expected_completed_session = (
         next(iter(expected_sessions)) if integrated_authority_matched else None
     )
+    return {
+        "identity_views": identity_views,
+        "authority_views": authority_views,
+        "identity_authority_status": identity_authority_status,
+        "identity_authority_reasons": identity_authority_reasons,
+        "identity_authority_id": identity_authority_id,
+        "identity_registry_version": identity_registry_version,
+        "identity_registry_hash": identity_registry_hash,
+        "identity_activation_cohort_id": identity_activation_cohort_id,
+        "session_authority_status": session_authority_status,
+        "session_authority_reasons": session_authority_reasons,
+        "session_authority_market_phase": session_authority_market_phase,
+        "calendar_hash": calendar_hash,
+        "session_activation_cohort_id": session_activation_cohort_id,
+        "integrated_authority_matched": integrated_authority_matched,
+        "integrated_authority_cohort_status": integrated_authority_cohort_status,
+        "expected_completed_session": expected_completed_session,
+    }
+
+
+def run_manual_preflight(
+    *,
+    manual_run_id: str,
+    system_portfolio: dict[str, Any],
+    system_portfolio_source: str,
+    system_portfolio_sha256: str,
+    provenance_policy: dict[str, Any],
+    account_reader: AccountReader,
+    market_reader: MarketReader,
+    maximum_broker_age_seconds: int,
+    decision_as_of: str | None = None,
+    observed_at: str | None = None,
+    extra_tickers: list[str] | None = None,
+) -> dict[str, Any]:
+    """Collect and validate M1 evidence without writing or invoking strategy logic."""
+    run_id = validate_manual_run_id(manual_run_id)
+    initial_observation = observed_at or _utc_now()
+    observed_dt = _timestamp(initial_observation)
+    initial_trading_date = observed_dt.astimezone(ET).date().isoformat()
+    initial_market_phase = market_session_at(initial_observation)
+    initial_authority_cutoff = decision_as_of or initial_observation
+    _timestamp(initial_authority_cutoff)
+
+    account_requests = [{"operation": operation} for operation in ACCOUNT_READ_OPERATIONS]
+    account_results = _safe_reader_call(
+        account_reader, account_requests, unavailable_status="KIWOOM_ACCOUNT_UNAVAILABLE",
+    )
+    broker_state, broker_status = _normalize_broker_state(
+        account_results,
+        observed_at=initial_observation,
+        maximum_age_seconds=maximum_broker_age_seconds,
+    )
+    system_state = _system_portfolio_projection(
+        system_portfolio,
+        source_path=system_portfolio_source,
+        source_sha256=system_portfolio_sha256,
+    )
+    tickers = sorted({
+        item
+        for item in (
+            [_ticker(value) for value in (extra_tickers or [])]
+            + [_ticker(value) for value in (system_state.get("holdings") or {})]
+            + [_ticker(item.get("ticker")) for item in broker_state.get("holdings", []) if isinstance(item, dict)]
+        )
+        if item is not None
+    })
+    initial_authority_context = _authority_context(
+        tickers,
+        observed_at=initial_observation,
+        decision_as_of=initial_authority_cutoff,
+    )
+    initial_authority_views = initial_authority_context["authority_views"]
+    initial_integrated_authority_matched = initial_authority_context[
+        "integrated_authority_matched"
+    ]
+    expected_completed_session_before_acquisition = initial_authority_context[
+        "expected_completed_session"
+    ]
+    initial_session_context = (
+        initial_trading_date,
+        initial_market_phase,
+        expected_completed_session_before_acquisition,
+    )
 
     market_requests: list[dict[str, Any]] = [{"operation": "oauth_health"}]
     market_requests.extend(
@@ -664,16 +736,74 @@ def run_manual_preflight(
     market_requests.extend(
         {
             "operation": "daily_chart", "ticker": ticker,
-            "completed_session": expected_completed_session,
+            "completed_session": expected_completed_session_before_acquisition,
             "price_basis": "RAW", "fx_applied": False,
         }
         for ticker in tickers
-        if integrated_authority_matched
-        and authority_views[ticker].authority_status == "VERIFIED"
-        and authority_views[ticker].expected_completed_session is not None
+        if initial_integrated_authority_matched
+        and initial_authority_views[ticker].authority_status == "VERIFIED"
+        and initial_authority_views[ticker].expected_completed_session is not None
     )
     market_results = _safe_reader_call(
         market_reader, market_requests, unavailable_status="KIWOOM_API_UNAVAILABLE",
+    )
+    acquisition_complete_cutoff = _acquisition_complete_cutoff(
+        account_results, market_results,
+    )
+    cutoff = acquisition_complete_cutoff or initial_authority_cutoff
+    cutoff_dt = _timestamp(cutoff)
+    if acquisition_complete_cutoff is not None:
+        authority_context = _authority_context(
+            tickers, observed_at=cutoff, decision_as_of=cutoff,
+        )
+        broker_state, broker_status = _normalize_broker_state(
+            account_results,
+            observed_at=cutoff,
+            maximum_age_seconds=maximum_broker_age_seconds,
+        )
+    else:
+        authority_context = initial_authority_context
+    identity_views = authority_context["identity_views"]
+    authority_views = authority_context["authority_views"]
+    identity_authority_status = authority_context["identity_authority_status"]
+    identity_authority_reasons = authority_context["identity_authority_reasons"]
+    identity_authority_id = authority_context["identity_authority_id"]
+    identity_registry_version = authority_context["identity_registry_version"]
+    identity_registry_hash = authority_context["identity_registry_hash"]
+    identity_activation_cohort_id = authority_context["identity_activation_cohort_id"]
+    session_authority_status = authority_context["session_authority_status"]
+    session_authority_reasons = authority_context["session_authority_reasons"]
+    session_authority_market_phase = authority_context["session_authority_market_phase"]
+    calendar_hash = authority_context["calendar_hash"]
+    session_activation_cohort_id = authority_context["session_activation_cohort_id"]
+    integrated_authority_matched = authority_context["integrated_authority_matched"]
+    integrated_authority_cohort_status = authority_context[
+        "integrated_authority_cohort_status"
+    ]
+    expected_completed_session = authority_context["expected_completed_session"]
+    trading_date = cutoff_dt.astimezone(ET).date().isoformat()
+    market_phase = market_session_at(cutoff)
+    cutoff_session_context = (
+        trading_date,
+        market_phase,
+        expected_completed_session,
+    )
+    authority_revalidation_valid = bool(
+        acquisition_complete_cutoff is not None
+        and identity_authority_status == "VERIFIED"
+        and session_authority_status == "VERIFIED"
+        and integrated_authority_cohort_status == "MATCHED"
+    )
+    session_rollover_detected = bool(
+        acquisition_complete_cutoff is not None
+        and initial_session_context[2] is not None
+        and cutoff_session_context[2] is not None
+        and initial_session_context[2] != cutoff_session_context[2]
+    )
+    session_identity_revalidated = bool(
+        authority_revalidation_valid
+        and expected_completed_session_before_acquisition is not None
+        and expected_completed_session_before_acquisition == expected_completed_session
     )
     health = _operation_result(market_results, "oauth_health")
     if health and health.get("bridge_status") == "PASS" and health.get("authenticated") is True:
@@ -691,7 +821,7 @@ def run_manual_preflight(
         authority_view = authority_views.get(ticker)
         daily_response = _operation_result(market_results, "daily_chart", ticker)
         daily_records = _normalize_daily_records(
-            daily_response, ticker=ticker, observed_at=initial_observation,
+            daily_response, ticker=ticker, observed_at=cutoff,
         )
         pagination = (daily_response or {}).get("pagination") or {}
         history_status = "AVAILABLE" if daily_records else "UNAVAILABLE"
@@ -709,7 +839,7 @@ def run_manual_preflight(
             quote_response=_operation_result(market_results, "market_quote", ticker),
             daily_records=daily_records,
             trading_date=trading_date,
-            observed_at=initial_observation,
+            observed_at=cutoff,
             market_phase=market_phase,
         )
         current_price_evidence.append({
@@ -741,12 +871,13 @@ def run_manual_preflight(
             authority_view.authority_status == "VERIFIED"
             and authority_view.expected_completed_session is not None
             and integrated_authority_matched
+            and session_identity_revalidated
         ):
             session_authority_item_status = authority_view.authority_status
             session_authority_item_reason = authority_view.authority_reason
             selected = _select_last_verified_finalized_bar(
                 daily_records,
-                observed_at=initial_observation,
+                observed_at=cutoff,
                 expected_ticker=ticker,
                 expected_completed_session=(
                     authority_view.expected_completed_session.session_date
@@ -756,7 +887,9 @@ def run_manual_preflight(
             session_authority_item_status = authority_view.authority_status
             session_authority_item_reason = authority_view.authority_reason
             failure_reason = (
-                "INTEGRITY_FAILURE"
+                "ACQUISITION_SESSION_ROLLOVER"
+                if session_rollover_detected
+                else "INTEGRITY_FAILURE"
                 if authority_view.authority_status == "VERIFIED"
                 and not integrated_authority_matched
                 else authority_view.authority_reason
@@ -795,6 +928,7 @@ def run_manual_preflight(
     finalized_bar_preflight_pass = bool(
         tickers
         and integrated_authority_matched
+        and session_identity_revalidated
         and expected_completed_session is not None
         and len(verified_bars) == len(tickers)
         and all(
@@ -819,6 +953,14 @@ def run_manual_preflight(
     hard_fail_reasons: list[str] = []
     partial_reasons: list[str] = []
     unknowns: list[str] = ["EVENT_EVIDENCE_NOT_EVALUATED_M1"]
+    if acquisition_complete_cutoff is None:
+        hard_fail_reasons.append("ACQUISITION_TIMESTAMP_INVALID")
+    if not authority_revalidation_valid:
+        hard_fail_reasons.append("AUTHORITY_REVALIDATION_AT_ACQUISITION_CUTOFF_FAILED")
+    if session_rollover_detected:
+        hard_fail_reasons.append("ACQUISITION_SESSION_ROLLOVER")
+    elif acquisition_complete_cutoff is not None and not session_identity_revalidated:
+        hard_fail_reasons.append("ACQUISITION_SESSION_IDENTITY_NOT_REVALIDATED")
     if kiwoom_health_status != "HEALTHY":
         hard_fail_reasons.append("KIWOOM_UNAVAILABLE")
     if broker_status == "UNAVAILABLE":
@@ -831,7 +973,7 @@ def run_manual_preflight(
     if missing_current:
         partial_reasons.append("CURRENT_PRICE_UNAVAILABLE:" + ",".join(missing_current))
     if current_session_finalization_status != "VERIFIED":
-        partial_reasons.append("CURRENT_SESSION_FINALIZATION_NOT_VERIFIED")
+        unknowns.append("CURRENT_SESSION_FINALIZATION_NOT_VERIFIED")
     if identity_authority_status != "VERIFIED":
         partial_reasons.append(
             "IDENTITY_AUTHORITY_NOT_VERIFIED:" + ",".join(identity_authority_reasons)
@@ -846,13 +988,12 @@ def run_manual_preflight(
     if missing_technical or historical_status in {"PARTIAL", "UNAVAILABLE"}:
         unknowns.append("TECHNICAL_EVIDENCE_INCOMPLETE:" + ",".join(sorted(set(missing_technical))))
 
-    temporal_valid = True
-    for value in _evidence_timestamps(account_results, market_results):
-        try:
-            if _timestamp(value) > cutoff_dt:
-                temporal_valid = False
-        except ValueError:
-            temporal_valid = False
+    temporal_valid = bool(
+        acquisition_complete_cutoff is not None
+        and _temporal_evidence_valid(
+            acquisition_complete_cutoff, account_results, market_results,
+        )
+    )
     if not temporal_valid:
         hard_fail_reasons.append("TEMPORAL_EVIDENCE_VIOLATION")
 
@@ -867,6 +1008,11 @@ def run_manual_preflight(
         and orderable_cash_status == "VERIFIED"
         and current_price_status == "AVAILABLE"
         and historical_status == "AVAILABLE"
+        and finalized_bar_preflight_pass
+        and identity_authority_status == "VERIFIED"
+        and session_authority_status == "VERIFIED"
+        and integrated_authority_cohort_status == "MATCHED"
+        and preflight_status == "PASS"
         and temporal_valid
     )
     if preflight_status == "FAIL":
@@ -878,9 +1024,23 @@ def run_manual_preflight(
     else:
         manual_data_status = "NOT_VERIFIED"
 
+    requested_evidence_grade = "GRADE_B" if real_data_verified else "UNVERIFIED"
     provenance = derive_run_provenance({
         "execution_origin": "MANUAL",
         "decision_mode": "MANUAL_READ_ONLY",
+        "evidence_grade": requested_evidence_grade,
+        "manual_data_verification_status": manual_data_status,
+        "kiwoom_health_status": kiwoom_health_status,
+        "broker_snapshot_status": broker_status,
+        "orderable_cash_status": orderable_cash_status,
+        "current_price_status": current_price_status,
+        "historical_daily_evidence_status": historical_status,
+        "finalized_bar_preflight_status": finalized_bar_preflight_status,
+        "identity_authority_status": identity_authority_status,
+        "session_authority_status": session_authority_status,
+        "integrated_authority_cohort_status": integrated_authority_cohort_status,
+        "preflight_status": preflight_status,
+        "manual_analysis_view": manual_view,
         "provenance_evidence": {
             "manual_run_id": run_id,
             "operator_initiated": True,
@@ -892,7 +1052,7 @@ def run_manual_preflight(
     }, provenance_policy)
     expected_provenance = {
         "run_provenance_status": "VERIFIED_MANUAL",
-        "evidence_grade": "GRADE_B",
+        "evidence_grade": requested_evidence_grade,
         "maturity_eligible": False,
         "operational_maturity_eligible": False,
         "policy_evolution_eligible": False,

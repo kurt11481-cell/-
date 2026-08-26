@@ -95,6 +95,32 @@ def scheduled_run() -> dict:
     }
 
 
+def verified_manual_contract() -> dict:
+    return {
+        "evidence_grade": "GRADE_B",
+        "manual_data_verification_status": "VERIFIED_REAL_DATA",
+        "kiwoom_health_status": "HEALTHY",
+        "broker_snapshot_status": "AVAILABLE",
+        "orderable_cash_status": "VERIFIED",
+        "current_price_status": "AVAILABLE",
+        "historical_daily_evidence_status": "AVAILABLE",
+        "finalized_bar_preflight_status": "PASS",
+        "identity_authority_status": "VERIFIED",
+        "session_authority_status": "VERIFIED",
+        "integrated_authority_cohort_status": "MATCHED",
+        "preflight_status": "PASS",
+        "manual_analysis_view": {
+            "holding_source": "BROKER_OBSERVED_STATE",
+            "ephemeral": True,
+            "memory_only": True,
+            "portfolio_mutation": False,
+            "order_authority": False,
+            "quantity_authority": "none",
+            "execution_quantity": None,
+        },
+    }
+
+
 class ContinuousImprovementSidecarTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -108,6 +134,74 @@ class ContinuousImprovementSidecarTests(unittest.TestCase):
         result = derive_run_provenance(raw, self.policy)
         self.assertEqual(result["run_provenance_status"], "UNVERIFIED")
         self.assertFalse(result["maturity_eligible"])
+
+    def test_verified_manual_unverified_or_missing_grade_stays_unverified(self):
+        for provided_grade in ("UNVERIFIED", None):
+            raw = copy.deepcopy(self.fixture["runs"][0])
+            raw.update(verified_manual_contract())
+            if provided_grade is None:
+                raw.pop("evidence_grade")
+            else:
+                raw["evidence_grade"] = provided_grade
+            result = derive_run_provenance(raw, self.policy)
+            self.assertEqual("VERIFIED_MANUAL", result["run_provenance_status"])
+            self.assertEqual("UNVERIFIED", result["evidence_grade"])
+            self.assertFalse(result["decision_quality_eligible"])
+            self.assertFalse(result["counterfactual_eligible"])
+
+    def test_verified_manual_grade_b_requires_verified_real_data(self):
+        raw = copy.deepcopy(self.fixture["runs"][0])
+        raw.update(verified_manual_contract())
+        result = derive_run_provenance(raw, self.policy)
+        self.assertEqual("GRADE_B", result["evidence_grade"])
+        self.assertTrue(result["decision_quality_eligible"])
+
+        failed = copy.deepcopy(raw)
+        failed["manual_data_verification_status"] = "FAILED"
+        failed_result = derive_run_provenance(failed, self.policy)
+        self.assertEqual("UNVERIFIED", failed_result["evidence_grade"])
+        self.assertFalse(failed_result["decision_quality_eligible"])
+
+    def test_verified_manual_grade_b_requires_every_authority_and_preflight_gate(self):
+        base = copy.deepcopy(self.fixture["runs"][0])
+        base.update(verified_manual_contract())
+        failures = {
+            "identity_authority_status": "NOT_VERIFIED",
+            "session_authority_status": "NOT_VERIFIED",
+            "integrated_authority_cohort_status": "NOT_VERIFIED",
+            "preflight_status": "PARTIAL",
+        }
+        for field, failed_value in failures.items():
+            with self.subTest(field=field, value=failed_value):
+                raw = copy.deepcopy(base)
+                raw[field] = failed_value
+                result = derive_run_provenance(raw, self.policy)
+                self.assertEqual("UNVERIFIED", result["evidence_grade"])
+                self.assertFalse(result["decision_quality_eligible"])
+        failed_preflight = copy.deepcopy(base)
+        failed_preflight["preflight_status"] = "FAIL"
+        result = derive_run_provenance(failed_preflight, self.policy)
+        self.assertEqual("UNVERIFIED", result["evidence_grade"])
+        self.assertFalse(result["decision_quality_eligible"])
+
+    def test_manual_system_portfolio_fallback_is_not_grade_b_or_actionable(self):
+        raw = copy.deepcopy(self.fixture["runs"][0])
+        raw.update(verified_manual_contract())
+        raw["manual_analysis_view"]["holding_source"] = "SYSTEM_PORTFOLIO_STATE_FALLBACK"
+        result = derive_run_provenance(raw, self.policy)
+        self.assertEqual("UNVERIFIED", result["evidence_grade"])
+        self.assertFalse(result["decision_quality_eligible"])
+        self.assertFalse(result["counterfactual_eligible"])
+
+    def test_non_manual_grade_contracts_are_unchanged(self):
+        scheduled = derive_run_provenance(scheduled_run(), self.policy)
+        replay = derive_run_provenance(self.fixture["runs"][1], self.policy)
+        test_only = derive_run_provenance(self.fixture["runs"][2], self.policy)
+        shadow = derive_run_provenance(self.fixture["runs"][3], self.policy)
+        self.assertEqual("GRADE_A", scheduled["evidence_grade"])
+        self.assertEqual("GRADE_C", replay["evidence_grade"])
+        self.assertEqual("GRADE_D", test_only["evidence_grade"])
+        self.assertEqual("GRADE_D", shadow["evidence_grade"])
 
     def test_replay_cannot_be_maturity_eligible(self):
         result = derive_run_provenance(self.fixture["runs"][1], self.policy)
@@ -399,7 +493,7 @@ class ContinuousImprovementSidecarTests(unittest.TestCase):
         for finding in report["improvement_findings"]:
             self.assertEqual(validate_instance(finding, FINDING_SCHEMA), [])
 
-    def test_analytics_cohort_fingerprint_is_reproducible_and_scoped(self):
+    def test_analytics_cohort_fingerprint_detects_sidecar_semantic_change(self):
         cohort = load_json(ROOT / "workspace/state/continuous_improvement/improvement_analytics_cohort.json")
         result = compute_analytics_semantic_fingerprint({
             "sidecar": ROOT / "manage-us-stock-strategy/scripts/continuous_improvement_sidecar.py",
@@ -410,9 +504,23 @@ class ContinuousImprovementSidecarTests(unittest.TestCase):
             "outcome_ledger_schema": ROOT / "manage-us-stock-strategy/schemas/forward-outcome-ledger.schema.json",
             "report_schema": ROOT / "manage-us-stock-strategy/schemas/continuous-improvement-report.schema.json",
         })
-        self.assertEqual(cohort["semantic_fingerprint"], result["semantic_fingerprint"])
+        self.assertNotEqual(cohort["semantic_fingerprint"], result["semantic_fingerprint"])
         self.assertEqual(cohort["semantic_fingerprint_algorithm"], result["algorithm"])
-        self.assertEqual(cohort["semantic_input_hashes"], result["normalized_input_hashes"])
+        self.assertNotEqual(
+            cohort["semantic_input_hashes"]["sidecar"],
+            result["normalized_input_hashes"]["sidecar"],
+        )
+        unchanged_inputs = {
+            key: value for key, value in cohort["semantic_input_hashes"].items()
+            if key != "sidecar"
+        }
+        self.assertEqual(
+            unchanged_inputs,
+            {
+                key: value for key, value in result["normalized_input_hashes"].items()
+                if key != "sidecar"
+            },
+        )
 
     def test_order_and_quantity_authority_remain_disabled(self):
         report, ledger = build_report(copy.deepcopy(self.fixture), self.policy)

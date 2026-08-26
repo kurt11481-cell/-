@@ -162,6 +162,37 @@ def assert_counter_authority_firewall(payload: dict[str, Any]) -> None:
         raise ValueError("ANALYTICS_AUTHORITY_FIREWALL_VIOLATION:" + ",".join(sorted(violations)))
 
 
+def manual_grade_b_eligible(run: dict[str, Any]) -> bool:
+    """Preserve Grade B only for an explicitly verified real-data manual run."""
+    required = {
+        "evidence_grade": "GRADE_B",
+        "manual_data_verification_status": "VERIFIED_REAL_DATA",
+        "kiwoom_health_status": "HEALTHY",
+        "broker_snapshot_status": "AVAILABLE",
+        "orderable_cash_status": "VERIFIED",
+        "current_price_status": "AVAILABLE",
+        "historical_daily_evidence_status": "AVAILABLE",
+        "finalized_bar_preflight_status": "PASS",
+        "identity_authority_status": "VERIFIED",
+        "session_authority_status": "VERIFIED",
+        "integrated_authority_cohort_status": "MATCHED",
+        "preflight_status": "PASS",
+    }
+    if any(run.get(key) != expected for key, expected in required.items()):
+        return False
+    view = run.get("manual_analysis_view")
+    return bool(
+        isinstance(view, dict)
+        and view.get("holding_source") == "BROKER_OBSERVED_STATE"
+        and view.get("ephemeral") is True
+        and view.get("memory_only") is True
+        and view.get("portfolio_mutation") is False
+        and view.get("order_authority") is False
+        and view.get("quantity_authority") == "none"
+        and view.get("execution_quantity") is None
+    )
+
+
 def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     """Derive provenance from evidence. A caller's origin label alone grants no authority."""
     origin = normalize_run_origin(run.get("execution_origin"))
@@ -220,15 +251,22 @@ def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[s
         if maturity_eligible and run.get("delivery_status") != "DELIVERED":
             maturity_eligible = False
             reasons.append("DELIVERY_NOT_VERIFIED")
-    evidence_grade = {
-        "VERIFIED_SCHEDULED": "GRADE_A",
-        "VERIFIED_MANUAL": "GRADE_B",
-        "VERIFIED_REPLAY": "GRADE_C",
-        "VERIFIED_TEST": "GRADE_D",
-        "VERIFIED_SHADOW": "GRADE_D",
-    }.get(status, "UNVERIFIED")
+    evidence_grade = (
+        "GRADE_B" if status == "VERIFIED_MANUAL" and manual_grade_b_eligible(run)
+        else {
+            "VERIFIED_SCHEDULED": "GRADE_A",
+            "VERIFIED_REPLAY": "GRADE_C",
+            "VERIFIED_TEST": "GRADE_D",
+            "VERIFIED_SHADOW": "GRADE_D",
+        }.get(status, "UNVERIFIED")
+    )
+    if status == "VERIFIED_MANUAL" and evidence_grade != "GRADE_B":
+        reasons.append("MANUAL_REAL_DATA_NOT_VERIFIED")
     temporal_valid = run.get("temporal_evidence_status", "TEMPORAL_EVIDENCE_VALID") == "TEMPORAL_EVIDENCE_VALID"
-    decision_observation = status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY"} and temporal_valid
+    decision_observation = (
+        status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY"}
+        and temporal_valid and evidence_grade != "UNVERIFIED"
+    )
     return {
         "execution_origin": origin if origin in RUN_ORIGINS else "UNVERIFIED",
         "decision_mode": run.get("decision_mode"),
@@ -237,7 +275,7 @@ def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[s
         "maturity_eligible": maturity_eligible,
         "operational_maturity_eligible": maturity_eligible,
         "decision_quality_eligible": decision_observation,
-        "counterfactual_eligible": status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY", "VERIFIED_SHADOW"} and temporal_valid,
+        "counterfactual_eligible": status in {"VERIFIED_SCHEDULED", "VERIFIED_MANUAL", "VERIFIED_REPLAY", "VERIFIED_SHADOW"} and temporal_valid and evidence_grade != "UNVERIFIED",
         "policy_evolution_eligible": status == "VERIFIED_SCHEDULED" and temporal_valid,
         "evidence_grade": evidence_grade,
         "reason_codes": reasons,
