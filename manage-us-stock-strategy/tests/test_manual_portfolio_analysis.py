@@ -30,6 +30,8 @@ from instrument_identity_authority import InstrumentIdentityView  # noqa: E402
 from run_manual_portfolio_analysis import (  # noqa: E402
     ACCOUNT_READ_OPERATIONS,
     _acquisition_complete_cutoff,
+    _current_price_record,
+    _number,
     _select_last_verified_finalized_bar,
     _temporal_evidence_valid,
     _write_immutable_report,
@@ -1325,6 +1327,83 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertFalse(report["order_authority"])
         self.assertEqual("none", report["quantity_authority"])
         self.assertIsNone(report["execution_quantity"])
+
+    def test_07i1_signed_cur_prc_normalizes_to_positive_price(self):
+        cases = (
+            ("MVLL", "-30.6390", 30.639),
+            ("NBIS", "-218.6500", 218.65),
+            ("SOXL", "+115.8200", 115.82),
+        )
+        for ticker, raw_price, expected in cases:
+            with self.subTest(ticker=ticker, raw_price=raw_price):
+                record = _current_price_record(
+                    ticker=ticker,
+                    quote_response={
+                        "bridge_status": "PASS",
+                        "data": [{"cur_prc": raw_price}],
+                        "retrieved_at": QUOTE_RETRIEVED_AT,
+                    },
+                    daily_records=[],
+                    trading_date=SAME_DAY,
+                    observed_at=OBSERVED_AT,
+                    market_phase="AFTER_HOURS",
+                )
+                self.assertIsNotNone(record)
+                self.assertEqual(expected, record["price"])
+
+    def test_07i2_invalid_cur_prc_values_fail_closed(self):
+        cases = (
+            "",
+            " ",
+            "0",
+            "+0.0000",
+            "-0.0000",
+            "-+1.0000",
+            "+-1.0000",
+            "++1.0000",
+            "--1.0000",
+            "+ 1.0000",
+            "- 1.0000",
+            "+\t1.0000",
+            "-\t1.0000",
+            "1e2",
+            "1E2",
+            "+1e2",
+            "-1e2",
+            "+",
+            "-",
+            ".",
+            "+.",
+            "-.",
+            "not-a-price",
+            float("nan"),
+            float("inf"),
+            float("-inf"),
+            "NaN",
+            "Infinity",
+            "+Infinity",
+            "-Infinity",
+        )
+        for raw_price in cases:
+            with self.subTest(raw_price=raw_price):
+                record = _current_price_record(
+                    ticker="MVLL",
+                    quote_response={
+                        "bridge_status": "PASS",
+                        "data": [{"cur_prc": raw_price}],
+                        "retrieved_at": QUOTE_RETRIEVED_AT,
+                    },
+                    daily_records=[],
+                    trading_date=SAME_DAY,
+                    observed_at=OBSERVED_AT,
+                    market_phase="AFTER_HOURS",
+                )
+                self.assertIsNone(record)
+
+    def test_07i3_generic_positive_number_behavior_is_unchanged(self):
+        self.assertIsNone(_number("-30.6390", positive=True))
+        self.assertIsNone(_number("0", positive=True))
+        self.assertEqual(115.82, _number("+115.8200", positive=True))
 
     def test_08_forbidden_high_level_entrypoints_are_absent_and_not_called(self):
         forbidden_modules = {

@@ -73,6 +73,16 @@ def _number(value: Any, *, positive: bool = False) -> float | None:
     return result
 
 
+def _cur_prc_price(value: Any) -> float | None:
+    """Normalize the Kiwoom cur_prc sign prefix to a positive price."""
+    if value is None or isinstance(value, bool):
+        return None
+    match = re.fullmatch(r"[+-]?(\d+(?:\.\d+)?)", str(value))
+    if match is None:
+        return None
+    return _number(match.group(1), positive=True)
+
+
 def _ticker(value: Any) -> str | None:
     result = str(value or "").strip().upper()
     return result if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,14}", result) else None
@@ -464,7 +474,7 @@ def _current_price_record(
     if quote_response and quote_response.get("bridge_status") == "PASS":
         rows = quote_response.get("data") or []
         row = rows[0] if len(rows) == 1 and isinstance(rows[0], dict) else None
-        price = _number((row or {}).get("cur_prc"), positive=True)
+        price = _cur_prc_price((row or {}).get("cur_prc"))
         if price is not None:
             return kiwoom_broker_quote_observation(
                 ticker=ticker,
