@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,7 +26,7 @@ from session_aware_market_data import (
     yfinance_regular_close_observation,
 )
 from shadow_acceptance import semantic_fingerprint
-from validation_common import load_json, validate_instance
+from validation_common import file_hash, load_json, validate_instance
 from validate_kiwoom_session_aware_acceptance import validate_acceptance
 from validate_kiwoom_market_snapshot import validate_snapshot_semantics
 from validate_skill_deployment import normalized_text_sha256
@@ -34,6 +36,68 @@ SESSION = "2026-08-13"
 AFTER = "2026-08-13T21:45:00+00:00"
 NEXT_DAY = "2026-08-14T13:00:00+00:00"
 TOLERANCE = {"absolute_usd_floor": 0.05, "relative_fraction": 0.001}
+ACCEPTANCE_EVIDENCE_ROOT = ROOT / "workspace/research/provider-evidence/kiwoom"
+HISTORICAL_ACCEPTANCE = ACCEPTANCE_EVIDENCE_ROOT / "2026-08-14/session-aware-priority-acceptance.json"
+INACTIVE_CANDIDATE = (
+    ACCEPTANCE_EVIDENCE_ROOT
+    / "2026-08-26/session-aware-priority-acceptance-k2-signed-cur-prc-7fa30b0-inactive-candidate.json"
+)
+
+
+def current_acceptance_binding(priority_policy: dict, source_registry: dict) -> str:
+    kiwoom_rows = [
+        row for row in source_registry["providers"]
+        if row.get("provider") == "kiwoom_rest"
+    ]
+    if len(kiwoom_rows) != 1:
+        raise AssertionError("current Acceptance authority requires exactly one kiwoom_rest registry row")
+
+    bindings = {
+        "priority_policy": str(
+            priority_policy["acceptance_evidence"].get(
+                "session_aware_acceptance_manifest_sha256"
+            ) or ""
+        ).lower(),
+        "source_registry": str(
+            kiwoom_rows[0].get("acceptance_artifact_sha256") or ""
+        ).lower(),
+    }
+    bindings.update({
+        f"provider_scope:{row['ticker']}": str(
+            row.get("acceptance_artifact_hash") or ""
+        ).lower()
+        for row in priority_policy["provider_scopes"]
+    })
+    distinct = set(bindings.values())
+    if len(distinct) != 1:
+        raise AssertionError(f"split current Acceptance authority: {bindings}")
+    binding = next(iter(distinct))
+    if len(binding) != 64 or any(char not in "0123456789abcdef" for char in binding):
+        raise AssertionError(f"invalid current Acceptance binding: {binding!r}")
+    return binding
+
+
+def current_acceptance_manifest_path(
+    priority_policy: dict | None = None,
+    source_registry: dict | None = None,
+) -> Path:
+    priority_policy = priority_policy or load_json(
+        ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json"
+    )
+    source_registry = source_registry or load_json(
+        ROOT / "workspace/policies/source_capabilities.json"
+    )
+    binding = current_acceptance_binding(priority_policy, source_registry)
+    matches = [
+        path for path in ACCEPTANCE_EVIDENCE_ROOT.rglob("*.json")
+        if file_hash(path).lower() == binding
+    ]
+    if len(matches) != 1:
+        raise AssertionError(
+            f"current Acceptance binding must resolve to exactly one manifest: "
+            f"binding={binding}, matches={[path.as_posix() for path in matches]}"
+        )
+    return matches[0]
 
 
 def regular(provider: str = "KIWOOM_REST", price: float = 100.0) -> dict:
@@ -190,12 +254,14 @@ class PriorityAndScopeTests(unittest.TestCase):
 
     def test_scope_04_checked_in_provider_scopes_are_complete_and_locked(self):
         policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
-        manifest_path = ROOT / "workspace/research/provider-evidence/kiwoom/2026-08-14/session-aware-priority-acceptance.json"
+        registry = load_json(ROOT / "workspace/policies/source_capabilities.json")
+        manifest_path = current_acceptance_manifest_path(policy, registry)
         expected = {"SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM"}
         scopes = policy["provider_scopes"]
         self.assertEqual({row["ticker"] for row in scopes}, expected)
         self.assertEqual(len(scopes), len(expected))
         expected_hash = normalized_text_sha256(manifest_path).lower()
+        self.assertEqual(current_acceptance_binding(policy, registry), expected_hash)
         self.assertTrue(all(row["acceptance_artifact_hash"] == expected_hash for row in scopes))
         self.assertTrue(all(row["order_authority"] is False for row in scopes))
         by_ticker = {row["ticker"]: row for row in scopes}
@@ -281,7 +347,7 @@ class InvariantAndContractTests(unittest.TestCase):
         self.assertEqual(validate_snapshot_semantics(value), [])
 
     def test_guarded_priority_requires_locked_acceptance_manifest(self):
-        manifest_path = ROOT / "workspace/research/provider-evidence/kiwoom/2026-08-14/session-aware-priority-acceptance.json"
+        manifest_path = current_acceptance_manifest_path()
         errors = validate_acceptance(
             manifest=load_json(manifest_path), manifest_path=manifest_path,
             manifest_schema=SCHEMAS / "kiwoom-session-aware-acceptance-manifest.schema.json",
@@ -293,7 +359,7 @@ class InvariantAndContractTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_missing_acceptance_hash_blocks_guarded_transition(self):
-        manifest_path = ROOT / "workspace/research/provider-evidence/kiwoom/2026-08-14/session-aware-priority-acceptance.json"
+        manifest_path = current_acceptance_manifest_path()
         policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
         policy["acceptance_evidence"]["session_aware_acceptance_manifest_sha256"] = None
         errors = validate_acceptance(
@@ -307,7 +373,7 @@ class InvariantAndContractTests(unittest.TestCase):
         self.assertIn("priority policy acceptance hash mismatch", errors)
 
     def test_scope_acceptance_hash_mismatch_blocks_guarded_transition(self):
-        manifest_path = ROOT / "workspace/research/provider-evidence/kiwoom/2026-08-14/session-aware-priority-acceptance.json"
+        manifest_path = current_acceptance_manifest_path()
         policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
         policy["provider_scopes"][0]["acceptance_artifact_hash"] = "0" * 64
         errors = validate_acceptance(
@@ -319,6 +385,46 @@ class InvariantAndContractTests(unittest.TestCase):
             source_schema=SCHEMAS / "source-capability.schema.json", repo_root=ROOT,
         )
         self.assertIn("provider scope acceptance hash mismatch: SOXL", errors)
+
+    def _assert_raw_byte_mutation_rejected(self, mutated_bytes: bytes) -> None:
+        policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
+        registry = load_json(ROOT / "workspace/policies/source_capabilities.json")
+        binding = current_acceptance_binding(policy, registry)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evidence_root = Path(temp_dir)
+            mutated_manifest = evidence_root / "acceptance.json"
+            mutated_manifest.write_bytes(mutated_bytes)
+            self.assertNotEqual(file_hash(mutated_manifest).lower(), binding)
+            self.assertEqual(normalized_text_sha256(mutated_manifest).lower(), binding)
+            with patch.object(sys.modules[__name__], "ACCEPTANCE_EVIDENCE_ROOT", evidence_root):
+                with self.assertRaisesRegex(AssertionError, "exactly one manifest"):
+                    current_acceptance_manifest_path(policy, registry)
+
+    def test_crlf_raw_sha_mismatch_rejected(self):
+        manifest_path = current_acceptance_manifest_path()
+        exact_bytes = manifest_path.read_bytes()
+        crlf_bytes = exact_bytes.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+        self.assertNotEqual(crlf_bytes, exact_bytes)
+        self._assert_raw_byte_mutation_rejected(crlf_bytes)
+
+    def test_bom_raw_sha_mismatch_rejected(self):
+        manifest_path = current_acceptance_manifest_path()
+        self._assert_raw_byte_mutation_rejected(b"\xef\xbb\xbf" + manifest_path.read_bytes())
+
+    def test_split_acceptance_authority_fails_closed(self):
+        policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
+        registry = load_json(ROOT / "workspace/policies/source_capabilities.json")
+        policy["provider_scopes"][0]["acceptance_artifact_hash"] = "0" * 64
+        with self.assertRaisesRegex(AssertionError, "split current Acceptance authority"):
+            current_acceptance_manifest_path(policy, registry)
+
+    def test_historical_and_inactive_candidate_are_not_current_acceptance(self):
+        manifest_path = current_acceptance_manifest_path()
+        current_hash = normalized_text_sha256(manifest_path).lower()
+        self.assertNotEqual(manifest_path, HISTORICAL_ACCEPTANCE)
+        self.assertNotEqual(normalized_text_sha256(HISTORICAL_ACCEPTANCE).lower(), current_hash)
+        self.assertNotEqual(manifest_path, INACTIVE_CANDIDATE)
+        self.assertNotEqual(normalized_text_sha256(INACTIVE_CANDIDATE).lower(), current_hash)
 
     def test_provider_authority_change_starts_zero_count_cohort(self):
         progress = load_json(ROOT / "workspace/state/integrated_shadow/shadow_progress.json")
