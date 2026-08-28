@@ -1,0 +1,222 @@
+{
+  "packet_schema_version": "1.0",
+  "packet_identity": "US_EQUITIES_CORE_SESSION_2026_THROUGH_20260825_V1",
+  "calendar_policy_identity": "US_EQUITIES_CORE_SESSION_V2",
+  "timezone_identity": "America/New_York",
+  "authority_as_of": "2026-08-25T05:09:59-04:00",
+  "authority_as_of_time_basis": "EXACT_ET_OFFICIAL_SOURCE_REVIEW_CUTOFF",
+  "generated_at": "2026-08-25T05:09:59-04:00",
+  "coverage_start": "2026-01-01",
+  "coverage_end": "2026-08-25",
+  "calendar_version": "2026-08-25.1",
+  "operating_mic_scope": [
+    "XNYS",
+    "XNAS",
+    "XCBO"
+  ],
+  "source_families": [
+    "NYSE_GROUP",
+    "NASDAQ",
+    "CBOE"
+  ],
+  "sources": [
+    {
+      "source_id": "NYSE_HOURS_CALENDAR_2026",
+      "source_family": "NYSE_GROUP",
+      "operating_mic": "XNYS",
+      "official_url": "https://www.nyse.com/trade/hours-calendars",
+      "title": "NYSE Holidays & Trading Hours",
+      "retrieved_date": "2026-08-25",
+      "retrieval_time_basis": "DATE_ONLY_ET_FROM_RECORDED_REVIEW_WINDOW",
+      "content_capture_status": "NOT_CAPTURED",
+      "content_sha256": null,
+      "source_scope": [
+        "REGULAR_HOURS",
+        "HOLIDAYS",
+        "EARLY_CLOSES"
+      ],
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-12-31",
+      "source_effective_basis": "PUBLISHED_2026_CALENDAR_AND_TRADING_HOURS"
+    },
+    {
+      "source_id": "NASDAQ_TRADER_CALENDAR_2026",
+      "source_family": "NASDAQ",
+      "operating_mic": "XNAS",
+      "official_url": "https://www.nasdaqtrader.com/Trader.aspx?id=Calendar",
+      "title": "Nasdaq Trader U.S. Equity and Options Markets Holiday Schedule 2026",
+      "retrieved_date": "2026-08-25",
+      "retrieval_time_basis": "DATE_ONLY_ET_FROM_RECORDED_REVIEW_WINDOW",
+      "content_capture_status": "NOT_CAPTURED",
+      "content_sha256": null,
+      "source_scope": [
+        "HOLIDAYS",
+        "EARLY_CLOSES"
+      ],
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-12-31",
+      "source_effective_basis": "PUBLISHED_2026_HOLIDAY_SCHEDULE"
+    },
+    {
+      "source_id": "NASDAQ_MARKET_HOURS_2026",
+      "source_family": "NASDAQ",
+      "operating_mic": "XNAS",
+      "official_url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+      "title": "Nasdaq Stock Market Holiday Schedule and Market Hours",
+      "retrieved_date": "2026-08-25",
+      "retrieval_time_basis": "DATE_ONLY_ET_FROM_RECORDED_REVIEW_WINDOW",
+      "content_capture_status": "NOT_CAPTURED",
+      "content_sha256": null,
+      "source_scope": [
+        "REGULAR_HOURS",
+        "HOLIDAYS",
+        "EARLY_CLOSES"
+      ],
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-12-31",
+      "source_effective_basis": "PUBLISHED_2026_CALENDAR_AND_MARKET_HOURS"
+    },
+    {
+      "source_id": "CBOE_US_EQUITIES_HOURS_2026",
+      "source_family": "CBOE",
+      "operating_mic": "XCBO",
+      "official_url": "https://www.cboe.com/about/hours/",
+      "title": "Cboe U.S. Equities Hours & Holidays",
+      "retrieved_date": "2026-08-25",
+      "retrieval_time_basis": "DATE_ONLY_ET_FROM_RECORDED_REVIEW_WINDOW",
+      "content_capture_status": "NOT_CAPTURED",
+      "content_sha256": null,
+      "source_scope": [
+        "REGULAR_HOURS",
+        "HOLIDAYS",
+        "EARLY_CLOSES"
+      ],
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-12-31",
+      "source_effective_basis": "PUBLISHED_2026_EQUITIES_CALENDAR_AND_TRADING_HOURS"
+    }
+  ],
+  "calendars": [
+    {
+      "source_family": "NYSE_GROUP",
+      "operating_mic": "XNYS",
+      "source_ids": [
+        "NYSE_HOURS_CALENDAR_2026"
+      ],
+      "regular_open": "09:30:00",
+      "regular_close": "16:00:00",
+      "closures": [
+        {
+          "session_date": "2026-01-01",
+          "label": "New Year's Day"
+        },
+        {
+          "session_date": "2026-01-19",
+          "label": "Martin Luther King, Jr. Day"
+        },
+        {
+          "session_date": "2026-02-16",
+          "label": "Washington's Birthday"
+        },
+        {
+          "session_date": "2026-04-03",
+          "label": "Good Friday"
+        },
+        {
+          "session_date": "2026-05-25",
+          "label": "Memorial Day"
+        },
+        {
+          "session_date": "2026-06-19",
+          "label": "Juneteenth National Independence Day"
+        },
+        {
+          "session_date": "2026-07-03",
+          "label": "Independence Day observed"
+        }
+      ],
+      "early_closes": []
+    },
+    {
+      "source_family": "NASDAQ",
+      "operating_mic": "XNAS",
+      "source_ids": [
+        "NASDAQ_TRADER_CALENDAR_2026",
+        "NASDAQ_MARKET_HOURS_2026"
+      ],
+      "regular_open": "09:30:00",
+      "regular_close": "16:00:00",
+      "closures": [
+        {
+          "session_date": "2026-01-01",
+          "label": "New Years Day (Observed)"
+        },
+        {
+          "session_date": "2026-01-19",
+          "label": "Martin Luther King, Jr. Day"
+        },
+        {
+          "session_date": "2026-02-16",
+          "label": "President's Day - U.S."
+        },
+        {
+          "session_date": "2026-04-03",
+          "label": "Good Friday"
+        },
+        {
+          "session_date": "2026-05-25",
+          "label": "Memorial Day - U.S."
+        },
+        {
+          "session_date": "2026-06-19",
+          "label": "Juneteenth Holiday (Observed)"
+        },
+        {
+          "session_date": "2026-07-03",
+          "label": "Independence Day - U.S. (Observed)"
+        }
+      ],
+      "early_closes": []
+    },
+    {
+      "source_family": "CBOE",
+      "operating_mic": "XCBO",
+      "source_ids": [
+        "CBOE_US_EQUITIES_HOURS_2026"
+      ],
+      "regular_open": "09:30:00",
+      "regular_close": "16:00:00",
+      "closures": [
+        {
+          "session_date": "2026-01-01",
+          "label": "New Year's Day"
+        },
+        {
+          "session_date": "2026-01-19",
+          "label": "Martin Luther King, Jr. Day"
+        },
+        {
+          "session_date": "2026-02-16",
+          "label": "Presidents' Day"
+        },
+        {
+          "session_date": "2026-04-03",
+          "label": "Good Friday"
+        },
+        {
+          "session_date": "2026-05-25",
+          "label": "Memorial Day"
+        },
+        {
+          "session_date": "2026-06-19",
+          "label": "Juneteenth Holiday"
+        },
+        {
+          "session_date": "2026-07-03",
+          "label": "Independence Day Observed"
+        }
+      ],
+      "early_closes": []
+    }
+  ]
+}
