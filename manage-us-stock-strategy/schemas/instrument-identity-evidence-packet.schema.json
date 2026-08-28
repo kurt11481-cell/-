@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "instrument-identity-evidence-packet.schema.json",
+  "title": "US Equity Instrument Identity Reviewed Evidence Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packet_schema_version",
+    "source_packet_id",
+    "registry_version",
+    "ticker_namespace",
+    "scope",
+    "generated_at",
+    "authority_as_of",
+    "artifact_authority_as_of",
+    "authority_as_of_time_basis",
+    "research_verdict",
+    "claims",
+    "records"
+  ],
+  "properties": {
+    "packet_schema_version": {"const": "1.0"},
+    "source_packet_id": {"type": "string", "minLength": 1},
+    "registry_version": {"type": "string", "minLength": 1},
+    "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
+    "scope": {
+      "type": "array",
+      "const": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+      "items": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+      "uniqueItems": true
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority_as_of": {"type": "string", "format": "date"},
+    "artifact_authority_as_of": {"type": "string", "format": "date-time"},
+    "authority_as_of_time_basis": {"const": "DATE_START_KST_CONSERVATIVE"},
+    "research_verdict": {"const": "VERIFIED"},
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "source_id_semantics",
+          "ticker",
+          "source_family",
+          "publisher",
+          "source_reference",
+          "claim_scope",
+          "publication_or_effective_date",
+          "publication_or_effective_date_note",
+          "retrieved_date",
+          "retrieval_time_precision",
+          "content_sha256",
+          "content_hash_status",
+          "source_observation",
+          "evidence_note"
+        ],
+        "properties": {
+          "source_id": {"type": "string", "pattern": "[A-Z0-9_]+"},
+          "source_id_semantics": {"const": "INTERNAL_EVIDENCE_PACKET_REFERENCE"},
+          "ticker": {
+            "type": ["string", "null"],
+            "enum": [null, "BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]
+          },
+          "source_family": {"enum": ["NYSE", "NASDAQ", "CBOE", "SEC", "SPONSOR", "ISO_10383"]},
+          "publisher": {"type": "string", "minLength": 1},
+          "source_reference": {"type": "string", "pattern": "https://.+"},
+          "claim_scope": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "ADVISER_IDENTITY",
+                "COUNTRY",
+                "CURRENT_LISTING",
+                "CURRENT_MIC_CHANGE_CROSSCHECK",
+                "CURRENT_PRIMARY_LISTING_VENUE",
+                "CURRENT_SECURITY_NAME",
+                "EFFECTIVE_FROM",
+                "FILING_IDENTITY",
+                "FILING_PROVENANCE",
+                "FIRST_TRADING_DATE",
+                "FUND_IDENTITY",
+                "FUND_TICKER",
+                "INSTRUMENT_TYPE",
+                "ISSUER_IDENTITY",
+                "LEGAL_ISSUER",
+                "LEVERAGED_OBJECTIVE",
+                "LISTING_START",
+                "LISTING_TRANSFER",
+                "MIC_IDENTITY",
+                "MIC_STATUS",
+                "MIC_TYPE",
+                "NASDAQ_MARKET_TIER",
+                "OPERATING_MIC",
+                "OPERATING_MIC_RELATIONSHIP",
+                "OPRT_SGMT_RELATIONSHIP",
+                "PRIMARY_LISTING",
+                "PRIMARY_LISTING_VENUE",
+                "SECURITY_CLASS",
+                "SECURITY_CLASS_CHANGE",
+                "SECURITY_IDENTITY",
+                "SEGMENT_MIC",
+                "SPONSOR_ADVISER_IDENTITY",
+                "SPONSOR_CORROBORATION",
+                "SPONSOR_IDENTITY",
+                "STATUS",
+                "TICKER"
+              ]
+            }
+          },
+          "publication_or_effective_date": {"type": ["string", "null"], "format": "date"},
+          "publication_or_effective_date_note": {"type": ["string", "null"]},
+          "retrieved_date": {"type": "string", "format": "date"},
+          "retrieval_time_precision": {"const": "DATE_ONLY_KST"},
+          "content_sha256": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+          "content_hash_status": {"enum": ["NOT_CAPTURED", "VERIFIED"]},
+          "source_observation": {"type": ["string", "null"]},
+          "evidence_note": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ticker",
+          "research_verdict",
+          "normalized_record",
+          "claim_links",
+          "temporal_notes",
+          "unresolved_non_blocking_historical_gaps"
+        ],
+        "properties": {
+          "ticker": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+          "research_verdict": {"const": "VERIFIED"},
+          "normalized_record": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "record_status",
+              "ticker",
+              "security_name",
+              "instrument_type",
+              "security_class",
+              "primary_listing_venue_name",
+              "primary_listing_segment_mic",
+              "primary_listing_operating_mic",
+              "effective_from",
+              "effective_from_basis",
+              "effective_to"
+            ],
+            "properties": {
+              "record_status": {"const": "VERIFIED"},
+              "ticker": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+              "security_name": {"type": "string", "minLength": 1},
+              "instrument_type": {"enum": ["EQUITY", "ETF"]},
+              "security_class": {
+                "enum": [
+                  "COMMON_STOCK",
+                  "CLASS_A_COMMON_STOCK",
+                  "CLASS_A_ORDINARY_SHARES",
+                  "ACTIVELY_MANAGED_ETF",
+                  "LEVERAGED_ETF"
+                ]
+              },
+              "primary_listing_venue_name": {"type": "string", "minLength": 1},
+              "primary_listing_segment_mic": {"type": "string", "pattern": "[A-Z]{4}"},
+              "primary_listing_operating_mic": {"enum": ["XNYS", "XNAS", "XCBO"]},
+              "effective_from": {"type": ["string", "null"], "format": "date"},
+              "effective_from_basis": {"enum": ["VERIFIED_DATE", "CURRENT_AS_OF_ONLY"]},
+              "effective_to": {"type": ["string", "null"], "format": "date"}
+            }
+          },
+          "claim_links": {
+            "type": "array",
+            "minItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["claim_type", "source_ids"],
+              "properties": {
+                "claim_type": {
+                  "enum": [
+                    "SECURITY_IDENTITY",
+                    "INSTRUMENT_TYPE_OR_CLASS",
+                    "PRIMARY_LISTING_VENUE",
+                    "PRIMARY_LISTING_SEGMENT_MIC",
+                    "PRIMARY_LISTING_OPERATING_MIC",
+                    "EFFECTIVE_DATE_BASIS"
+                  ]
+                },
+                "source_ids": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {"type": "string", "pattern": "[A-Z0-9_]+"}
+                }
+              }
+            }
+          },
+          "temporal_notes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "unresolved_non_blocking_historical_gaps": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  }
+}

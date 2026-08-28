@@ -1,0 +1,150 @@
+﻿default_permissions = ":read-only"
+
+# ============================================================
+# 1. Calendar Official Source Review
+# Repository read-only + external network
+# ============================================================
+
+[permissions.calendar-source-review]
+description = "Calendar official-source review: repository read-only with network access."
+
+[permissions.calendar-source-review.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+
+[permissions.calendar-source-review.network]
+enabled = true
+
+# ============================================================
+# 2. Identity + Calendar Activation Builder
+# Repository read-only except workspace/policies
+# Network disabled
+# ============================================================
+
+[permissions.activation-builder]
+description = "Activation Builder"
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\workspace\policies' = true }
+
+[permissions.activation-builder.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\코덱스저장소\workspace\policies' = "write"
+
+[permissions.activation-builder.network]
+enabled = false
+
+# ============================================================
+# 3. Calendar Candidate Refresh Builder
+# Repository read-only except workspace/calendar-authority
+# Network disabled
+# ============================================================
+
+[permissions.calendar-refresh-builder]
+description = "Calendar candidate refresh Builder"
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\workspace\calendar-authority' = true }
+
+[permissions.calendar-refresh-builder.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\코덱스저장소\workspace\calendar-authority' = "write"
+
+[permissions.calendar-refresh-builder.network]
+enabled = false
+
+# ============================================================
+# 4. Independent Calendar SA-J2
+# Repository read-only
+# External Judge workspace write only
+# Network disabled
+# ============================================================
+
+[permissions.calendar-sa-j2]
+description = "Independent Calendar SA-J2 with repository read-only and external Judge workspace write access."
+workspace_roots = { 'C:\Users\금동한\.codex\judge-workspaces\calendar-sa-j2' = true }
+
+[permissions.calendar-sa-j2.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'C:\Users\금동한\.codex\judge-workspaces\calendar-sa-j2' = "write"
+
+[permissions.calendar-sa-j2.network]
+enabled = false
+
+# ============================================================
+# 5. Kiwoom Canonical Market-Data Read
+# Repository read-only
+# Official Kiwoom runtime read-only
+# External network enabled
+# No writable project root
+# ============================================================
+
+[permissions.kiwoom-marketdata-read]
+description = "Kiwoom canonical market-data read-only preflight with external network access."
+
+[permissions.kiwoom-marketdata-read.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\runtime\Kiwoom-REST-API' = "read"
+
+[permissions.kiwoom-marketdata-read.network]
+enabled = true
+
+# ============================================================
+# 6. Live Manual Read-Only Portfolio Analysis
+# Repository read-only except bounded output tree
+# Official Kiwoom runtime read-only
+# External network enabled
+#
+# Technical writable root:
+# workspace/outputs
+#
+# Project contract still forbids:
+# - order create / modify / cancel
+# - holdings mutation
+# - average-cost mutation
+# - broker-state mutation
+# - execution-authority expansion
+# ============================================================
+
+[permissions.live-manual-output]
+description = "Live Manual read-only Portfolio Analysis with bounded output-tree write and Kiwoom network access."
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\workspace\outputs' = true }
+
+[permissions.live-manual-output.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\runtime\Kiwoom-REST-API' = "read"
+'E:\사업\##금동한\코덱스저장소\workspace\outputs' = "write"
+
+[permissions.live-manual-output.network]
+enabled = true
+
+# ============================================================
+# 7. K2 Live Manual Bridge / Grade Contract Builder
+#
+# IMPORTANT:
+# This profile is retained for later diagnosis only.
+# Do NOT select it immediately after recovery.
+#
+# Project-authorized mutation surface:
+# - manage-us-stock-strategy/scripts
+# - manage-us-stock-strategy/schemas
+# - manage-us-stock-strategy/tests
+#
+# Network disabled.
+# ============================================================
+
+[permissions.k2-live-manual-builder]
+description = "K2 Builder for Live Manual bridge encoding, failure classification, evidence-grade contract, and targeted regression tests."
+
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\scripts' = true, 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\schemas' = true, 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\tests' = true }
+
+[permissions.k2-live-manual-builder.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\scripts' = "write"
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\schemas' = "write"
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\tests' = "write"
+
+[permissions.k2-live-manual-builder.network]
+enabled = false

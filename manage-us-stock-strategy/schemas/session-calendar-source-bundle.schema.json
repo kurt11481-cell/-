@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session-calendar-source-bundle.schema.json",
+  "title": "US Equities Core Session Calendar Source Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_bundle_schema_version",
+    "source_bundle_id",
+    "calendar_policy_identity",
+    "timezone_identity",
+    "authority_as_of",
+    "authority_as_of_time_basis",
+    "generated_at",
+    "coverage_start",
+    "coverage_end",
+    "operating_mic_scope",
+    "source_families",
+    "source_content_bytes_captured",
+    "source_content_hash_status",
+    "official_sources",
+    "calendar_claims",
+    "claim_source_edges",
+    "operating_mic_agreement_status",
+    "conflicts"
+  ],
+  "properties": {
+    "source_bundle_schema_version": {"const": "1.0"},
+    "source_bundle_id": {"type": "string", "minLength": 1},
+    "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+    "timezone_identity": {"const": "America/New_York"},
+    "authority_as_of": {"type": "string", "format": "date-time"},
+    "authority_as_of_time_basis": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "coverage_start": {"type": "string", "format": "date"},
+    "coverage_end": {"type": "string", "format": "date"},
+    "operating_mic_scope": {
+      "type": "array",
+      "const": ["XNYS", "XNAS", "XCBO"],
+      "items": {"enum": ["XNYS", "XNAS", "XCBO"]},
+      "uniqueItems": true
+    },
+    "source_families": {
+      "type": "array",
+      "const": ["NYSE_GROUP", "NASDAQ", "CBOE"],
+      "items": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+      "uniqueItems": true
+    },
+    "source_content_bytes_captured": {"enum": ["YES", "NO", "MIXED"]},
+    "source_content_hash_status": {"enum": ["VERIFIED", "NOT_CAPTURED", "MIXED"]},
+    "official_sources": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "source_family",
+          "operating_mic",
+          "official_url",
+          "title",
+          "retrieved_date",
+          "retrieval_time_basis",
+          "content_capture_status",
+          "content_sha256",
+          "source_scope",
+          "effective_from",
+          "effective_to",
+          "source_effective_basis"
+        ],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "source_family": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+          "operating_mic": {"enum": ["XNYS", "XNAS", "XCBO"]},
+          "official_url": {"type": "string", "pattern": "https://.+"},
+          "title": {"type": "string", "minLength": 1},
+          "retrieved_date": {"type": "string", "format": "date"},
+          "retrieval_time_basis": {"type": "string", "minLength": 1},
+          "content_capture_status": {"enum": ["CAPTURED", "NOT_CAPTURED"]},
+          "content_sha256": {"type": ["null", "string"], "pattern": "[0-9a-f]{64}"},
+          "source_scope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"enum": ["REGULAR_HOURS", "HOLIDAYS", "EARLY_CLOSES"]},
+            "uniqueItems": true
+          },
+          "effective_from": {"type": "string", "format": "date"},
+          "effective_to": {"type": "string", "format": "date"},
+          "source_effective_basis": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "calendar_claims": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "source_family",
+          "operating_mic",
+          "session_date",
+          "is_session",
+          "core_open_at",
+          "core_close_at",
+          "close_type",
+          "closure_label",
+          "source_ids"
+        ],
+        "properties": {
+          "claim_id": {"type": "string", "minLength": 1},
+          "source_family": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+          "operating_mic": {"enum": ["XNYS", "XNAS", "XCBO"]},
+          "session_date": {"type": "string", "format": "date"},
+          "is_session": {"type": "boolean"},
+          "core_open_at": {"type": ["null", "string"], "format": "date-time"},
+          "core_close_at": {"type": ["null", "string"], "format": "date-time"},
+          "close_type": {"enum": [null, "REGULAR", "EARLY"]},
+          "closure_label": {"type": ["null", "string"], "minLength": 1},
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "claim_source_edges": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_id", "source_id"],
+        "properties": {
+          "claim_id": {"type": "string", "minLength": 1},
+          "source_id": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "operating_mic_agreement_status": {"const": "VERIFIED"},
+    "conflicts": {"const": []}
+  }
+}
