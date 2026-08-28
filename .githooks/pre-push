@@ -1,0 +1,14 @@
+#!/bin/sh
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo ""
+    echo "BLOCKED: direct push to main is disabled for this repository."
+    echo "Use a working branch and merge through a Pull Request."
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
