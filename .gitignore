@@ -59,3 +59,75 @@ workspace/outputs/price-evidence-route-acceptance/
 workspace/outputs/portfolio-strategy/
 workspace/outputs/v2_5_activation/
 workspace/outputs/v2_5_shadow/
+
+# Generic credentials / secrets
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+credentials.json
+credentials*.json
+secrets.json
+secrets*.json
+token.json
+tokens.json
+
+**/credentials/
+**/secrets/
+
+# Local Git / repository diagnostics
+git_head.txt
+git_recent_log.txt
+git_remote_status.txt
+git_status.txt
+repo_files.txt
+
+# Raw runtime process captures
+**/*.stdout.raw
+**/*.stderr.raw
+
+# Broker/runtime snapshots
+**/*_kiwoom_snapshot.json
+
+# Generated diagnostics
+**/portfolio_diagnostic*.md
+
+# ============================================================
+# Local Git / repository diagnostics
+# ============================================================
+/git_head.txt
+/git_recent_log.txt
+/git_remote_status.txt
+/git_status.txt
+/repo_files.txt
+
+# ============================================================
+# Runtime stdout / stderr captures
+# Reproducible execution artifacts; never canonical source
+# ============================================================
+**/*.stdout.raw
+**/*.stderr.raw
+
+# ============================================================
+# Kiwoom runtime snapshots / local diagnostics
+# ============================================================
+**/*_kiwoom_snapshot.json
+**/kiwoom_preflight.json
+**/portfolio_diagnostic*.md
+
+# ============================================================
+# Reproducible normalized market-data rows
+# ============================================================
+workspace/**/*-normalized-row.json
+workspace/**/*_normalized-row.json
+
+# ============================================================
+# Reproducible analysis outputs
+# Only generated workspace/outputs artifacts
+# ============================================================
+workspace/outputs/**/*-analysis.json
+workspace/outputs/**/*_analysis.json
