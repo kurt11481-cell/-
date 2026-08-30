@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.1",
+  "task_name": "GuardedPortfolio-SEC-Shadow-v0.1",
+  "timezone_assumption": "WINDOWS_LOCAL_ASIA_SEOUL",
+  "lookback_days": 7,
+  "triggers": [
+    {
+      "id": "PRE_US_MARKET_RADAR",
+      "days_of_week": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "local_time": "22:00"
+    },
+    {
+      "id": "POST_EDGAR_DAILY_RADAR",
+      "days_of_week": ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      "local_time": "12:30"
+    }
+  ],
+  "settings": {
+    "logon_type": "INTERACTIVE",
+    "run_level": "LIMITED",
+    "start_when_available": true,
+    "wake_to_run": false,
+    "execution_time_limit_minutes": 10,
+    "multiple_instances": "IGNORE_NEW"
+  },
+  "user_agent": {
+    "source": "ENVIRONMENT_VARIABLE",
+    "variable_name": "SEC_USER_AGENT",
+    "plaintext_artifact_storage": false,
+    "plaintext_task_arguments": false
+  },
+  "authority": {
+    "task_scheduler_activated_by_default": false,
+    "order_authority": false,
+    "execution_quantity": null,
+    "automatic_order": false
+  }
+}
