@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.1",
+  "pipeline_ready": "뉴스와 이벤트 추출은 완료되었습니다. 일정 영역의 날짜 충돌은 별도로 격리되었습니다.",
+  "no_change": "포트폴리오 판단을 바꿀 직접 이벤트가 없습니다.",
+  "watch": "포트폴리오와 연결되는 이벤트가 있어 내용을 확인해야 합니다. 이것은 주문 신호가 아닙니다.",
+  "review": "직접 보유·기초자산 이벤트가 있어 자산 검토가 필요합니다. 주문은 생성되지 않았습니다.",
+  "no_direct_event": "직접 관련 이벤트 없음",
+  "indirect_event": "간접 관련",
+  "affected": "관련",
+  "reason": "이유",
+  "verification": "검증",
+  "not_verified": "SAVE 외 원문은 오프라인 모드에서 검증하지 않음",
+  "schedule_conflict": "PDF 화면 날짜와 텍스트 레이어 날짜가 충돌하여 일정 자동 사용을 금지함",
+  "portfolio_stale": "Portfolio Context는 최신 브로커 조회가 아닌 LAST_KNOWN 상태임",
+  "no_action": "지금 필요한 주문 행동 없음",
+  "read_event": "상위 이벤트 원문 맥락을 읽고 다음 세션 검토 후보로만 사용",
+  "asset_review": "직접 관련 이벤트를 자산 단위로 검토",
+  "schedule_auto_use_no": "일정 자동 사용: NO",
+  "event_count": "정규화 이벤트 수",
+  "source_notice": "SAVE는 외부 연구·이벤트 발견 출처이며 canonical broker authority가 아닙니다.",
+  "no_events": "관련 이벤트 없음"
+}

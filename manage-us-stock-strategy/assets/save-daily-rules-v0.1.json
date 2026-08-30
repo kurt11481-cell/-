@@ -1,0 +1,133 @@
+{
+  "schema_version": "0.1",
+  "news_section_label": "오늘의 소식",
+  "company_roundup_label": "개별 기업",
+  "schedule_section_labels": ["주요 일정", "주 차 주요 일정", "주 핵심 일정"],
+  "original_link_label": "원문",
+  "holdings": ["MRVL", "MVLL", "NBIS", "SOXL"],
+  "challengers": ["PGR", "JPM", "CME", "V"],
+  "root_theses": [
+    "AI_INFRASTRUCTURE",
+    "SEMICONDUCTOR",
+    "DATA_CENTER_POWER",
+    "BANK_CREDIT",
+    "INSURANCE_PRICING",
+    "MARKET_VOLATILITY",
+    "PAYMENT_NETWORKS"
+  ],
+  "ticker_aliases": {
+    "MRVL": ["MRVL", "$MRVL", "마벨"],
+    "MVLL": ["MVLL", "$MVLL"],
+    "NBIS": ["NBIS", "$NBIS", "네비우스"],
+    "SOXL": ["SOXL", "$SOXL"],
+    "PGR": ["PGR", "$PGR", "프로그레시브"],
+    "JPM": ["JPM", "$JPM", "JP모건", "제이피모건", "JPMorgan"],
+    "CME": ["CME", "$CME", "시카고상품거래소"],
+    "V": ["$V", "Visa", "비자"],
+    "NVDA": ["NVDA", "$NVDA", "엔비디아"],
+    "GOOGL": ["GOOGL", "$GOOGL", "구글", "알파벳"],
+    "META": ["META", "$META", "메타"],
+    "PYPL": ["PYPL", "$PYPL", "페이팔"],
+    "QCOM": ["QCOM", "$QCOM", "퀄컴"],
+    "SNDK": ["SNDK", "$SNDK", "샌디스크"],
+    "CRM": ["CRM", "$CRM", "세일즈포스"],
+    "NVO": ["NVO", "$NVO", "노보 노디스크"],
+    "TSLA": ["TSLA", "$TSLA", "테슬라"]
+  },
+  "source_aliases": {
+    "Reuters": ["로이터", "Reuters"],
+    "The Wall Street Journal": ["월스트리트저널", "Wall Street Journal", "WSJ"],
+    "Bloomberg": ["블룸버그", "Bloomberg"],
+    "Bank of America": ["뱅크오브아메리카", "Bank of America", "BofA"],
+    "PIMCO": ["핌코", "PIMCO"],
+    "CNN": ["CNN"],
+    "Earnings Whispers": ["Earnings Whispers"]
+  },
+  "root_thesis_evidence": {
+    "AI_INFRASTRUCTURE": {
+      "explicit_tickers": ["NBIS", "NVDA"],
+      "strong_phrases": ["AI 클라우드", "AI 인프라", "AI 자본지출", "GPU 파이낸싱", "GPU 공급", "AI 반도체"],
+      "keyword_groups": [["AI", "GPU"], ["인공지능", "GPU"], ["AI", "데이터센터"], ["인공지능", "데이터센터"], ["클라우드", "GPU"], ["AI", "CAPEX"], ["인공지능", "CAPEX"]],
+      "event_type_domains": {
+        "CONVERTIBLE": ["AI", "인공지능"],
+        "CUSTOMER_CONTRACT": ["AI 클라우드", "GPU"],
+        "CAPITAL_STRUCTURE": ["AI", "GPU"],
+        "GUIDANCE": ["AI", "GPU"]
+      }
+    },
+    "SEMICONDUCTOR": {
+      "explicit_tickers": ["MRVL", "MVLL", "SOXL", "NVDA", "QCOM", "SNDK"],
+      "strong_phrases": ["반도체", "NAND", "HBM", "파운드리", "키옥시아", "SK 하이닉스", "SK하이닉스", "창신메모리"],
+      "keyword_groups": [["메모리", "생산능력"], ["메모리", "증설"], ["칩", "공급"], ["칩", "생산"]],
+      "event_type_domains": {
+        "CAPACITY": ["메모리", "반도체", "칩"],
+        "SUPPLY_CHAIN": ["메모리", "반도체", "칩"],
+        "EARNINGS": ["메모리", "반도체", "칩"],
+        "GUIDANCE": ["메모리", "반도체", "칩"]
+      }
+    },
+    "DATA_CENTER_POWER": {
+      "explicit_tickers": [],
+      "strong_phrases": ["데이터센터 전력", "데이터 센터 전력", "전력망", "액체 냉각"],
+      "keyword_groups": [["데이터센터", "전력"], ["데이터 센터", "전력"], ["데이터센터", "냉각"], ["데이터 센터", "냉각"]],
+      "event_type_domains": {
+        "CAPACITY": ["데이터센터", "데이터 센터"],
+        "SUPPLY_CHAIN": ["데이터센터", "데이터 센터", "전력"]
+      }
+    },
+    "BANK_CREDIT": {
+      "explicit_tickers": ["JPM"],
+      "strong_phrases": ["채권시장", "수익률 곡선", "신용 스프레드", "국채금리", "회사채"],
+      "keyword_groups": [["은행", "신용"], ["채권", "발행"], ["차입", "금리"], ["국채", "금리"]],
+      "event_type_domains": {
+        "FED": ["국채", "금리", "인플레이션"],
+        "CONVERTIBLE": ["채권", "자금 조달"],
+        "MACRO": ["국채", "금리", "채권"]
+      }
+    },
+    "INSURANCE_PRICING": {
+      "explicit_tickers": ["PGR"],
+      "strong_phrases": ["보험료", "손해율", "보험 가격"],
+      "keyword_groups": [["보험", "가격"], ["보험", "요율"]],
+      "event_type_domains": {}
+    },
+    "MARKET_VOLATILITY": {
+      "explicit_tickers": ["CME"],
+      "strong_phrases": ["VIX", "옵션 만기", "시장 변동성", "위험 선호"],
+      "keyword_groups": [["시장", "급락"], ["증시", "급락"], ["자금", "순유출"]],
+      "event_type_domains": {
+        "FED": ["위험 선호", "국채", "금리"],
+        "MACRO": ["시장", "증시", "자금"]
+      }
+    },
+    "PAYMENT_NETWORKS": {
+      "explicit_tickers": ["V", "PYPL"],
+      "strong_phrases": ["결제 네트워크", "결제망", "페이팔", "스트라이프", "마스터카드", "Visa"],
+      "keyword_groups": [["결제", "네트워크"], ["결제", "플랫폼"]],
+      "event_type_domains": {}
+    }
+  },
+  "event_type_rules": [
+    {"event_type": "FED", "keywords": ["연준", "잭슨홀", "FOMC"]},
+    {"event_type": "GUIDANCE", "keywords": ["가이던스", "전망 상향", "전망 하향"]},
+    {"event_type": "EARNINGS", "keywords": ["실적 발표", "실적 호조", "실적 부진"]},
+    {"event_type": "CONVERTIBLE", "keywords": ["전환사채", "CB 발행", "CB "]},
+    {"event_type": "DILUTION", "keywords": ["희석", "유상증자", "주식 발행", "equity issuance"]},
+    {"event_type": "CUSTOMER_CONTRACT", "keywords": ["고객 계약", "수익 공유 계약", "공급 계약", "계약 중단", "계약 취소"]},
+    {"event_type": "CAPITAL_STRUCTURE", "keywords": ["IPO", "인수", "자금 조달", "차입매수"]},
+    {"event_type": "INSIDER", "keywords": ["내부자", "Form 4"]},
+    {"event_type": "REGULATORY", "keywords": ["규제", "FTC", "반독점", "수출 통제"]},
+    {"event_type": "LEGAL", "keywords": ["소송", "법원", "판사", "불법"]},
+    {"event_type": "SUPPLY_CHAIN", "keywords": ["공급망", "병목", "공급 부족"]},
+    {"event_type": "CAPACITY", "keywords": ["생산능력", "증설", "생산시설", "공장", "캐파"]},
+    {"event_type": "DATA_CENTER", "keywords": ["데이터센터", "데이터 센터"]},
+    {"event_type": "SEMICONDUCTOR", "keywords": ["반도체", "메모리", "NAND", "HBM", "칩"]},
+    {"event_type": "AI_INFRASTRUCTURE", "keywords": ["AI 인프라", "AI 자본지출", "GPU", "AI 클라우드"]},
+    {"event_type": "ECONOMIC_DATA", "keywords": ["경제지표", "PCE", "GDP", "소비자신뢰", "기대인플레이션"]},
+    {"event_type": "ANALYST_ACTION", "keywords": ["애널리스트", "투자의견", "목표주가"]},
+    {"event_type": "MACRO", "keywords": ["인플레이션", "국채", "금리", "호르무즈", "유가"]},
+    {"event_type": "RUMOR", "keywords": ["루머", "미확인"]}
+  ],
+  "nbis_relevance_keywords": ["AI 클라우드", "GPU", "데이터센터", "데이터 센터", "전력", "고객 계약", "CAPEX", "자본지출", "부채", "채권", "전환사채", "희석", "파이낸싱"],
+  "title_stopwords": ["오늘의", "소식", "원문", "미국", "시장", "기업", "주요", "전망", "관련", "통신", "따르면"]
+}

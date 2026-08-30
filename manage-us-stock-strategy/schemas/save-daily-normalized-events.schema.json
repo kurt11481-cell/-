@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SAVE Daily normalized events v0.1",
+  "type": "object",
+  "required": ["schema_version", "report_date", "generated_at", "events"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "report_date": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_id", "event_fingerprint", "report_date", "page_number", "page_numbers", "section", "title", "raw_title", "source_name", "source_names", "source_status", "source_count", "article_count", "published_at", "tickers", "root_theses", "event_type", "verification_status", "materiality", "time_sensitivity", "decision_impact", "claim_summary", "raw_text_excerpt", "original_link_status", "extraction_method", "extraction_confidence", "duplicate_status", "portfolio_relevance"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "event_fingerprint": {"type": "string", "minLength": 64},
+          "report_date": {"type": "string", "format": "date"},
+          "page_number": {"type": "integer", "minimum": 1},
+          "page_numbers": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+          "section": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "raw_title": {"type": "string", "minLength": 1},
+          "source_name": {"type": "string", "minLength": 1},
+          "source_names": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "source_status": {"enum": ["SAVE_ONLY", "SAVE_ATTRIBUTED", "MULTIPLE_SAVE_ATTRIBUTED_SOURCES"]},
+          "source_count": {"type": "integer", "minimum": 1},
+          "article_count": {"type": "integer", "minimum": 1},
+          "published_at": {"type": ["string", "null"]},
+          "tickers": {"type": "array", "items": {"type": "string"}},
+          "root_theses": {"type": "array", "items": {"enum": ["AI_INFRASTRUCTURE", "SEMICONDUCTOR", "DATA_CENTER_POWER", "BANK_CREDIT", "INSURANCE_PRICING", "MARKET_VOLATILITY", "PAYMENT_NETWORKS"]}},
+          "event_type": {"enum": ["EARNINGS", "GUIDANCE", "CUSTOMER_CONTRACT", "CAPITAL_STRUCTURE", "DILUTION", "CONVERTIBLE", "INSIDER", "REGULATORY", "LEGAL", "SUPPLY_CHAIN", "CAPACITY", "AI_INFRASTRUCTURE", "SEMICONDUCTOR", "DATA_CENTER", "MACRO", "FED", "ECONOMIC_DATA", "ANALYST_ACTION", "RUMOR", "OTHER"]},
+          "verification_status": {"enum": ["SAVE_REPORTED", "ORIGINAL_LINK_AVAILABLE", "OFFICIAL_SOURCE_VERIFIED", "CONFLICTING", "NOT_VERIFIED"]},
+          "materiality": {"enum": ["HIGH", "MEDIUM", "LOW"]},
+          "materiality_reason": {"type": "string", "minLength": 1},
+          "time_sensitivity": {"enum": ["IMMEDIATE", "NEXT_48_HOURS", "ONGOING", "NOT_VERIFIED"]},
+          "decision_impact": {"enum": ["NO_CHANGE", "WATCH", "REPRICE_REQUIRED", "ASSET_REVIEW_REQUIRED", "PORTFOLIO_RECOMPILE_REQUIRED"]},
+          "decision_impact_reason": {"type": "string", "minLength": 1},
+          "claim_summary": {"type": "string", "minLength": 1},
+          "raw_text_excerpt": {"type": "string", "minLength": 1},
+          "original_link_status": {"enum": ["AVAILABLE_LABEL_ONLY", "NOT_PRESENT"]},
+          "extraction_method": {"const": "PDF_TEXT_LAYER"},
+          "extraction_confidence": {"enum": ["HIGH", "MEDIUM", "LOW"]},
+          "duplicate_status": {"enum": ["UNIQUE", "CLUSTERED"]},
+          "portfolio_relevance": {"type": "array", "items": {"enum": ["MRVL", "MVLL", "NBIS", "SOXL", "PGR", "JPM", "CME", "V"]}}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
