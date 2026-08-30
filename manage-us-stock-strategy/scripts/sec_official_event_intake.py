@@ -533,6 +533,119 @@ def user_action(events: list[dict[str, Any]]) -> str:
     return "NONE"
 
 
+def _filing_ordinal(event: dict[str, Any]) -> int:
+    try:
+        return date.fromisoformat(str(event.get("filing_date", ""))).toordinal()
+    except ValueError:
+        return 0
+
+
+def _event_timestamp(event: dict[str, Any]) -> float:
+    accepted_at = event.get("accepted_at")
+    if accepted_at:
+        parsed = _parse_datetime(str(accepted_at))
+        if parsed is not None:
+            return parsed.astimezone(timezone.utc).timestamp()
+    try:
+        filing = date.fromisoformat(str(event.get("filing_date", "")))
+    except ValueError:
+        return 0.0
+    return datetime(filing.year, filing.month, filing.day, tzinfo=timezone.utc).timestamp()
+
+
+def dashboard_event_sort_key(event: dict[str, Any]) -> tuple[Any, ...]:
+    """Impact, materiality, and recency ordering for presentation only."""
+    return (
+        -IMPACT_RANK[event["decision_impact"]],
+        -MATERIALITY_RANK[event["materiality"]],
+        -_event_timestamp(event),
+        -_filing_ordinal(event),
+        str(event.get("accession_number", "")),
+    )
+
+
+def sort_dashboard_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(events, key=dashboard_event_sort_key)
+
+
+def is_routine_prospectus_watch(event: dict[str, Any]) -> bool:
+    return (
+        event.get("portfolio_relevance") == "CHALLENGER"
+        and event.get("event_type") == "OFFERING_PROSPECTUS"
+        and event.get("decision_impact") == "WATCH"
+    )
+
+
+def aggregate_routine_prospectus(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for event in events:
+        if is_routine_prospectus_watch(event):
+            groups.setdefault((event["ticker"], event["form"]), []).append(event)
+    aggregates: list[dict[str, Any]] = []
+    for (ticker, form), members in sorted(groups.items()):
+        ordered = sort_dashboard_events(members)
+        dates = sorted(str(event["filing_date"]) for event in members)
+        latest = ordered[0]
+        aggregates.append({
+            "ticker": ticker,
+            "form": form,
+            "count": len(members),
+            "earliest_filing_date": dates[0],
+            "latest_filing_date": dates[-1],
+            "latest_accession": latest["accession_number"],
+            "decision_impact": "WATCH",
+            "source_authority": "OFFICIAL_SEC",
+            "label": "Routine Prospectus / Structured-Note Metadata",
+        })
+    return aggregates
+
+
+def materiality_rule_reason(event: dict[str, Any]) -> str:
+    relation = "Direct holding underlying" if event.get("underlying_company_relevance") else (
+        "Direct holding" if event.get("portfolio_relevance") == "HOLDING" else "Direct challenger"
+    )
+    event_type = str(event["event_type"])
+    impact = str(event["decision_impact"])
+    if event_type == "CURRENT_REPORT":
+        items = ", ".join(event.get("items_if_available", [])) or "not available"
+        return (
+            f"{relation} + CURRENT_REPORT + SEC item metadata ({items}) -> {impact}. "
+            "Filing content not interpreted in v0.1; read filing required."
+        )
+    if event_type == "FOREIGN_CURRENT_REPORT":
+        return (
+            f"{relation} + FOREIGN_CURRENT_REPORT -> Conservative review candidate ({impact}). "
+            "Filing content materiality not interpreted in v0.1; read filing required."
+        )
+    return (
+        f"{relation} + {event_type} -> {impact}. "
+        "Filing content not interpreted in v0.1; read filing required."
+    )
+
+
+def build_dashboard_view(events: list[dict[str, Any]]) -> dict[str, Any]:
+    high_events = sort_dashboard_events([
+        event for event in events if event["materiality"] == "HIGH" and not is_routine_prospectus_watch(event)
+    ])
+    routine_aggregates = aggregate_routine_prospectus(events)
+    other_material_offerings = [
+        event for event in events
+        if event["event_type"] in {"SHELF_REGISTRATION", "OFFERING_PROSPECTUS"}
+        and not is_routine_prospectus_watch(event)
+    ]
+    return {
+        "result": overall_result(events),
+        "action": user_action(events),
+        "high_events": high_events,
+        "high_event_count": len(high_events),
+        "routine_aggregates": routine_aggregates,
+        "routine_event_count": sum(item["count"] for item in routine_aggregates),
+        "individual_routine_top_events": 0,
+        "confirmed_convertible_dilution": "NOT_VERIFIED",
+        "other_material_offering_count": len(other_material_offerings),
+    }
+
+
 def _event_label(event: dict[str, Any]) -> str:
     return f"{event['ticker']} {event['form']} ({event['filing_date']}) - {event['decision_impact']}"
 
@@ -555,13 +668,9 @@ def render_dashboard_markdown(
     ownership_coverage: str,
     company_status: dict[str, str],
 ) -> str:
-    result = overall_result(events)
-    action = user_action(events)
-    top = sorted(
-        events,
-        key=lambda item: (-IMPACT_RANK[item["decision_impact"]], -MATERIALITY_RANK[item["materiality"]], item["filing_date"]),
-    )[:3]
-    capital = [event for event in events if event["event_type"] in {"SHELF_REGISTRATION", "OFFERING_PROSPECTUS"}]
+    view = build_dashboard_view(events)
+    result = view["result"]
+    action = view["action"]
     periodic = [event for event in events if event["event_type"] == "PERIODIC_FINANCIAL"]
     unknowns = [f"{ticker}: {status}" for ticker, status in company_status.items() if status != "PASS"]
     if ownership_coverage != "VERIFIED":
@@ -573,19 +682,45 @@ def render_dashboard_markdown(
         f"Portfolio Context: {context['status']} / {context.get('as_of') or 'NOT_VERIFIED'}",
         f"Lookback: {lookback_days} calendar days", "",
         "## TODAY'S RESULT", "", f"**{result}**", "",
-        "\uacf5\uc2dd filing metadata \ud655\uc778 \uacb0\uacfc\uc774\uba70, \ub9e4\uc218\u00b7\ub9e4\ub3c4 \uc2e0\ud638\uac00 \uc544\ub2d9\ub2c8\ub2e4.", "",
-        "## NEW OFFICIAL FILINGS", "",
+        f"Triggered by: {view['high_event_count']} HIGH review candidates.",
+        "Meaning: Review required. Not a BUY / SELL signal.", "",
+        "## NEW OFFICIAL FILINGS / HIGH REVIEW CANDIDATES", "",
+        f"HIGH Event Count: {view['high_event_count']}", "",
     ]
-    if top:
-        for index, event in enumerate(top, 1):
+    if view["high_events"]:
+        for index, event in enumerate(view["high_events"], 1):
             lines.extend([
                 f"{index}. **{_event_label(event)}**",
+                f"   - Ticker: {event['ticker']}",
+                f"   - Form: {event['form']}",
+                f"   - Filing Date: {event['filing_date']}",
+                f"   - Accepted At: {event.get('accepted_at') or 'NOT_AVAILABLE'}",
                 f"   - Accession: {event['accession_number']}",
+                f"   - Event Type: {event['event_type']}",
+                f"   - Portfolio Relevance: {event['portfolio_relevance']}",
+                f"   - Decision Impact: {event['decision_impact']}",
                 f"   - Materiality: {event['materiality']} (DERIVED_RULE_BASED)",
+                f"   - Why It Matters / Rule Reason: {materiality_rule_reason(event)}",
                 f"   - Verification: {event['verification_status']}",
             ])
     else:
-        lines.extend(["1. \uc0c8 \uad00\uc2ec filing \uc5c6\uc74c", "2. -", "3. -"])
+        lines.append("1. No HIGH review candidates")
+    lines.extend(["", "## ROUTINE FILING WATCH", ""])
+    if view["routine_aggregates"]:
+        for index, aggregate in enumerate(view["routine_aggregates"], 1):
+            lines.extend([
+                f"{index}. **{aggregate['ticker']} - {aggregate['label']}**",
+                f"   - Form: {aggregate['form']}",
+                f"   - Count: {aggregate['count']}",
+                f"   - Period: {aggregate['earliest_filing_date']} ~ {aggregate['latest_filing_date']}",
+                f"   - Latest Filing: {aggregate['latest_filing_date']}",
+                f"   - Latest Accession: {aggregate['latest_accession']}",
+                f"   - Decision Impact: {aggregate['decision_impact']}",
+                f"   - Source Authority: {aggregate['source_authority']}",
+                "   - Meaning: Aggregated metadata watch; not individual portfolio alerts.",
+            ])
+    else:
+        lines.append("1. No routine prospectus aggregates")
     lines.extend([
         "", "## HOLDINGS / UNDERLYING", "",
         f"MRVL -> MVLL: {_ticker_summary(events, 'MRVL')} / DERIVED_MAPPING_NOT_ENTITY_EQUIVALENCE",
@@ -596,10 +731,12 @@ def render_dashboard_markdown(
         f"JPM: {_ticker_summary(events, 'JPM')}",
         f"CME: {_ticker_summary(events, 'CME')}",
         f"V: {_ticker_summary(events, 'V')}", "",
-        "## CAPITAL STRUCTURE ALERTS", "",
-        f"Shelf: {sum(event['event_type'] == 'SHELF_REGISTRATION' for event in capital)}",
-        f"Offering: {sum(event['event_type'] == 'OFFERING_PROSPECTUS' for event in capital)}",
-        f"Convertible / dilution candidate: {len(capital)} (metadata-only candidate; filing \ubcf8\ubb38 \ubbf8\ud574\uc11d)", "",
+        "## CAPITAL STRUCTURE / OFFERING WATCH", "",
+        f"Confirmed / explicit convertible-dilution candidates: {view['confirmed_convertible_dilution']}",
+        f"Routine prospectus / structured-note metadata events: {view['routine_event_count']}",
+        f"Routine aggregate rows: {len(view['routine_aggregates'])}",
+        f"Other material offering filings: {view['other_material_offering_count']}",
+        "Offering prospectus metadata does not confirm convertible terms or economic dilution.", "",
         "## PERIODIC FINANCIAL FILINGS", "",
         f"10-Q / 10-K / 20-F: {len(periodic)}", "",
         "## OWNERSHIP", "", f"Status: {ownership_coverage}", "",
@@ -624,15 +761,29 @@ def render_dashboard_markdown(
 
 def render_dashboard_html(markdown_model: dict[str, Any]) -> str:
     events = markdown_model["events"]
-    result = overall_result(events)
-    top = sorted(events, key=lambda item: (-IMPACT_RANK[item["decision_impact"]], -MATERIALITY_RANK[item["materiality"]], item["filing_date"]))[:3]
+    view = build_dashboard_view(events)
+    result = view["result"]
     cards = "".join(
         "<article><div class='tag'>" + html.escape(f"{event['materiality']} - {event['form']}")
         + "</div><h3>" + html.escape(event["ticker"] + " - " + event["event_type"])
         + "</h3><p>" + html.escape(event["filing_date"] + " - " + event["decision_impact"])
+        + "</p><dl><dt>Accession</dt><dd>" + html.escape(event["accession_number"])
+        + "</dd><dt>Portfolio Relevance</dt><dd>" + html.escape(event["portfolio_relevance"])
+        + "</dd><dt>Accepted At</dt><dd>" + html.escape(str(event.get("accepted_at") or "NOT_AVAILABLE"))
+        + "</dd></dl><p><strong>Why It Matters / Rule Reason</strong><br>"
+        + html.escape(materiality_rule_reason(event))
         + "</p><small>OFFICIAL_SOURCE_VERIFIED - interpretation DERIVED_RULE_BASED</small></article>"
-        for event in top
-    ) or "<article><h3>\uc0c8 \uad00\uc2ec filing \uc5c6\uc74c</h3><p>NO_CHANGE</p></article>"
+        for event in view["high_events"]
+    ) or "<article><h3>No HIGH review candidates</h3><p>NO_CHANGE</p></article>"
+    aggregate_rows = "".join(
+        "<div class='aggregate-row'><strong>" + html.escape(f"{item['ticker']} {item['form']}")
+        + "</strong><span>" + html.escape(item["label"])
+        + "</span><span>Count: " + str(item["count"])
+        + "</span><span>Period: " + html.escape(item["earliest_filing_date"] + " ~ " + item["latest_filing_date"])
+        + "</span><span>Latest Accession: " + html.escape(item["latest_accession"])
+        + "</span><span>WATCH - OFFICIAL_SEC</span></div>"
+        for item in view["routine_aggregates"]
+    ) or "<p>No routine prospectus aggregates</p>"
     summaries = "".join(
         "<div class='row'><strong>" + html.escape(ticker) + "</strong><span>" + html.escape(_ticker_summary(events, ticker)) + "</span></div>"
         for ticker in ("MRVL", "NBIS", "PGR", "JPM", "CME", "V")
@@ -645,11 +796,13 @@ def render_dashboard_html(markdown_model: dict[str, Any]) -> str:
 <title>SEC Official Event Radar</title><style>
 :root{--navy:#10233f;--blue:#246bfd;--ink:#172231;--muted:#66758a;--line:#dfe6ee;--bg:#f4f7fb;--white:#fff;--amber:#e99b18}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Noto Sans KR","Segoe UI",sans-serif;line-height:1.55}.shell{max-width:1120px;margin:auto;padding:32px 20px 64px}
-.hero{background:linear-gradient(135deg,#0c1d35,#173f70);color:white;border-radius:24px;padding:30px;box-shadow:0 18px 45px #10233f22}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:800;color:#9ec3ff}.hero h1{font-size:clamp(30px,5vw,50px);line-height:1;margin:10px 0 24px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.meta div{background:#ffffff10;border:1px solid #ffffff24;border-radius:12px;padding:12px}.meta small{display:block;color:#b9cbe1}.result{background:white;border-left:7px solid var(--amber);border-radius:18px;padding:22px;margin-top:18px}.result h2{font-size:36px;margin:3px 0;color:#a56100}.section{margin:28px 0 12px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}article,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}.tag{font-size:12px;color:var(--blue);font-weight:800}.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:grid;grid-template-columns:100px 1fr;padding:10px 0;border-bottom:1px solid var(--line)}.row span,small{color:var(--muted)}.safety{background:var(--navy);color:white}.safety-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.safety-grid div{background:#ffffff10;border-radius:10px;padding:10px}.action{background:#edf3ff;border-color:#b9ccff}.unknown{background:#fff8e9;border-color:#f0d7a6}@media(max-width:760px){.meta,.cards,.columns,.safety-grid{grid-template-columns:1fr}}
+.hero{background:linear-gradient(135deg,#0c1d35,#173f70);color:white;border-radius:24px;padding:30px;box-shadow:0 18px 45px #10233f22}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:800;color:#9ec3ff}.hero h1{font-size:clamp(30px,5vw,50px);line-height:1;margin:10px 0 24px}.meta{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.meta div{background:#ffffff10;border:1px solid #ffffff24;border-radius:12px;padding:12px}.meta small{display:block;color:#b9cbe1}.result{background:white;border-left:7px solid var(--amber);border-radius:18px;padding:22px;margin-top:18px}.result h2{font-size:36px;margin:3px 0;color:#a56100}.section{margin:28px 0 12px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}article,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}.tag{font-size:12px;color:var(--blue);font-weight:800}.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:grid;grid-template-columns:100px 1fr;padding:10px 0;border-bottom:1px solid var(--line)}.row span,small{color:var(--muted)}.aggregate-row{display:grid;grid-template-columns:110px 1.5fr 90px 1.5fr 2fr 120px;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.safety{background:var(--navy);color:white}.safety-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.safety-grid div{background:#ffffff10;border-radius:10px;padding:10px}.action{background:#edf3ff;border-color:#b9ccff}.unknown{background:#fff8e9;border-color:#f0d7a6}@media(max-width:760px){.meta,.cards,.columns,.safety-grid{grid-template-columns:1fr}.aggregate-row{grid-template-columns:1fr}}
 </style></head><body><main class="shell"><section class="hero"><div class="eyebrow">OFFICIAL SEC - ONE-SHOT LIVE SHADOW</div><h1>SEC OFFICIAL EVENT RADAR</h1><div class="meta">
-<div><small>Run Time</small><strong>""" + html.escape(markdown_model["run_time"]) + """</strong></div><div><small>Source</small><strong>""" + html.escape(markdown_model["source_status"]) + """</strong></div><div><small>Portfolio</small><strong>""" + html.escape(markdown_model["context"]["status"]) + """</strong></div><div><small>Lookback</small><strong>""" + str(markdown_model["lookback_days"]) + """ days</strong></div></div></section>
-<section class="result"><small>TODAY'S RESULT</small><h2>""" + html.escape(result) + """</h2><p>\uacf5\uc2dd metadata \ud655\uc778 \uacb0\uacfc\uc774\uba70 \uc790\ub3d9 \ub9e4\ub9e4 \uc2e0\ud638\uac00 \uc544\ub2d9\ub2c8\ub2e4.</p></section>
-<h2 class="section">NEW OFFICIAL FILINGS</h2><section class="cards">""" + cards + """</section>
+<div><small>Run Time</small><strong>""" + html.escape(markdown_model["run_time"]) + """</strong></div><div><small>Source</small><strong>""" + html.escape(markdown_model["source_status"]) + """</strong></div><div><small>Portfolio Context</small><strong>""" + html.escape(markdown_model["context"]["status"] + " / " + str(markdown_model["context"].get("as_of") or "NOT_VERIFIED")) + """</strong></div><div><small>Lookback</small><strong>""" + str(markdown_model["lookback_days"]) + """ days</strong></div><div><small>HIGH Events</small><strong>""" + str(view["high_event_count"]) + """</strong></div></div></section>
+<section class="result"><small>TODAY'S RESULT</small><h2>""" + html.escape(result) + """</h2><p>Triggered by """ + str(view["high_event_count"]) + """ HIGH review candidates. Review required. Not a BUY / SELL signal.</p></section>
+<h2 class="section">NEW OFFICIAL FILINGS / HIGH REVIEW CANDIDATES</h2><section class="cards">""" + cards + """</section>
+<h2 class="section">ROUTINE FILING WATCH</h2><section class="panel">""" + aggregate_rows + """<p>Aggregated metadata watch; not individual portfolio alerts.</p></section>
+<h2 class="section">CAPITAL STRUCTURE / OFFERING WATCH</h2><section class="panel"><p><strong>Confirmed / explicit convertible-dilution candidates:</strong> """ + html.escape(view["confirmed_convertible_dilution"]) + """</p><p><strong>Routine prospectus / structured-note metadata events:</strong> """ + str(view["routine_event_count"]) + """</p><p><strong>Routine aggregate rows:</strong> """ + str(len(view["routine_aggregates"])) + """</p><p><strong>Other material offering filings:</strong> """ + str(view["other_material_offering_count"]) + """</p><p>Offering prospectus metadata does not confirm convertible terms or economic dilution.</p></section>
 <h2 class="section">HOLDINGS / UNDERLYING &amp; CHALLENGERS</h2><section class="columns"><div class="panel">""" + summaries + """<div class="row"><strong>SOXL</strong><span>DEFERRED_TO_SECTOR_OR_FUND_SOURCE</span></div></div><div class="panel"><h3>MRVL -&gt; MVLL</h3><p>Underlying relevance is derived. MVLL is not represented as the MRVL SEC entity or CIK.</p><h3>OWNERSHIP</h3><p>""" + html.escape(markdown_model["ownership_coverage"]) + """</p></div></section>
 <h2 class="section">MATERIAL UNKNOWNS</h2><section class="panel unknown"><ol>""" + unknown_html + """</ol></section>
 <h2 class="section">USER ACTION</h2><section class="panel action"><h3>""" + html.escape(user_action(events)) + """</h3><p>Actual portfolio action remains separate Portfolio Compiler work.</p></section>
