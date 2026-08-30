@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1",
+  "corporate_watchlist": ["MRVL", "NBIS", "PGR", "JPM", "CME", "V"],
+  "holdings": ["MRVL", "NBIS"],
+  "challengers": ["PGR", "JPM", "CME", "V"],
+  "forms_of_interest": [
+    "8-K", "10-Q", "10-K", "6-K", "20-F", "S-3", "S-3ASR",
+    "424B2", "424B3", "424B5", "DEF 14A", "4", "144",
+    "SC 13D", "SC 13G", "SC 13D/A", "SC 13G/A"
+  ],
+  "form_event_types": {
+    "10-Q": "PERIODIC_FINANCIAL",
+    "10-K": "PERIODIC_FINANCIAL",
+    "20-F": "PERIODIC_FINANCIAL",
+    "8-K": "CURRENT_REPORT",
+    "6-K": "FOREIGN_CURRENT_REPORT",
+    "S-3": "SHELF_REGISTRATION",
+    "S-3ASR": "SHELF_REGISTRATION",
+    "424B2": "OFFERING_PROSPECTUS",
+    "424B3": "OFFERING_PROSPECTUS",
+    "424B5": "OFFERING_PROSPECTUS",
+    "DEF 14A": "GOVERNANCE_PROXY",
+    "4": "INSIDER_OWNERSHIP",
+    "144": "PROPOSED_SECURITY_SALE",
+    "SC 13D": "BENEFICIAL_OWNERSHIP",
+    "SC 13G": "BENEFICIAL_OWNERSHIP",
+    "SC 13D/A": "BENEFICIAL_OWNERSHIP",
+    "SC 13G/A": "BENEFICIAL_OWNERSHIP"
+  },
+  "high_candidate_event_types": [
+    "PERIODIC_FINANCIAL", "SHELF_REGISTRATION", "OFFERING_PROSPECTUS",
+    "FOREIGN_CURRENT_REPORT", "BENEFICIAL_OWNERSHIP"
+  ],
+  "material_8k_items": [
+    "1.01", "1.02", "2.01", "2.02", "2.03", "2.04", "2.05", "2.06",
+    "3.01", "3.02", "4.01", "4.02", "5.01", "5.02", "7.01", "8.01"
+  ],
+  "administrative_8k_items": ["5.07", "9.01"],
+  "root_theses": {
+    "MRVL": ["AI_INFRASTRUCTURE", "SEMICONDUCTOR"],
+    "NBIS": ["AI_INFRASTRUCTURE", "DATA_CENTER_POWER"],
+    "PGR": ["INSURANCE_PRICING"],
+    "JPM": ["BANK_CREDIT"],
+    "CME": ["MARKET_VOLATILITY"],
+    "V": ["PAYMENT_NETWORKS"]
+  },
+  "derived_relations": {
+    "MRVL": {
+      "leveraged_vehicle": "MVLL",
+      "relation_status": "DERIVED_MAPPING_NOT_ENTITY_EQUIVALENCE"
+    }
+  },
+  "deferred_symbols": {
+    "SOXL": "DEFERRED_TO_SECTOR_OR_FUND_SOURCE"
+  }
+}

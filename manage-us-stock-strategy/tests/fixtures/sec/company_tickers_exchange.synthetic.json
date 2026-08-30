@@ -1,0 +1,11 @@
+{
+  "fields": ["cik", "name", "ticker", "exchange"],
+  "data": [
+    [1835632, "Marvell Technology, Inc.", "MRVL", "Nasdaq"],
+    [1513845, "Nebius Group N.V.", "NBIS", "Nasdaq"],
+    [80661, "The Progressive Corporation", "PGR", "NYSE"],
+    [19617, "JPMorgan Chase & Co.", "JPM", "NYSE"],
+    [1156375, "CME Group Inc.", "CME", "Nasdaq"],
+    [1403161, "Visa Inc.", "V", "NYSE"]
+  ]
+}

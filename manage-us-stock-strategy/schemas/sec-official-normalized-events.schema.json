@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SEC Official Event Intake normalized events v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pipeline_version", "decision_as_of", "lookback_days", "ownership_coverage", "portfolio_context", "deferred_symbols", "events"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "pipeline_version": {"const": "0.1"},
+    "decision_as_of": {"type": "string", "format": "date-time"},
+    "lookback_days": {"type": "integer", "minimum": 1},
+    "ownership_coverage": {"enum": ["PARTIAL", "NOT_VERIFIED"]},
+    "portfolio_context": {
+      "type": "object",
+      "required": ["status", "as_of", "source_path", "source_sha256"],
+      "properties": {
+        "status": {"enum": ["LAST_KNOWN", "NOT_VERIFIED"]},
+        "as_of": {"type": ["string", "null"]},
+        "source_path": {"type": ["string", "null"]},
+        "source_sha256": {"type": ["string", "null"]}
+      }
+    },
+    "deferred_symbols": {"type": "object", "additionalProperties": {"type": "string"}},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "source_authority", "source_name", "source_url", "ticker", "cik", "company_name", "accession_number", "form", "filing_date", "accepted_at", "report_date", "primary_document", "items_if_available", "event_type", "materiality", "portfolio_relevance", "root_theses", "verification_status", "interpretation_status", "decision_impact", "retrieved_at", "raw_source_sha256", "underlying_company_relevance", "leveraged_vehicle", "derived_relation_status"],
+        "properties": {
+          "event_id": {"type": "string", "pattern": "sec-[0-9a-f]{24}"},
+          "source_authority": {"const": "OFFICIAL_SEC"},
+          "source_name": {"const": "SEC_EDGAR_COMPANY_SUBMISSIONS"},
+          "source_url": {"type": "string", "format": "uri"},
+          "ticker": {"type": "string"},
+          "cik": {"type": "string", "pattern": "[0-9]{10}"},
+          "company_name": {"type": "string", "minLength": 1},
+          "accession_number": {"type": "string", "minLength": 1},
+          "form": {"type": "string"},
+          "filing_date": {"type": "string", "format": "date"},
+          "accepted_at": {"type": ["string", "null"]},
+          "report_date": {"type": ["string", "null"]},
+          "primary_document": {"type": ["string", "null"]},
+          "items_if_available": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "event_type": {"enum": ["PERIODIC_FINANCIAL", "CURRENT_REPORT", "FOREIGN_CURRENT_REPORT", "SHELF_REGISTRATION", "OFFERING_PROSPECTUS", "GOVERNANCE_PROXY", "INSIDER_OWNERSHIP", "PROPOSED_SECURITY_SALE", "BENEFICIAL_OWNERSHIP"]},
+          "materiality": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+          "portfolio_relevance": {"enum": ["HOLDING", "CHALLENGER"]},
+          "root_theses": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "verification_status": {"const": "OFFICIAL_SOURCE_VERIFIED"},
+          "interpretation_status": {"const": "DERIVED_RULE_BASED"},
+          "decision_impact": {"enum": ["NO_CHANGE", "WATCH", "ASSET_REVIEW_REQUIRED", "PORTFOLIO_RECOMPILE_REQUIRED"]},
+          "retrieved_at": {"type": "string", "format": "date-time"},
+          "raw_source_sha256": {"type": "string", "pattern": "[0-9a-f]{64}"},
+          "underlying_company_relevance": {"type": "boolean"},
+          "leveraged_vehicle": {"type": ["string", "null"]},
+          "derived_relation_status": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
