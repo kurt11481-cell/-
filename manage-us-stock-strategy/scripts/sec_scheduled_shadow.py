@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -18,7 +19,9 @@ from typing import Any
 
 from sec_official_event_intake import (
     DEFAULT_OUTPUT_ROOT,
+    DEFAULT_RULES_PATH,
     IntakeError,
+    PIPELINE_VERSION,
     create_only_json,
     create_only_write,
 )
@@ -27,13 +30,21 @@ from validation_common import file_hash, load_json, validate_instance
 
 ROOT = Path(__file__).resolve().parents[2]
 SUMMARY_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/sec-scheduled-shadow-summary.schema.json"
+ATTEMPT_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/sec-scheduled-attempt.schema.json"
 SCHEDULE_CONTRACT = ROOT / "manage-us-stock-strategy/assets/sec-scheduled-shadow-contract-v0.1.json"
+DEFAULT_ATTEMPT_OUTPUT_ROOT = ROOT / "workspace/outputs/official-event-intake/sec-scheduled-attempts"
 SCHEDULED_DASHBOARD_JSON = "scheduled-dashboard.json"
 SCHEDULED_DASHBOARD_MARKDOWN = "scheduled-dashboard.md"
+SCHEDULED_ATTEMPT_JSON = "scheduled-attempt.json"
+TASK_NAME = "GuardedPortfolio-SEC-Shadow-v0.1"
 COMPATIBLE_NETWORK_ACCESS = "SEC_OFFICIAL_ONLY"
 COMPATIBLE_EVENT_AUTHORITY = "OFFICIAL_SEC"
 ALLOWED_FAILURE_CODES = frozenset({
+    "WINDOWS_TIMEZONE_MISMATCH",
+    "SEC_USER_AGENT_USER_ENV_REQUIRED",
     "SEC_USER_AGENT_REQUIRED",
+    "RUNNER_NOT_FOUND",
+    "PYTHON_RUNTIME_NOT_FOUND",
     "SEC_ACCESS_BLOCKED",
     "SEC_RATE_LIMITED",
     "SEC_SOURCE_INVALID",
@@ -42,6 +53,14 @@ ALLOWED_FAILURE_CODES = frozenset({
     "RUN_COLLISION",
     "PROCESS_ERROR",
 })
+EARLY_FAILURE_CODES = frozenset({
+    "WINDOWS_TIMEZONE_MISMATCH",
+    "SEC_USER_AGENT_USER_ENV_REQUIRED",
+    "SEC_USER_AGENT_REQUIRED",
+    "RUNNER_NOT_FOUND",
+    "PYTHON_RUNTIME_NOT_FOUND",
+})
+ATTEMPT_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 @dataclass(frozen=True)
@@ -115,6 +134,52 @@ def runs_are_compatible(current: RunArtifact, previous: RunArtifact) -> bool:
     )
 
 
+def canonical_watchlist() -> list[str]:
+    rules = load_json(DEFAULT_RULES_PATH)
+    watchlist = rules.get("corporate_watchlist") if isinstance(rules, dict) else None
+    if not isinstance(watchlist, list) or not watchlist or not all(isinstance(item, str) for item in watchlist):
+        raise IntakeError("SEC_SOURCE_INVALID", "CANONICAL_WATCHLIST_INVALID")
+    return list(watchlist)
+
+
+def is_canonical_successful_run(run: RunArtifact) -> bool:
+    return (
+        is_sec_run(run)
+        and run.normalized.get("schema_version") == "0.1"
+        and run.normalized.get("pipeline_version") == PIPELINE_VERSION
+        and run.manifest.get("pipeline_version") == PIPELINE_VERSION
+        and run.manifest.get("pipeline_status") in {"PASS", "PARTIAL"}
+        and run.manifest.get("watchlist") == canonical_watchlist()
+    )
+
+
+def discover_latest_compatible_successful_run(
+    output_root: str | Path,
+    exclude_run_id: str | None = None,
+) -> tuple[str, RunArtifact | None]:
+    compatible: list[RunArtifact] = []
+    incompatible_sec_run_found = False
+    for path in Path(output_root).resolve().glob("*/*/normalized-events.json"):
+        try:
+            candidate = load_run_artifact(path.parent)
+        except (IntakeError, OSError, ValueError):
+            continue
+        if exclude_run_id is not None and candidate.run_id == exclude_run_id:
+            continue
+        if not is_sec_run(candidate):
+            continue
+        if is_canonical_successful_run(candidate):
+            compatible.append(candidate)
+        else:
+            incompatible_sec_run_found = True
+    compatible.sort(key=lambda item: (item.decision_as_of, item.run_id), reverse=True)
+    if compatible:
+        return "PASS", compatible[0]
+    if incompatible_sec_run_found:
+        return "PREVIOUS_RUN_INCOMPATIBLE", None
+    return "BASELINE_ONLY", None
+
+
 def discover_previous_run(
     output_root: str | Path,
     current: RunArtifact,
@@ -185,6 +250,7 @@ def build_summary(
         "run_id": current.run_id,
         "schedule_status": schedule_status,
         "pipeline_status": pipeline_status,
+        "pipeline_version": str(current.manifest["pipeline_version"]),
         "run_started_at": str(current.manifest["started_at"]),
         "run_finished_at": str(current.manifest["finished_at"]),
         "decision_as_of": str(current.normalized["decision_as_of"]),
@@ -236,6 +302,7 @@ def render_scheduled_dashboard(summary: dict[str, Any]) -> str:
         "",
         f"SCHEDULE_STATUS = {summary['schedule_status']}",
         f"PIPELINE_STATUS = {summary['pipeline_status']}",
+        f"PIPELINE_VERSION = {summary['pipeline_version']}",
         f"RUN_ID = {summary['run_id']}",
         f"RUN_STARTED_AT = {summary['run_started_at']}",
         f"RUN_FINISHED_AT = {summary['run_finished_at']}",
@@ -271,19 +338,14 @@ def write_scheduled_artifacts(output_root: str | Path, current_run_id: str) -> d
     return summary
 
 
-def latest_known_summary(output_root: str | Path, failure_code: str) -> dict[str, Any]:
+def latest_known_summary(
+    output_root: str | Path,
+    failure_code: str,
+    exclude_run_id: str | None = None,
+) -> dict[str, Any]:
     if failure_code not in ALLOWED_FAILURE_CODES:
         failure_code = "PROCESS_ERROR"
-    candidates: list[RunArtifact] = []
-    for path in Path(output_root).resolve().glob("*/*/normalized-events.json"):
-        try:
-            candidate = load_run_artifact(path.parent)
-        except (IntakeError, OSError, ValueError):
-            continue
-        if is_sec_run(candidate):
-            candidates.append(candidate)
-    candidates.sort(key=lambda item: (item.decision_as_of, item.run_id), reverse=True)
-    previous = candidates[0] if candidates else None
+    diff_status, previous = discover_latest_compatible_successful_run(output_root, exclude_run_id)
     now = datetime.now(timezone.utc).isoformat()
     return {
         "schedule_status": failure_code,
@@ -293,24 +355,187 @@ def latest_known_summary(output_root: str | Path, failure_code: str) -> dict[str
         "previous_run_id": previous.run_id if previous else None,
         "previous_run_as_of": str(previous.normalized["decision_as_of"]) if previous else None,
         "freshness_status": "LAST_KNOWN" if previous else "BASELINE_ONLY",
+        "diff_status": diff_status,
         "order_authority": False,
         "execution_quantity": None,
         "automatic_order": False,
     }
 
 
+def attempt_artifact_path(attempt_output_root: str | Path, attempt_id: str, started_at: str) -> Path:
+    if not ATTEMPT_ID_PATTERN.fullmatch(attempt_id):
+        raise IntakeError("SEC_SOURCE_INVALID", "ATTEMPT_ID_INVALID")
+    date_directory = parse_timestamp(started_at).date().isoformat()
+    return Path(attempt_output_root).resolve() / date_directory / attempt_id / SCHEDULED_ATTEMPT_JSON
+
+
+def assert_attempt_available(attempt_output_root: str | Path, attempt_id: str, started_at: str) -> Path:
+    path = attempt_artifact_path(attempt_output_root, attempt_id, started_at)
+    if path.exists():
+        raise IntakeError("RUN_COLLISION", str(path.parent))
+    return path
+
+
+def build_scheduled_attempt(
+    *,
+    summary: dict[str, Any],
+    attempt_id: str,
+    started_at: str,
+    attempt_result: str,
+    failure_code: str | None,
+    network_started: bool,
+    sec_live_request_count_if_known: int | None,
+    runner_exit_code: int | None,
+    user_agent_configured: bool,
+    persistent_user_agent_configured: bool,
+    timezone_id: str,
+    timezone_preflight_status: str,
+) -> dict[str, Any]:
+    if attempt_result not in {"PASS", "PARTIAL", "FAIL", "BLOCKED"}:
+        raise IntakeError("SEC_SOURCE_INVALID", "ATTEMPT_RESULT_INVALID")
+    if failure_code is not None and failure_code not in ALLOWED_FAILURE_CODES:
+        failure_code = "PROCESS_ERROR"
+    if attempt_result in {"PASS", "PARTIAL"}:
+        if failure_code is not None or summary.get("freshness_status") != "CURRENT_RUN":
+            raise IntakeError("SEC_SOURCE_INVALID", "SUCCESS_ATTEMPT_INVARIANT_INVALID")
+        current_run_id = str(summary["run_id"])
+    else:
+        if failure_code is None or summary.get("freshness_status") == "CURRENT_RUN":
+            raise IntakeError("SEC_SOURCE_INVALID", "FAILURE_ATTEMPT_INVARIANT_INVALID")
+        current_run_id = None
+    if failure_code in EARLY_FAILURE_CODES and network_started:
+        raise IntakeError("SEC_SOURCE_INVALID", "EARLY_FAILURE_NETWORK_STATE_INVALID")
+    if sec_live_request_count_if_known is not None and sec_live_request_count_if_known < 0:
+        raise IntakeError("SEC_SOURCE_INVALID", "REQUEST_COUNT_INVALID")
+
+    attempt = {
+        "schema_version": "0.1",
+        "attempt_id": attempt_id,
+        "task_name": TASK_NAME,
+        "started_at": parse_timestamp(started_at).isoformat(),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+        "attempt_result": attempt_result,
+        "failure_code": failure_code,
+        "freshness_status": str(summary["freshness_status"]),
+        "current_run_id": current_run_id,
+        "last_known_run_id": summary.get("previous_run_id"),
+        "last_known_run_as_of": summary.get("previous_run_as_of"),
+        "diff_status": summary.get("diff_status"),
+        "network_started": network_started,
+        "sec_live_request_count_if_known": sec_live_request_count_if_known,
+        "runner_exit_code": runner_exit_code,
+        "scheduler_mode": "SCHEDULED_SHADOW",
+        "lookback_days": 7,
+        "user_agent_configured": user_agent_configured,
+        "persistent_user_agent_configured": persistent_user_agent_configured,
+        "timezone_id": timezone_id or "NOT_VERIFIED",
+        "timezone_preflight_status": timezone_preflight_status,
+        "portfolio_context_status": "NOT_ACCESSED_BY_SCHEDULED_ATTEMPT",
+        "order_authority": False,
+        "execution_quantity": None,
+        "automatic_order": False,
+    }
+    errors = validate_instance(attempt, ATTEMPT_SCHEMA)
+    if errors:
+        raise IntakeError("SEC_SOURCE_INVALID", "SCHEDULED_ATTEMPT_SCHEMA_INVALID:" + "; ".join(errors))
+    return attempt
+
+
+def write_scheduled_attempt(
+    *,
+    attempt_output_root: str | Path,
+    summary: dict[str, Any],
+    attempt_id: str,
+    started_at: str,
+    attempt_result: str,
+    failure_code: str | None,
+    network_started: bool,
+    sec_live_request_count_if_known: int | None,
+    runner_exit_code: int | None,
+    user_agent_configured: bool,
+    persistent_user_agent_configured: bool,
+    timezone_id: str,
+    timezone_preflight_status: str,
+) -> Path:
+    path = assert_attempt_available(attempt_output_root, attempt_id, started_at)
+    attempt = build_scheduled_attempt(
+        summary=summary,
+        attempt_id=attempt_id,
+        started_at=started_at,
+        attempt_result=attempt_result,
+        failure_code=failure_code,
+        network_started=network_started,
+        sec_live_request_count_if_known=sec_live_request_count_if_known,
+        runner_exit_code=runner_exit_code,
+        user_agent_configured=user_agent_configured,
+        persistent_user_agent_configured=persistent_user_agent_configured,
+        timezone_id=timezone_id,
+        timezone_preflight_status=timezone_preflight_status,
+    )
+    create_only_json(path, attempt)
+    return path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build SEC Scheduled Shadow v0.1 derived views")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--attempt-output-root", type=Path, default=DEFAULT_ATTEMPT_OUTPUT_ROOT)
+    parser.add_argument("--attempt-id")
+    parser.add_argument("--attempt-started-at")
+    parser.add_argument("--attempt-result", choices=("PASS", "PARTIAL", "FAIL", "BLOCKED"))
+    parser.add_argument("--network-started", choices=("true", "false"))
+    parser.add_argument("--sec-live-request-count", type=int)
+    parser.add_argument("--runner-exit-code", type=int)
+    parser.add_argument("--user-agent-configured", choices=("true", "false"))
+    parser.add_argument("--persistent-user-agent-configured", choices=("true", "false"))
+    parser.add_argument("--timezone-id", default="NOT_VERIFIED")
+    parser.add_argument("--timezone-preflight-status", choices=("PASS", "FAIL", "NOT_VERIFIED"), default="NOT_VERIFIED")
+    parser.add_argument("--exclude-run-id")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--current-run-id")
     group.add_argument("--failure-code")
     args = parser.parse_args()
     try:
+        attempt_requested = args.attempt_id is not None
+        if attempt_requested:
+            required_attempt_values = {
+                "attempt_started_at": args.attempt_started_at,
+                "attempt_result": args.attempt_result,
+                "network_started": args.network_started,
+                "user_agent_configured": args.user_agent_configured,
+                "persistent_user_agent_configured": args.persistent_user_agent_configured,
+            }
+            missing = sorted(key for key, value in required_attempt_values.items() if value is None)
+            if missing:
+                raise IntakeError("SEC_SOURCE_INVALID", "ATTEMPT_ARGUMENT_REQUIRED:" + ",".join(missing))
+            assert_attempt_available(args.attempt_output_root, args.attempt_id, args.attempt_started_at)
         if args.failure_code:
-            result = latest_known_summary(args.output_root, args.failure_code)
+            result = latest_known_summary(args.output_root, args.failure_code, args.exclude_run_id)
         else:
             result = write_scheduled_artifacts(args.output_root, args.current_run_id)
+        if attempt_requested:
+            attempt_result = args.attempt_result
+            if args.current_run_id and result.get("schedule_status") == "PARTIAL":
+                attempt_result = "PARTIAL"
+            if args.current_run_id and attempt_result not in {"PASS", "PARTIAL"}:
+                raise IntakeError("SEC_SOURCE_INVALID", "CURRENT_RUN_ATTEMPT_RESULT_INVALID")
+            if args.failure_code and attempt_result not in {"FAIL", "BLOCKED"}:
+                raise IntakeError("SEC_SOURCE_INVALID", "FAILURE_ATTEMPT_RESULT_INVALID")
+            write_scheduled_attempt(
+                attempt_output_root=args.attempt_output_root,
+                summary=result,
+                attempt_id=args.attempt_id,
+                started_at=args.attempt_started_at,
+                attempt_result=attempt_result,
+                failure_code=args.failure_code,
+                network_started=args.network_started == "true",
+                sec_live_request_count_if_known=args.sec_live_request_count,
+                runner_exit_code=args.runner_exit_code,
+                user_agent_configured=args.user_agent_configured == "true",
+                persistent_user_agent_configured=args.persistent_user_agent_configured == "true",
+                timezone_id=args.timezone_id,
+                timezone_preflight_status=args.timezone_preflight_status,
+            )
     except (IntakeError, FileExistsError, OSError, ValueError, KeyError) as exc:
         code = exc.code if isinstance(exc, IntakeError) else "PROCESS_ERROR"
         print(json.dumps({

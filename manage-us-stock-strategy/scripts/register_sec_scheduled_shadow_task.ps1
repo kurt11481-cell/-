@@ -9,7 +9,11 @@ $ErrorActionPreference = "Stop"
 $resolvedRepository = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $contractPath = Join-Path $resolvedRepository "manage-us-stock-strategy\assets\sec-scheduled-shadow-contract-v0.1.json"
 $wrapperPath = Join-Path $resolvedRepository "manage-us-stock-strategy\scripts\run_sec_scheduled_shadow.ps1"
+$preflightPath = Join-Path $resolvedRepository "manage-us-stock-strategy\scripts\sec_scheduled_shadow_preflight.ps1"
 $contract = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
+
+if (-not (Test-Path -LiteralPath $preflightPath -PathType Leaf)) { throw "PREFLIGHT_HELPER_NOT_FOUND" }
+. $preflightPath
 
 function Assert-ScheduleContract {
     param([object]$Value)
@@ -60,9 +64,9 @@ function Write-TaskPlan {
         [string]$Mode,
         [string]$ExistsBefore,
         [string]$ExistsAfter,
-        [bool]$Mutation
+        [bool]$Mutation,
+        [object]$Preflight
     )
-    $userAgentConfigured = if ([string]::IsNullOrWhiteSpace($env:SEC_USER_AGENT)) { "NOT_CONFIGURED" } else { "CONFIGURED" }
     ([ordered]@{
         TASK_NAME = $contract.task_name
         MODE = $Mode
@@ -76,7 +80,15 @@ function Write-TaskPlan {
         START_WHEN_AVAILABLE = [bool]$contract.settings.start_when_available
         WAKE_COMPUTER = [bool]$contract.settings.wake_to_run
         EXECUTION_LIMIT = "10_MINUTES"
-        USER_AGENT = $userAgentConfigured
+        WINDOWS_TIMEZONE = $Preflight.TimezoneDisplay
+        TIMEZONE_PREFLIGHT = $Preflight.TimezonePreflight
+        PROCESS_USER_AGENT = $Preflight.ProcessUserAgent
+        USER_AGENT = $Preflight.ProcessUserAgent
+        PERSISTENT_USER_AGENT = $Preflight.PersistentUserAgent
+        PERSISTENT_USER_ENV = $Preflight.PersistentUserAgent
+        NEW_LOGON_SESSION_REQUIRED_AFTER_CHANGE = $Preflight.NewLogonSessionRequiredAfterChange
+        ACTIVATION_READY = [bool]$Preflight.ActivationReady
+        FAILURE_CODE = if ($null -eq $Preflight.FailureCode) { "NONE" } else { $Preflight.FailureCode }
         USER_AGENT_VALUE = "REDACTED"
         TASK_EXISTS_BEFORE = $ExistsBefore
         TASK_EXISTS_AFTER = $ExistsAfter
@@ -91,13 +103,32 @@ function Write-TaskPlan {
 }
 
 Assert-ScheduleContract -Value $contract
-if (-not (Test-Path -LiteralPath $wrapperPath -PathType Leaf)) { throw "WRAPPER_NOT_FOUND" }
-$taskExistsBefore = Get-TaskExistence -TaskName $contract.task_name
+$preflight = Get-SecScheduledShadowSystemPreflight
 
 if (-not $Apply) {
-    Write-TaskPlan -Mode "PLAN_ONLY" -ExistsBefore $taskExistsBefore -ExistsAfter $taskExistsBefore -Mutation $false
+    if (-not (Test-Path -LiteralPath $wrapperPath -PathType Leaf)) { throw "WRAPPER_NOT_FOUND" }
+    $taskExistsBefore = Get-TaskExistence -TaskName $contract.task_name
+    Write-TaskPlan `
+        -Mode "PLAN_ONLY" `
+        -ExistsBefore $taskExistsBefore `
+        -ExistsAfter $taskExistsBefore `
+        -Mutation $false `
+        -Preflight $preflight
     exit 0
 }
+
+if (-not $preflight.ActivationReady) {
+    Write-TaskPlan `
+        -Mode "APPLY_BLOCKED" `
+        -ExistsBefore "NOT_OBSERVED" `
+        -ExistsAfter "NOT_OBSERVED" `
+        -Mutation $false `
+        -Preflight $preflight
+    exit 2
+}
+
+if (-not (Test-Path -LiteralPath $wrapperPath -PathType Leaf)) { throw "WRAPPER_NOT_FOUND" }
+$taskExistsBefore = Get-TaskExistence -TaskName $contract.task_name
 
 $powerShellExecutable = (Get-Command powershell.exe -ErrorAction Stop).Source
 $actionArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -RepositoryRoot "{1}"' -f $wrapperPath, $resolvedRepository
@@ -120,4 +151,9 @@ Register-ScheduledTask `
     -Description "Read-only SEC Scheduled Shadow v0.1; no order authority" `
     -Force | Out-Null
 $taskExistsAfter = Get-TaskExistence -TaskName $contract.task_name
-Write-TaskPlan -Mode "APPLY" -ExistsBefore $taskExistsBefore -ExistsAfter $taskExistsAfter -Mutation $true
+Write-TaskPlan `
+    -Mode "APPLY" `
+    -ExistsBefore $taskExistsBefore `
+    -ExistsAfter $taskExistsAfter `
+    -Mutation $true `
+    -Preflight $preflight
