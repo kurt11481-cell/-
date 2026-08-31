@@ -39,6 +39,31 @@ function Get-AttemptArtifactPath {
     Join-Path (Join-Path (Join-Path $AttemptOutputRoot $dateDirectory) $AttemptId) "scheduled-attempt.json"
 }
 
+function Test-AttemptPathCollision {
+    $path = Get-AttemptArtifactPath
+    $directory = Split-Path -Parent $path
+    (Test-Path -LiteralPath $directory) -or (Test-Path -LiteralPath $path)
+}
+
+function Write-AttemptCollision {
+    [ordered]@{
+        SCHEDULE_STATUS = "RUN_COLLISION"
+        ATTEMPT_RESULT = "BLOCKED"
+        FAILURE_CODE = "RUN_COLLISION"
+        FRESHNESS_STATUS = "NOT_AVAILABLE"
+        LAST_KNOWN_RUN_ID = $null
+        NETWORK_STARTED = $false
+        SEC_RUNNER_INVOKED = $false
+        TASK_MUTATION = $false
+        USER_AGENT_SOURCE = "ENVIRONMENT_VARIABLE"
+        USER_AGENT_VALUE = "REDACTED"
+        ATTEMPT_ID = $AttemptId
+        ORDER_AUTHORITY = $false
+        EXECUTION_QUANTITY = $null
+        AUTOMATIC_ORDER = $false
+    } | ConvertTo-Json -Compress | Write-Output
+}
+
 function Get-LatestFallbackSummary {
     $candidates = @()
     if (Test-Path -LiteralPath $OutputRoot -PathType Container) {
@@ -119,6 +144,10 @@ function Write-SanitizedFailure {
         [Nullable[int]]$RunnerExitCode
     )
     $attemptPath = Get-AttemptArtifactPath
+    if (Test-AttemptPathCollision) {
+        Write-AttemptCollision
+        exit 3
+    }
     if (-not (Test-Path -LiteralPath $attemptPath -PathType Leaf)) {
         $writtenByPython = $false
         if (
@@ -163,6 +192,11 @@ function Write-SanitizedFailure {
         EXECUTION_QUANTITY = $null
         AUTOMATIC_ORDER = $false
     } | ConvertTo-Json -Compress | Write-Output
+}
+
+if (Test-AttemptPathCollision) {
+    Write-AttemptCollision
+    exit 3
 }
 
 $rawTimezone = try { (Get-TimeZone -ErrorAction Stop).Id } catch { "NOT_VERIFIED" }

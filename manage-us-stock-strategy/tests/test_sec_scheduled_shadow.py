@@ -804,6 +804,88 @@ class SecScheduledShadowTests(unittest.TestCase):
             self.assertEqual("LAST_KNOWN", summary["freshness_status"])
             self.assertEqual("prior", summary["previous_run_id"])
 
+    def test_37_wrapper_duplicate_attempt_id_fails_closed_before_runner(self) -> None:
+        executable = powershell_executable()
+        if executable is None:
+            self.skipTest("PowerShell is not available")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = root / "manage-us-stock-strategy/assets"
+            schemas = root / "manage-us-stock-strategy/schemas"
+            scripts = root / "manage-us-stock-strategy/scripts"
+            assets.mkdir(parents=True)
+            schemas.mkdir(parents=True)
+            scripts.mkdir(parents=True)
+            shutil.copyfile(CONTRACT_PATH, assets / CONTRACT_PATH.name)
+            shutil.copyfile(ATTEMPT_SCHEMA, schemas / ATTEMPT_SCHEMA.name)
+            shutil.copyfile(SCRIPT_ROOT / "sec_scheduled_shadow.py", scripts / "sec_scheduled_shadow.py")
+            shutil.copyfile(SCRIPT_ROOT / "validation_common.py", scripts / "validation_common.py")
+            write_fake_preflight(scripts)
+            runner_count = root / "runner-count.txt"
+            (scripts / "sec_official_event_intake.py").write_text(
+                "import json, sys\n"
+                "from pathlib import Path\n"
+                "DEFAULT_OUTPUT_ROOT = Path('.')\n"
+                "DEFAULT_RULES_PATH = Path('unused-rules.json')\n"
+                "PIPELINE_VERSION = '0.1'\n"
+                "class IntakeError(RuntimeError):\n"
+                "    def __init__(self, code, detail=''):\n"
+                "        super().__init__(code)\n"
+                "        self.code = code\n"
+                "def create_only_json(path, value):\n"
+                "    path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    with path.open('x', encoding='utf-8') as handle: json.dump(value, handle)\n"
+                "def create_only_write(path, value):\n"
+                "    path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    with path.open('x', encoding='utf-8') as handle: handle.write(value)\n"
+                "if __name__ == '__main__':\n"
+                f"    marker = Path({str(runner_count)!r})\n"
+                "    count = int(marker.read_text(encoding='utf-8')) if marker.exists() else 0\n"
+                "    marker.write_text(str(count + 1), encoding='utf-8')\n"
+                "    print(json.dumps({'status':'BLOCKED','code':'SEC_ACCESS_BLOCKED'}), file=sys.stderr)\n"
+                "    raise SystemExit(7)\n",
+                encoding="utf-8",
+            )
+            environment = os.environ.copy()
+            environment["SEC_USER_AGENT"] = "configured-but-redacted@example.invalid"
+            attempt_root = root / "attempts"
+            arguments = [
+                executable, "-NoProfile", "-File", str(WRAPPER_PATH),
+                "-RepositoryRoot", str(root), "-PythonPath", sys.executable,
+                "-OutputRoot", str(root / "sec"), "-AttemptOutputRoot", str(attempt_root),
+                "-AttemptId", "fixed-test-attempt-id",
+            ]
+            first = subprocess.run(
+                arguments, cwd=ROOT, env=environment, text=True, capture_output=True,
+                timeout=30, check=False,
+            )
+            self.assertEqual(7, first.returncode, first.stderr)
+            artifact_path = next(attempt_root.rglob("scheduled-attempt.json"))
+            artifact_before = artifact_path.read_bytes()
+            hash_before = file_hash(artifact_path)
+            first_artifact = json.loads(artifact_before)
+            self.assertEqual(1, int(runner_count.read_text(encoding="utf-8")))
+
+            second = subprocess.run(
+                arguments, cwd=ROOT, env=environment, text=True, capture_output=True,
+                timeout=30, check=False,
+            )
+            self.assertEqual(3, second.returncode, second.stderr)
+            second_result = json.loads(second.stdout.strip().splitlines()[-1])
+            self.assertEqual("RUN_COLLISION", second_result["SCHEDULE_STATUS"])
+            self.assertEqual("RUN_COLLISION", second_result["FAILURE_CODE"])
+            self.assertEqual("BLOCKED", second_result["ATTEMPT_RESULT"])
+            self.assertEqual("NOT_AVAILABLE", second_result["FRESHNESS_STATUS"])
+            self.assertFalse(second_result["NETWORK_STARTED"])
+            self.assertFalse(second_result["SEC_RUNNER_INVOKED"])
+            self.assertFalse(second_result["TASK_MUTATION"])
+            self.assertEqual(1, int(runner_count.read_text(encoding="utf-8")))
+            self.assertEqual(hash_before, file_hash(artifact_path))
+            self.assertEqual(artifact_before, artifact_path.read_bytes())
+            self.assertEqual(1, len(list(attempt_root.rglob("scheduled-attempt.json"))))
+            self.assertNotEqual(first_artifact["freshness_status"], second_result["FRESHNESS_STATUS"])
+            self.assertNotEqual(first_artifact["failure_code"], second_result["FAILURE_CODE"])
+
 
 if __name__ == "__main__":
     unittest.main()
