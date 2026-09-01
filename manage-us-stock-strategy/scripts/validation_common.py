@@ -97,9 +97,11 @@ def audit_schema_dialect(schema: Any, path: str = "$") -> list[str]:
     return errors
 
 
-def validate_instance(instance: Any, schema_path: str | Path) -> list[str]:
+def validate_instance(
+    instance: Any, schema_path: str | Path, *, schema_bytes: bytes | None = None,
+) -> list[str]:
     schema_file = Path(schema_path).resolve()
-    schema = load_json(schema_file)
+    schema = json.loads(schema_bytes.decode("utf-8")) if schema_bytes is not None else load_json(schema_file)
     errors = audit_schema_dialect(schema)
     if errors:
         return errors

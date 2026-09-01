@@ -15,6 +15,7 @@ import json
 import math
 import os
 import subprocess
+from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,7 @@ from validation_common import file_hash, load_json, validate_instance
 ROOT = Path(__file__).resolve().parents[2]
 PLAN_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-plan.schema.json"
 DASHBOARD_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-dashboard.schema.json"
+MANUAL_EVIDENCE_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/manual-portfolio-analysis.schema.json"
 DEFAULT_RISK_POLICY = ROOT / "manage-us-stock-strategy/assets/portfolio-decision-risk-envelope-v0.2.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "workspace/outputs/portfolio-decision-dashboard"
 ALLOWED_MODES = {"INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"}
@@ -88,8 +90,46 @@ def _git_commit(root: Path) -> str | None:
     return value if len(value) == 40 else None
 
 
-def validate_plan(plan: dict[str, Any], schema_path: Path = PLAN_SCHEMA) -> list[str]:
-    errors = validate_instance(plan, schema_path)
+def implementation_provenance_paths(risk_path: Path) -> list[Path]:
+    return [
+        Path(__file__).resolve(), Path(__file__).with_name("validation_common.py"),
+        MANUAL_EVIDENCE_SCHEMA, PLAN_SCHEMA, DASHBOARD_SCHEMA, risk_path.resolve(),
+    ]
+
+
+def _decimal(value: Any) -> Decimal | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return result if result.is_finite() else None
+
+
+def _floor_shares(nav: Any, target_weight_pct: Any, price: Any) -> int | None:
+    nav_value = _decimal(nav)
+    target_value = _decimal(target_weight_pct)
+    price_value = _decimal(price)
+    if nav_value is None or target_value is None or price_value is None or price_value <= 0:
+        return None
+    return int((nav_value * target_value / Decimal("100") / price_value).to_integral_value(rounding=ROUND_FLOOR))
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def validate_plan(
+    plan: dict[str, Any], schema_path: Path = PLAN_SCHEMA, *, schema_bytes: bytes | None = None,
+) -> list[str]:
+    errors = validate_instance(plan, schema_path, schema_bytes=schema_bytes)
     seen: set[str] = set()
     for index, position in enumerate(plan.get("positions") or []):
         ticker = _ticker(position.get("ticker")) if isinstance(position, dict) else None
@@ -104,11 +144,14 @@ def validate_plan(plan: dict[str, Any], schema_path: Path = PLAN_SCHEMA) -> list
     cash_target = plan.get("cash_target_pct")
     if cash_target is not None and (_finite(cash_target, minimum=0) is None or float(cash_target) > 100):
         errors.append("$.cash_target_pct: CASH_TARGET_OUTSIDE_0_100")
+    supplied = [p.get("target_weight_pct") for p in plan.get("positions", []) if p.get("target_weight_pct") is not None]
+    supplied_total = sum((_decimal(value) or Decimal("0")) for value in supplied)
+    if supplied_total > Decimal("100"):
+        errors.append("$: TARGET_ALLOCATION_EXCEEDS_100_PERCENT")
     if cash_target is not None:
-        supplied = [p.get("target_weight_pct") for p in plan.get("positions", []) if p.get("target_weight_pct") is not None]
-        all_targets_supplied = len(supplied) == len(plan.get("positions", []))
-        if all_targets_supplied and supplied and abs(sum(float(v) for v in supplied) + float(cash_target) - 100.0) > 1e-7:
-            errors.append("$: TARGET_WEIGHTS_AND_CASH_MUST_SUM_TO_100")
+        cash_decimal = _decimal(cash_target)
+        if cash_decimal is not None and supplied_total + cash_decimal > Decimal("100"):
+            errors.append("$: TARGET_ALLOCATION_EXCEEDS_100_PERCENT")
     priority = plan.get("buy_priority") or []
     unknown_priority = [item for item in priority if item not in seen]
     if unknown_priority:
@@ -312,9 +355,81 @@ def _event_context(value: dict[str, Any] | None) -> dict[str, Any]:
     high = value.get("current_high_count", summary.get("current_high_count", 0))
     new = value.get("new_high_count", summary.get("new_high_count", 0))
     affected = value.get("affected_tickers", summary.get("affected_tickers", []))
-    return {"status": "AVAILABLE", "current_high_count": int(high or 0), "new_high_count": int(new or 0),
+    status = value.get("status") or ("ASSET_REVIEW_REQUIRED" if high or new or affected else "AVAILABLE")
+    return {"status": status, "current_high_count": int(high or 0), "new_high_count": int(new or 0),
             "affected_tickers": sorted({_ticker(item) for item in affected if _ticker(item)}),
-            "automatic_target_change": False}
+             "automatic_target_change": False}
+
+
+def _canonical_evidence_gate(
+    evidence: dict[str, Any], plan: dict[str, Any], compile_mode: str, schema_bytes: bytes,
+) -> tuple[list[str], list[str], set[str]]:
+    schema_errors = validate_instance(evidence, MANUAL_EVIDENCE_SCHEMA, schema_bytes=schema_bytes)
+    schema = json.loads(schema_bytes.decode("utf-8"))
+    phases = set(schema["properties"]["market_phase"]["enum"])
+    blockers = [f"CANONICAL_EVIDENCE_SCHEMA_INVALID:{item}" for item in schema_errors]
+    required_values = {
+        "EVIDENCE_GRADE_NOT_GRADE_B": evidence.get("evidence_grade") == "GRADE_B",
+        "MANUAL_DATA_NOT_VERIFIED_REAL": evidence.get("manual_data_verification_status") == "VERIFIED_REAL_DATA",
+        "RUN_PROVENANCE_NOT_VERIFIED_MANUAL": evidence.get("run_provenance_status") == "VERIFIED_MANUAL",
+        "PREFLIGHT_NOT_PASS": evidence.get("preflight_status") == "PASS",
+        "BROKER_SNAPSHOT_NOT_AVAILABLE": evidence.get("broker_snapshot_status") == "AVAILABLE",
+        "BROKER_OBSERVED_STATE_NOT_AVAILABLE": (evidence.get("broker_observed_state") or {}).get("status") == "AVAILABLE",
+        "ORDERABLE_CASH_NOT_VERIFIED": evidence.get("orderable_cash_status") == "VERIFIED",
+        "FINALIZED_BAR_PREFLIGHT_NOT_PASS": evidence.get("finalized_bar_preflight_status") == "PASS",
+        "FINALIZED_BAR_NOT_VERIFIED": evidence.get("last_verified_finalized_bar_status") == "VERIFIED",
+        "IDENTITY_AUTHORITY_NOT_VERIFIED": evidence.get("identity_authority_status") == "VERIFIED",
+        "SESSION_AUTHORITY_NOT_VERIFIED": evidence.get("session_authority_status") == "VERIFIED",
+        "AUTHORITY_COHORT_NOT_MATCHED": evidence.get("integrated_authority_cohort_status") == "MATCHED",
+        "DECISION_QUALITY_NOT_ELIGIBLE": (evidence.get("provenance") or {}).get("decision_quality_eligible") is True,
+    }
+    blockers.extend(reason for reason, satisfied in required_values.items() if not satisfied)
+    operations = (evidence.get("broker_observed_state") or {}).get("operation_statuses") or {}
+    for operation in ("account_holdings_read", "account_deposit_read"):
+        if not isinstance(operations, dict) or operations.get(operation) != "PASS":
+            blockers.append(f"CORE_BROKER_OPERATION_NOT_PASS:{operation}")
+
+    decision_time = _parse_timestamp(evidence.get("decision_as_of"))
+    observed_time = _parse_timestamp(evidence.get("observed_at"))
+    broker_time = _parse_timestamp(evidence.get("broker_snapshot_as_of"))
+    if decision_time is None or observed_time is None or broker_time is None:
+        blockers.append("EVIDENCE_FRESHNESS_TIMESTAMP_INVALID")
+    else:
+        if observed_time > decision_time or broker_time > decision_time:
+            blockers.append("EVIDENCE_FROM_FUTURE")
+        if (decision_time - broker_time).total_seconds() > 900:
+            blockers.append("BROKER_SNAPSHOT_STALE")
+
+    evidence_run_id = evidence.get("manual_run_id")
+    evidence_as_of = evidence.get("decision_as_of")
+    binding = plan.get("evidence_binding") or {}
+    if compile_mode == "POST_SELL_RECOMPILE":
+        refresh = plan.get("post_sell_refresh") or {}
+        if not refresh:
+            blockers.append("POST_SELL_REFRESH_BINDING_REQUIRED")
+        if (refresh.get("prior_run_id"), refresh.get("prior_decision_as_of")) != (
+            binding.get("expected_run_id"), binding.get("expected_decision_as_of"),
+        ):
+            blockers.append("POST_SELL_PRIOR_BINDING_MISMATCH")
+        if evidence_run_id == refresh.get("prior_run_id"):
+            blockers.append("POST_SELL_FRESH_RUN_REQUIRED")
+        current_time = _parse_timestamp(evidence_as_of)
+        prior_time = _parse_timestamp(refresh.get("prior_decision_as_of"))
+        if current_time is None or prior_time is None or current_time <= prior_time:
+            blockers.append("POST_SELL_DECISION_AS_OF_NOT_LATER")
+        plan_time = _parse_timestamp(plan.get("as_of"))
+        if plan_time is None or prior_time is None or plan_time > prior_time:
+            blockers.append("PLAN_AS_OF_AFTER_BOUND_EVIDENCE")
+    else:
+        if evidence_run_id != binding.get("expected_run_id"):
+            blockers.append("EVIDENCE_RUN_ID_BINDING_MISMATCH")
+        if evidence_as_of != binding.get("expected_decision_as_of"):
+            blockers.append("EVIDENCE_DECISION_AS_OF_BINDING_MISMATCH")
+        plan_time = _parse_timestamp(plan.get("as_of"))
+        evidence_time = _parse_timestamp(evidence_as_of)
+        if plan_time is None or evidence_time is None or plan_time > evidence_time:
+            blockers.append("PLAN_AS_OF_AFTER_BOUND_EVIDENCE")
+    return schema_errors, sorted(set(blockers)), phases
 
 
 def compile_dashboard(
@@ -322,18 +437,26 @@ def compile_dashboard(
     *, compile_mode: str = "INITIAL_COMPILE", registry: dict[str, Any] | None = None,
     event_context: dict[str, Any] | None = None, run_id: str = "portfolio-decision-test",
     generated_at: str | None = None, runtime_advisory_authority: str | None = None,
+    evidence_schema_bytes: bytes | None = None, plan_schema_bytes: bytes | None = None,
+    dashboard_schema_bytes: bytes | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     if compile_mode not in ALLOWED_MODES:
         raise ContractError("INVALID_COMPILE_MODE")
-    plan_errors = validate_plan(plan)
+    evidence_schema_bytes = evidence_schema_bytes or MANUAL_EVIDENCE_SCHEMA.read_bytes()
+    plan_schema_bytes = plan_schema_bytes or PLAN_SCHEMA.read_bytes()
+    dashboard_schema_bytes = dashboard_schema_bytes or DASHBOARD_SCHEMA.read_bytes()
+    plan_errors = validate_plan(plan, schema_bytes=plan_schema_bytes)
     if plan_errors:
         raise ContractError("DECISION_PLAN_INVALID:" + "; ".join(plan_errors))
+    evidence_schema_errors, evidence_gate_blockers, canonical_phases = _canonical_evidence_gate(
+        evidence, plan, compile_mode, evidence_schema_bytes,
+    )
     positions = {item["ticker"]: item for item in plan["positions"]}
     holdings, costs, holding_issues, holding_source = _extract_holdings(evidence)
     current_cash, orderable_cash, cash_issues = _extract_cash(evidence)
     required_tickers = set(holdings) | set(positions)
     prices, price_issues = _extract_prices(evidence, required_tickers)
-    issues = holding_issues + cash_issues + price_issues
+    issues = holding_issues + cash_issues + price_issues + evidence_gate_blockers
     warnings: list[str] = []
     input_authority_blockers: list[str] = []
     if evidence.get("order_authority") is not False:
@@ -347,13 +470,22 @@ def compile_dashboard(
     if evidence.get("broker_diff_status") == "DIFFERENT":
         warnings.append("BROKER_SYSTEM_MISMATCH_BROKER_CANONICAL")
     operations = (evidence.get("broker_observed_state") or {}).get("operation_statuses") or {}
-    open_items_status = operations.get("account_open_items")
+    open_items_status = operations.get("account_open_items") if isinstance(operations, dict) else None
     if open_items_status != "PASS":
         warnings.append("OPEN_ITEMS_VISIBILITY_UNAVAILABLE")
-    if evidence.get("exact_request_accounting") is None:
-        warnings.append("EXACT_REQUEST_ACCOUNTING_ABSENT")
     if (evidence.get("broker_observed_state") or {}).get("scope_complete") is not True:
         warnings.append("AUXILIARY_SCOPE_INCOMPLETE_CORE_MAY_REMAIN_VERIFIED")
+    if not operations:
+        request_accounting_status = "ABSENT"
+    elif not isinstance(operations, dict) or any(
+        not isinstance(name, str) or not name or not isinstance(status, str) or not status
+        for name, status in operations.items()
+    ):
+        request_accounting_status = "PRESENT_INVALID"
+        warnings.append("REQUEST_ACCOUNTING_INVALID")
+    else:
+        request_accounting_status = "PRESENT_UNVERIFIED"
+        warnings.append("REQUEST_ACCOUNTING_NOT_CANONICALLY_VERIFIABLE")
 
     mappings: dict[str, dict[str, Any]] = {}
     for ticker in sorted(required_tickers):
@@ -366,8 +498,12 @@ def compile_dashboard(
     nav: float | None = None
     values: dict[str, float] = {}
     weights: dict[str, float] = {}
-    if current_cash is not None and holdings and all(ticker in prices for ticker in holdings):
-        values = {ticker: quantity * prices[ticker]["price"] for ticker, quantity in holdings.items()}
+    positive_holdings = {ticker for ticker, quantity in holdings.items() if quantity > 0}
+    if current_cash is not None and holdings and all(ticker in prices for ticker in positive_holdings):
+        values = {
+            ticker: quantity * prices[ticker]["price"] if quantity > 0 else 0.0
+            for ticker, quantity in holdings.items()
+        }
         nav = current_cash + sum(values.values())
         if nav <= 0:
             nav = None
@@ -379,14 +515,10 @@ def compile_dashboard(
     core_blockers = bool(
         holding_issues or current_cash is None
         or input_authority_blockers
-        or any(issue.endswith(tuple(f":{ticker}" for ticker in holdings)) for issue in price_issues)
+        or evidence_gate_blockers
+        or any(issue.endswith(tuple(f":{ticker}" for ticker in positive_holdings)) for issue in price_issues)
     )
-    evidence_contract_verified = bool(
-        evidence.get("evidence_grade") == "GRADE_B"
-        and evidence.get("preflight_status") == "PASS"
-        and evidence.get("broker_snapshot_status") == "AVAILABLE"
-        and (evidence.get("provenance") or {}).get("decision_quality_eligible") is True
-    )
+    evidence_contract_verified = not evidence_gate_blockers
     core_status = (
         "BLOCKED" if nav is None or core_blockers else
         "VERIFIED" if evidence_contract_verified else "PARTIAL"
@@ -395,6 +527,15 @@ def compile_dashboard(
     if nav is not None and set(weights) <= set(mappings):
         current_risk = calculate_risk_metrics(weights, current_cash / nav * 100.0, mappings, risk_policy)
     current_violations = set((current_risk or {}).get("hard_cap_violations") or [])
+    target_weights = {
+        ticker: float(item["target_weight_pct"]) for ticker, item in positions.items()
+        if item.get("target_weight_pct") is not None and ticker in mappings
+    }
+    target_risk = calculate_risk_metrics(
+        target_weights, float(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
+        mappings, risk_policy,
+    ) if set(target_weights) <= set(mappings) else None
+    target_violations = set((target_risk or {}).get("hard_cap_violations") or [])
 
     position_rows: list[dict[str, Any]] = []
     all_tickers = sorted(set(holdings) | set(positions))
@@ -420,12 +561,16 @@ def compile_dashboard(
         target_shares = None
         delta = None
         if not blockers and target_weight is not None and price and nav is not None:
-            target_shares = math.floor(nav * float(target_weight) / 100.0 / price)
+            target_shares = _floor_shares(nav, target_weight, price)
             delta = target_shares - current_quantity
+        if target_violations:
+            blockers.append("TARGET_HARD_CAP_VIOLATION")
+            delta = None
         deadband = False
         if (delta is not None and current_weight is not None and target_weight is not None
                 and abs(float(target_weight) - current_weight) < risk_policy["deadband"]["absolute_percentage_points"]
-                and not current_violations and source.get("thesis_kill") is not True):
+                and not current_violations and not target_violations
+                and not blockers and source.get("thesis_kill") is not True):
             deadband = True
             delta = 0
         direction_conflict = bool(
@@ -485,7 +630,9 @@ def compile_dashboard(
         stage1_status = "BLOCKED"
     elif replay:
         stage1_status = "REPLAY_ONLY"
-    elif evidence.get("market_phase") != "REGULAR":
+    elif evidence.get("market_phase") not in canonical_phases or evidence.get("market_phase") != "REGULAR_COMPLETED":
+        stage1_status = "PROVISIONAL"
+    elif evidence.get("current_session_finalization_status") != "VERIFIED":
         stage1_status = "PROVISIONAL"
     elif plan["plan_status"] != CURRENT_PLAN_STATUS or any(row.get("target_status") != "APPROVED" for row in position_rows):
         stage1_status = "PROVISIONAL"
@@ -494,7 +641,8 @@ def compile_dashboard(
     else:
         stage1_status = "BLOCKED"
 
-    buy_rows = [row for row in position_rows if row["action"] == "ADD" and isinstance(row["share_delta"]["value"], int) and row["share_delta"]["value"] > 0]
+    add_rows = [row for row in position_rows if row["action"] == "ADD"]
+    buy_rows = [row for row in add_rows if isinstance(row["share_delta"]["value"], int) and row["share_delta"]["value"] > 0]
     buy_advisories: list[dict[str, Any]] = []
     stage2_blockers: list[str] = []
     post_initial_buy_cash = None
@@ -507,7 +655,16 @@ def compile_dashboard(
     elif orderable_cash is None:
         stage2_status = "BLOCKED"
         stage2_blockers.append("VERIFIED_ORDERABLE_CASH_REQUIRED")
-    elif any(row["blockers"] for row in buy_rows):
+    elif core_status != "VERIFIED":
+        stage2_status = "BLOCKED"
+        stage2_blockers.append("POST_SELL_CANONICAL_EVIDENCE_NOT_VERIFIED")
+    elif evidence.get("market_phase") not in {"REGULAR_INTRADAY", "REGULAR_COMPLETED"}:
+        stage2_status = "BLOCKED"
+        stage2_blockers.append("POST_SELL_SESSION_NOT_ELIGIBLE")
+    elif plan["plan_status"] != CURRENT_PLAN_STATUS or any(row.get("target_status") != "APPROVED" for row in position_rows):
+        stage2_status = "PROVISIONAL"
+        stage2_blockers.append("CURRENT_APPROVED_PLAN_REQUIRED")
+    elif any(row["blockers"] for row in add_rows):
         stage2_status = "BLOCKED"
         stage2_blockers.append("BUY_INPUT_BLOCKED")
     else:
@@ -517,22 +674,31 @@ def compile_dashboard(
             gap = int(row["share_delta"]["value"])
             if int(row["current_quantity"]["value"]) == 0:
                 full_target = int(row["target_shares_reference"]["value"])
-                gap = min(gap, math.floor(full_target * risk_policy["new_position_initial_entry"]["maximum_fraction_of_full_target"]))
+                entry_fraction = _decimal(risk_policy["new_position_initial_entry"]["maximum_fraction_of_full_target"])
+                capped_target = int((Decimal(full_target) * entry_fraction).to_integral_value(rounding=ROUND_FLOOR))
+                gap = min(gap, capped_target)
             capped_gaps[row["ticker"]] = max(0, gap)
             requested_cost += capped_gaps[row["ticker"]] * prices[row["ticker"]]["price"]
+        eligible_gaps = {ticker: gap for ticker, gap in capped_gaps.items() if gap > 0}
         priority = plan.get("buy_priority") or []
-        if requested_cost > orderable_cash + 1e-9 and not priority:
+        insufficient_cash = requested_cost > orderable_cash + 1e-9
+        eligible = set(eligible_gaps)
+        if insufficient_cash and not priority:
             stage2_status = "BLOCKED"
             stage2_blockers.append("BUY_ALLOCATION_PRIORITY_REQUIRED")
+        elif insufficient_cash and (len(priority) != len(eligible) or set(priority) != eligible):
+            stage2_status = "BLOCKED"
+            stage2_blockers.append("BUY_ALLOCATION_PRIORITY_INCOMPLETE")
         else:
-            order = [ticker for ticker in priority if ticker in capped_gaps]
-            order += [ticker for ticker in sorted(capped_gaps) if ticker not in order]
+            order = list(priority) if insufficient_cash else [
+                item["ticker"] for item in plan["positions"] if item["ticker"] in eligible_gaps
+            ]
             cash_left = orderable_cash
             simulated_holdings = dict(holdings)
-            allocations = {ticker: 0 for ticker in capped_gaps}
+            allocations = {ticker: 0 for ticker in eligible_gaps}
             for ticker in order:
                 price = prices[ticker]["price"]
-                maximum = min(capped_gaps[ticker], math.floor(cash_left / price))
+                maximum = min(eligible_gaps[ticker], _floor_shares(cash_left, 100, price) or 0)
                 for _ in range(maximum):
                     candidate_holdings = dict(simulated_holdings)
                     candidate_holdings[ticker] = candidate_holdings.get(ticker, 0) + 1
@@ -548,26 +714,24 @@ def compile_dashboard(
             for ticker in order:
                 buy_advisories.append({
                     "ticker": ticker,
-                    "target_gap_shares": capped_gaps[ticker],
+                    "target_gap_shares": eligible_gaps[ticker],
                     "calculated_buy_shares": allocations[ticker],
                     "price_usd": prices[ticker]["price"],
                     "estimated_cost_usd": allocations[ticker] * prices[ticker]["price"],
                     "quantity_status": "CALCULATED_MANUAL_ADVISORY",
                 })
             post_initial_buy_cash = cash_left
-            stage2_status = "FINAL_MANUAL_ADVISORY_ELIGIBLE" if plan["plan_status"] == CURRENT_PLAN_STATUS else "PROVISIONAL"
-
-    target_weights = {
-        ticker: float(item["target_weight_pct"]) for ticker, item in positions.items()
-        if item.get("target_weight_pct") is not None and ticker in mappings
-    }
-    target_risk = calculate_risk_metrics(
-        target_weights, float(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
-        mappings, risk_policy,
-    ) if set(target_weights) <= set(mappings) else None
+            stage2_status = "FINAL_MANUAL_ADVISORY_ELIGIBLE"
 
     event = _event_context(event_context)
     generated = generated_at or _now()
+    current_authority_eligible = (
+        stage1_status == "FINAL_MANUAL_ADVISORY_ELIGIBLE"
+        or stage2_status == "FINAL_MANUAL_ADVISORY_ELIGIBLE"
+    )
+    derived_runtime_authority = (
+        "CURRENT_MANUAL_ADVISORY_ELIGIBLE" if current_authority_eligible else "NOT_VERIFIED_BY_RUNTIME"
+    )
     report = {
         "schema_version": "1.0",
         "report_type": "PORTFOLIO_DECISION_DASHBOARD_MANUAL_ADVISORY",
@@ -586,7 +750,12 @@ def compile_dashboard(
             "broker_system_mismatch": evidence.get("broker_diff_status"),
             "scope_complete": (evidence.get("broker_observed_state") or {}).get("scope_complete") is True,
             "open_items_status": open_items_status or "NOT_AVAILABLE",
-            "exact_request_accounting_status": "AVAILABLE" if evidence.get("exact_request_accounting") is not None else "ABSENT",
+            "request_accounting_status": request_accounting_status,
+            "request_accounting": dict(sorted(operations.items())) if isinstance(operations, dict) else {},
+            "canonical_schema_sha256": _sha256_bytes(evidence_schema_bytes),
+            "canonical_schema_errors": evidence_schema_errors,
+            "failure_code": "GRADE_B_SCHEMA_INVALID" if evidence_schema_errors else None,
+            "canonical_gate_blockers": evidence_gate_blockers,
             "issues": sorted(set(issues)),
             "warnings": sorted(set(warnings)),
             "current_freshness": "HISTORICAL_REPLAY" if replay else (
@@ -596,6 +765,8 @@ def compile_dashboard(
         "plan": {
             "plan_id": plan["plan_id"], "as_of": plan["as_of"], "plan_status": plan["plan_status"],
             "target_type": plan["target_type"], "cash_target_pct": plan.get("cash_target_pct"),
+            "evidence_binding": plan["evidence_binding"],
+            "post_sell_refresh": plan.get("post_sell_refresh"),
             "material_unknowns": plan.get("material_unknowns") or [],
             "decision_change_triggers": plan.get("decision_change_triggers") or [],
             "temporal_status": "HISTORICAL_REPLAY" if replay else "CURRENT_OR_PROVISIONAL",
@@ -620,6 +791,10 @@ def compile_dashboard(
             "status": stage2_status,
             "verified_orderable_cash_usd": _value(orderable_cash, "VERIFIED" if orderable_cash is not None else "NOT_VERIFIED", "USD"),
             "buy_candidates": [row["ticker"] for row in buy_rows],
+            "buy_candidate_references": [
+                {"ticker": row["ticker"], "target_shares_reference": row["target_shares_reference"]["value"]}
+                for row in add_rows
+            ],
             "buy_advisories": buy_advisories,
             "blockers": sorted(set(stage2_blockers)),
             "order_created": False,
@@ -640,7 +815,9 @@ def compile_dashboard(
         "event_context": event,
         "authority": {
             "artifact_time_quantity_authority": evidence.get("quantity_authority", "none"),
-            "current_runtime_advisory_authority": runtime_advisory_authority or "NOT_VERIFIED_BY_RUNTIME",
+            "current_runtime_advisory_authority": derived_runtime_authority,
+            "runtime_authority_cli_input": runtime_advisory_authority,
+            "runtime_authority_cli_input_effect": "DISPLAY_ONLY_NO_AUTHORITY_EFFECT" if runtime_advisory_authority else "NOT_PROVIDED",
             "manual_advisory_label": "CALCULATED_MANUAL_ADVISORY",
             "broker_order_authority": False,
             "execution_quantity": None,
@@ -652,19 +829,29 @@ def compile_dashboard(
             "portfolio_mutation": False, "policy_mutation": False, "orders": "NONE",
         },
     }
-    schema_errors = validate_instance(report, DASHBOARD_SCHEMA)
+    schema_errors = validate_instance(report, DASHBOARD_SCHEMA, schema_bytes=dashboard_schema_bytes)
+    stage2_gate_verified = bool(
+        compile_mode == "POST_SELL_RECOMPILE"
+        and core_status == "VERIFIED"
+        and evidence.get("market_phase") in {"REGULAR_INTRADAY", "REGULAR_COMPLETED"}
+        and orderable_cash is not None
+        and plan["plan_status"] == CURRENT_PLAN_STATUS
+        and not evidence_gate_blockers
+    )
     invariants = {
         "dashboard_schema": not schema_errors,
         "order_authority_false": report["authority"]["broker_order_authority"] is False,
         "execution_quantity_null": report["authority"]["execution_quantity"] is None,
         "automatic_order_false": report["authority"]["automatic_order"] is False,
         "expected_proceeds_not_orderable": report["cash_semantics"]["expected_proceeds_treated_as_orderable_cash"] is False,
-        "stage2_firewall": compile_mode == "POST_SELL_RECOMPILE" or stage2_status == "BLOCKED_POST_SELL_BROKER_REFRESH_REQUIRED",
+        "canonical_evidence_schema": not evidence_schema_errors,
+        "canonical_evidence_gate_enforced": not current_authority_eligible or not evidence_gate_blockers,
+        "stage2_firewall": stage2_status != "FINAL_MANUAL_ADVISORY_ELIGIBLE" or stage2_gate_verified,
         "portfolio_mutation_false": report["safety"]["portfolio_mutation"] is False,
         "policy_mutation_false": report["safety"]["policy_mutation"] is False,
         "network_false": report["safety"]["network_access"] is False,
     }
-    validation_status = "FAIL" if schema_errors or not all(invariants.values()) else (
+    validation_status = "FAIL" if schema_errors or evidence_schema_errors or not all(invariants.values()) else (
         "BLOCKED" if core_status == "BLOCKED" else "PASS"
     )
     validation = {
@@ -686,7 +873,7 @@ def _fmt(value: Any, digits: int = 2) -> str:
     return str(value)
 
 
-def render_markdown(report: dict[str, Any]) -> str:
+def _render_markdown_legacy(report: dict[str, Any]) -> str:
     stage1 = report["stage1"]
     stage2 = report["stage2"]
     conclusion = "위험 축소 우선" if any((row.get("calculated_sell_shares") or 0) > 0 for row in stage1["sell_advisories"]) else (
@@ -764,8 +951,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_html(report: dict[str, Any]) -> str:
-    markdown = render_markdown(report)
+def _render_html_legacy(report: dict[str, Any]) -> str:
+    markdown = _render_markdown_legacy(report)
     first = report["stage1"]["sell_advisories"]
     stage1_rows = "".join(
         f"<tr><td>{html.escape(row['ticker'])}</td><td>{_fmt(row['current_shares'])}</td>"
@@ -798,6 +985,153 @@ table{{border-collapse:collapse;width:100%}}th,td{{border-bottom:1px solid #dce3
 </main></body></html>"""
 
 
+def _display(value: Any, digits: int = 2) -> str:
+    if value is None:
+        return "확인 필요"
+    if isinstance(value, bool):
+        return str(value).upper()
+    if isinstance(value, int):
+        return f"{value:,}"
+    if isinstance(value, float):
+        return f"{value:,.{digits}f}"
+    return str(value)
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    evidence = report["evidence"]
+    stage1 = report["stage1"]
+    stage2 = report["stage2"]
+    event = report["event_context"]
+    lines = [
+        "# 포트폴리오 의사결정 대시보드", "",
+        f"- 판단 시각: {evidence.get('decision_as_of') or '확인 필요'}",
+        f"- Evidence Run: {evidence.get('run_id') or '확인 필요'}",
+        f"- Evidence Grade: {evidence['portfolio_evidence_grade_display']}",
+        f"- 시장 단계: {evidence.get('market_phase') or '확인 필요'}", "",
+        "> 수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.", "",
+        "## 위험 축소 1단계", "", f"상태: {stage1['status']}", "",
+        "| 종목 | 현재 주식 | 목표 참고 주식 | 계산 매도 주식 | 현재 비중 | 목표 비중 | 근거 |",
+        "|---|---:|---:|---:|---:|---:|---|",
+    ]
+    if stage1["sell_advisories"]:
+        for row in stage1["sell_advisories"]:
+            lines.append(
+                f"| {row['ticker']} | {_display(row['current_shares'])} | {_display(row['target_shares_reference'])} | "
+                f"{_display(row['calculated_sell_shares'])} | {_display(row['current_weight_pct'])}% | "
+                f"{_display(row['target_weight_pct'])}% | {row['reason']} |"
+            )
+    else:
+        lines.append("| 해당 없음 | - | - | - | - | - | 계획상 축소·청산 항목 없음 |")
+
+    lines += ["", "## 2단계 매수", "", f"상태: {stage2['status']}", ""]
+    if stage2["status"] == "BLOCKED_POST_SELL_BROKER_REFRESH_REQUIRED":
+        lines.append("매도 체결 후 새 broker-observed Grade B run으로 다시 계산해야 합니다.")
+    if stage2["buy_advisories"]:
+        lines += [
+            "| 종목 | 목표 참고 주식 | 목표 격차 | 계산 매수 주식 | 기준 가격 | 예상 소요액 |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+        references = {item["ticker"]: item["target_shares_reference"] for item in stage2["buy_candidate_references"]}
+        for row in stage2["buy_advisories"]:
+            lines.append(
+                f"| {row['ticker']} | {_display(references.get(row['ticker']))}주 | {_display(row['target_gap_shares'])}주 | "
+                f"{_display(row['calculated_buy_shares'])}주 | ${_display(row['price_usd'])} | "
+                f"${_display(row['estimated_cost_usd'])} |"
+            )
+    else:
+        lines += ["| 종목 | 목표 참고 주식 | 최종 매수 주식 |", "|---|---:|---|"]
+        if stage2["buy_candidate_references"]:
+            for row in stage2["buy_candidate_references"]:
+                lines.append(f"| {row['ticker']} | {_display(row['target_shares_reference'])}주 | 산출 보류 / BLOCKED |")
+        else:
+            lines.append("| 없음 | - | 산출 보류 / BLOCKED |")
+    if stage2["blockers"]:
+        lines.append(f"차단 사유: {', '.join(stage2['blockers'])}")
+
+    lines += ["", "## 종목 판단", ""]
+    actions = {"ADD": "늘림", "HOLD": "유지", "TRIM": "축소", "EXIT": "전량 정리"}
+    for row in report["portfolio"]["positions"]:
+        lines += [
+            f"### {row['ticker']}", "",
+            f"- 판단: {actions[row['action']]}",
+            f"- 현재/목표 비중: {_display(row['current_weight_pct']['value'])}% / {_display(row['target_weight_pct']['value'])}%",
+            f"- 현재/목표 참고 주식: {_display(row['current_quantity']['value'])}주 / {_display(row['target_shares_reference']['value'])}주",
+            f"- 계산 변화: {_display(row['share_delta']['value'])}주",
+            f"- 근거: {row['rationale']}",
+            f"- 주요 위험: {row.get('material_risk') or '계획에 기재되지 않음'}",
+            f"- 판단 변경 조건: {', '.join(row['decision_change_triggers']) or '계획에 기재되지 않음'}", "",
+        ]
+
+    lines += [
+        "## 근거·요청·이벤트", "",
+        f"- Canonical schema SHA-256: {evidence['canonical_schema_sha256']}",
+        f"- Request accounting: {evidence['request_accounting_status']}",
+    ]
+    for name, status in evidence.get("request_accounting", {}).items():
+        lines.append(f"  - {name}: {status}")
+    lines += [
+        f"- Event context: {event['status']}",
+        f"- HIGH events (current/new): {_display(event['current_high_count'])}/{_display(event['new_high_count'])}",
+        f"- Affected tickers: {', '.join(event['affected_tickers']) or '없음'}",
+        f"- Automatic target change: {_display(event['automatic_target_change'])}", "",
+        "## 권한과 현금 의미", "",
+        f"- 현재 현금: ${_display(report['cash_semantics']['current_cash_usd']['value'])}",
+        f"- 검증된 주문 가능 현금: ${_display(report['cash_semantics']['verified_orderable_cash_usd']['value'])}",
+        f"- 매도 후 추정 현금: ${_display(report['cash_semantics']['post_sell_estimated_cash_usd']['value'])}",
+        f"- 현재 런타임 수동자문 권한: {report['authority']['current_runtime_advisory_authority']}",
+        f"- CLI authority input effect: {report['authority']['runtime_authority_cli_input_effect']}",
+        "- Broker Order Authority: FALSE", "- execution_quantity: NULL", "- automatic_order: FALSE", "",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_html(report: dict[str, Any]) -> str:
+    evidence = report["evidence"]
+    stage1_rows = "".join(
+        f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['current_shares'])}</td>"
+        f"<td>{_display(row['target_shares_reference'])}</td><td>{_display(row['calculated_sell_shares'])}</td>"
+        f"<td>{html.escape(row['reason'])}</td></tr>" for row in report["stage1"]["sell_advisories"]
+    ) or "<tr><td colspan='5'>계획상 축소·청산 항목이 없습니다.</td></tr>"
+    references = {
+        item["ticker"]: item["target_shares_reference"]
+        for item in report["stage2"]["buy_candidate_references"]
+    }
+    buy_rows = "".join(
+        f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(references.get(row['ticker']))}</td>"
+        f"<td>{_display(row['target_gap_shares'])}</td><td>{_display(row['calculated_buy_shares'])}</td>"
+        f"<td>${_display(row['price_usd'])}</td><td>${_display(row['estimated_cost_usd'])}</td></tr>"
+        for row in report["stage2"]["buy_advisories"]
+    )
+    if not buy_rows:
+        buy_rows = "".join(
+            f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['target_shares_reference'])}</td>"
+            "<td>-</td><td>산출 보류 / BLOCKED</td><td>-</td><td>-</td></tr>"
+            for row in report["stage2"]["buy_candidate_references"]
+        ) or "<tr><td colspan='6'>후보 없음 · 산출 보류 / BLOCKED</td></tr>"
+    request_rows = "".join(
+        f"<li>{html.escape(name)}: {html.escape(str(status))}</li>"
+        for name, status in evidence.get("request_accounting", {}).items()
+    )
+    event = report["event_context"]
+    markdown = render_markdown(report)
+    return f"""<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>포트폴리오 의사결정 대시보드</title><style>
+body{{font-family:"Malgun Gothic","Segoe UI",sans-serif;margin:0;background:#f4f7fb;color:#172033}}main{{max-width:1120px;margin:auto;padding:28px}}
+.hero{{background:#173b66;color:white;padding:26px;border-radius:18px}}.notice{{background:#fff4d6;border-left:5px solid #d39500;padding:14px;margin:18px 0}}
+section{{background:white;padding:20px;margin:18px 0;border-radius:14px;box-shadow:0 5px 20px #16324f14}}table{{border-collapse:collapse;width:100%}}
+th,td{{border-bottom:1px solid #dce3ec;padding:10px;text-align:left}}.status{{font-weight:700;color:#8a4200}}pre{{white-space:pre-wrap;background:#f7f8fa;padding:12px}}
+</style></head><body><main>
+<header class="hero"><h1>포트폴리오 의사결정 대시보드</h1><p>판단 시각: {html.escape(str(evidence.get('decision_as_of') or '확인 필요'))}</p><p>Evidence Run: {html.escape(str(evidence.get('run_id') or '확인 필요'))} · Grade: {html.escape(evidence['portfolio_evidence_grade_display'])} · 시장 단계: {html.escape(str(evidence.get('market_phase') or '확인 필요'))}</p></header>
+<div class="notice">수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.</div>
+<section><h2>위험 축소 1단계</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>종목</th><th>현재 주식</th><th>목표 참고</th><th>계산 매도</th><th>근거</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
+<section><h2>2단계 매수</h2><p class="status">{html.escape(report['stage2']['status'])}</p><table><thead><tr><th>종목</th><th>목표 참고</th><th>목표 격차</th><th>계산 매수</th><th>기준 가격</th><th>예상 소요액</th></tr></thead><tbody>{buy_rows}</tbody></table><p>차단 사유: {html.escape(', '.join(report['stage2']['blockers']) or '없음')}</p></section>
+<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>Request accounting: {html.escape(evidence['request_accounting_status'])}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
+<section><h2>권한</h2><p>Broker Order Authority = FALSE · execution_quantity = NULL · automatic_order = FALSE</p><p>현재 런타임 수동자문 권한: {html.escape(report['authority']['current_runtime_advisory_authority'])}</p><small>CLI authority input effect: {html.escape(report['authority']['runtime_authority_cli_input_effect'])}</small></section>
+<details><summary>동일 의미의 Markdown 원문</summary><pre>{html.escape(markdown)}</pre></details>
+</main></body></html>"""
+
+
 def _trusted_output(root: Path, output_root: Path) -> Path:
     trusted = Path(os.path.abspath(root))
     output = Path(os.path.abspath(output_root))
@@ -812,6 +1146,7 @@ def _trusted_output(root: Path, output_root: Path) -> Path:
 def write_run(
     report: dict[str, Any], validation: dict[str, Any], *, output_root: Path,
     source_paths: dict[str, Path | None], implementation_paths: list[Path], root: Path = ROOT,
+    consumed_hashes: dict[str, str] | None = None,
 ) -> Path:
     output = _trusted_output(root, output_root)
     run_dir = output / report["run_id"]
@@ -836,6 +1171,7 @@ def write_run(
         "implementation_hashes": {
             path.relative_to(root).as_posix(): file_hash(path) for path in implementation_paths
         },
+        "consumed_hashes": dict(sorted((consumed_hashes or {}).items())),
         "artifact_hashes": {name: _sha256_bytes(payload) for name, payload in artifacts.items()},
         "create_only": True, "immutable_derived_output": True,
         "order_authority": False, "execution_quantity": None, "automatic_order": False,
@@ -850,13 +1186,22 @@ def write_run(
 
 def discover_historical_replay(root: Path = ROOT) -> dict[str, Any]:
     evidence_candidates: list[Path] = []
+    rejected_schema_errors: dict[str, list[str]] = {}
+    schema_bytes = (root / MANUAL_EVIDENCE_SCHEMA.relative_to(ROOT)).read_bytes()
     base = root / "workspace/outputs/manual-portfolio-analysis"
     if base.exists():
         for path in base.glob("*/manual-portfolio-analysis.json"):
             try:
-                if load_json(path).get("evidence_grade") == "GRADE_B":
+                source_bytes = path.read_bytes()
+                candidate = json.loads(source_bytes.decode("utf-8"))
+                errors = validate_instance(
+                    candidate, root / MANUAL_EVIDENCE_SCHEMA.relative_to(ROOT), schema_bytes=schema_bytes,
+                )
+                if candidate.get("evidence_grade") == "GRADE_B" and not errors:
                     evidence_candidates.append(path)
-            except (OSError, json.JSONDecodeError):
+                elif candidate.get("evidence_grade") == "GRADE_B":
+                    rejected_schema_errors[path.relative_to(root).as_posix()] = errors
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
     plan_candidates = [
         path for path in (root / "workspace").rglob("*.json")
@@ -874,6 +1219,7 @@ def discover_historical_replay(root: Path = ROOT) -> dict[str, Any]:
         "status": status,
         "real_grade_b_fixture": evidence_candidates[0].relative_to(root).as_posix() if evidence_candidates else None,
         "historical_decision_plan": plan_candidates[0].relative_to(root).as_posix() if plan_candidates else None,
+        "rejected_grade_b_schema_errors": rejected_schema_errors,
         "current_advisory_created": False,
     }
 
@@ -900,25 +1246,47 @@ def main() -> int:
     plan_path = args.decision_plan.resolve()
     risk_path = args.risk_policy.resolve()
     event_path = args.event_context.resolve() if args.event_context else None
-    risk = load_json(risk_path)
+    evidence_bytes = evidence_path.read_bytes()
+    plan_bytes = plan_path.read_bytes()
+    evidence_schema_bytes = MANUAL_EVIDENCE_SCHEMA.read_bytes()
+    plan_schema_bytes = PLAN_SCHEMA.read_bytes()
+    dashboard_schema_bytes = DASHBOARD_SCHEMA.read_bytes()
+    evidence_value = json.loads(evidence_bytes.decode("utf-8"))
+    plan_value = json.loads(plan_bytes.decode("utf-8"))
+    risk_bytes = risk_path.read_bytes()
+    risk = json.loads(risk_bytes.decode("utf-8"))
     registry_path = args.instrument_registry.resolve() if args.instrument_registry else ROOT / risk["instrument_registry_path"]
-    registry = load_json(registry_path) if registry_path.exists() else None
+    registry_bytes = registry_path.read_bytes() if registry_path.exists() else None
+    registry = json.loads(registry_bytes.decode("utf-8")) if registry_bytes is not None else None
+    event_bytes = event_path.read_bytes() if event_path else None
     generated = _now()
     seed = _sha256_bytes((file_hash(evidence_path) + file_hash(plan_path) + generated).encode("utf-8"))[:12]
     run_id = args.run_id or f"portfolio-decision-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{seed}"
     report, validation = compile_dashboard(
-        load_json(evidence_path), load_json(plan_path), risk, compile_mode=args.mode,
-        registry=registry, event_context=load_json(event_path) if event_path else None,
+        evidence_value, plan_value, risk, compile_mode=args.mode,
+        registry=registry, event_context=json.loads(event_bytes.decode("utf-8")) if event_bytes else None,
         run_id=run_id, generated_at=generated,
         runtime_advisory_authority=args.runtime_advisory_authority,
+        evidence_schema_bytes=evidence_schema_bytes, plan_schema_bytes=plan_schema_bytes,
+        dashboard_schema_bytes=dashboard_schema_bytes,
     )
-    implementation_paths = [Path(__file__).resolve(), PLAN_SCHEMA, DASHBOARD_SCHEMA, risk_path]
+    implementation_paths = implementation_provenance_paths(risk_path)
     run_dir = write_run(
         report, validation, output_root=args.output_root.resolve(), root=ROOT,
         source_paths={"portfolio_evidence": evidence_path, "decision_plan": plan_path,
-                      "risk_policy": risk_path, "instrument_registry": registry_path if registry_path.exists() else None,
-                      "event_context": event_path},
+                       "risk_policy": risk_path, "instrument_registry": registry_path if registry_path.exists() else None,
+                      "event_context": event_path, "portfolio_evidence_schema": MANUAL_EVIDENCE_SCHEMA},
         implementation_paths=implementation_paths,
+        consumed_hashes={
+            "portfolio_evidence": _sha256_bytes(evidence_bytes),
+            "decision_plan": _sha256_bytes(plan_bytes),
+            "portfolio_evidence_schema": _sha256_bytes(evidence_schema_bytes),
+            "decision_plan_schema": _sha256_bytes(plan_schema_bytes),
+            "dashboard_schema": _sha256_bytes(dashboard_schema_bytes),
+            "risk_policy": _sha256_bytes(risk_bytes),
+            **({"instrument_registry": _sha256_bytes(registry_bytes)} if registry_bytes is not None else {}),
+            **({"event_context": _sha256_bytes(event_bytes)} if event_bytes is not None else {}),
+        },
     )
     print(run_dir)
     return 0

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
 import sys
 import tempfile
@@ -19,88 +20,66 @@ sys.path.insert(0, str(SCRIPTS))
 from portfolio_decision_dashboard import (  # noqa: E402
     ContractError,
     DEFAULT_RISK_POLICY,
+    MANUAL_EVIDENCE_SCHEMA,
     compile_dashboard,
     discover_historical_replay,
+    implementation_provenance_paths,
     render_html,
     render_markdown,
     validate_plan,
     write_run,
 )
-from validation_common import load_json  # noqa: E402
+from validation_common import load_json, validate_instance  # noqa: E402
 
 
-def finalized_bar(ticker: str, price: float) -> dict:
-    return {
-        "ticker": ticker,
-        "identity_authority_status": "VERIFIED",
-        "session_authority_status": "VERIFIED",
-        "status": "VERIFIED",
-        "bar_date": "2026-08-28",
-        "bar": {
-            "ticker": ticker,
-            "provider": "KIWOOM_REST",
-            "market_session_type": "REGULAR_COMPLETED",
-            "reported_session": "2026-08-28",
-            "price_basis": "RAW_REGULAR_SESSION_CLOSE",
-            "price": price,
-            "currency": "USD",
-            "provider_timestamp": "2026-08-29T20:00:00+09:00",
-            "bar_finalized": True,
-            "stable": True,
-            "comparable_to_regular_close": True,
-        },
-    }
+MANUAL_TEST_PATH = ROOT / "manage-us-stock-strategy/tests/test_manual_portfolio_analysis.py"
+_manual_spec = importlib.util.spec_from_file_location("dashboard_canonical_manual_fixture", MANUAL_TEST_PATH)
+assert _manual_spec and _manual_spec.loader
+_manual_module = importlib.util.module_from_spec(_manual_spec)
+_manual_spec.loader.exec_module(_manual_module)
 
 
-def evidence(*, market_phase: str = "REGULAR", cash: float = 10_000.0) -> dict:
+def evidence(
+    *, market_phase: str = "REGULAR_COMPLETED", cash: float = 10_000.0,
+    run_id: str = "manual-synthetic-grade-b", decision_as_of: str = "2026-08-21T22:00:00+00:00",
+    holdings: dict[str, float] | None = None,
+) -> dict:
+    broker_holdings = holdings or {"MVLL": 100, "NBIS": 20, "SOXL": 20, "PGR": 0, "JPM": 0}
+    costs = {"MVLL": 30.0, "NBIS": 90.0, "SOXL": 50.0, "PGR": 0.0, "JPM": 0.0}
+    system = _manual_module.system_portfolio(
+        {"MVLL": 99, "NBIS": 20, "SOXL": 20, "PGR": 0, "JPM": 0}, costs, cash,
+    )
+    case = _manual_module.ManualPortfolioAnalysisTest(methodName="runTest")
+    case.setUpClass()
+    case.setUp()
+    try:
+        value = case.build_report(
+            portfolio=system, broker_holdings=broker_holdings, broker_costs=costs,
+            orderable_cash=cash, manual_run_id=run_id, observed_at=decision_as_of,
+            decision_as_of=decision_as_of, account_retrieved_at=decision_as_of,
+            market_retrieved_at_by_operation={"oauth_health": decision_as_of, "market_quote": decision_as_of,
+                                               "daily_chart": decision_as_of},
+        )
+    finally:
+        case.tearDown()
     prices = {"MVLL": 20.0, "NBIS": 100.0, "SOXL": 40.0, "PGR": 200.0, "JPM": 100.0}
-    return {
-        "schema_version": "2.0",
-        "manual_run_id": "manual-synthetic-grade-b",
-        "decision_as_of": "2026-08-29T20:00:00+09:00",
-        "market_phase": market_phase,
-        "evidence_grade": "GRADE_B",
-        "preflight_status": "PASS",
-        "provenance": {"decision_quality_eligible": True},
-        "broker_snapshot_status": "AVAILABLE",
-        "broker_diff_status": "DIFFERENT",
-        "orderable_cash_status": "VERIFIED",
-        "verified_orderable_cash_usd": cash,
-        "quantity_authority": "none",
-        "order_authority": False,
-        "execution_quantity": None,
-        "mutation_status": "REPORT_ONLY_CREATE_ONLY",
-        "broker_observed_state": {
-            "status": "AVAILABLE",
-            "scope_complete": False,
-            "operation_statuses": {
-                "account_holdings_read": "PASS",
-                "account_deposit_read": "PASS",
-                "account_open_items": "KIWOOM_API_RESPONSE_ERROR",
-            },
-            "holdings": [
-                {"ticker": "MVLL", "held_quantity": 100, "average_cost": 30.0},
-                {"ticker": "NBIS", "held_quantity": 20, "average_cost": 90.0},
-                {"ticker": "SOXL", "held_quantity": 20, "average_cost": 50.0},
-            ],
-            "cash": {
-                "foreign_currency_deposit": cash,
-                "settled_available_cash": cash,
-                "order_available_cash": cash,
-                "cash_status": "VERIFIED_POSITIVE",
-                "projected_proceeds_included": False,
-            },
-        },
-        "system_portfolio_state": {"holdings": {"MVLL": 99, "NBIS": 20, "SOXL": 20}},
-        "last_verified_finalized_bars": [finalized_bar(ticker, price) for ticker, price in prices.items()],
-    }
+    for item in value["last_verified_finalized_bars"]:
+        item["bar"]["price"] = prices[item["ticker"]]
+    value["market_phase"] = market_phase
+    value["current_session_finalization_status"] = "VERIFIED" if market_phase == "REGULAR_COMPLETED" else "NOT_VERIFIED"
+    assert validate_instance(value, MANUAL_EVIDENCE_SCHEMA) == []
+    return value
 
 
 def plan(*, status: str = "CURRENT_APPROVED", include_priority: bool = True) -> dict:
     value = {
         "plan_id": "synthetic-plan-v1",
-        "as_of": "2026-08-29T20:00:00+09:00",
+        "as_of": "2026-08-21T22:00:00+00:00",
         "plan_status": status,
+        "evidence_binding": {
+            "expected_run_id": "manual-synthetic-grade-b",
+            "expected_decision_as_of": "2026-08-21T22:00:00+00:00",
+        },
         "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET",
         "cash_target_pct": 61.5,
         "positions": [
@@ -119,13 +98,21 @@ def plan(*, status: str = "CURRENT_APPROVED", include_priority: bool = True) -> 
 
 
 def post_sell_evidence(*, cash: float = 13_000.0) -> dict:
-    value = evidence(cash=cash)
+    value = evidence(
+        cash=cash, run_id="manual-post-sell-grade-b",
+        decision_as_of="2026-08-21T22:05:00+00:00",
+        holdings={"MVLL": 37, "NBIS": 20, "SOXL": 0, "PGR": 0, "JPM": 0},
+    )
     value["broker_diff_status"] = "MATCH"
-    value["broker_observed_state"]["holdings"] = [
-        {"ticker": "MVLL", "held_quantity": 37, "average_cost": 30.0},
-        {"ticker": "NBIS", "held_quantity": 20, "average_cost": 90.0},
-        {"ticker": "SOXL", "held_quantity": 0, "average_cost": 50.0},
-    ]
+    return value
+
+
+def post_sell_plan(*, cash_priority: bool = True) -> dict:
+    value = plan(include_priority=cash_priority)
+    value["post_sell_refresh"] = {
+        "prior_run_id": value["evidence_binding"]["expected_run_id"],
+        "prior_decision_as_of": value["evidence_binding"]["expected_decision_as_of"],
+    }
     return value
 
 
@@ -167,7 +154,7 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         source = post_sell_evidence()
         source["orderable_cash_status"] = "NOT_VERIFIED"
         source["verified_orderable_cash_usd"] = None
-        report, _ = self.compile(source, compile_mode="POST_SELL_RECOMPILE")
+        report, _ = self.compile(source, post_sell_plan(), compile_mode="POST_SELL_RECOMPILE")
         self.assertEqual(report["stage2"]["status"], "BLOCKED")
         self.assertIn("VERIFIED_ORDERABLE_CASH_REQUIRED", report["stage2"]["blockers"])
 
@@ -235,10 +222,14 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
     def test_deadband_prefers_no_trade(self):
         source = evidence(cash=900.0)
         source["broker_observed_state"]["holdings"] = [{"ticker": "PGR", "held_quantity": 1, "average_cost": 90.0}]
-        source["last_verified_finalized_bars"] = [finalized_bar("PGR", 100.0)]
+        source["last_verified_finalized_bars"] = [
+            item for item in source["last_verified_finalized_bars"] if item["ticker"] == "PGR"
+        ]
+        source["last_verified_finalized_bars"][0]["bar"]["price"] = 100.0
         value = {
-            "plan_id": "deadband", "as_of": "2026-08-29T20:00:00+09:00", "plan_status": "CURRENT_APPROVED",
+            "plan_id": "deadband", "as_of": "2026-08-21T22:00:00+00:00", "plan_status": "CURRENT_APPROVED",
             "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 89.0,
+            "evidence_binding": {"expected_run_id": "manual-synthetic-grade-b", "expected_decision_as_of": "2026-08-21T22:00:00+00:00"},
             "positions": [{"ticker": "PGR", "action": "HOLD", "target_weight_pct": 11.0, "rationale": "inside deadband", "investment_horizon": "long", "target_status": "APPROVED"}],
             "material_unknowns": [], "decision_change_triggers": [],
         }
@@ -260,20 +251,23 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertIsNotNone(report["cash_semantics"]["full_target_reference_cash_usd"]["value"])
 
     def test_post_sell_verified_cash_permits_stage2(self):
-        report, _ = self.compile(post_sell_evidence(), compile_mode="POST_SELL_RECOMPILE")
+        report, _ = self.compile(post_sell_evidence(), post_sell_plan(), compile_mode="POST_SELL_RECOMPILE")
         self.assertEqual(report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
         self.assertTrue(report["stage2"]["buy_advisories"])
         self.assertTrue(all(row["calculated_buy_shares"] >= 0 for row in report["stage2"]["buy_advisories"]))
 
     def test_insufficient_buy_cash_requires_priority(self):
-        report, _ = self.compile(post_sell_evidence(cash=50.0), plan(include_priority=False), compile_mode="POST_SELL_RECOMPILE")
+        report, _ = self.compile(post_sell_evidence(cash=50.0), post_sell_plan(cash_priority=False), compile_mode="POST_SELL_RECOMPILE")
         self.assertEqual(report["stage2"]["status"], "BLOCKED")
         self.assertIn("BUY_ALLOCATION_PRIORITY_REQUIRED", report["stage2"]["blockers"])
 
-    def test_open_items_and_request_accounting_absence_remain_visible(self):
-        report, _ = self.compile()
+    def test_open_items_and_request_accounting_remain_visible(self):
+        source = evidence()
+        source["broker_observed_state"]["operation_statuses"]["account_open_items"] = "KIWOOM_API_RESPONSE_ERROR"
+        report, _ = self.compile(source)
         self.assertIn("OPEN_ITEMS_VISIBILITY_UNAVAILABLE", report["evidence"]["warnings"])
-        self.assertEqual(report["evidence"]["exact_request_accounting_status"], "ABSENT")
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_UNVERIFIED")
+        self.assertEqual(report["evidence"]["request_accounting"]["account_holdings_read"], "PASS")
         self.assertEqual(report["authority"]["artifact_time_quantity_authority"], "none")
 
     def test_no_event_context_and_high_event_context(self):
@@ -297,6 +291,252 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertFalse(validation["broker_used"])
         self.assertFalse(validation["order_path_used"])
 
+    def test_canonical_synthetic_fixture_is_schema_valid(self):
+        source = evidence()
+        self.assertEqual(validate_instance(source, MANUAL_EVIDENCE_SCHEMA), [])
+        report, validation = self.compile(source)
+        self.assertEqual(report["evidence"]["canonical_schema_errors"], [])
+        self.assertEqual(report["evidence"]["canonical_schema_sha256"], hashlib.sha256(MANUAL_EVIDENCE_SCHEMA.read_bytes()).hexdigest())
+        self.assertTrue(validation["invariants"]["canonical_evidence_schema"])
+
+    def test_noncanonical_regular_literal_never_finalizes_stage1(self):
+        source = evidence()
+        source["market_phase"] = "REGULAR"
+        report, validation = self.compile(source)
+        self.assertNotEqual(report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        self.assertEqual(report["evidence"]["portfolio_evidence_status"], "BLOCKED")
+        self.assertEqual(validation["status"], "FAIL")
+
+    def test_decimal_floor_boundary_avoids_binary_float_underallocation(self):
+        source = evidence(cash=1290.50, holdings={"PGR": 0})
+        for item in source["last_verified_finalized_bars"]:
+            if item["ticker"] == "PGR":
+                item["bar"]["price"] = 0.89
+        value = {
+            "plan_id": "decimal-boundary", "as_of": source["decision_as_of"],
+            "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": source["manual_run_id"], "expected_decision_as_of": source["decision_as_of"]},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 98.0,
+            "positions": [{"ticker": "PGR", "action": "ADD", "target_weight_pct": 2.0,
+                           "rationale": "decimal boundary", "investment_horizon": "long", "target_status": "APPROVED"}],
+            "material_unknowns": [], "decision_change_triggers": [],
+        }
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "PGR")
+        self.assertEqual(row["target_shares_reference"]["value"], 29)
+
+    def test_total_targets_over_100_rejected_without_cash_target(self):
+        value = plan()
+        del value["cash_target_pct"]
+        value["positions"][0]["target_weight_pct"] = 70.0
+        value["positions"][1]["target_weight_pct"] = 40.0
+        self.assertTrue(any("TARGET_ALLOCATION_EXCEEDS_100_PERCENT" in item for item in validate_plan(value)))
+        with self.assertRaises(ContractError):
+            self.compile(plan_value=value)
+
+    def test_target_hard_cap_blocks_deadband(self):
+        source = evidence(cash=852.0, holdings={"PGR": 148})
+        for item in source["last_verified_finalized_bars"]:
+            if item["ticker"] == "PGR":
+                item["bar"]["price"] = 1.0
+        value = {
+            "plan_id": "target-hard-cap", "as_of": source["decision_as_of"], "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": source["manual_run_id"], "expected_decision_as_of": source["decision_as_of"]},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 84.0,
+            "positions": [{"ticker": "PGR", "action": "ADD", "target_weight_pct": 16.0,
+                           "rationale": "counterexample", "investment_horizon": "long", "target_status": "APPROVED"}],
+            "material_unknowns": [], "decision_change_triggers": [],
+        }
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "PGR")
+        self.assertIn("TARGET_HARD_CAP_VIOLATION", row["blockers"])
+        self.assertEqual(row["deadband_status"], "NOT_APPLIED")
+
+    def test_partial_priority_is_blocked_when_cash_is_insufficient(self):
+        value = post_sell_plan()
+        value["buy_priority"] = ["PGR"]
+        report, _ = self.compile(post_sell_evidence(cash=50.0), value, compile_mode="POST_SELL_RECOMPILE")
+        self.assertEqual(report["stage2"]["status"], "BLOCKED")
+        self.assertIn("BUY_ALLOCATION_PRIORITY_INCOMPLETE", report["stage2"]["blockers"])
+        self.assertEqual(report["stage2"]["buy_advisories"], [])
+
+    def test_post_sell_requires_newer_bound_run_and_eligible_session(self):
+        stale = evidence()
+        value = post_sell_plan()
+        stale_report, _ = self.compile(stale, value, compile_mode="POST_SELL_RECOMPILE")
+        self.assertNotEqual(stale_report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        self.assertIn("POST_SELL_FRESH_RUN_REQUIRED", stale_report["evidence"]["canonical_gate_blockers"])
+        pre_market = post_sell_evidence()
+        pre_market["market_phase"] = "PRE_MARKET"
+        pre_market["current_session_finalization_status"] = "NOT_VERIFIED"
+        pre_report, _ = self.compile(pre_market, value, compile_mode="POST_SELL_RECOMPILE")
+        self.assertNotEqual(pre_report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        self.assertIn("POST_SELL_SESSION_NOT_ELIGIBLE", pre_report["stage2"]["blockers"])
+
+    def test_cli_authority_input_cannot_elevate_blocked_report(self):
+        source = evidence(market_phase="PRE_MARKET")
+        report, _ = self.compile(source, runtime_advisory_authority="CURRENT_MANUAL_ADVISORY_ELIGIBLE")
+        self.assertEqual(report["authority"]["current_runtime_advisory_authority"], "NOT_VERIFIED_BY_RUNTIME")
+        self.assertEqual(report["authority"]["runtime_authority_cli_input_effect"], "DISPLAY_ONLY_NO_AUTHORITY_EFFECT")
+
+    def test_json_markdown_html_parity_for_buys_events_and_requests(self):
+        report, _ = self.compile(
+            post_sell_evidence(), post_sell_plan(), compile_mode="POST_SELL_RECOMPILE",
+            event_context={"current_high_count": 2, "new_high_count": 1, "affected_tickers": ["MVLL"]},
+        )
+        markdown = render_markdown(report)
+        dashboard_html = render_html(report)
+        self.assertTrue(report["stage2"]["buy_advisories"])
+        for row in report["stage2"]["buy_advisories"]:
+            for token in (row["ticker"], str(row["calculated_buy_shares"])):
+                self.assertIn(token, markdown)
+                self.assertIn(token, dashboard_html)
+        for token in ("Event context", "MVLL", "Request accounting", "account_holdings_read"):
+            self.assertIn(token, markdown)
+            self.assertIn(token, dashboard_html)
+
+    def test_schema_valid_but_unverified_and_preflight_fail_block_stage1(self):
+        unverified = evidence()
+        unverified["evidence_grade"] = "UNVERIFIED"
+        unverified["manual_data_verification_status"] = "NOT_VERIFIED"
+        unverified["provenance"]["evidence_grade"] = "UNVERIFIED"
+        unverified["provenance"]["decision_quality_eligible"] = False
+        self.assertEqual(validate_instance(unverified, MANUAL_EVIDENCE_SCHEMA), [])
+        unverified_report, _ = self.compile(unverified)
+        self.assertNotEqual(unverified_report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        failed = evidence()
+        failed["preflight_status"] = "FAIL"
+        failed_report, _ = self.compile(failed)
+        self.assertNotEqual(failed_report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+
+    def test_plan_later_than_evidence_blocks_current_final(self):
+        value = plan()
+        value["as_of"] = "2026-08-21T22:00:01+00:00"
+        report, _ = self.compile(plan_value=value)
+        self.assertEqual(report["evidence"]["portfolio_evidence_status"], "BLOCKED")
+        self.assertIn("PLAN_AS_OF_AFTER_BOUND_EVIDENCE", report["evidence"]["canonical_gate_blockers"])
+
+    def test_stage2_unverified_and_preflight_fail_are_blocked(self):
+        value = post_sell_plan()
+        unverified = post_sell_evidence()
+        unverified["evidence_grade"] = "UNVERIFIED"
+        unverified["manual_data_verification_status"] = "NOT_VERIFIED"
+        unverified["provenance"]["evidence_grade"] = "UNVERIFIED"
+        unverified["provenance"]["decision_quality_eligible"] = False
+        report, _ = self.compile(unverified, value, compile_mode="POST_SELL_RECOMPILE")
+        self.assertNotEqual(report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        failed = post_sell_evidence()
+        failed["preflight_status"] = "FAIL"
+        report, _ = self.compile(failed, value, compile_mode="POST_SELL_RECOMPILE")
+        self.assertNotEqual(report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+
+    def test_decimal_floor_just_below_integer_boundary(self):
+        source = evidence(cash=1290.49, holdings={"PGR": 0})
+        for item in source["last_verified_finalized_bars"]:
+            if item["ticker"] == "PGR":
+                item["bar"]["price"] = 0.89
+        value = {
+            "plan_id": "decimal-below", "as_of": source["decision_as_of"], "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": source["manual_run_id"], "expected_decision_as_of": source["decision_as_of"]},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 98.0,
+            "positions": [{"ticker": "PGR", "action": "ADD", "target_weight_pct": 2.0,
+                           "rationale": "below boundary", "investment_horizon": "long", "target_status": "APPROVED"}],
+            "material_unknowns": [], "decision_change_triggers": [],
+        }
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "PGR")
+        self.assertEqual(row["target_shares_reference"]["value"], 28)
+
+    def test_position_targets_plus_cash_over_100_rejected(self):
+        value = plan()
+        value["cash_target_pct"] = 70.0
+        self.assertTrue(any("TARGET_ALLOCATION_EXCEEDS_100_PERCENT" in item for item in validate_plan(value)))
+
+    def test_current_hard_cap_prevents_deadband(self):
+        source = evidence(cash=840.0, holdings={"PGR": 160})
+        for item in source["last_verified_finalized_bars"]:
+            if item["ticker"] == "PGR":
+                item["bar"]["price"] = 1.0
+        value = {
+            "plan_id": "current-hard-cap", "as_of": source["decision_as_of"], "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": source["manual_run_id"], "expected_decision_as_of": source["decision_as_of"]},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 85.5,
+            "positions": [{"ticker": "PGR", "action": "TRIM", "target_weight_pct": 14.5,
+                           "rationale": "current cap", "investment_horizon": "long", "target_status": "APPROVED"}],
+            "material_unknowns": [], "decision_change_triggers": [],
+        }
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "PGR")
+        self.assertEqual(row["deadband_status"], "NOT_APPLIED")
+        self.assertNotEqual(row["share_delta"]["value"], 0)
+
+    def test_complete_priority_is_deterministic_without_ticker_fallback(self):
+        first_source = post_sell_evidence(cash=250.0)
+        second_source = post_sell_evidence(cash=250.0)
+        for source in (first_source, second_source):
+            next(item for item in source["broker_observed_state"]["holdings"] if item["ticker"] == "NBIS")["held_quantity"] = 100
+        first_plan = post_sell_plan()
+        first_plan["buy_priority"] = ["PGR", "JPM"]
+        first, _ = self.compile(first_source, first_plan, compile_mode="POST_SELL_RECOMPILE")
+        second_plan = post_sell_plan()
+        second_plan["buy_priority"] = ["JPM", "PGR"]
+        second, _ = self.compile(second_source, second_plan, compile_mode="POST_SELL_RECOMPILE")
+        self.assertEqual([row["ticker"] for row in first["stage2"]["buy_advisories"]], ["PGR", "JPM"])
+        self.assertEqual([row["ticker"] for row in second["stage2"]["buy_advisories"]], ["JPM", "PGR"])
+
+    def test_request_accounting_absent_and_arbitrary_shape_are_not_verified(self):
+        absent = evidence()
+        del absent["broker_observed_state"]["operation_statuses"]
+        absent_report, _ = self.compile(absent)
+        self.assertEqual(absent_report["evidence"]["request_accounting_status"], "ABSENT")
+        invalid = evidence()
+        invalid["broker_observed_state"]["operation_statuses"] = ["arbitrary"]
+        invalid_report, _ = self.compile(invalid)
+        self.assertEqual(invalid_report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
+        self.assertNotIn("VERIFIED", invalid_report["evidence"]["request_accounting_status"])
+
+    def test_event_asset_review_required_is_visible_without_target_change(self):
+        report, _ = self.compile(event_context={
+            "status": "ASSET_REVIEW_REQUIRED", "current_high_count": 2,
+            "new_high_count": 0, "affected_tickers": ["MVLL", "NBIS"],
+        })
+        self.assertFalse(report["event_context"]["automatic_target_change"])
+        for rendered in (render_markdown(report), render_html(report)):
+            self.assertIn("ASSET_REVIEW_REQUIRED", rendered)
+            self.assertIn("MVLL", rendered)
+            self.assertIn("NBIS", rendered)
+
+    def test_historical_replay_cannot_be_forced_current_by_cli(self):
+        report, _ = self.compile(
+            plan_value=plan(status="HISTORICAL"), compile_mode="HISTORICAL_REPLAY",
+            runtime_advisory_authority="CURRENT_MANUAL_ADVISORY_ELIGIBLE",
+        )
+        self.assertEqual(report["stage1"]["status"], "REPLAY_ONLY")
+        self.assertEqual(report["authority"]["current_runtime_advisory_authority"], "NOT_VERIFIED_BY_RUNTIME")
+
+    def test_validation_common_is_in_implementation_provenance(self):
+        paths = implementation_provenance_paths(DEFAULT_RISK_POLICY)
+        self.assertIn(SCRIPTS / "validation_common.py", paths)
+        report, validation = self.compile()
+        with tempfile.TemporaryDirectory(dir=ROOT / "manage-us-stock-strategy/tests") as temp:
+            consumed = {"risk_policy": hashlib.sha256(DEFAULT_RISK_POLICY.read_bytes()).hexdigest()}
+            run_dir = write_run(
+                report, validation, output_root=Path(temp), root=ROOT,
+                source_paths={"portfolio_evidence": None, "decision_plan": None},
+                implementation_paths=paths, consumed_hashes=consumed,
+            )
+            manifest = load_json(run_dir / "run-manifest.json")
+            self.assertIn("manage-us-stock-strategy/scripts/validation_common.py", manifest["implementation_hashes"])
+            self.assertEqual(manifest["consumed_hashes"], consumed)
+
+    def test_real_historical_grade_b_fixture_is_schema_valid_but_has_no_plan(self):
+        fixture = ROOT / "workspace/outputs/manual-portfolio-analysis/manual-20260829T153208101909Z-c32341e4e7f3/manual-portfolio-analysis.json"
+        self.assertTrue(fixture.is_file())
+        self.assertEqual(validate_instance(load_json(fixture), MANUAL_EVIDENCE_SCHEMA), [])
+        discovery = discover_historical_replay(ROOT)
+        self.assertEqual(discovery["status"], "BLOCKED_HISTORICAL_DECISION_PLAN_NOT_FOUND")
+        self.assertFalse(discovery["current_advisory_created"])
+
     def test_create_only_collision(self):
         report, validation = self.compile()
         with tempfile.TemporaryDirectory() as temp:
@@ -319,10 +559,13 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
     def test_replay_discovery_requires_real_plan(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
+            schema_target = root / MANUAL_EVIDENCE_SCHEMA.relative_to(ROOT)
+            schema_target.parent.mkdir(parents=True)
+            schema_target.write_bytes(MANUAL_EVIDENCE_SCHEMA.read_bytes())
             fixture_dir = root / "workspace/outputs/manual-portfolio-analysis/run-1"
             fixture_dir.mkdir(parents=True)
             (fixture_dir / "manual-portfolio-analysis.json").write_text(
-                json.dumps({"evidence_grade": "GRADE_B"}), encoding="utf-8",
+                json.dumps(evidence()), encoding="utf-8",
             )
             result = discover_historical_replay(root)
             self.assertEqual(result["status"], "BLOCKED_HISTORICAL_DECISION_PLAN_NOT_FOUND")
