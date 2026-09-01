@@ -23,7 +23,9 @@ from sec_official_event_intake import (
     IntakeError,
     PIPELINE_VERSION,
     create_only_json,
-    create_only_write,
+    create_only_utf8_dashboard,
+    render_dashboard_html,
+    render_dashboard_markdown,
 )
 from validation_common import file_hash, load_json, validate_instance
 
@@ -35,6 +37,7 @@ SCHEDULE_CONTRACT = ROOT / "manage-us-stock-strategy/assets/sec-scheduled-shadow
 DEFAULT_ATTEMPT_OUTPUT_ROOT = ROOT / "workspace/outputs/official-event-intake/sec-scheduled-attempts"
 SCHEDULED_DASHBOARD_JSON = "scheduled-dashboard.json"
 SCHEDULED_DASHBOARD_MARKDOWN = "scheduled-dashboard.md"
+SCHEDULED_DASHBOARD_HTML = "scheduled-dashboard.html"
 SCHEDULED_ATTEMPT_JSON = "scheduled-attempt.json"
 TASK_NAME = "GuardedPortfolio-SEC-Shadow-v0.1"
 COMPATIBLE_NETWORK_ACCESS = "SEC_OFFICIAL_ONLY"
@@ -325,16 +328,45 @@ def render_scheduled_dashboard(summary: dict[str, Any]) -> str:
     ])
 
 
+def build_scheduled_dashboard_model(current: RunArtifact, summary: dict[str, Any]) -> dict[str, Any]:
+    validation_path = current.run_directory / "validation-report.json"
+    company_status: dict[str, str] = {}
+    if validation_path.is_file():
+        validation = load_json(validation_path)
+        if isinstance(validation, dict) and isinstance(validation.get("company_source_status"), dict):
+            company_status = {
+                str(ticker): str(status) for ticker, status in validation["company_source_status"].items()
+            }
+    if not company_status:
+        company_status = {str(ticker): "PASS" for ticker in current.manifest.get("watchlist", [])}
+    context = current.normalized.get("portfolio_context")
+    if not isinstance(context, dict):
+        context = {"status": "NOT_VERIFIED", "as_of": None}
+    return {
+        "run_time": str(summary["decision_as_of"]),
+        "source_status": str(summary["pipeline_status"]),
+        "context": context,
+        "lookback_days": int(summary["lookback_days"]),
+        "events": list(current.normalized["events"]),
+        "ownership_coverage": str(current.normalized.get("ownership_coverage", "NOT_VERIFIED")),
+        "company_status": company_status,
+        "scheduled_summary": summary,
+    }
+
+
 def write_scheduled_artifacts(output_root: str | Path, current_run_id: str) -> dict[str, Any]:
     current = find_run_by_id(output_root, current_run_id)
     previous_status, previous = discover_previous_run(output_root, current)
     summary = build_summary(current, previous_status, previous)
     json_path = current.run_directory / SCHEDULED_DASHBOARD_JSON
     markdown_path = current.run_directory / SCHEDULED_DASHBOARD_MARKDOWN
-    if json_path.exists() or markdown_path.exists():
+    html_path = current.run_directory / SCHEDULED_DASHBOARD_HTML
+    if json_path.exists() or markdown_path.exists() or html_path.exists():
         raise IntakeError("RUN_COLLISION", str(current.run_directory))
+    model = build_scheduled_dashboard_model(current, summary)
     create_only_json(json_path, summary)
-    create_only_write(markdown_path, render_scheduled_dashboard(summary))
+    create_only_utf8_dashboard(markdown_path, render_dashboard_markdown(**model))
+    create_only_utf8_dashboard(html_path, render_dashboard_html(model))
     return summary
 
 

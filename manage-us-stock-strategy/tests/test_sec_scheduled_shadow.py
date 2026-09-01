@@ -381,6 +381,14 @@ class SecScheduledShadowTests(unittest.TestCase):
             self.assertEqual(before, {path: file_hash(path) for path in protected})
             self.assertTrue((current_directory / "scheduled-dashboard.json").is_file())
             self.assertTrue((current_directory / "scheduled-dashboard.md").is_file())
+            self.assertTrue((current_directory / "scheduled-dashboard.html").is_file())
+            markdown_bytes = (current_directory / "scheduled-dashboard.md").read_bytes()
+            html_bytes = (current_directory / "scheduled-dashboard.html").read_bytes()
+            self.assertTrue(markdown_bytes.startswith(b"\xef\xbb\xbf"))
+            self.assertTrue(html_bytes.startswith(b"\xef\xbb\xbf"))
+            for token in ("SEC 공시 자동 분석", "최근 7일 공시 수", "새 HIGH 공시 수", "현재 HIGH 검토 공시 수"):
+                self.assertIn(token, markdown_bytes.decode("utf-8-sig"))
+                self.assertIn(token, html_bytes.decode("utf-8-sig"))
             with self.assertRaises(IntakeError) as context:
                 write_scheduled_artifacts(root, "current")
             self.assertEqual("RUN_COLLISION", context.exception.code)

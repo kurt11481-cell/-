@@ -163,15 +163,18 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
             "source_authority": "OFFICIAL_SEC",
         }
 
-    def dashboard_outputs(self, events: list[dict]) -> tuple[str, str]:
+    def dashboard_outputs(
+        self, events: list[dict], scheduled_summary: dict | None = None
+    ) -> tuple[str, str]:
         model = {
             "run_time": "2026-08-30T01:00:00+00:00",
             "source_status": "PASS",
             "context": {"status": "LAST_KNOWN", "as_of": "2026-08-29T00:00:00+00:00"},
-            "lookback_days": 14,
+            "lookback_days": (scheduled_summary or {}).get("lookback_days", 14),
             "events": events,
             "ownership_coverage": "PARTIAL",
             "company_status": {ticker: "PASS" for ticker in ("MRVL", "NBIS", "PGR", "JPM", "CME", "V")},
+            "scheduled_summary": scheduled_summary,
         }
         return render_dashboard_markdown(**model), render_dashboard_html(model)
 
@@ -418,7 +421,7 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
         self.assertEqual("NOT_VERIFIED", view["confirmed_convertible_dilution"])
         for output in (markdown, html_output):
             self.assertIn("NOT_VERIFIED", output)
-            self.assertIn("does not confirm convertible terms or economic dilution", output)
+            self.assertIn("전환 조건이나 경제적 희석을 확정하지 않습니다", output)
 
     def test_dashboard_04_latest_equal_priority_mrvl_10q_is_first(self) -> None:
         old = self.dashboard_event(
@@ -489,8 +492,8 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
         for event in events:
             self.assertIn(event["accession_number"], markdown)
             self.assertIn(event["accession_number"], html_output)
-        self.assertIn("HIGH Event Count: 7", markdown)
-        self.assertIn("HIGH Events</small><strong>7", html_output)
+        self.assertIn("현재 HIGH 검토 공시 수: **7건**", markdown)
+        self.assertIn("현재 HIGH 검토 공시 수</small><strong>7건", html_output)
 
     def test_dashboard_10_every_high_event_has_deterministic_rule_reason(self) -> None:
         events = [
@@ -523,9 +526,10 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
         ]
         markdown, html_output = self.dashboard_outputs(events)
         shared_tokens = (
-            "ASSET_REVIEW_REQUIRED", "parity-high", "Why It Matters / Rule Reason",
-            "Routine Prospectus / Structured-Note Metadata", "424B2", "424B3",
-            "NOT_VERIFIED", "LAST_KNOWN", "OFFICIAL_SEC", "Order Authority", "Execution Quantity",
+            "SEC 공시 자동 분석", "확인 필요한 종목이 있습니다", "ASSET_REVIEW_REQUIRED",
+            "parity-high", "왜 중요한가", "확인된 사실", "아직 모르는 것",
+            "424B2", "424B3", "NOT_VERIFIED", "OFFICIAL_SEC",
+            "order_authority=false", "execution_quantity=null",
         )
         for token in shared_tokens:
             self.assertIn(token, markdown)
@@ -544,6 +548,94 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
         self.assertEqual(2, len(view["routine_aggregates"]))
         self.assertEqual(24, view["routine_event_count"])
         self.assertEqual(0, view["individual_routine_top_events"])
+
+    def test_dashboard_15_korean_first_labels_and_internal_display_separation(self) -> None:
+        markdown, html_output = self.dashboard_outputs([self.dashboard_event()])
+        for output in (markdown, html_output):
+            self.assertIn("SEC 공시 자동 분석", output)
+            self.assertIn("오늘의 결론", output)
+            self.assertIn("지금 확인할 중요 공시", output)
+            self.assertIn("확인 필요한 종목이 있습니다", output)
+            self.assertIn("ASSET_REVIEW_REQUIRED", output)
+
+    def test_dashboard_16_form_codes_have_korean_descriptions(self) -> None:
+        events = [
+            self.dashboard_event(form="10-Q", event_type="PERIODIC_FINANCIAL", accession="form-10q"),
+            self.dashboard_event(form="8-K", event_type="CURRENT_REPORT", accession="form-8k"),
+            self.dashboard_event(ticker="NBIS", form="6-K", event_type="FOREIGN_CURRENT_REPORT", accession="form-6k"),
+        ]
+        markdown, html_output = self.dashboard_outputs(events)
+        for output in (markdown, html_output):
+            self.assertIn("분기보고서 (10-Q)", output)
+            self.assertIn("중요 수시공시 (8-K)", output)
+            self.assertIn("해외기업 수시공시 (6-K)", output)
+
+    def test_dashboard_17_scheduled_counts_are_distinct_and_visible(self) -> None:
+        summary = {
+            "filings_in_lookback_window": 478,
+            "new_since_previous_count": 21,
+            "new_high_since_previous_count": 0,
+            "high_filings_in_lookback_window": 3,
+            "freshness_status": "CURRENT_RUN",
+            "lookback_days": 7,
+        }
+        events = [self.dashboard_event(accession=f"scheduled-{index}") for index in range(3)]
+        markdown, html_output = self.dashboard_outputs(events, summary)
+        for output in (markdown, html_output):
+            self.assertIn("최근 7일 공시 수", output)
+            self.assertIn("478건", output)
+            self.assertIn("21건", output)
+            self.assertIn("0건", output)
+            self.assertIn("3건", output)
+            self.assertIn("최신 자동 실행 결과", output)
+        self.assertNotEqual(summary["filings_in_lookback_window"], summary["new_since_previous_count"])
+
+    def test_dashboard_18_verified_unknown_and_no_trade_inference(self) -> None:
+        markdown, html_output = self.dashboard_outputs([self.dashboard_event()])
+        for output in (markdown, html_output):
+            self.assertIn("확인된 사실", output)
+            self.assertIn("공식 SEC filing 존재", output)
+            self.assertIn("아직 모르는 것", output)
+            self.assertIn("filing 본문 영향", output)
+            self.assertIn("매수/매도 신호", output)
+            self.assertNotIn("BUY", output)
+            self.assertNotIn("SELL", output)
+
+    def test_dashboard_18b_last_known_has_korean_display_without_internal_mutation(self) -> None:
+        summary = {"freshness_status": "LAST_KNOWN"}
+        markdown, html_output = self.dashboard_outputs([], summary)
+        for output in (markdown, html_output):
+            self.assertIn("이전 정상 결과", output)
+            self.assertIn("LAST_KNOWN", output)
+
+    def test_dashboard_19_jpm_routine_aggregation_is_beginner_compact(self) -> None:
+        events = [*self.routine_flood(460), *self.routine_flood(15, form="424B3")]
+        view = build_dashboard_view(events)
+        markdown, html_output = self.dashboard_outputs(events)
+        self.assertEqual(475, view["routine_event_count"])
+        self.assertEqual(2, len(view["routine_aggregates"]))
+        for output in (markdown, html_output):
+            self.assertIn("일상적인 증권 발행 관련 공시", output)
+            self.assertIn("475건", output)
+            self.assertIn("424B2", output)
+            self.assertIn("460건", output)
+            self.assertIn("424B3", output)
+            self.assertIn("15건", output)
+
+    def test_dashboard_20_windows_font_meta_and_korean_utf8_bom(self) -> None:
+        events = [self.dashboard_event()]
+        _, html_output = self.dashboard_outputs(events)
+        self.assertIn('<meta charset="utf-8">', html_output)
+        self.assertIn('font-family:"Malgun Gothic","맑은 고딕","Segoe UI",Arial,sans-serif', html_output)
+        self.assertNotIn("Inter", html_output)
+        self.assertNotIn("Noto Sans KR", html_output)
+        with tempfile.TemporaryDirectory() as directory:
+            _, run_dir, _, _ = self.run_mock_pipeline(Path(directory))
+            html_bytes = (run_dir / "dashboard.html").read_bytes()
+            markdown_bytes = (run_dir / "dashboard.md").read_bytes()
+            self.assertTrue(html_bytes.startswith(b"\xef\xbb\xbf"))
+            self.assertTrue(markdown_bytes.startswith(b"\xef\xbb\xbf"))
+            self.assertIn("SEC 공시 자동 분석", html_bytes.decode("utf-8-sig"))
 
     def test_no_broker_portfolio_policy_scheduler_or_order_path(self) -> None:
         boundaries = audit_static_boundaries()

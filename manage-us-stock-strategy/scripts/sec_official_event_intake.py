@@ -60,6 +60,27 @@ IMPACT_RANK = {
 }
 MATERIALITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
+DISPLAY_LABELS = {
+    "ASSET_REVIEW_REQUIRED": "확인 필요한 종목이 있습니다",
+    "PORTFOLIO_RECOMPILE_REQUIRED": "포트폴리오 재검토가 필요합니다",
+    "WATCH": "관찰 필요",
+    "NO_CHANGE": "별도 행동 필요 없음",
+    "CURRENT_RUN": "최신 자동 실행 결과",
+    "LAST_KNOWN": "이전 정상 결과",
+    "BASELINE_ONLY": "비교할 이전 결과 없음",
+    "READ_FILING": "공시 내용 확인 필요",
+    "NONE": "별도 행동 필요 없음",
+}
+FORM_LABELS = {
+    "10-Q": "분기보고서",
+    "10-K": "연차보고서",
+    "8-K": "중요 수시공시",
+    "6-K": "해외기업 수시공시",
+    "424B2": "증권 발행 관련 보충자료",
+    "424B3": "증권 발행 관련 보충자료",
+}
+MATERIALITY_LABELS = {"HIGH": "높음", "MEDIUM": "보통", "LOW": "낮음"}
+
 
 class IntakeError(RuntimeError):
     """Deterministic fail-closed intake error."""
@@ -435,6 +456,11 @@ def create_only_json(path: Path, value: Any) -> None:
     create_only_write(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
+def create_only_utf8_dashboard(path: Path, payload: str) -> None:
+    """Write a Windows-friendly create-only dashboard without changing JSON encoding."""
+    create_only_write(path, b"\xef\xbb\xbf" + payload.encode("utf-8"))
+
+
 def _git(args: list[str]) -> str:
     try:
         return subprocess.check_output(
@@ -623,7 +649,45 @@ def materiality_rule_reason(event: dict[str, Any]) -> str:
     )
 
 
-def build_dashboard_view(events: list[dict[str, Any]]) -> dict[str, Any]:
+def display_label(value: Any) -> str:
+    return DISPLAY_LABELS.get(str(value), str(value))
+
+
+def form_label(form: Any) -> str:
+    code = str(form)
+    return f"{FORM_LABELS.get(code, 'SEC 공시')} ({code})"
+
+
+def korean_rule_reason(event: dict[str, Any]) -> str:
+    relation = "현재 보유와 직접 관련된 기업" if event.get("underlying_company_relevance") else (
+        "현재 보유 종목" if event.get("portfolio_relevance") == "HOLDING" else "현재 관심종목"
+    )
+    event_type = str(event.get("event_type"))
+    if event_type == "PERIODIC_FINANCIAL":
+        return f"{relation}의 정기 실적 공시입니다. 공시 본문이 실적이나 전망에 미치는 영향은 아직 분석하지 않았습니다."
+    if event_type == "CURRENT_REPORT":
+        return f"{relation}의 중요 수시공시입니다. SEC 항목 메타데이터만 확인했으며 공시 내용 자체의 중요도는 아직 분석하지 않았습니다."
+    if event_type == "FOREIGN_CURRENT_REPORT":
+        return f"{relation}의 해외기업 수시공시입니다. 공시 내용 자체의 중요도는 아직 분석하지 않았습니다."
+    return f"{relation}의 {FORM_LABELS.get(str(event.get('form')), 'SEC 공시')}입니다. 공시 본문 영향은 아직 분석하지 않았습니다."
+
+
+def _routine_ticker_groups(aggregates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[str, dict[str, Any]] = {}
+    for item in aggregates:
+        group = groups.setdefault(item["ticker"], {"ticker": item["ticker"], "count": 0, "forms": {}})
+        group["count"] += item["count"]
+        group["forms"][item["form"]] = item["count"]
+    return [groups[ticker] for ticker in sorted(groups)]
+
+
+def _event_action(event: dict[str, Any]) -> str:
+    return f"{event['ticker']} {FORM_LABELS.get(str(event['form']), str(event['form']))} 내용 검토"
+
+
+def build_dashboard_view(
+    events: list[dict[str, Any]], scheduled_summary: dict[str, Any] | None = None
+) -> dict[str, Any]:
     high_events = sort_dashboard_events([
         event for event in events if event["materiality"] == "HIGH" and not is_routine_prospectus_watch(event)
     ])
@@ -633,12 +697,29 @@ def build_dashboard_view(events: list[dict[str, Any]]) -> dict[str, Any]:
         if event["event_type"] in {"SHELF_REGISTRATION", "OFFERING_PROSPECTUS"}
         and not is_routine_prospectus_watch(event)
     ]
+    scheduled = scheduled_summary or {}
+    recent_count = scheduled.get("filings_in_lookback_window", len(events))
+    current_high_count = scheduled.get("high_filings_in_lookback_window", len(high_events))
+    new_count = scheduled.get("new_since_previous_count")
+    new_high_count = scheduled.get("new_high_since_previous_count")
+    freshness = scheduled.get("freshness_status", "CURRENT_RUN")
     return {
         "result": overall_result(events),
+        "result_display": display_label(overall_result(events)),
         "action": user_action(events),
+        "action_display": display_label(user_action(events)),
         "high_events": high_events,
         "high_event_count": len(high_events),
+        "current_high_count": current_high_count,
+        "recent_filing_count": recent_count,
+        "new_filing_count": new_count,
+        "new_high_count": new_high_count,
+        "freshness": freshness,
+        "freshness_display": display_label(freshness),
+        "user_actions": [_event_action(event) for event in high_events],
+        "buy_sell_signal": "없음 (매수·매도 신호를 추론하지 않음)",
         "routine_aggregates": routine_aggregates,
+        "routine_ticker_groups": _routine_ticker_groups(routine_aggregates),
         "routine_event_count": sum(item["count"] for item in routine_aggregates),
         "individual_routine_top_events": 0,
         "confirmed_convertible_dilution": "NOT_VERIFIED",
@@ -667,146 +748,170 @@ def render_dashboard_markdown(
     events: list[dict[str, Any]],
     ownership_coverage: str,
     company_status: dict[str, str],
+    scheduled_summary: dict[str, Any] | None = None,
 ) -> str:
-    view = build_dashboard_view(events)
-    result = view["result"]
-    action = view["action"]
+    view = build_dashboard_view(events, scheduled_summary)
     periodic = [event for event in events if event["event_type"] == "PERIODIC_FINANCIAL"]
     unknowns = [f"{ticker}: {status}" for ticker, status in company_status.items() if status != "PASS"]
     if ownership_coverage != "VERIFIED":
-        unknowns.append("Issuer submissions\ub9cc\uc73c\ub85c Form 4/144 ownership coverage\uc758 \uc644\uc804\uc131\uc744 \uac80\uc99d\ud560 \uc218 \uc5c6\uc74c")
+        unknowns.append("기업 제출자료만으로는 Form 4/144 보유 변동 공시의 전체 범위를 확인할 수 없습니다.")
+    count = lambda value: "비교 기준 없음" if value is None else f"{value}건"
     lines = [
-        "# SEC OFFICIAL EVENT RADAR", "",
-        f"Run Time: {run_time}",
-        f"Source Status: {source_status}",
-        f"Portfolio Context: {context['status']} / {context.get('as_of') or 'NOT_VERIFIED'}",
-        f"Lookback: {lookback_days} calendar days", "",
-        "## TODAY'S RESULT", "", f"**{result}**", "",
-        f"Triggered by: {view['high_event_count']} HIGH review candidates.",
-        "Meaning: Review required. Not a BUY / SELL signal.", "",
-        "## NEW OFFICIAL FILINGS / HIGH REVIEW CANDIDATES", "",
-        f"HIGH Event Count: {view['high_event_count']}", "",
+        "# SEC 공시 자동 분석", "",
+        f"- 실행 시각: {run_time}",
+        f"- 데이터 상태: {view['freshness_display']} ({view['freshness']})",
+        f"- SEC 수집 상태: {source_status}",
+        f"- 포트폴리오 기준: {display_label(context['status'])} / {context.get('as_of') or '확인되지 않음'}", "",
+        "## 오늘의 결론", "", f"**{view['result_display']}**", "",
+        f"- 최근 {lookback_days}일 공시 수: **{count(view['recent_filing_count'])}**",
+        f"- 이전 실행 이후 새 공시 수: **{count(view['new_filing_count'])}**",
+        f"- 새 HIGH 공시 수: **{count(view['new_high_count'])}**",
+        f"- 현재 HIGH 검토 공시 수: **{count(view['current_high_count'])}**",
+        f"- 매수/매도 신호: **{view['buy_sell_signal']}**", "",
+        "> 전체 공시 수와 새 공시 수는 서로 다른 값입니다. 이 화면은 검토 대상을 보여주며 주문 신호를 만들지 않습니다.", "",
+        "## 지금 할 일", "",
     ]
+    if view["user_actions"]:
+        lines.extend(f"{index}. {value}" for index, value in enumerate(view["user_actions"], 1))
+    else:
+        lines.append("1. 별도 행동 필요 없음")
+    lines.extend(["", "**현재 주문: 없음**", "", "## 지금 확인할 중요 공시", ""])
     if view["high_events"]:
         for index, event in enumerate(view["high_events"], 1):
             lines.extend([
-                f"{index}. **{_event_label(event)}**",
-                f"   - Ticker: {event['ticker']}",
-                f"   - Form: {event['form']}",
-                f"   - Filing Date: {event['filing_date']}",
-                f"   - Accepted At: {event.get('accepted_at') or 'NOT_AVAILABLE'}",
-                f"   - Accession: {event['accession_number']}",
-                f"   - Event Type: {event['event_type']}",
-                f"   - Portfolio Relevance: {event['portfolio_relevance']}",
-                f"   - Decision Impact: {event['decision_impact']}",
-                f"   - Materiality: {event['materiality']} (DERIVED_RULE_BASED)",
-                f"   - Why It Matters / Rule Reason: {materiality_rule_reason(event)}",
-                f"   - Verification: {event['verification_status']}",
+                f"### {index}. {event['ticker']} · {form_label(event['form'])}", "",
+                f"- **종목:** {event['ticker']}",
+                f"- **공시 종류:** {form_label(event['form'])}",
+                f"- **중요도:** {MATERIALITY_LABELS.get(event['materiality'], event['materiality'])} ({event['materiality']})",
+                f"- **왜 중요한가:** {korean_rule_reason(event)}",
+                "- **확인된 사실:**",
+                "  - ✓ 공식 SEC filing 존재",
+                "  - ✓ ticker/company 연결",
+                "- **아직 모르는 것:**",
+                "  - ? filing 본문 영향",
+                "  - ? 실적/가이던스 변화",
+                "  - ? Portfolio Thesis 영향",
+                f"- **지금 할 일:** {_event_action(event)}", "",
+                "<details><summary>개발용 세부정보</summary>", "",
+                f"- Accession: {event['accession_number']}",
+                f"- Accepted At: {event.get('accepted_at') or 'NOT_AVAILABLE'}",
+                f"- Filing Date: {event['filing_date']}",
+                f"- Rule Code: {event['event_type']}",
+                f"- Rule Reason: {materiality_rule_reason(event)}",
+                f"- Decision Impact: {event['decision_impact']}",
+                f"- Verification: {event['verification_status']}", "", "</details>", "",
             ])
     else:
-        lines.append("1. No HIGH review candidates")
-    lines.extend(["", "## ROUTINE FILING WATCH", ""])
-    if view["routine_aggregates"]:
-        for index, aggregate in enumerate(view["routine_aggregates"], 1):
+        lines.append("1. 현재 HIGH 검토 공시가 없습니다.")
+    lines.extend(["", "## 기타 자동 수집 공시", ""])
+    if view["routine_ticker_groups"]:
+        for index, aggregate in enumerate(view["routine_ticker_groups"], 1):
             lines.extend([
-                f"{index}. **{aggregate['ticker']} - {aggregate['label']}**",
-                f"   - Form: {aggregate['form']}",
-                f"   - Count: {aggregate['count']}",
-                f"   - Period: {aggregate['earliest_filing_date']} ~ {aggregate['latest_filing_date']}",
-                f"   - Latest Filing: {aggregate['latest_filing_date']}",
-                f"   - Latest Accession: {aggregate['latest_accession']}",
-                f"   - Decision Impact: {aggregate['decision_impact']}",
-                f"   - Source Authority: {aggregate['source_authority']}",
-                "   - Meaning: Aggregated metadata watch; not individual portfolio alerts.",
+                f"### {index}. {aggregate['ticker']}", "",
+                f"일상적인 증권 발행 관련 공시 **{aggregate['count']}건**",
+                "현재 별도 행동 필요 없음", "",
+                "상세:",
             ])
+            lines.extend(f"- {form}: {form_count}건" for form, form_count in sorted(aggregate["forms"].items()))
     else:
-        lines.append("1. No routine prospectus aggregates")
+        lines.append("1. 집계된 일상 공시가 없습니다.")
     lines.extend([
-        "", "## HOLDINGS / UNDERLYING", "",
+        "", "## 보유종목 / 관심종목", "",
         f"MRVL -> MVLL: {_ticker_summary(events, 'MRVL')} / DERIVED_MAPPING_NOT_ENTITY_EQUIVALENCE",
         f"NBIS: {_ticker_summary(events, 'NBIS')}",
-        "SOXL: DEFERRED_TO_SECTOR_OR_FUND_SOURCE", "",
-        "## CHALLENGERS", "",
+        "SOXL: 섹터/ETF 전용 데이터에서 별도 확인", "",
+        "### 관심종목", "",
         f"PGR: {_ticker_summary(events, 'PGR')}",
         f"JPM: {_ticker_summary(events, 'JPM')}",
         f"CME: {_ticker_summary(events, 'CME')}",
         f"V: {_ticker_summary(events, 'V')}", "",
-        "## CAPITAL STRUCTURE / OFFERING WATCH", "",
-        f"Confirmed / explicit convertible-dilution candidates: {view['confirmed_convertible_dilution']}",
-        f"Routine prospectus / structured-note metadata events: {view['routine_event_count']}",
-        f"Routine aggregate rows: {len(view['routine_aggregates'])}",
-        f"Other material offering filings: {view['other_material_offering_count']}",
-        "Offering prospectus metadata does not confirm convertible terms or economic dilution.", "",
-        "## PERIODIC FINANCIAL FILINGS", "",
-        f"10-Q / 10-K / 20-F: {len(periodic)}", "",
-        "## OWNERSHIP", "", f"Status: {ownership_coverage}", "",
-        "## MATERIAL UNKNOWNS", "",
+        "## 자금조달 관련 공시", "",
+        f"- 전환증권·희석 조건 확인 여부: {view['confirmed_convertible_dilution']}",
+        f"- 일상적인 증권 발행 관련 공시: {view['routine_event_count']}건",
+        f"- 그 밖의 중요 자금조달 공시: {view['other_material_offering_count']}건",
+        "- 증권 발행 보충자료의 메타데이터만으로 전환 조건이나 경제적 희석을 확정하지 않습니다.", "",
+        f"- 정기 실적 공시(10-Q / 10-K / 20-F): {len(periodic)}건", "",
+        "## 아직 확인하지 못한 정보", "",
     ])
     if unknowns:
         lines.extend(f"{index}. {value}" for index, value in enumerate(unknowns, 1))
     else:
         lines.append("1. \uc5c6\uc74c")
     lines.extend([
-        "", "## USER ACTION", "", f"**{action}**", "",
-        "\uc2e4\uc81c portfolio action\uc740 \ubcc4\ub3c4 Portfolio Compiler \uac80\ud1a0\uac00 \ud544\uc694\ud569\ub2c8\ub2e4.", "",
-        "## EXECUTION STATUS", "",
-        "Source Authority: OFFICIAL_SEC",
-        "Portfolio Price Authority: KIWOOM when valid",
-        "Order Authority: FALSE",
-        "Execution Quantity: NULL",
-        "Automatic Order: OFF", "",
+        "", "## 안전 상태", "",
+        "- ✓ 자동 주문 없음",
+        "- ✓ Broker 호출 없음",
+        "- ✓ Portfolio 자동 변경 없음",
+        "- ✓ SEC 공식 데이터 사용", "",
+        "<details><summary>개발용 상태값</summary>", "",
+        "- order_authority=false",
+        "- execution_quantity=null",
+        "- automatic_order=false",
+        "- source_authority=OFFICIAL_SEC",
+        f"- freshness_status={view['freshness']}",
+        f"- source_status={source_status}", "", "</details>", "",
     ])
     return "\n".join(lines)
 
 
 def render_dashboard_html(markdown_model: dict[str, Any]) -> str:
     events = markdown_model["events"]
-    view = build_dashboard_view(events)
-    result = view["result"]
+    view = build_dashboard_view(events, markdown_model.get("scheduled_summary"))
+    periodic_count = sum(event.get("event_type") == "PERIODIC_FINANCIAL" for event in events)
+    count = lambda value: "비교 기준 없음" if value is None else f"{value}건"
     cards = "".join(
-        "<article><div class='tag'>" + html.escape(f"{event['materiality']} - {event['form']}")
-        + "</div><h3>" + html.escape(event["ticker"] + " - " + event["event_type"])
-        + "</h3><p>" + html.escape(event["filing_date"] + " - " + event["decision_impact"])
-        + "</p><dl><dt>Accession</dt><dd>" + html.escape(event["accession_number"])
-        + "</dd><dt>Portfolio Relevance</dt><dd>" + html.escape(event["portfolio_relevance"])
-        + "</dd><dt>Accepted At</dt><dd>" + html.escape(str(event.get("accepted_at") or "NOT_AVAILABLE"))
-        + "</dd></dl><p><strong>Why It Matters / Rule Reason</strong><br>"
-        + html.escape(materiality_rule_reason(event))
-        + "</p><small>OFFICIAL_SOURCE_VERIFIED - interpretation DERIVED_RULE_BASED</small></article>"
+        "<article class='event-card'><div class='tag'>중요도 "
+        + html.escape(MATERIALITY_LABELS.get(event["materiality"], event["materiality"]))
+        + " (" + html.escape(event["materiality"]) + ")</div><h3>"
+        + html.escape(event["ticker"] + " · " + form_label(event["form"]))
+        + "</h3><dl class='primary'><dt>종목</dt><dd>" + html.escape(event["ticker"])
+        + "</dd><dt>공시 종류</dt><dd>" + html.escape(form_label(event["form"]))
+        + "</dd><dt>중요도</dt><dd>" + html.escape(MATERIALITY_LABELS.get(event["materiality"], event["materiality"]))
+        + "</dd></dl><h4>왜 중요한가</h4><p>" + html.escape(korean_rule_reason(event))
+        + "</p><div class='facts'><div><h4>확인된 사실</h4><p>✓ 공식 SEC filing 존재<br>✓ ticker/company 연결</p></div>"
+        + "<div><h4>아직 모르는 것</h4><p>? filing 본문 영향<br>? 실적/가이던스 변화<br>? Portfolio Thesis 영향</p></div></div>"
+        + "<h4>지금 할 일</h4><p><strong>" + html.escape(_event_action(event))
+        + "</strong></p><details><summary>개발용 세부정보</summary><dl><dt>Accession</dt><dd>"
+        + html.escape(event["accession_number"]) + "</dd><dt>Accepted At</dt><dd>"
+        + html.escape(str(event.get("accepted_at") or "NOT_AVAILABLE"))
+        + "</dd><dt>Filing Date</dt><dd>" + html.escape(event["filing_date"])
+        + "</dd><dt>Rule Code</dt><dd>" + html.escape(event["event_type"])
+        + "</dd><dt>Rule Reason</dt><dd>" + html.escape(materiality_rule_reason(event))
+        + "</dd><dt>Decision Impact</dt><dd>" + html.escape(event["decision_impact"])
+        + "</dd></dl></details></article>"
         for event in view["high_events"]
-    ) or "<article><h3>No HIGH review candidates</h3><p>NO_CHANGE</p></article>"
+    ) or "<article><h3>현재 HIGH 검토 공시가 없습니다.</h3><p>별도 행동 필요 없음</p></article>"
     aggregate_rows = "".join(
-        "<div class='aggregate-row'><strong>" + html.escape(f"{item['ticker']} {item['form']}")
-        + "</strong><span>" + html.escape(item["label"])
-        + "</span><span>Count: " + str(item["count"])
-        + "</span><span>Period: " + html.escape(item["earliest_filing_date"] + " ~ " + item["latest_filing_date"])
-        + "</span><span>Latest Accession: " + html.escape(item["latest_accession"])
-        + "</span><span>WATCH - OFFICIAL_SEC</span></div>"
-        for item in view["routine_aggregates"]
-    ) or "<p>No routine prospectus aggregates</p>"
+        "<div class='routine-card'><h3>" + html.escape(item["ticker"])
+        + "</h3><p>일상적인 증권 발행 관련 공시 <strong>" + str(item["count"])
+        + "건</strong><br>현재 별도 행동 필요 없음</p><details><summary>상세</summary><ul>"
+        + "".join("<li>" + html.escape(form) + " " + str(form_count) + "건</li>" for form, form_count in sorted(item["forms"].items()))
+        + "</ul></details></div>" for item in view["routine_ticker_groups"]
+    ) or "<p>집계된 일상 공시가 없습니다.</p>"
     summaries = "".join(
         "<div class='row'><strong>" + html.escape(ticker) + "</strong><span>" + html.escape(_ticker_summary(events, ticker)) + "</span></div>"
         for ticker in ("MRVL", "NBIS", "PGR", "JPM", "CME", "V")
     )
     unknowns = [f"{ticker}: {status}" for ticker, status in markdown_model["company_status"].items() if status != "PASS"]
     if markdown_model["ownership_coverage"] != "VERIFIED":
-        unknowns.append("Ownership coverage is incomplete for issuer submissions.")
+        unknowns.append("기업 제출자료만으로는 Form 4/144 보유 변동 공시의 전체 범위를 확인할 수 없습니다.")
     unknown_html = "".join("<li>" + html.escape(item) + "</li>" for item in unknowns) or "<li>\uc5c6\uc74c</li>"
+    actions = "".join("<li>" + html.escape(value) + "</li>" for value in view["user_actions"]) or "<li>별도 행동 필요 없음</li>"
     return """<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEC Official Event Radar</title><style>
+<title>SEC 공시 자동 분석</title><style>
 :root{--navy:#10233f;--blue:#246bfd;--ink:#172231;--muted:#66758a;--line:#dfe6ee;--bg:#f4f7fb;--white:#fff;--amber:#e99b18}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Noto Sans KR","Segoe UI",sans-serif;line-height:1.55}.shell{max-width:1120px;margin:auto;padding:32px 20px 64px}
-.hero{background:linear-gradient(135deg,#0c1d35,#173f70);color:white;border-radius:24px;padding:30px;box-shadow:0 18px 45px #10233f22}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:800;color:#9ec3ff}.hero h1{font-size:clamp(30px,5vw,50px);line-height:1;margin:10px 0 24px}.meta{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.meta div{background:#ffffff10;border:1px solid #ffffff24;border-radius:12px;padding:12px}.meta small{display:block;color:#b9cbe1}.result{background:white;border-left:7px solid var(--amber);border-radius:18px;padding:22px;margin-top:18px}.result h2{font-size:36px;margin:3px 0;color:#a56100}.section{margin:28px 0 12px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}article,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}.tag{font-size:12px;color:var(--blue);font-weight:800}.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:grid;grid-template-columns:100px 1fr;padding:10px 0;border-bottom:1px solid var(--line)}.row span,small{color:var(--muted)}.aggregate-row{display:grid;grid-template-columns:110px 1.5fr 90px 1.5fr 2fr 120px;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.safety{background:var(--navy);color:white}.safety-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.safety-grid div{background:#ffffff10;border-radius:10px;padding:10px}.action{background:#edf3ff;border-color:#b9ccff}.unknown{background:#fff8e9;border-color:#f0d7a6}@media(max-width:760px){.meta,.cards,.columns,.safety-grid{grid-template-columns:1fr}.aggregate-row{grid-template-columns:1fr}}
-</style></head><body><main class="shell"><section class="hero"><div class="eyebrow">OFFICIAL SEC - ONE-SHOT LIVE SHADOW</div><h1>SEC OFFICIAL EVENT RADAR</h1><div class="meta">
-<div><small>Run Time</small><strong>""" + html.escape(markdown_model["run_time"]) + """</strong></div><div><small>Source</small><strong>""" + html.escape(markdown_model["source_status"]) + """</strong></div><div><small>Portfolio Context</small><strong>""" + html.escape(markdown_model["context"]["status"] + " / " + str(markdown_model["context"].get("as_of") or "NOT_VERIFIED")) + """</strong></div><div><small>Lookback</small><strong>""" + str(markdown_model["lookback_days"]) + """ days</strong></div><div><small>HIGH Events</small><strong>""" + str(view["high_event_count"]) + """</strong></div></div></section>
-<section class="result"><small>TODAY'S RESULT</small><h2>""" + html.escape(result) + """</h2><p>Triggered by """ + str(view["high_event_count"]) + """ HIGH review candidates. Review required. Not a BUY / SELL signal.</p></section>
-<h2 class="section">NEW OFFICIAL FILINGS / HIGH REVIEW CANDIDATES</h2><section class="cards">""" + cards + """</section>
-<h2 class="section">ROUTINE FILING WATCH</h2><section class="panel">""" + aggregate_rows + """<p>Aggregated metadata watch; not individual portfolio alerts.</p></section>
-<h2 class="section">CAPITAL STRUCTURE / OFFERING WATCH</h2><section class="panel"><p><strong>Confirmed / explicit convertible-dilution candidates:</strong> """ + html.escape(view["confirmed_convertible_dilution"]) + """</p><p><strong>Routine prospectus / structured-note metadata events:</strong> """ + str(view["routine_event_count"]) + """</p><p><strong>Routine aggregate rows:</strong> """ + str(len(view["routine_aggregates"])) + """</p><p><strong>Other material offering filings:</strong> """ + str(view["other_material_offering_count"]) + """</p><p>Offering prospectus metadata does not confirm convertible terms or economic dilution.</p></section>
-<h2 class="section">HOLDINGS / UNDERLYING &amp; CHALLENGERS</h2><section class="columns"><div class="panel">""" + summaries + """<div class="row"><strong>SOXL</strong><span>DEFERRED_TO_SECTOR_OR_FUND_SOURCE</span></div></div><div class="panel"><h3>MRVL -&gt; MVLL</h3><p>Underlying relevance is derived. MVLL is not represented as the MRVL SEC entity or CIK.</p><h3>OWNERSHIP</h3><p>""" + html.escape(markdown_model["ownership_coverage"]) + """</p></div></section>
-<h2 class="section">MATERIAL UNKNOWNS</h2><section class="panel unknown"><ol>""" + unknown_html + """</ol></section>
-<h2 class="section">USER ACTION</h2><section class="panel action"><h3>""" + html.escape(user_action(events)) + """</h3><p>Actual portfolio action remains separate Portfolio Compiler work.</p></section>
-<h2 class="section">EXECUTION STATUS</h2><section class="panel safety"><div class="safety-grid"><div><small>Source Authority</small><br>OFFICIAL_SEC</div><div><small>Portfolio Price Authority</small><br>KIWOOM when valid</div><div><small>Order Authority</small><br>FALSE</div><div><small>Execution Quantity</small><br>NULL</div><div><small>Automatic Order</small><br>OFF</div><div><small>Broker Call</small><br>NO</div></div></section>
+*{box-sizing:border-box;font-family:"Malgun Gothic","맑은 고딕","Segoe UI",Arial,sans-serif !important}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6}.shell{max-width:1120px;margin:auto;padding:32px 20px 64px}
+.hero{background:linear-gradient(135deg,#0c1d35,#173f70);color:white;border-radius:24px;padding:30px;box-shadow:0 18px 45px #10233f22}.eyebrow{font-size:12px;letter-spacing:.08em;font-weight:800;color:#9ec3ff}.hero h1{font-size:clamp(30px,5vw,50px);line-height:1.2;margin:10px 0 24px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.meta div{background:#ffffff10;border:1px solid #ffffff24;border-radius:12px;padding:12px}.meta small{display:block;color:#b9cbe1}.result{background:white;border-left:7px solid var(--amber);border-radius:18px;padding:22px;margin-top:18px}.result h2{font-size:32px;margin:3px 0;color:#a56100}.section{margin:28px 0 12px}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}article,.panel,.routine-card{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}.tag{font-size:12px;color:var(--blue);font-weight:800}.columns,.facts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.facts>div{background:#f7f9fc;border-radius:12px;padding:12px}.primary{display:grid;grid-template-columns:100px 1fr}.primary dt,.primary dd{padding:6px 0;margin:0}.row{display:grid;grid-template-columns:100px 1fr;padding:10px 0;border-bottom:1px solid var(--line)}.row span,small,summary{color:var(--muted)}.routine-card{margin-bottom:10px}.safety{background:var(--navy);color:white}.safety-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.safety-grid div{background:#ffffff10;border-radius:10px;padding:12px}.action{background:#edf3ff;border-color:#b9ccff}.unknown{background:#fff8e9;border-color:#f0d7a6}.dev{font-size:12px;margin-top:14px}@media(max-width:760px){.meta,.cards,.columns,.facts,.safety-grid{grid-template-columns:1fr}}
+</style></head><body><main class="shell"><section class="hero"><div class="eyebrow">SEC 공식 데이터 · 자동 분석 결과</div><h1>SEC 공시 자동 분석</h1><p>""" + html.escape(view["freshness_display"]) + """ · 실행 시각 """ + html.escape(markdown_model["run_time"]) + """</p><div class="meta">
+<div><small>최근 """ + str(markdown_model["lookback_days"]) + """일 공시 수</small><strong>""" + html.escape(count(view["recent_filing_count"])) + """</strong></div><div><small>이전 실행 이후 새 공시 수</small><strong>""" + html.escape(count(view["new_filing_count"])) + """</strong></div><div><small>새 HIGH 공시 수</small><strong>""" + html.escape(count(view["new_high_count"])) + """</strong></div><div><small>현재 HIGH 검토 공시 수</small><strong>""" + html.escape(count(view["current_high_count"])) + """</strong></div></div></section>
+<section class="result"><small>오늘의 결론</small><h2>""" + html.escape(view["result_display"]) + """</h2><p>매수/매도 신호: <strong>""" + html.escape(view["buy_sell_signal"]) + """</strong></p><p>전체 공시 수와 새 공시 수는 서로 다른 값입니다.</p></section>
+<h2 class="section">지금 할 일</h2><section class="panel action"><ol>""" + actions + """</ol><p><strong>현재 주문: 없음</strong></p></section>
+<h2 class="section">지금 확인할 중요 공시</h2><section class="cards">""" + cards + """</section>
+<h2 class="section">기타 자동 수집 공시</h2><section class="panel">""" + aggregate_rows + """</section>
+<h2 class="section">자금조달 관련 공시</h2><section class="panel"><p><strong>전환증권·희석 조건 확인 여부:</strong> """ + html.escape(view["confirmed_convertible_dilution"]) + """</p><p><strong>일상적인 증권 발행 관련 공시:</strong> """ + str(view["routine_event_count"]) + """건</p><p><strong>그 밖의 중요 자금조달 공시:</strong> """ + str(view["other_material_offering_count"]) + """건</p><p><strong>정기 실적 공시(10-Q / 10-K / 20-F):</strong> """ + str(periodic_count) + """건</p><p>증권 발행 보충자료의 메타데이터만으로 전환 조건이나 경제적 희석을 확정하지 않습니다.</p></section>
+<h2 class="section">보유종목 / 관심종목</h2><section class="columns"><div class="panel">""" + summaries + """<div class="row"><strong>SOXL</strong><span>섹터/ETF 전용 데이터에서 별도 확인</span></div></div><div class="panel"><h3>MRVL -&gt; MVLL</h3><p>관련성은 파생 매핑이며 MVLL을 MRVL의 SEC 법인 또는 CIK와 동일시하지 않습니다.</p><h3>보유 변동 공시 범위</h3><p>""" + html.escape(markdown_model["ownership_coverage"]) + """</p></div></section>
+<h2 class="section">아직 확인하지 못한 정보</h2><section class="panel unknown"><ol>""" + unknown_html + """</ol></section>
+<h2 class="section">안전 상태</h2><section class="panel safety"><div class="safety-grid"><div>✓ 자동 주문 없음</div><div>✓ Broker 호출 없음</div><div>✓ Portfolio 자동 변경 없음</div><div>✓ SEC 공식 데이터 사용</div></div><details class="dev"><summary>개발용 상태값</summary><p>order_authority=false<br>execution_quantity=null<br>automatic_order=false<br>source_authority=OFFICIAL_SEC<br>freshness_status=""" + html.escape(view["freshness"]) + """<br>source_status=""" + html.escape(markdown_model["source_status"]) + """</p></details></section>
 </main></body></html>"""
 
 
@@ -979,8 +1084,8 @@ def run_pipeline(
     dashboard_md = render_dashboard_markdown(**dashboard_model)
     dashboard_html = render_dashboard_html(dashboard_model)
     create_only_json(run_directory / "normalized-events.json", normalized)
-    create_only_write(run_directory / "dashboard.html", dashboard_html)
-    create_only_write(run_directory / "dashboard.md", dashboard_md)
+    create_only_utf8_dashboard(run_directory / "dashboard.html", dashboard_html)
+    create_only_utf8_dashboard(run_directory / "dashboard.md", dashboard_md)
 
     protected_after = {
         name: file_hash(path) if path.is_file() else None for name, path in protected_paths.items()
