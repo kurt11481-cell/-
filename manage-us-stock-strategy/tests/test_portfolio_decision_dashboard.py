@@ -10,7 +10,9 @@ import json
 import sys
 import tempfile
 import unittest
+from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,8 +21,10 @@ sys.path.insert(0, str(SCRIPTS))
 
 from portfolio_decision_dashboard import (  # noqa: E402
     ContractError,
+    CURRENT_SESSION_CONTEXT_SCHEMA,
     DEFAULT_RISK_POLICY,
     MANUAL_EVIDENCE_SCHEMA,
+    REQUEST_ACCOUNTING_SCHEMA,
     compile_dashboard,
     discover_historical_replay,
     implementation_provenance_paths,
@@ -116,14 +120,81 @@ def post_sell_plan(*, cash_priority: bool = True) -> dict:
     return value
 
 
+def evidence_raw_bytes(value: dict) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
+
+
+def current_context(value: dict, source_sha256: str | None = None) -> dict:
+    return {
+        "context_type": "PORTFOLIO_DECISION_CURRENT_SESSION_CONTEXT",
+        "context_version": "1.0",
+        "context_generated_at": value["decision_as_of"],
+        "expected_evidence_run_id": value["manual_run_id"],
+        "expected_evidence_sha256": source_sha256 or hashlib.sha256(evidence_raw_bytes(value)).hexdigest(),
+        "expected_evidence_decision_as_of": value["decision_as_of"],
+        "expected_completed_us_session": value["expected_completed_us_session"],
+        "market_phase": value["market_phase"],
+        "session_authority_market_phase": value["session_authority_market_phase"],
+        "primary_listing_operating_mic": "XNAS",
+        "calendar_policy_identity": value["calendar_policy_identity"],
+        "calendar_hash": value["calendar_hash"],
+        "session_activation_cohort_id": value["session_activation_cohort_id"],
+        "context_status": "VERIFIED_CURRENT_SESSION",
+        "order_authority": False,
+        "execution_quantity": None,
+        "automatic_order": False,
+    }
+
+
+def verified_request_accounting(value: dict, source_sha256: str | None = None) -> dict:
+    return {
+        "schema_version": "1.0",
+        "source_type": "KIWOOM_MANUAL_PORTFOLIO_ANALYSIS",
+        "source_run_id": value["manual_run_id"],
+        "source_artifact_sha256": source_sha256 or hashlib.sha256(evidence_raw_bytes(value)).hexdigest(),
+        "generated_at": value["decision_as_of"],
+        "verification_status": "VERIFIED_EXACT",
+        "http_request_count": 5,
+        "successful_request_count": 5,
+        "failed_request_count": 0,
+        "retry_count": 0,
+        "operation_counts": {
+            "account_holdings_read": 1, "account_deposit_read": 1,
+            "oauth_health": 1, "market_quote": 1, "daily_chart": 1,
+        },
+        "endpoint_counts": {"account": 2, "oauth": 1, "quote": 1, "chart": 1},
+        "order_authority": False,
+        "execution_quantity": None,
+        "automatic_order": False,
+    }
+
+
+def canonical_runtime_resolver(value: dict):
+    def resolve(*_args, **_kwargs):
+        return SimpleNamespace(
+            authority_status="VERIFIED",
+            expected_completed_session=SimpleNamespace(session_date=value["expected_completed_us_session"]),
+            market_phase=value["session_authority_market_phase"],
+            calendar_policy_identity=value["calendar_policy_identity"],
+            calendar_hash=value["calendar_hash"],
+            activation_cohort_id=value["session_activation_cohort_id"],
+        )
+    return resolve
+
+
 class PortfolioDecisionDashboardTests(unittest.TestCase):
     def setUp(self) -> None:
         self.policy = load_json(DEFAULT_RISK_POLICY)
 
     def compile(self, evidence_value=None, plan_value=None, **kwargs):
+        source = evidence_value if evidence_value is not None else evidence()
+        source_sha256 = hashlib.sha256(evidence_raw_bytes(source)).hexdigest()
+        kwargs.setdefault("evidence_sha256", source_sha256)
+        kwargs.setdefault("current_session_context", current_context(source, source_sha256))
+        kwargs.setdefault("current_session_authority_resolver", canonical_runtime_resolver(source))
         return compile_dashboard(
-            evidence_value or evidence(), plan_value or plan(), self.policy,
-            run_id="synthetic-run", generated_at="2026-08-30T00:00:00+00:00", **kwargs,
+            source, plan_value if plan_value is not None else plan(), self.policy,
+            run_id="synthetic-run", generated_at=source["decision_as_of"], **kwargs,
         )
 
     def test_stage1_integer_floor_and_stage2_firewall(self):
@@ -188,7 +259,7 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
     def test_non_regular_market_is_provisional(self):
         report, _ = self.compile(evidence(market_phase="MARKET_CLOSED"))
         self.assertEqual(report["stage1"]["status"], "PROVISIONAL")
-        self.assertEqual(report["evidence"]["current_freshness"], "LAST_KNOWN")
+        self.assertEqual(report["evidence"]["current_freshness"], "CURRENT_SESSION_CONTEXT_VERIFIED")
 
     def test_historical_plan_is_replay_only(self):
         report, _ = self.compile(plan_value=plan(status="HISTORICAL"), compile_mode="HISTORICAL_REPLAY")
@@ -391,9 +462,17 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
             for token in (row["ticker"], str(row["calculated_buy_shares"])):
                 self.assertIn(token, markdown)
                 self.assertIn(token, dashboard_html)
-        for token in ("Event context", "MVLL", "Request accounting", "account_holdings_read"):
+        for token in ("Event context", "MVLL", "Request accounting", "account_holdings_read", "현재성 확인"):
             self.assertIn(token, markdown)
             self.assertIn(token, dashboard_html)
+
+    def test_verified_request_accounting_plain_language_has_html_markdown_parity(self):
+        source = evidence()
+        report, _ = self.compile(source, request_accounting=verified_request_accounting(source))
+        for rendered in (render_markdown(report), render_html(report)):
+            self.assertIn("Request accounting: VERIFIED", rendered)
+            self.assertIn("원본 해시에 정확히 결속", rendered)
+            self.assertIn("현재 세션 확인 자료", rendered)
 
     def test_schema_valid_but_unverified_and_preflight_fail_block_stage1(self):
         unverified = evidence()
@@ -495,6 +574,240 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertEqual(invalid_report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
         self.assertNotIn("VERIFIED", invalid_report["evidence"]["request_accounting_status"])
 
+    def test_old_evidence_cannot_use_later_current_context(self):
+        old = evidence()
+        later = post_sell_evidence()
+        later_hash = hashlib.sha256(evidence_raw_bytes(later)).hexdigest()
+        report, _ = self.compile(old, current_session_context=current_context(later, later_hash))
+        self.assertEqual(report["stage1"]["status"], "READY_FOR_DECISION_PLAN_PREPARATION")
+        self.assertIn("CURRENT_CONTEXT_RUN_ID_MISMATCH", report["current_context"]["blockers"])
+
+    def test_bound_old_context_cannot_pass_a_later_canonical_session(self):
+        source = evidence()
+
+        def later_session(*_args, **_kwargs):
+            return SimpleNamespace(
+                authority_status="VERIFIED",
+                expected_completed_session=SimpleNamespace(session_date="2026-08-24"),
+                market_phase=source["session_authority_market_phase"],
+                calendar_policy_identity=source["calendar_policy_identity"],
+                calendar_hash=source["calendar_hash"],
+                activation_cohort_id=source["session_activation_cohort_id"],
+            )
+
+        report, _ = self.compile(source, current_session_authority_resolver=later_session)
+        self.assertEqual(report["stage1"]["status"], "READY_FOR_DECISION_PLAN_PREPARATION")
+        self.assertIn("CURRENT_CONTEXT_NOT_CURRENT_CANONICAL_SESSION", report["current_context"]["blockers"])
+
+    def test_missing_current_context_allows_only_plan_preparation(self):
+        report, _ = self.compile(current_session_context=None)
+        self.assertEqual(report["stage1"]["status"], "READY_FOR_DECISION_PLAN_PREPARATION")
+        self.assertEqual(report["current_context"]["status"], "ABSENT")
+        self.assertTrue(report["authority"]["ready_for_decision_plan_preparation"])
+        self.assertEqual(report["authority"]["current_runtime_advisory_authority"], "NOT_VERIFIED_BY_RUNTIME")
+
+    def test_current_context_run_mismatch_blocks_final(self):
+        source = evidence()
+        context = current_context(source)
+        context["expected_evidence_run_id"] = "manual-other-grade-b"
+        report, _ = self.compile(source, current_session_context=context)
+        self.assertIn("CURRENT_CONTEXT_RUN_ID_MISMATCH", report["current_context"]["blockers"])
+        self.assertNotEqual(report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+
+    def test_current_context_sha_mismatch_blocks_final(self):
+        source = evidence()
+        context = current_context(source)
+        context["expected_evidence_sha256"] = "0" * 64
+        report, _ = self.compile(source, current_session_context=context)
+        self.assertIn("CURRENT_CONTEXT_EVIDENCE_SHA256_MISMATCH", report["current_context"]["blockers"])
+
+    def test_current_context_decision_as_of_mismatch_blocks_final(self):
+        source = evidence()
+        context = current_context(source)
+        context["expected_evidence_decision_as_of"] = "2026-08-21T22:00:01+00:00"
+        report, _ = self.compile(source, current_session_context=context)
+        self.assertIn("CURRENT_CONTEXT_DECISION_AS_OF_MISMATCH", report["current_context"]["blockers"])
+
+    def test_matching_current_context_allows_other_stage1_gates(self):
+        report, validation = self.compile()
+        self.assertEqual(report["current_context"]["status"], "VERIFIED")
+        self.assertEqual(report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+        self.assertTrue(validation["invariants"]["current_session_context_gate_enforced"])
+
+    def test_stage2_context_bound_to_prior_run_is_blocked(self):
+        source = post_sell_evidence()
+        prior = evidence()
+        prior_hash = hashlib.sha256(evidence_raw_bytes(prior)).hexdigest()
+        report, _ = self.compile(
+            source, post_sell_plan(), compile_mode="POST_SELL_RECOMPILE",
+            current_session_context=current_context(prior, prior_hash),
+        )
+        self.assertEqual(report["stage2"]["status"], "BLOCKED")
+        self.assertIn("CURRENT_CONTEXT_RUN_ID_MISMATCH", report["stage2"]["blockers"])
+
+    def test_stage2_matching_post_sell_context_passes_currentness(self):
+        report, _ = self.compile(post_sell_evidence(), post_sell_plan(), compile_mode="POST_SELL_RECOMPILE")
+        self.assertEqual(report["current_context"]["status"], "VERIFIED")
+        self.assertEqual(report["stage2"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
+
+    def _decimal_portfolio_case(self, pgr_price: float) -> tuple[dict, dict]:
+        source = evidence(cash=0.01, holdings={"PGR": 1, "JPM": 1, "SOXL": 0})
+        exact_prices = {"PGR": pgr_price, "JPM": 1289.37, "SOXL": 0.89}
+        source["last_verified_finalized_bars"] = [
+            item for item in source["last_verified_finalized_bars"] if item["ticker"] in exact_prices
+        ]
+        for item in source["last_verified_finalized_bars"]:
+            item["bar"]["price"] = exact_prices[item["ticker"]]
+        value = {
+            "plan_id": "exact-decimal", "as_of": source["decision_as_of"],
+            "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": source["manual_run_id"],
+                                 "expected_decision_as_of": source["decision_as_of"]},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 98.0,
+            "positions": [
+                {"ticker": "PGR", "action": "HOLD", "target_weight_pct": 0.0,
+                 "rationale": "NAV component A", "investment_horizon": "test", "target_status": "APPROVED"},
+                {"ticker": "JPM", "action": "HOLD", "target_weight_pct": 0.0,
+                 "rationale": "NAV component B", "investment_horizon": "test", "target_status": "APPROVED"},
+                {"ticker": "SOXL", "action": "ADD", "target_weight_pct": 2.0,
+                 "rationale": "exact target", "investment_horizon": "test", "target_status": "APPROVED"},
+            ],
+            "material_unknowns": [], "decision_change_triggers": [],
+        }
+        return source, value
+
+    def test_decimal_nav_is_exact_before_serialization(self):
+        source, value = self._decimal_portfolio_case(1.12)
+        report, _ = self.compile(source, value)
+        self.assertEqual(report["portfolio"]["nav_usd"]["value"], 1290.5)
+
+    def test_decimal_multi_position_values_recompute_to_exact_nav(self):
+        source, value = self._decimal_portfolio_case(1.12)
+        report, _ = self.compile(source, value)
+        values = {row["ticker"]: row["current_market_value_usd"]["value"] for row in report["portfolio"]["positions"]}
+        self.assertEqual(values["PGR"], 1.12)
+        self.assertEqual(values["JPM"], 1289.37)
+        recomputed = Decimal("0.01") + Decimal(str(values["PGR"])) + Decimal(str(values["JPM"]))
+        self.assertEqual(recomputed, Decimal(str(report["portfolio"]["nav_usd"]["value"])))
+
+    def test_decimal_exact_target_yields_29_shares(self):
+        source, value = self._decimal_portfolio_case(1.12)
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "SOXL")
+        self.assertEqual(row["target_shares_reference"]["value"], 29)
+
+    def test_decimal_just_below_target_yields_28_shares(self):
+        source, value = self._decimal_portfolio_case(1.11)
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "SOXL")
+        self.assertEqual(report["portfolio"]["nav_usd"]["value"], 1290.49)
+        self.assertEqual(row["target_shares_reference"]["value"], 28)
+
+    def test_decimal_exact_whole_share_boundary_is_not_underallocated(self):
+        source, value = self._decimal_portfolio_case(1.12)
+        value["positions"][2]["target_weight_pct"] = 2
+        report, _ = self.compile(source, value)
+        row = next(item for item in report["portfolio"]["positions"] if item["ticker"] == "SOXL")
+        self.assertEqual(row["target_shares_reference"]["value"], 29)
+
+    def test_decimal_cash_bound_has_no_epsilon_overspend(self):
+        source = post_sell_evidence(cash=100.89)
+        source["broker_observed_state"]["holdings"] = [
+            {"ticker": "PGR", "held_quantity": 0, "average_cost": 0.0}
+        ]
+        source["verified_orderable_cash_usd"] = 0.89
+        source["last_verified_finalized_bars"] = [
+            item for item in source["last_verified_finalized_bars"] if item["ticker"] == "PGR"
+        ]
+        source["last_verified_finalized_bars"][0]["bar"]["price"] = 0.89
+        value = {
+            "plan_id": "cash-bound", "as_of": "2026-08-21T22:00:00+00:00",
+            "plan_status": "CURRENT_APPROVED",
+            "evidence_binding": {"expected_run_id": "manual-synthetic-grade-b",
+                                 "expected_decision_as_of": "2026-08-21T22:00:00+00:00"},
+            "post_sell_refresh": {"prior_run_id": "manual-synthetic-grade-b",
+                                  "prior_decision_as_of": "2026-08-21T22:00:00+00:00"},
+            "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET", "cash_target_pct": 90.0,
+            "positions": [{"ticker": "PGR", "action": "ADD", "target_weight_pct": 10.0,
+                           "rationale": "cash boundary", "investment_horizon": "test", "target_status": "APPROVED"}],
+            "buy_priority": ["PGR"], "material_unknowns": [], "decision_change_triggers": [],
+        }
+        original_policy = self.policy
+        self.policy = copy.deepcopy(self.policy)
+        self.policy["cash"]["hard_floor_pct"] = 0
+        try:
+            exact, _ = self.compile(source, value, compile_mode="POST_SELL_RECOMPILE")
+            self.assertEqual(exact["stage2"]["buy_advisories"][0]["calculated_buy_shares"], 1)
+            self.assertEqual(exact["cash_semantics"]["post_initial_buy_estimated_cash_usd"]["value"], 0)
+            source["verified_orderable_cash_usd"] = 0.8899999999999999
+            below, _ = self.compile(source, value, compile_mode="POST_SELL_RECOMPILE")
+            self.assertEqual(below["stage2"]["buy_advisories"][0]["calculated_buy_shares"], 0)
+            self.assertGreaterEqual(below["cash_semantics"]["post_initial_buy_estimated_cash_usd"]["value"], 0)
+        finally:
+            self.policy = original_policy
+
+    def test_request_accounting_verified_state_is_reachable(self):
+        source = evidence()
+        verified = verified_request_accounting(source)
+        report, _ = self.compile(source, request_accounting=verified)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "VERIFIED")
+
+    def test_request_accounting_present_unverified_state_is_reachable(self):
+        source = evidence()
+        unverified = verified_request_accounting(source)
+        unverified["verification_status"] = "UNVERIFIED"
+        report, _ = self.compile(source, request_accounting=unverified)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_UNVERIFIED")
+
+    def test_request_accounting_present_invalid_state_is_reachable(self):
+        report, _ = self.compile(request_accounting={"arbitrary": True})
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
+
+    def test_request_accounting_absent_state_is_reachable(self):
+        source = evidence()
+        del source["broker_observed_state"]["operation_statuses"]
+        report, _ = self.compile(source, request_accounting=None)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "ABSENT")
+
+    def test_request_accounting_run_mismatch_is_unverified(self):
+        source = evidence()
+        wrong_run = verified_request_accounting(source)
+        wrong_run["source_run_id"] = "manual-other-grade-b"
+        report, _ = self.compile(source, request_accounting=wrong_run)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_UNVERIFIED")
+        self.assertIn("REQUEST_ACCOUNTING_RUN_ID_MISMATCH", report["evidence"]["request_accounting_issues"])
+
+    def test_request_accounting_hash_mismatch_is_unverified(self):
+        source = evidence()
+        wrong_hash = verified_request_accounting(source)
+        wrong_hash["source_artifact_sha256"] = "0" * 64
+        report, _ = self.compile(source, request_accounting=wrong_hash)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_UNVERIFIED")
+        self.assertIn("REQUEST_ACCOUNTING_SOURCE_SHA256_MISMATCH", report["evidence"]["request_accounting_issues"])
+
+    def test_request_accounting_negative_counter_is_invalid(self):
+        source = evidence()
+        negative = verified_request_accounting(source)
+        negative["retry_count"] = -1
+        report, _ = self.compile(source, request_accounting=negative)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
+
+    def test_request_accounting_consistency_violation_is_invalid(self):
+        source = evidence()
+        inconsistent = verified_request_accounting(source)
+        inconsistent["successful_request_count"] = 4
+        report, _ = self.compile(source, request_accounting=inconsistent)
+        self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
+        self.assertIn("REQUEST_ACCOUNTING_RESULT_TOTAL_MISMATCH", report["evidence"]["request_accounting_issues"])
+
+    def test_verified_request_accounting_never_changes_authority(self):
+        source = evidence()
+        report, _ = self.compile(source, request_accounting=verified_request_accounting(source))
+        self.assertEqual(report["evidence"]["request_accounting_status"], "VERIFIED")
+        self.assertFalse(report["authority"]["broker_order_authority"])
+        self.assertIsNone(report["authority"]["execution_quantity"])
+        self.assertFalse(report["authority"]["automatic_order"])
+
     def test_event_asset_review_required_is_visible_without_target_change(self):
         report, _ = self.compile(event_context={
             "status": "ASSET_REVIEW_REQUIRED", "current_high_count": 2,
@@ -517,6 +830,10 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
     def test_validation_common_is_in_implementation_provenance(self):
         paths = implementation_provenance_paths(DEFAULT_RISK_POLICY)
         self.assertIn(SCRIPTS / "validation_common.py", paths)
+        self.assertIn(SCRIPTS / "session_authority.py", paths)
+        self.assertIn(SCRIPTS / "session_calendar_artifact.py", paths)
+        self.assertIn(CURRENT_SESSION_CONTEXT_SCHEMA, paths)
+        self.assertIn(REQUEST_ACCOUNTING_SCHEMA, paths)
         report, validation = self.compile()
         with tempfile.TemporaryDirectory(dir=ROOT / "manage-us-stock-strategy/tests") as temp:
             consumed = {"risk_policy": hashlib.sha256(DEFAULT_RISK_POLICY.read_bytes()).hexdigest()}

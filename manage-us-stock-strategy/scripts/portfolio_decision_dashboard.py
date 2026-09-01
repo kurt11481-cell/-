@@ -12,21 +12,23 @@ import argparse
 import hashlib
 import html
 import json
-import math
 import os
 import subprocess
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from validation_common import file_hash, load_json, validate_instance
+from session_authority import derive_us_market_session_authority
 
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-plan.schema.json"
 DASHBOARD_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-dashboard.schema.json"
 MANUAL_EVIDENCE_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/manual-portfolio-analysis.schema.json"
+CURRENT_SESSION_CONTEXT_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-current-session-context.schema.json"
+REQUEST_ACCOUNTING_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/portfolio-decision-request-accounting.schema.json"
 DEFAULT_RISK_POLICY = ROOT / "manage-us-stock-strategy/assets/portfolio-decision-risk-envelope-v0.2.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "workspace/outputs/portfolio-decision-dashboard"
 ALLOWED_MODES = {"INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"}
@@ -37,18 +39,9 @@ class ContractError(ValueError):
     """Raised when an input contract is structurally or semantically invalid."""
 
 
-def _finite(value: Any, *, minimum: float | None = None) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    result = float(value)
-    if not math.isfinite(result) or (minimum is not None and result < minimum):
-        return None
-    return result
-
-
 def _integer_quantity(value: Any) -> int | None:
-    number = _finite(value, minimum=0)
-    if number is None or not number.is_integer():
+    number = _decimal(value)
+    if number is None or number < 0 or number != number.to_integral_value():
         return None
     return int(number)
 
@@ -62,8 +55,14 @@ def _ticker(value: Any) -> str | None:
     return normalized
 
 
-def _value(value: float | int | None, label: str, unit: str) -> dict[str, Any]:
-    return {"value": value, "value_status": label, "unit": unit}
+def _json_number(value: Decimal | float | int | None) -> float | int | None:
+    if isinstance(value, Decimal):
+        return int(value) if value == value.to_integral_value() else float(value)
+    return value
+
+
+def _value(value: Decimal | float | int | None, label: str, unit: str) -> dict[str, Any]:
+    return {"value": _json_number(value), "value_status": label, "unit": unit}
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -93,7 +92,10 @@ def _git_commit(root: Path) -> str | None:
 def implementation_provenance_paths(risk_path: Path) -> list[Path]:
     return [
         Path(__file__).resolve(), Path(__file__).with_name("validation_common.py"),
-        MANUAL_EVIDENCE_SCHEMA, PLAN_SCHEMA, DASHBOARD_SCHEMA, risk_path.resolve(),
+        Path(__file__).with_name("session_authority.py"),
+        Path(__file__).with_name("session_calendar_artifact.py"),
+        MANUAL_EVIDENCE_SCHEMA, PLAN_SCHEMA, DASHBOARD_SCHEMA,
+        CURRENT_SESSION_CONTEXT_SCHEMA, REQUEST_ACCOUNTING_SCHEMA, risk_path.resolve(),
     ]
 
 
@@ -139,17 +141,18 @@ def validate_plan(
             errors.append(f"$.positions[{index}]: DUPLICATE_TICKER:{ticker}")
         seen.add(ticker)
         weight = position.get("target_weight_pct")
-        if weight is not None and (_finite(weight, minimum=0) is None or float(weight) > 100):
+        weight_decimal = _decimal(weight)
+        if weight is not None and (weight_decimal is None or weight_decimal < 0 or weight_decimal > Decimal("100")):
             errors.append(f"$.positions[{index}].target_weight_pct: TARGET_WEIGHT_OUTSIDE_0_100")
     cash_target = plan.get("cash_target_pct")
-    if cash_target is not None and (_finite(cash_target, minimum=0) is None or float(cash_target) > 100):
+    cash_decimal = _decimal(cash_target)
+    if cash_target is not None and (cash_decimal is None or cash_decimal < 0 or cash_decimal > Decimal("100")):
         errors.append("$.cash_target_pct: CASH_TARGET_OUTSIDE_0_100")
     supplied = [p.get("target_weight_pct") for p in plan.get("positions", []) if p.get("target_weight_pct") is not None]
     supplied_total = sum((_decimal(value) or Decimal("0")) for value in supplied)
     if supplied_total > Decimal("100"):
         errors.append("$: TARGET_ALLOCATION_EXCEEDS_100_PERCENT")
     if cash_target is not None:
-        cash_decimal = _decimal(cash_target)
         if cash_decimal is not None and supplied_total + cash_decimal > Decimal("100"):
             errors.append("$: TARGET_ALLOCATION_EXCEEDS_100_PERCENT")
     priority = plan.get("buy_priority") or []
@@ -159,11 +162,11 @@ def validate_plan(
     return sorted(set(errors))
 
 
-def _extract_holdings(evidence: dict[str, Any]) -> tuple[dict[str, int], dict[str, float], list[str], str]:
+def _extract_holdings(evidence: dict[str, Any]) -> tuple[dict[str, int], dict[str, Decimal], list[str], str]:
     broker = evidence.get("broker_observed_state") or {}
     issues: list[str] = []
     holdings: dict[str, int] = {}
-    costs: dict[str, float] = {}
+    costs: dict[str, Decimal] = {}
     if broker.get("status") != "AVAILABLE":
         return {}, {}, ["BROKER_HOLDINGS_NOT_AVAILABLE"], "BROKER_OBSERVED_STATE"
     raw = broker.get("holdings")
@@ -182,24 +185,28 @@ def _extract_holdings(evidence: dict[str, Any]) -> tuple[dict[str, int], dict[st
             issues.append(f"DUPLICATE_BROKER_TICKER:{ticker}")
             continue
         holdings[ticker] = quantity
-        average_cost = _finite(item.get("average_cost"), minimum=0)
-        if average_cost is not None:
+        average_cost = _decimal(item.get("average_cost"))
+        if average_cost is not None and average_cost >= 0:
             costs[ticker] = average_cost
     if not holdings:
         issues.append("MISSING_HOLDINGS")
     return holdings, costs, issues, "BROKER_OBSERVED_STATE"
 
 
-def _extract_cash(evidence: dict[str, Any]) -> tuple[float | None, float | None, list[str]]:
+def _extract_cash(evidence: dict[str, Any]) -> tuple[Decimal | None, Decimal | None, list[str]]:
     broker = evidence.get("broker_observed_state") or {}
     cash = broker.get("cash") or {}
     issues: list[str] = []
-    current_cash = _finite(cash.get("foreign_currency_deposit"), minimum=0)
+    current_cash = _decimal(cash.get("foreign_currency_deposit"))
+    if current_cash is not None and current_cash < 0:
+        current_cash = None
     if cash.get("cash_status") not in {"VERIFIED_POSITIVE", "VERIFIED_ZERO"}:
         current_cash = None
     if current_cash is None:
         issues.append("MISSING_CURRENT_CASH")
-    verified_orderable = _finite(evidence.get("verified_orderable_cash_usd"), minimum=0)
+    verified_orderable = _decimal(evidence.get("verified_orderable_cash_usd"))
+    if verified_orderable is not None and verified_orderable < 0:
+        verified_orderable = None
     if evidence.get("orderable_cash_status") != "VERIFIED" or verified_orderable is None:
         verified_orderable = None
         issues.append("MISSING_VERIFIED_ORDERABLE_CASH")
@@ -214,9 +221,9 @@ def _extract_prices(evidence: dict[str, Any], required: set[str]) -> tuple[dict[
             continue
         ticker = _ticker(item.get("ticker"))
         bar = item.get("bar") or {}
-        price = _finite(bar.get("price"), minimum=0)
+        price = _decimal(bar.get("price"))
         valid = bool(
-            ticker and price and item.get("status") == "VERIFIED"
+            ticker and price is not None and price > 0 and item.get("status") == "VERIFIED"
             and item.get("session_authority_status") == "VERIFIED"
             and bar.get("bar_finalized") is True
             and bar.get("stable") is True
@@ -247,10 +254,10 @@ def _instrument_mapping(
     if fallback is None and registered is None:
         return None, "RISK_MAPPING_REQUIRED"
     if fallback is None:
-        factor = _finite(registered.get("leverage_factor"), minimum=0)
+        factor = _decimal(registered.get("leverage_factor"))
         if factor is None or registered.get("leverage_factor_status") not in {
             "verified", "verified_by_existing_active_policy"
-        }:
+        } or factor < 0:
             return None, "RISK_MAPPING_UNVERIFIED"
         instrument_class = "NORMAL_STOCK" if factor == 1 else "LEVERAGED_PRODUCT"
         return {
@@ -264,42 +271,45 @@ def _instrument_mapping(
     mapping = dict(fallback)
     mapping["mapping_source"] = "USER_APPROVED_FALLBACK"
     if registered is not None:
-        registered_factor = _finite(registered.get("leverage_factor"), minimum=0)
-        if registered_factor is not None and not math.isclose(
-            registered_factor, float(fallback["leverage_factor"]), rel_tol=0, abs_tol=1e-12,
-        ):
+        registered_factor = _decimal(registered.get("leverage_factor"))
+        fallback_factor = _decimal(fallback["leverage_factor"])
+        if registered_factor is not None and registered_factor != fallback_factor:
             return None, "RISK_MAPPING_CONFLICT"
         if registered_factor is not None:
             mapping["mapping_source"] = "INSTRUMENT_REGISTRY_CONFIRMED"
+    mapping["leverage_factor"] = _decimal(mapping["leverage_factor"])
     return mapping, None
 
 
-def _risk_status(value: float | None, *, low: float | None = None, high: float | None = None,
-                 hard_low: float | None = None, hard_high: float | None = None) -> str:
+def _risk_status(value: Decimal | None, *, low: Any = None, high: Any = None,
+                 hard_low: Any = None, hard_high: Any = None) -> str:
     if value is None:
         return "BLOCKED"
-    if hard_low is not None and value < hard_low - 1e-9:
+    low_value, high_value = _decimal(low), _decimal(high)
+    hard_low_value, hard_high_value = _decimal(hard_low), _decimal(hard_high)
+    if hard_low_value is not None and value < hard_low_value:
         return "VIOLATION"
-    if hard_high is not None and value > hard_high + 1e-9:
+    if hard_high_value is not None and value > hard_high_value:
         return "VIOLATION"
-    if low is not None and value < low - 1e-9:
+    if low_value is not None and value < low_value:
         return "WARNING"
-    if high is not None and value > high + 1e-9:
+    if high_value is not None and value > high_value:
         return "WARNING"
     return "PASS"
 
 
 def calculate_risk_metrics(
-    weights: dict[str, float], cash_pct: float | None,
+    weights: dict[str, Decimal], cash_pct: Decimal | None,
     mappings: dict[str, dict[str, Any]], policy: dict[str, Any],
 ) -> dict[str, Any]:
-    leveraged = sum(weight for ticker, weight in weights.items() if mappings[ticker]["leverage_factor"] > 1)
-    cluster_book = sum(weight for ticker, weight in weights.items() if mappings[ticker]["growth_ai_semiconductor_cluster"])
-    cluster_adjusted = sum(
+    zero = Decimal("0")
+    leveraged = sum((weight for ticker, weight in weights.items() if mappings[ticker]["leverage_factor"] > 1), zero)
+    cluster_book = sum((weight for ticker, weight in weights.items() if mappings[ticker]["growth_ai_semiconductor_cluster"]), zero)
+    cluster_adjusted = sum((
         weight * mappings[ticker]["leverage_factor"] for ticker, weight in weights.items()
         if mappings[ticker]["growth_ai_semiconductor_cluster"]
-    )
-    overall_adjusted = sum(weight * mappings[ticker]["leverage_factor"] for ticker, weight in weights.items())
+    ), zero)
+    overall_adjusted = sum((weight * mappings[ticker]["leverage_factor"] for ticker, weight in weights.items()), zero)
     checks: list[dict[str, Any]] = []
     cash_rule = policy["cash"]
     checks.append({"metric": "CASH_PCT", "value": cash_pct,
@@ -329,6 +339,8 @@ def calculate_risk_metrics(
     overall_rule = policy["overall_leverage_adjusted_exposure_proxy"]
     checks.append({"metric": "OVERALL_LEVERAGE_ADJUSTED_PROXY_PCT", "value": overall_adjusted,
                    "status": _risk_status(overall_adjusted, low=overall_rule["target_min_pct"], high=overall_rule["target_max_pct"], hard_high=overall_rule["hard_cap_pct"])})
+    for item in checks:
+        item["value"] = _json_number(item["value"])
     violations = [item["metric"] for item in checks if item["status"] == "VIOLATION"]
     aggregate_status = (
         "VIOLATION" if violations else
@@ -359,6 +371,132 @@ def _event_context(value: dict[str, Any] | None) -> dict[str, Any]:
     return {"status": status, "current_high_count": int(high or 0), "new_high_count": int(new or 0),
             "affected_tickers": sorted({_ticker(item) for item in affected if _ticker(item)}),
              "automatic_target_change": False}
+
+
+def _evaluate_current_session_context(
+    context: Any, evidence: dict[str, Any], evidence_sha256: str | None,
+    schema_bytes: bytes, dashboard_generated_at: str,
+    authority_resolver: Callable[..., Any],
+) -> dict[str, Any]:
+    if context is None:
+        return {"status": "ABSENT", "verified": False, "blockers": ["CURRENT_SESSION_CONTEXT_REQUIRED"],
+                "schema_errors": [], "context": None}
+    if not isinstance(context, dict):
+        return {"status": "PRESENT_INVALID", "verified": False,
+                "blockers": ["CURRENT_SESSION_CONTEXT_INVALID"], "schema_errors": ["$: type"], "context": None}
+    schema_errors = validate_instance(context, CURRENT_SESSION_CONTEXT_SCHEMA, schema_bytes=schema_bytes)
+    blockers = [f"CURRENT_SESSION_CONTEXT_SCHEMA_INVALID:{item}" for item in schema_errors]
+    if not schema_errors:
+        expected_pairs = (
+            ("expected_evidence_run_id", evidence.get("manual_run_id"), "CURRENT_CONTEXT_RUN_ID_MISMATCH"),
+            ("expected_evidence_sha256", evidence_sha256, "CURRENT_CONTEXT_EVIDENCE_SHA256_MISMATCH"),
+            ("expected_evidence_decision_as_of", evidence.get("decision_as_of"), "CURRENT_CONTEXT_DECISION_AS_OF_MISMATCH"),
+            ("expected_completed_us_session", evidence.get("expected_completed_us_session"), "CURRENT_CONTEXT_SESSION_MISMATCH"),
+            ("market_phase", evidence.get("market_phase"), "CURRENT_CONTEXT_MARKET_PHASE_MISMATCH"),
+            ("session_authority_market_phase", evidence.get("session_authority_market_phase"), "CURRENT_CONTEXT_AUTHORITY_PHASE_MISMATCH"),
+            ("calendar_policy_identity", evidence.get("calendar_policy_identity"), "CURRENT_CONTEXT_CALENDAR_POLICY_MISMATCH"),
+            ("calendar_hash", evidence.get("calendar_hash"), "CURRENT_CONTEXT_CALENDAR_HASH_MISMATCH"),
+            ("session_activation_cohort_id", evidence.get("session_activation_cohort_id"), "CURRENT_CONTEXT_SESSION_COHORT_MISMATCH"),
+        )
+        for field, expected, reason in expected_pairs:
+            if expected is None or context.get(field) != expected:
+                blockers.append(reason)
+        if evidence_sha256 is None:
+            blockers.append("EVIDENCE_RAW_SHA256_REQUIRED")
+        if context.get("context_status") != "VERIFIED_CURRENT_SESSION":
+            blockers.append("CURRENT_SESSION_CONTEXT_NOT_VERIFIED")
+        context_time = _parse_timestamp(context.get("context_generated_at"))
+        evidence_time = _parse_timestamp(evidence.get("decision_as_of"))
+        if context_time is None or evidence_time is None or context_time < evidence_time:
+            blockers.append("CURRENT_CONTEXT_GENERATED_BEFORE_EVIDENCE")
+        try:
+            canonical_runtime = authority_resolver(
+                dashboard_generated_at,
+                primary_listing_operating_mic=context.get("primary_listing_operating_mic"),
+                decision_as_of=dashboard_generated_at,
+            )
+        except (OSError, ValueError):
+            canonical_runtime = None
+        if canonical_runtime is None or canonical_runtime.authority_status != "VERIFIED":
+            blockers.append("CURRENT_CONTEXT_CANONICAL_RUNTIME_NOT_VERIFIED")
+        else:
+            current_expected_session = (
+                canonical_runtime.expected_completed_session.session_date
+                if canonical_runtime.expected_completed_session is not None else None
+            )
+            if context.get("expected_completed_us_session") != current_expected_session:
+                blockers.append("CURRENT_CONTEXT_NOT_CURRENT_CANONICAL_SESSION")
+            if context.get("session_authority_market_phase") != canonical_runtime.market_phase:
+                blockers.append("CURRENT_CONTEXT_NOT_CURRENT_CANONICAL_PHASE")
+            if context.get("calendar_policy_identity") != canonical_runtime.calendar_policy_identity:
+                blockers.append("CURRENT_CONTEXT_RUNTIME_CALENDAR_POLICY_MISMATCH")
+            if context.get("calendar_hash") != canonical_runtime.calendar_hash:
+                blockers.append("CURRENT_CONTEXT_RUNTIME_CALENDAR_HASH_MISMATCH")
+            if context.get("session_activation_cohort_id") != canonical_runtime.activation_cohort_id:
+                blockers.append("CURRENT_CONTEXT_RUNTIME_SESSION_COHORT_MISMATCH")
+        expected_session = evidence.get("expected_completed_us_session")
+        if evidence.get("market_phase") == "REGULAR_COMPLETED" and (
+            evidence.get("current_session_finalization_status") != "VERIFIED"
+            or evidence.get("last_verified_finalized_bar_date") != expected_session
+        ):
+            blockers.append("CURRENT_CONTEXT_CANONICAL_SESSION_RELATION_FAILED")
+    verified = not blockers
+    status = "VERIFIED" if verified else ("PRESENT_INVALID" if schema_errors else "PRESENT_MISMATCH")
+    return {"status": status, "verified": verified, "blockers": sorted(set(blockers)),
+            "schema_errors": schema_errors, "context": context}
+
+
+def _evaluate_request_accounting(
+    accounting: Any, evidence: dict[str, Any], evidence_sha256: str | None,
+    schema_bytes: bytes,
+) -> dict[str, Any]:
+    operations = (evidence.get("broker_observed_state") or {}).get("operation_statuses")
+    if accounting is None:
+        if operations is None or operations == {}:
+            return {"status": "ABSENT", "verified": False, "issues": [], "details": None}
+        if not isinstance(operations, dict) or any(
+            not isinstance(name, str) or not name or not isinstance(status, str) or not status
+            for name, status in operations.items()
+        ):
+            return {"status": "PRESENT_INVALID", "verified": False,
+                    "issues": ["LEGACY_OPERATION_STATUS_INVALID"], "details": None}
+        return {"status": "PRESENT_UNVERIFIED", "verified": False,
+                "issues": ["VERIFIED_REQUEST_ACCOUNTING_ARTIFACT_REQUIRED"], "details": None}
+    if not isinstance(accounting, dict):
+        return {"status": "PRESENT_INVALID", "verified": False,
+                "issues": ["REQUEST_ACCOUNTING_NOT_OBJECT"], "details": None}
+    schema_errors = validate_instance(accounting, REQUEST_ACCOUNTING_SCHEMA, schema_bytes=schema_bytes)
+    issues = [f"REQUEST_ACCOUNTING_SCHEMA_INVALID:{item}" for item in schema_errors]
+    if not schema_errors:
+        total = accounting["http_request_count"]
+        if not accounting["operation_counts"]:
+            issues.append("REQUEST_ACCOUNTING_OPERATION_COUNTS_EMPTY")
+        if not accounting["endpoint_counts"]:
+            issues.append("REQUEST_ACCOUNTING_ENDPOINT_COUNTS_EMPTY")
+        if accounting["successful_request_count"] + accounting["failed_request_count"] != total:
+            issues.append("REQUEST_ACCOUNTING_RESULT_TOTAL_MISMATCH")
+        if sum(accounting["operation_counts"].values()) != total:
+            issues.append("REQUEST_ACCOUNTING_OPERATION_TOTAL_MISMATCH")
+        if sum(accounting["endpoint_counts"].values()) != total:
+            issues.append("REQUEST_ACCOUNTING_ENDPOINT_TOTAL_MISMATCH")
+        if accounting["retry_count"] > total:
+            issues.append("REQUEST_ACCOUNTING_RETRY_COUNT_EXCEEDS_REQUESTS")
+    if issues:
+        return {"status": "PRESENT_INVALID", "verified": False,
+                "issues": sorted(set(issues)), "details": accounting}
+    binding_issues: list[str] = []
+    if accounting.get("verification_status") != "VERIFIED_EXACT":
+        binding_issues.append("REQUEST_ACCOUNTING_NOT_VERIFIED_EXACT")
+    if accounting.get("source_run_id") != evidence.get("manual_run_id"):
+        binding_issues.append("REQUEST_ACCOUNTING_RUN_ID_MISMATCH")
+    if evidence_sha256 is None or accounting.get("source_artifact_sha256") != evidence_sha256:
+        binding_issues.append("REQUEST_ACCOUNTING_SOURCE_SHA256_MISMATCH")
+    return {
+        "status": "VERIFIED" if not binding_issues else "PRESENT_UNVERIFIED",
+        "verified": not binding_issues,
+        "issues": sorted(set(binding_issues)),
+        "details": accounting,
+    }
 
 
 def _canonical_evidence_gate(
@@ -437,19 +575,34 @@ def compile_dashboard(
     *, compile_mode: str = "INITIAL_COMPILE", registry: dict[str, Any] | None = None,
     event_context: dict[str, Any] | None = None, run_id: str = "portfolio-decision-test",
     generated_at: str | None = None, runtime_advisory_authority: str | None = None,
+    current_session_context: dict[str, Any] | None = None,
+    request_accounting: dict[str, Any] | None = None,
+    evidence_sha256: str | None = None,
+    current_session_authority_resolver: Callable[..., Any] = derive_us_market_session_authority,
     evidence_schema_bytes: bytes | None = None, plan_schema_bytes: bytes | None = None,
-    dashboard_schema_bytes: bytes | None = None,
+    dashboard_schema_bytes: bytes | None = None, current_context_schema_bytes: bytes | None = None,
+    request_accounting_schema_bytes: bytes | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     if compile_mode not in ALLOWED_MODES:
         raise ContractError("INVALID_COMPILE_MODE")
     evidence_schema_bytes = evidence_schema_bytes or MANUAL_EVIDENCE_SCHEMA.read_bytes()
     plan_schema_bytes = plan_schema_bytes or PLAN_SCHEMA.read_bytes()
     dashboard_schema_bytes = dashboard_schema_bytes or DASHBOARD_SCHEMA.read_bytes()
+    current_context_schema_bytes = current_context_schema_bytes or CURRENT_SESSION_CONTEXT_SCHEMA.read_bytes()
+    request_accounting_schema_bytes = request_accounting_schema_bytes or REQUEST_ACCOUNTING_SCHEMA.read_bytes()
+    generated = generated_at or _now()
     plan_errors = validate_plan(plan, schema_bytes=plan_schema_bytes)
     if plan_errors:
         raise ContractError("DECISION_PLAN_INVALID:" + "; ".join(plan_errors))
     evidence_schema_errors, evidence_gate_blockers, canonical_phases = _canonical_evidence_gate(
         evidence, plan, compile_mode, evidence_schema_bytes,
+    )
+    current_context_result = _evaluate_current_session_context(
+        current_session_context, evidence, evidence_sha256, current_context_schema_bytes, generated,
+        current_session_authority_resolver,
+    )
+    request_accounting_result = _evaluate_request_accounting(
+        request_accounting, evidence, evidence_sha256, request_accounting_schema_bytes,
     )
     positions = {item["ticker"]: item for item in plan["positions"]}
     holdings, costs, holding_issues, holding_source = _extract_holdings(evidence)
@@ -475,16 +628,10 @@ def compile_dashboard(
         warnings.append("OPEN_ITEMS_VISIBILITY_UNAVAILABLE")
     if (evidence.get("broker_observed_state") or {}).get("scope_complete") is not True:
         warnings.append("AUXILIARY_SCOPE_INCOMPLETE_CORE_MAY_REMAIN_VERIFIED")
-    if not operations:
-        request_accounting_status = "ABSENT"
-    elif not isinstance(operations, dict) or any(
-        not isinstance(name, str) or not name or not isinstance(status, str) or not status
-        for name, status in operations.items()
-    ):
-        request_accounting_status = "PRESENT_INVALID"
+    request_accounting_status = request_accounting_result["status"]
+    if request_accounting_status == "PRESENT_INVALID":
         warnings.append("REQUEST_ACCOUNTING_INVALID")
-    else:
-        request_accounting_status = "PRESENT_UNVERIFIED"
+    elif request_accounting_status == "PRESENT_UNVERIFIED":
         warnings.append("REQUEST_ACCOUNTING_NOT_CANONICALLY_VERIFIABLE")
 
     mappings: dict[str, dict[str, Any]] = {}
@@ -495,13 +642,13 @@ def compile_dashboard(
         elif mapping:
             mappings[ticker] = mapping
 
-    nav: float | None = None
-    values: dict[str, float] = {}
-    weights: dict[str, float] = {}
+    nav: Decimal | None = None
+    values: dict[str, Decimal] = {}
+    weights: dict[str, Decimal] = {}
     positive_holdings = {ticker for ticker, quantity in holdings.items() if quantity > 0}
     if current_cash is not None and holdings and all(ticker in prices for ticker in positive_holdings):
         values = {
-            ticker: quantity * prices[ticker]["price"] if quantity > 0 else 0.0
+            ticker: Decimal(quantity) * prices[ticker]["price"] if quantity > 0 else Decimal("0")
             for ticker, quantity in holdings.items()
         }
         nav = current_cash + sum(values.values())
@@ -509,7 +656,7 @@ def compile_dashboard(
             nav = None
             issues.append("NAV_NOT_POSITIVE")
         else:
-            weights = {ticker: value / nav * 100.0 for ticker, value in values.items()}
+            weights = {ticker: value / nav * Decimal("100") for ticker, value in values.items()}
     else:
         issues.append("NAV_BLOCKED_REQUIRED_CORE_EVIDENCE")
     core_blockers = bool(
@@ -525,14 +672,14 @@ def compile_dashboard(
     )
     current_risk = None
     if nav is not None and set(weights) <= set(mappings):
-        current_risk = calculate_risk_metrics(weights, current_cash / nav * 100.0, mappings, risk_policy)
+        current_risk = calculate_risk_metrics(weights, current_cash / nav * Decimal("100"), mappings, risk_policy)
     current_violations = set((current_risk or {}).get("hard_cap_violations") or [])
     target_weights = {
-        ticker: float(item["target_weight_pct"]) for ticker, item in positions.items()
+        ticker: _decimal(item["target_weight_pct"]) for ticker, item in positions.items()
         if item.get("target_weight_pct") is not None and ticker in mappings
     }
     target_risk = calculate_risk_metrics(
-        target_weights, float(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
+        target_weights, _decimal(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
         mappings, risk_policy,
     ) if set(target_weights) <= set(mappings) else None
     target_violations = set((target_risk or {}).get("hard_cap_violations") or [])
@@ -568,7 +715,8 @@ def compile_dashboard(
             delta = None
         deadband = False
         if (delta is not None and current_weight is not None and target_weight is not None
-                and abs(float(target_weight) - current_weight) < risk_policy["deadband"]["absolute_percentage_points"]
+                and abs((_decimal(target_weight) or Decimal("0")) - current_weight)
+                    < (_decimal(risk_policy["deadband"]["absolute_percentage_points"]) or Decimal("0"))
                 and not current_violations and not target_violations
                 and not blockers and source.get("thesis_kill") is not True):
             deadband = True
@@ -588,9 +736,9 @@ def compile_dashboard(
             "average_cost_usd": _value(costs.get(ticker), "VERIFIED" if ticker in costs else "NOT_VERIFIED", "USD"),
             "canonical_price_usd": _value(price, "VERIFIED" if price is not None else "NOT_VERIFIED", "USD"),
             "price_session": prices.get(ticker, {}).get("session"),
-            "current_market_value_usd": _value(values.get(ticker, 0.0 if nav is not None else None), "DERIVED" if nav is not None else "PROVISIONAL", "USD"),
+            "current_market_value_usd": _value(values.get(ticker, Decimal("0") if nav is not None else None), "DERIVED" if nav is not None else "PROVISIONAL", "USD"),
             "current_weight_pct": _value(current_weight, "DERIVED" if current_weight is not None else "PROVISIONAL", "PCT"),
-            "target_weight_pct": _value(float(target_weight) if target_weight is not None else None, "VERIFIED" if target_weight is not None else "NOT_VERIFIED", "PCT"),
+            "target_weight_pct": _value(_decimal(target_weight) if target_weight is not None else None, "VERIFIED" if target_weight is not None else "NOT_VERIFIED", "PCT"),
             "target_shares_reference": _value(target_shares, "DERIVED" if target_shares is not None else "PROVISIONAL", "SHARES"),
             "share_delta": _value(delta, "DERIVED" if delta is not None else "PROVISIONAL", "SHARES"),
             "deadband_status": "NO_TRADE_PREFERRED" if deadband else "NOT_APPLIED",
@@ -622,7 +770,9 @@ def compile_dashboard(
     sell_rows = [row for row in stage1_rows if isinstance(row["calculated_sell_shares"], int) and row["calculated_sell_shares"] > 0]
     expected_proceeds = None
     if sell_rows and all(row["ticker"] in prices for row in sell_rows):
-        expected_proceeds = sum(row["calculated_sell_shares"] * prices[row["ticker"]]["price"] for row in sell_rows)
+        expected_proceeds = sum((
+            Decimal(row["calculated_sell_shares"]) * prices[row["ticker"]]["price"] for row in sell_rows
+        ), Decimal("0"))
     post_sell_estimated_cash = (
         current_cash + expected_proceeds if current_cash is not None and expected_proceeds is not None else None
     )
@@ -636,8 +786,10 @@ def compile_dashboard(
         stage1_status = "PROVISIONAL"
     elif plan["plan_status"] != CURRENT_PLAN_STATUS or any(row.get("target_status") != "APPROVED" for row in position_rows):
         stage1_status = "PROVISIONAL"
-    elif core_status == "VERIFIED":
+    elif core_status == "VERIFIED" and current_context_result["verified"]:
         stage1_status = "FINAL_MANUAL_ADVISORY_ELIGIBLE"
+    elif core_status == "VERIFIED":
+        stage1_status = "READY_FOR_DECISION_PLAN_PREPARATION"
     else:
         stage1_status = "BLOCKED"
 
@@ -658,6 +810,9 @@ def compile_dashboard(
     elif core_status != "VERIFIED":
         stage2_status = "BLOCKED"
         stage2_blockers.append("POST_SELL_CANONICAL_EVIDENCE_NOT_VERIFIED")
+    elif not current_context_result["verified"]:
+        stage2_status = "BLOCKED"
+        stage2_blockers.extend(current_context_result["blockers"])
     elif evidence.get("market_phase") not in {"REGULAR_INTRADAY", "REGULAR_COMPLETED"}:
         stage2_status = "BLOCKED"
         stage2_blockers.append("POST_SELL_SESSION_NOT_ELIGIBLE")
@@ -668,7 +823,7 @@ def compile_dashboard(
         stage2_status = "BLOCKED"
         stage2_blockers.append("BUY_INPUT_BLOCKED")
     else:
-        requested_cost = 0.0
+        requested_cost = Decimal("0")
         capped_gaps: dict[str, int] = {}
         for row in buy_rows:
             gap = int(row["share_delta"]["value"])
@@ -678,10 +833,10 @@ def compile_dashboard(
                 capped_target = int((Decimal(full_target) * entry_fraction).to_integral_value(rounding=ROUND_FLOOR))
                 gap = min(gap, capped_target)
             capped_gaps[row["ticker"]] = max(0, gap)
-            requested_cost += capped_gaps[row["ticker"]] * prices[row["ticker"]]["price"]
+            requested_cost += Decimal(capped_gaps[row["ticker"]]) * prices[row["ticker"]]["price"]
         eligible_gaps = {ticker: gap for ticker, gap in capped_gaps.items() if gap > 0}
         priority = plan.get("buy_priority") or []
-        insufficient_cash = requested_cost > orderable_cash + 1e-9
+        insufficient_cash = requested_cost > orderable_cash
         eligible = set(eligible_gaps)
         if insufficient_cash and not priority:
             stage2_status = "BLOCKED"
@@ -698,13 +853,17 @@ def compile_dashboard(
             allocations = {ticker: 0 for ticker in eligible_gaps}
             for ticker in order:
                 price = prices[ticker]["price"]
-                maximum = min(eligible_gaps[ticker], _floor_shares(cash_left, 100, price) or 0)
+                maximum = min(eligible_gaps[ticker], _floor_shares(cash_left, Decimal("100"), price) or 0)
                 for _ in range(maximum):
                     candidate_holdings = dict(simulated_holdings)
                     candidate_holdings[ticker] = candidate_holdings.get(ticker, 0) + 1
-                    candidate_values = {name: qty * prices[name]["price"] for name, qty in candidate_holdings.items()}
-                    candidate_weights = {name: value / nav * 100.0 for name, value in candidate_values.items()} if nav else {}
-                    candidate_cash_pct = (cash_left - price) / nav * 100.0 if nav else None
+                    candidate_values = {
+                        name: Decimal(qty) * prices[name]["price"] for name, qty in candidate_holdings.items()
+                    }
+                    candidate_weights = {
+                        name: value / nav * Decimal("100") for name, value in candidate_values.items()
+                    } if nav else {}
+                    candidate_cash_pct = (cash_left - price) / nav * Decimal("100") if nav else None
                     candidate_risk = calculate_risk_metrics(candidate_weights, candidate_cash_pct, mappings, risk_policy)
                     if candidate_risk["hard_cap_violations"]:
                         break
@@ -716,15 +875,14 @@ def compile_dashboard(
                     "ticker": ticker,
                     "target_gap_shares": eligible_gaps[ticker],
                     "calculated_buy_shares": allocations[ticker],
-                    "price_usd": prices[ticker]["price"],
-                    "estimated_cost_usd": allocations[ticker] * prices[ticker]["price"],
+                    "price_usd": _json_number(prices[ticker]["price"]),
+                    "estimated_cost_usd": _json_number(Decimal(allocations[ticker]) * prices[ticker]["price"]),
                     "quantity_status": "CALCULATED_MANUAL_ADVISORY",
                 })
             post_initial_buy_cash = cash_left
             stage2_status = "FINAL_MANUAL_ADVISORY_ELIGIBLE"
 
     event = _event_context(event_context)
-    generated = generated_at or _now()
     current_authority_eligible = (
         stage1_status == "FINAL_MANUAL_ADVISORY_ELIGIBLE"
         or stage2_status == "FINAL_MANUAL_ADVISORY_ELIGIBLE"
@@ -752,6 +910,8 @@ def compile_dashboard(
             "open_items_status": open_items_status or "NOT_AVAILABLE",
             "request_accounting_status": request_accounting_status,
             "request_accounting": dict(sorted(operations.items())) if isinstance(operations, dict) else {},
+            "request_accounting_contract": request_accounting_result["details"],
+            "request_accounting_issues": request_accounting_result["issues"],
             "canonical_schema_sha256": _sha256_bytes(evidence_schema_bytes),
             "canonical_schema_errors": evidence_schema_errors,
             "failure_code": "GRADE_B_SCHEMA_INVALID" if evidence_schema_errors else None,
@@ -759,8 +919,19 @@ def compile_dashboard(
             "issues": sorted(set(issues)),
             "warnings": sorted(set(warnings)),
             "current_freshness": "HISTORICAL_REPLAY" if replay else (
-                "CURRENT_AT_ARTIFACT_TIME" if stage1_status == "FINAL_MANUAL_ADVISORY_ELIGIBLE" else "LAST_KNOWN"
+                "CURRENT_SESSION_CONTEXT_VERIFIED" if current_context_result["verified"] else "CURRENT_SESSION_CONTEXT_NOT_VERIFIED"
             ),
+        },
+        "current_context": {
+            "status": current_context_result["status"],
+            "verified": current_context_result["verified"],
+            "blockers": current_context_result["blockers"],
+            "schema_errors": current_context_result["schema_errors"],
+            "expected_completed_us_session": (
+                current_session_context.get("expected_completed_us_session")
+                if isinstance(current_session_context, dict) else None
+            ),
+            "market_phase": current_session_context.get("market_phase") if isinstance(current_session_context, dict) else None,
         },
         "plan": {
             "plan_id": plan["plan_id"], "as_of": plan["as_of"], "plan_status": plan["plan_status"],
@@ -804,10 +975,11 @@ def compile_dashboard(
             "verified_orderable_cash_usd": _value(orderable_cash, "VERIFIED" if orderable_cash is not None else "NOT_VERIFIED", "USD"),
             "post_sell_estimated_cash_usd": _value(post_sell_estimated_cash, "ESTIMATED" if post_sell_estimated_cash is not None else "PROVISIONAL", "USD"),
             "post_initial_buy_estimated_cash_usd": _value(post_initial_buy_cash, "ESTIMATED" if post_initial_buy_cash is not None else "PROVISIONAL", "USD"),
-            "full_target_reference_cash_pct": _value(float(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
+            "full_target_reference_cash_pct": _value(_decimal(plan["cash_target_pct"]) if plan.get("cash_target_pct") is not None else None,
                                                         "VERIFIED" if plan.get("cash_target_pct") is not None else "NOT_VERIFIED", "PCT"),
             "full_target_reference_cash_usd": _value(
-                nav * float(plan["cash_target_pct"]) / 100.0 if nav is not None and plan.get("cash_target_pct") is not None else None,
+                nav * (_decimal(plan["cash_target_pct"]) or Decimal("0")) / Decimal("100")
+                if nav is not None and plan.get("cash_target_pct") is not None else None,
                 "DERIVED" if nav is not None and plan.get("cash_target_pct") is not None else "PROVISIONAL", "USD",
             ),
             "expected_proceeds_treated_as_orderable_cash": False,
@@ -818,6 +990,9 @@ def compile_dashboard(
             "current_runtime_advisory_authority": derived_runtime_authority,
             "runtime_authority_cli_input": runtime_advisory_authority,
             "runtime_authority_cli_input_effect": "DISPLAY_ONLY_NO_AUTHORITY_EFFECT" if runtime_advisory_authority else "NOT_PROVIDED",
+            "ready_for_decision_plan_preparation": bool(
+                stage1_status in {"READY_FOR_DECISION_PLAN_PREPARATION", "FINAL_MANUAL_ADVISORY_ELIGIBLE"}
+            ),
             "manual_advisory_label": "CALCULATED_MANUAL_ADVISORY",
             "broker_order_authority": False,
             "execution_quantity": None,
@@ -837,6 +1012,7 @@ def compile_dashboard(
         and orderable_cash is not None
         and plan["plan_status"] == CURRENT_PLAN_STATUS
         and not evidence_gate_blockers
+        and current_context_result["verified"]
     )
     invariants = {
         "dashboard_schema": not schema_errors,
@@ -846,7 +1022,9 @@ def compile_dashboard(
         "expected_proceeds_not_orderable": report["cash_semantics"]["expected_proceeds_treated_as_orderable_cash"] is False,
         "canonical_evidence_schema": not evidence_schema_errors,
         "canonical_evidence_gate_enforced": not current_authority_eligible or not evidence_gate_blockers,
+        "current_session_context_gate_enforced": not current_authority_eligible or current_context_result["verified"],
         "stage2_firewall": stage2_status != "FINAL_MANUAL_ADVISORY_ELIGIBLE" or stage2_gate_verified,
+        "request_accounting_has_no_authority_effect": report["authority"]["broker_order_authority"] is False,
         "portfolio_mutation_false": report["safety"]["portfolio_mutation"] is False,
         "policy_mutation_false": report["safety"]["policy_mutation"] is False,
         "network_false": report["safety"]["network_access"] is False,
@@ -997,8 +1175,27 @@ def _display(value: Any, digits: int = 2) -> str:
     return str(value)
 
 
+def _current_context_explanation(status: str) -> str:
+    return {
+        "VERIFIED": "현재 세션 확인 자료가 Grade B 원본 실행·해시·판단 시각·세션과 정확히 일치합니다.",
+        "ABSENT": "현재 세션 확인 자료가 없어 계산은 계획 준비용이며 최종 수동 검토는 차단됩니다.",
+        "PRESENT_INVALID": "현재 세션 확인 자료의 형식이 유효하지 않아 최종 수동 검토는 차단됩니다.",
+        "PRESENT_MISMATCH": "현재 세션 확인 자료가 Grade B 원본 또는 정규 세션과 일치하지 않아 최종 수동 검토는 차단됩니다.",
+    }.get(status, "현재 세션 확인 상태를 판정할 수 없습니다.")
+
+
+def _request_accounting_explanation(status: str) -> str:
+    return {
+        "VERIFIED": "요청 횟수가 같은 Grade B 실행과 원본 해시에 정확히 결속되어 검증되었습니다.",
+        "ABSENT": "검증 가능한 요청 회계 자료가 없습니다.",
+        "PRESENT_INVALID": "요청 회계의 형식 또는 합계가 유효하지 않습니다.",
+        "PRESENT_UNVERIFIED": "요청 흔적은 있으나 같은 Grade B 원본 실행과 정확히 결속되지 않았습니다.",
+    }.get(status, "요청 회계 상태를 판정할 수 없습니다.")
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     evidence = report["evidence"]
+    current_context = report["current_context"]
     stage1 = report["stage1"]
     stage2 = report["stage2"]
     event = report["event_context"]
@@ -1065,7 +1262,9 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines += [
         "## 근거·요청·이벤트", "",
         f"- Canonical schema SHA-256: {evidence['canonical_schema_sha256']}",
-        f"- Request accounting: {evidence['request_accounting_status']}",
+        f"- 현재성 확인: {current_context['status']} — {_current_context_explanation(current_context['status'])}",
+        f"- 현재성 차단 사유: {', '.join(current_context['blockers']) or '없음'}",
+        f"- Request accounting: {evidence['request_accounting_status']} — {_request_accounting_explanation(evidence['request_accounting_status'])}",
     ]
     for name, status in evidence.get("request_accounting", {}).items():
         lines.append(f"  - {name}: {status}")
@@ -1087,6 +1286,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def render_html(report: dict[str, Any]) -> str:
     evidence = report["evidence"]
+    current_context = report["current_context"]
     stage1_rows = "".join(
         f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['current_shares'])}</td>"
         f"<td>{_display(row['target_shares_reference'])}</td><td>{_display(row['calculated_sell_shares'])}</td>"
@@ -1126,7 +1326,7 @@ th,td{{border-bottom:1px solid #dce3ec;padding:10px;text-align:left}}.status{{fo
 <div class="notice">수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.</div>
 <section><h2>위험 축소 1단계</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>종목</th><th>현재 주식</th><th>목표 참고</th><th>계산 매도</th><th>근거</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
 <section><h2>2단계 매수</h2><p class="status">{html.escape(report['stage2']['status'])}</p><table><thead><tr><th>종목</th><th>목표 참고</th><th>목표 격차</th><th>계산 매수</th><th>기준 가격</th><th>예상 소요액</th></tr></thead><tbody>{buy_rows}</tbody></table><p>차단 사유: {html.escape(', '.join(report['stage2']['blockers']) or '없음')}</p></section>
-<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>Request accounting: {html.escape(evidence['request_accounting_status'])}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
+<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>현재성 확인: {html.escape(current_context['status'])} — {html.escape(_current_context_explanation(current_context['status']))}</p><p>현재성 차단 사유: {html.escape(', '.join(current_context['blockers']) or '없음')}</p><p>Request accounting: {html.escape(evidence['request_accounting_status'])} — {html.escape(_request_accounting_explanation(evidence['request_accounting_status']))}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
 <section><h2>권한</h2><p>Broker Order Authority = FALSE · execution_quantity = NULL · automatic_order = FALSE</p><p>현재 런타임 수동자문 권한: {html.escape(report['authority']['current_runtime_advisory_authority'])}</p><small>CLI authority input effect: {html.escape(report['authority']['runtime_authority_cli_input_effect'])}</small></section>
 <details><summary>동일 의미의 Markdown 원문</summary><pre>{html.escape(markdown)}</pre></details>
 </main></body></html>"""
@@ -1231,6 +1431,8 @@ def main() -> int:
     parser.add_argument("--risk-policy", type=Path, default=DEFAULT_RISK_POLICY)
     parser.add_argument("--event-context", type=Path)
     parser.add_argument("--instrument-registry", type=Path)
+    parser.add_argument("--current-session-context", type=Path)
+    parser.add_argument("--request-accounting", type=Path)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--run-id")
     parser.add_argument("--mode", choices=sorted(ALLOWED_MODES), default="INITIAL_COMPILE")
@@ -1246,11 +1448,15 @@ def main() -> int:
     plan_path = args.decision_plan.resolve()
     risk_path = args.risk_policy.resolve()
     event_path = args.event_context.resolve() if args.event_context else None
+    current_context_path = args.current_session_context.resolve() if args.current_session_context else None
+    request_accounting_path = args.request_accounting.resolve() if args.request_accounting else None
     evidence_bytes = evidence_path.read_bytes()
     plan_bytes = plan_path.read_bytes()
     evidence_schema_bytes = MANUAL_EVIDENCE_SCHEMA.read_bytes()
     plan_schema_bytes = PLAN_SCHEMA.read_bytes()
     dashboard_schema_bytes = DASHBOARD_SCHEMA.read_bytes()
+    current_context_schema_bytes = CURRENT_SESSION_CONTEXT_SCHEMA.read_bytes()
+    request_accounting_schema_bytes = REQUEST_ACCOUNTING_SCHEMA.read_bytes()
     evidence_value = json.loads(evidence_bytes.decode("utf-8"))
     plan_value = json.loads(plan_bytes.decode("utf-8"))
     risk_bytes = risk_path.read_bytes()
@@ -1259,6 +1465,8 @@ def main() -> int:
     registry_bytes = registry_path.read_bytes() if registry_path.exists() else None
     registry = json.loads(registry_bytes.decode("utf-8")) if registry_bytes is not None else None
     event_bytes = event_path.read_bytes() if event_path else None
+    current_context_bytes = current_context_path.read_bytes() if current_context_path else None
+    request_accounting_bytes = request_accounting_path.read_bytes() if request_accounting_path else None
     generated = _now()
     seed = _sha256_bytes((file_hash(evidence_path) + file_hash(plan_path) + generated).encode("utf-8"))[:12]
     run_id = args.run_id or f"portfolio-decision-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{seed}"
@@ -1267,15 +1475,26 @@ def main() -> int:
         registry=registry, event_context=json.loads(event_bytes.decode("utf-8")) if event_bytes else None,
         run_id=run_id, generated_at=generated,
         runtime_advisory_authority=args.runtime_advisory_authority,
+        current_session_context=(
+            json.loads(current_context_bytes.decode("utf-8")) if current_context_bytes else None
+        ),
+        request_accounting=(
+            json.loads(request_accounting_bytes.decode("utf-8")) if request_accounting_bytes else None
+        ),
+        evidence_sha256=_sha256_bytes(evidence_bytes),
         evidence_schema_bytes=evidence_schema_bytes, plan_schema_bytes=plan_schema_bytes,
         dashboard_schema_bytes=dashboard_schema_bytes,
+        current_context_schema_bytes=current_context_schema_bytes,
+        request_accounting_schema_bytes=request_accounting_schema_bytes,
     )
     implementation_paths = implementation_provenance_paths(risk_path)
     run_dir = write_run(
         report, validation, output_root=args.output_root.resolve(), root=ROOT,
         source_paths={"portfolio_evidence": evidence_path, "decision_plan": plan_path,
-                       "risk_policy": risk_path, "instrument_registry": registry_path if registry_path.exists() else None,
-                      "event_context": event_path, "portfolio_evidence_schema": MANUAL_EVIDENCE_SCHEMA},
+                      "risk_policy": risk_path, "instrument_registry": registry_path if registry_path.exists() else None,
+                      "event_context": event_path, "portfolio_evidence_schema": MANUAL_EVIDENCE_SCHEMA,
+                      "current_session_context": current_context_path,
+                      "request_accounting": request_accounting_path},
         implementation_paths=implementation_paths,
         consumed_hashes={
             "portfolio_evidence": _sha256_bytes(evidence_bytes),
@@ -1283,9 +1502,13 @@ def main() -> int:
             "portfolio_evidence_schema": _sha256_bytes(evidence_schema_bytes),
             "decision_plan_schema": _sha256_bytes(plan_schema_bytes),
             "dashboard_schema": _sha256_bytes(dashboard_schema_bytes),
+            "current_session_context_schema": _sha256_bytes(current_context_schema_bytes),
+            "request_accounting_schema": _sha256_bytes(request_accounting_schema_bytes),
             "risk_policy": _sha256_bytes(risk_bytes),
             **({"instrument_registry": _sha256_bytes(registry_bytes)} if registry_bytes is not None else {}),
             **({"event_context": _sha256_bytes(event_bytes)} if event_bytes is not None else {}),
+            **({"current_session_context": _sha256_bytes(current_context_bytes)} if current_context_bytes is not None else {}),
+            **({"request_accounting": _sha256_bytes(request_accounting_bytes)} if request_accounting_bytes is not None else {}),
         },
     )
     print(run_dir)

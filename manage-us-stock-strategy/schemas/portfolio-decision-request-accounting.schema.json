@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision-request-accounting.schema.json",
+  "title": "Portfolio Decision Verified Request Accounting",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_type",
+    "source_run_id",
+    "source_artifact_sha256",
+    "generated_at",
+    "verification_status",
+    "http_request_count",
+    "successful_request_count",
+    "failed_request_count",
+    "retry_count",
+    "operation_counts",
+    "endpoint_counts",
+    "order_authority",
+    "execution_quantity",
+    "automatic_order"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "source_type": {"const": "KIWOOM_MANUAL_PORTFOLIO_ANALYSIS"},
+    "source_run_id": {"type": "string", "minLength": 8},
+    "source_artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "verification_status": {"enum": ["VERIFIED_EXACT", "UNVERIFIED"]},
+    "http_request_count": {"type": "integer", "minimum": 0},
+    "successful_request_count": {"type": "integer", "minimum": 0},
+    "failed_request_count": {"type": "integer", "minimum": 0},
+    "retry_count": {"type": "integer", "minimum": 0},
+    "operation_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "endpoint_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "order_authority": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "automatic_order": {"const": false}
+  }
+}

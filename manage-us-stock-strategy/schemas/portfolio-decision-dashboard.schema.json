@@ -11,6 +11,7 @@
     "generated_at",
     "compile_mode",
     "evidence",
+    "current_context",
     "plan",
     "portfolio",
     "stage1",
@@ -25,7 +26,33 @@
     "run_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,160}$"},
     "generated_at": {"type": "string", "format": "date-time"},
     "compile_mode": {"enum": ["INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"]},
-    "evidence": {"type": "object", "additionalProperties": true},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["request_accounting_status", "current_freshness"],
+      "properties": {
+        "request_accounting_status": {
+          "enum": ["ABSENT", "PRESENT_INVALID", "PRESENT_UNVERIFIED", "VERIFIED"]
+        },
+        "current_freshness": {
+          "enum": [
+            "HISTORICAL_REPLAY",
+            "CURRENT_SESSION_CONTEXT_NOT_VERIFIED",
+            "CURRENT_SESSION_CONTEXT_VERIFIED"
+          ]
+        }
+      }
+    },
+    "current_context": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["status", "verified", "blockers"],
+      "properties": {
+        "status": {"enum": ["ABSENT", "PRESENT_INVALID", "PRESENT_MISMATCH", "VERIFIED"]},
+        "verified": {"type": "boolean"},
+        "blockers": {"type": "array", "items": {"type": "string"}}
+      }
+    },
     "plan": {"type": "object", "additionalProperties": true},
     "portfolio": {"type": "object", "additionalProperties": true},
     "stage1": {"type": "object", "additionalProperties": true},

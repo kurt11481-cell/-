@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision-current-session-context.schema.json",
+  "title": "Portfolio Decision Current Session Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "context_type",
+    "context_version",
+    "context_generated_at",
+    "expected_evidence_run_id",
+    "expected_evidence_sha256",
+    "expected_evidence_decision_as_of",
+    "expected_completed_us_session",
+    "market_phase",
+    "session_authority_market_phase",
+    "primary_listing_operating_mic",
+    "calendar_policy_identity",
+    "calendar_hash",
+    "session_activation_cohort_id",
+    "context_status",
+    "order_authority",
+    "execution_quantity",
+    "automatic_order"
+  ],
+  "properties": {
+    "context_type": {"const": "PORTFOLIO_DECISION_CURRENT_SESSION_CONTEXT"},
+    "context_version": {"const": "1.0"},
+    "context_generated_at": {"type": "string", "format": "date-time"},
+    "expected_evidence_run_id": {"type": "string", "minLength": 8},
+    "expected_evidence_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "expected_evidence_decision_as_of": {"type": "string", "format": "date-time"},
+    "expected_completed_us_session": {"type": "string", "format": "date"},
+    "market_phase": {
+      "enum": [
+        "PRE_MARKET",
+        "REGULAR_INTRADAY",
+        "REGULAR_COMPLETED",
+        "AFTER_HOURS",
+        "DAY_MARKET",
+        "OVERNIGHT",
+        "MARKET_CLOSED",
+        "UNKNOWN"
+      ]
+    },
+    "session_authority_market_phase": {
+      "enum": ["PRE_CORE", "CORE_OPEN", "POST_CORE"]
+    },
+    "primary_listing_operating_mic": {"enum": ["XNAS", "XNYS"]},
+    "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+    "calendar_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "session_activation_cohort_id": {"type": "string", "minLength": 1},
+    "context_status": {
+      "enum": ["VERIFIED_CURRENT_SESSION", "NOT_VERIFIED"]
+    },
+    "order_authority": {"const": false},
+    "execution_quantity": {"type": "null"},
+    "automatic_order": {"const": false}
+  }
+}
