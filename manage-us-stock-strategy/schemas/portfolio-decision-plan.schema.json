@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision-plan.schema.json",
+  "title": "Portfolio Decision Dashboard Explicit Plan Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "as_of",
+    "plan_status",
+    "target_type",
+    "positions",
+    "material_unknowns",
+    "decision_change_triggers"
+  ],
+  "properties": {
+    "plan_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "plan_status": {
+      "enum": ["CURRENT_APPROVED", "PROVISIONAL", "HISTORICAL", "REPLAY_ONLY"]
+    },
+    "target_type": {
+      "enum": [
+        "MINIMUM_SAFETY_REFERENCE",
+        "TRANSITIONAL_RISK_FEASIBLE_TARGET",
+        "RECOMMENDED_FEASIBLE_TARGET",
+        "PROVISIONAL_FULL_TARGET_REFERENCE"
+      ]
+    },
+    "cash_target_pct": {"type": "number", "minimum": 0},
+    "buy_priority": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+      "uniqueItems": true
+    },
+    "positions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ticker",
+          "action",
+          "rationale",
+          "investment_horizon",
+          "target_status"
+        ],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+          "action": {"enum": ["ADD", "HOLD", "TRIM", "EXIT"]},
+          "target_weight_pct": {"type": "number", "minimum": 0},
+          "rationale": {"type": "string", "minLength": 1},
+          "investment_horizon": {"type": "string", "minLength": 1},
+          "target_status": {"enum": ["APPROVED", "PROVISIONAL", "HISTORICAL", "BLOCKED"]},
+          "evidence_reference": {"type": ["string", "null"]},
+          "thesis_kill": {"type": "boolean"},
+          "material_risk": {"type": ["string", "null"]},
+          "decision_change_triggers": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "material_unknowns": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "decision_change_triggers": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

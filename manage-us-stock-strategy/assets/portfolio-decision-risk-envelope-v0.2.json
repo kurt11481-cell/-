@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "portfolio-decision-risk-envelope-v0.2",
+  "status": "APPROVED_READ_ONLY_REFERENCE",
+  "authority_source": "USER_APPROVED_PORTFOLIO_DECISION_DASHBOARD_V1_0_GOAL",
+  "units": "PERCENT_OF_NAV",
+  "cash": {
+    "target_min_pct": 15.0,
+    "target_max_pct": 25.0,
+    "hard_floor_pct": 10.0
+  },
+  "all_daily_reset_leveraged_products": {
+    "target_min_pct": 10.0,
+    "target_max_pct": 15.0,
+    "hard_cap_pct": 20.0
+  },
+  "single_3x_etf": {
+    "target_min_pct": 5.0,
+    "target_max_pct": 8.0,
+    "hard_cap_pct": 10.0
+  },
+  "single_2x_single_stock_etf": {
+    "target_min_pct": 0.0,
+    "target_max_pct": 5.0,
+    "hard_cap_pct": 10.0
+  },
+  "single_normal_stock": {
+    "target_min_pct": 8.0,
+    "target_max_pct": 12.0,
+    "hard_cap_pct": 15.0,
+    "exceptional_hard_cap_pct": 20.0,
+    "exceptional_cap_requires_separate_approval": true
+  },
+  "growth_ai_semiconductor_cluster": {
+    "book_hard_cap_pct": 35.0,
+    "leverage_adjusted_hard_cap_pct": 60.0
+  },
+  "overall_leverage_adjusted_exposure_proxy": {
+    "target_min_pct": 90.0,
+    "target_max_pct": 110.0,
+    "hard_cap_pct": 125.0
+  },
+  "new_position_initial_entry": {
+    "maximum_fraction_of_full_target": 0.5
+  },
+  "deadband": {
+    "absolute_percentage_points": 2.0,
+    "requires_no_hard_cap_violation": true,
+    "requires_no_thesis_kill": true
+  },
+  "instrument_registry_path": "workspace/policies/instrument_registry.json",
+  "fallback_instrument_mapping": {
+    "MVLL": {
+      "instrument_class": "SINGLE_2X_SINGLE_STOCK_ETF",
+      "leverage_factor": 2.0,
+      "growth_ai_semiconductor_cluster": true,
+      "underlying_reference": "MRVL"
+    },
+    "SOXL": {
+      "instrument_class": "SINGLE_3X_ETF",
+      "leverage_factor": 3.0,
+      "growth_ai_semiconductor_cluster": true,
+      "underlying_reference": null
+    },
+    "NBIS": {
+      "instrument_class": "NORMAL_STOCK",
+      "leverage_factor": 1.0,
+      "growth_ai_semiconductor_cluster": true,
+      "underlying_reference": null
+    },
+    "PGR": {
+      "instrument_class": "NORMAL_STOCK",
+      "leverage_factor": 1.0,
+      "growth_ai_semiconductor_cluster": false,
+      "underlying_reference": null
+    },
+    "JPM": {
+      "instrument_class": "NORMAL_STOCK",
+      "leverage_factor": 1.0,
+      "growth_ai_semiconductor_cluster": false,
+      "underlying_reference": null
+    },
+    "CME": {
+      "instrument_class": "NORMAL_STOCK",
+      "leverage_factor": 1.0,
+      "growth_ai_semiconductor_cluster": false,
+      "underlying_reference": null
+    },
+    "V": {
+      "instrument_class": "NORMAL_STOCK",
+      "leverage_factor": 1.0,
+      "growth_ai_semiconductor_cluster": false,
+      "underlying_reference": null
+    }
+  },
+  "expected_sale_proceeds_are_orderable_cash": false,
+  "portfolio_mutation_authority": false,
+  "policy_mutation_authority": false,
+  "order_authority": false,
+  "execution_quantity": null,
+  "automatic_order": false
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "portfolio-decision-dashboard.schema.json",
+  "title": "Portfolio Decision Dashboard Derived Manual Advisory",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "report_type",
+    "run_id",
+    "generated_at",
+    "compile_mode",
+    "evidence",
+    "plan",
+    "portfolio",
+    "stage1",
+    "stage2",
+    "cash_semantics",
+    "authority",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "report_type": {"const": "PORTFOLIO_DECISION_DASHBOARD_MANUAL_ADVISORY"},
+    "run_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,160}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "compile_mode": {"enum": ["INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"]},
+    "evidence": {"type": "object", "additionalProperties": true},
+    "plan": {"type": "object", "additionalProperties": true},
+    "portfolio": {"type": "object", "additionalProperties": true},
+    "stage1": {"type": "object", "additionalProperties": true},
+    "stage2": {"type": "object", "additionalProperties": true},
+    "cash_semantics": {"type": "object", "additionalProperties": true},
+    "authority": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["broker_order_authority", "execution_quantity", "automatic_order"],
+      "properties": {
+        "broker_order_authority": {"const": false},
+        "execution_quantity": {"type": "null"},
+        "automatic_order": {"const": false}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "network_access",
+        "kiwoom_call",
+        "broker_call",
+        "sec_live_request",
+        "task_scheduler_mutation",
+        "portfolio_mutation",
+        "policy_mutation",
+        "orders"
+      ],
+      "properties": {
+        "network_access": {"const": false},
+        "kiwoom_call": {"const": false},
+        "broker_call": {"const": false},
+        "sec_live_request": {"const": false},
+        "task_scheduler_mutation": {"const": false},
+        "portfolio_mutation": {"const": false},
+        "policy_mutation": {"const": false},
+        "orders": {"const": "NONE"}
+      }
+    }
+  }
+}
