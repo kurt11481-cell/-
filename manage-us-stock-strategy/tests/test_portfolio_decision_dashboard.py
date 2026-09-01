@@ -197,6 +197,10 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
             run_id="synthetic-run", generated_at=source["decision_as_of"], **kwargs,
         )
 
+    def assert_display_line(self, report, label: str, value: str) -> None:
+        self.assertIn(f"- {label}: {value}", render_markdown(report))
+        self.assertIn(f"<p>{label}: {value}</p>", render_html(report))
+
     def test_stage1_integer_floor_and_stage2_firewall(self):
         report, validation = self.compile()
         rows = {row["ticker"]: row for row in report["stage1"]["sell_advisories"]}
@@ -267,6 +271,9 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertEqual(report["stage2"]["status"], "REPLAY_ONLY")
         self.assertEqual(report["evidence"]["current_freshness"], "HISTORICAL_REPLAY")
         self.assertEqual(report["evidence"]["portfolio_evidence_grade_display"], "GRADE_B_AT_ARTIFACT_TIME")
+        self.assert_display_line(report, "현재 자료 상태", "과거 자료 / 현재 판단 사용 불가 (HISTORICAL_REPLAY)")
+        for rendered in (render_markdown(report), render_html(report)):
+            self.assertNotIn("현재 자료 (CURRENT_SESSION_CONTEXT_VERIFIED)", rendered)
 
     def test_input_order_authority_fails_closed(self):
         source = evidence()
@@ -462,7 +469,7 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
             for token in (row["ticker"], str(row["calculated_buy_shares"])):
                 self.assertIn(token, markdown)
                 self.assertIn(token, dashboard_html)
-        for token in ("Event context", "MVLL", "Request accounting", "account_holdings_read", "현재성 확인"):
+        for token in ("Event context", "MVLL", "요청 회계 상태", "account_holdings_read", "현재 세션 확인 결과", "현재 자료 상태"):
             self.assertIn(token, markdown)
             self.assertIn(token, dashboard_html)
 
@@ -470,9 +477,22 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         source = evidence()
         report, _ = self.compile(source, request_accounting=verified_request_accounting(source))
         for rendered in (render_markdown(report), render_html(report)):
-            self.assertIn("Request accounting: VERIFIED", rendered)
+            self.assertIn("요청 회계 상태: 검증됨 (VERIFIED)", rendered)
             self.assertIn("원본 해시에 정확히 결속", rendered)
             self.assertIn("현재 세션 확인 자료", rendered)
+
+    def test_renderers_do_not_mutate_semantics_or_authority(self):
+        report, _ = self.compile(post_sell_evidence(), post_sell_plan(), compile_mode="POST_SELL_RECOMPILE")
+        before = copy.deepcopy(report)
+        render_markdown(report)
+        render_html(report)
+        self.assertEqual(report, before)
+        self.assertEqual(report["stage1"]["status"], before["stage1"]["status"])
+        self.assertEqual(report["stage2"]["status"], before["stage2"]["status"])
+        self.assertEqual(report["stage2"]["buy_advisories"], before["stage2"]["buy_advisories"])
+        self.assertFalse(report["authority"]["broker_order_authority"])
+        self.assertIsNone(report["authority"]["execution_quantity"])
+        self.assertFalse(report["authority"]["automatic_order"])
 
     def test_schema_valid_but_unverified_and_preflight_fail_block_stage1(self):
         unverified = evidence()
@@ -605,6 +625,10 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertEqual(report["current_context"]["status"], "ABSENT")
         self.assertTrue(report["authority"]["ready_for_decision_plan_preparation"])
         self.assertEqual(report["authority"]["current_runtime_advisory_authority"], "NOT_VERIFIED_BY_RUNTIME")
+        self.assert_display_line(
+            report, "현재 자료 상태", "현재 자료 여부 확인 불가 (CURRENT_SESSION_CONTEXT_NOT_VERIFIED)",
+        )
+        self.assert_display_line(report, "현재 세션 확인 결과", "확인되지 않음 (ABSENT)")
 
     def test_current_context_run_mismatch_blocks_final(self):
         source = evidence()
@@ -633,6 +657,8 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         self.assertEqual(report["current_context"]["status"], "VERIFIED")
         self.assertEqual(report["stage1"]["status"], "FINAL_MANUAL_ADVISORY_ELIGIBLE")
         self.assertTrue(validation["invariants"]["current_session_context_gate_enforced"])
+        self.assert_display_line(report, "현재 자료 상태", "현재 자료 (CURRENT_SESSION_CONTEXT_VERIFIED)")
+        self.assert_display_line(report, "현재 세션 확인 결과", "확인됨 (VERIFIED)")
 
     def test_stage2_context_bound_to_prior_run_is_blocked(self):
         source = post_sell_evidence()
@@ -751,6 +777,7 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         verified = verified_request_accounting(source)
         report, _ = self.compile(source, request_accounting=verified)
         self.assertEqual(report["evidence"]["request_accounting_status"], "VERIFIED")
+        self.assert_display_line(report, "요청 회계 상태", "검증됨 (VERIFIED)")
 
     def test_request_accounting_present_unverified_state_is_reachable(self):
         source = evidence()
@@ -758,16 +785,19 @@ class PortfolioDecisionDashboardTests(unittest.TestCase):
         unverified["verification_status"] = "UNVERIFIED"
         report, _ = self.compile(source, request_accounting=unverified)
         self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_UNVERIFIED")
+        self.assert_display_line(report, "요청 회계 상태", "미검증 (PRESENT_UNVERIFIED)")
 
     def test_request_accounting_present_invalid_state_is_reachable(self):
         report, _ = self.compile(request_accounting={"arbitrary": True})
         self.assertEqual(report["evidence"]["request_accounting_status"], "PRESENT_INVALID")
+        self.assert_display_line(report, "요청 회계 상태", "형식 오류 (PRESENT_INVALID)")
 
     def test_request_accounting_absent_state_is_reachable(self):
         source = evidence()
         del source["broker_observed_state"]["operation_statuses"]
         report, _ = self.compile(source, request_accounting=None)
         self.assertEqual(report["evidence"]["request_accounting_status"], "ABSENT")
+        self.assert_display_line(report, "요청 회계 상태", "없음 (ABSENT)")
 
     def test_request_accounting_run_mismatch_is_unverified(self):
         source = evidence()

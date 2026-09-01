@@ -1193,9 +1193,39 @@ def _request_accounting_explanation(status: str) -> str:
     }.get(status, "요청 회계 상태를 판정할 수 없습니다.")
 
 
+def _dashboard_display_semantics(report: dict[str, Any]) -> dict[str, str]:
+    """Return beginner-facing labels without changing canonical report semantics."""
+    freshness = str(report["evidence"].get("current_freshness") or "NOT_AVAILABLE")
+    context_status = str(report["current_context"].get("status") or "NOT_AVAILABLE")
+    accounting_status = str(report["evidence"].get("request_accounting_status") or "NOT_AVAILABLE")
+    current_data_labels = {
+        "CURRENT_SESSION_CONTEXT_VERIFIED": "현재 자료",
+        "CURRENT_SESSION_CONTEXT_NOT_VERIFIED": "현재 자료 여부 확인 불가",
+        "HISTORICAL_REPLAY": "과거 자료 / 현재 판단 사용 불가",
+    }
+    session_labels = {
+        "VERIFIED": "확인됨",
+        "ABSENT": "확인되지 않음",
+        "PRESENT_MISMATCH": "확인되지 않음",
+        "PRESENT_INVALID": "확인되지 않음",
+    }
+    accounting_labels = {
+        "VERIFIED": "검증됨",
+        "PRESENT_UNVERIFIED": "미검증",
+        "ABSENT": "없음",
+        "PRESENT_INVALID": "형식 오류",
+    }
+    return {
+        "current_data_status": f"{current_data_labels.get(freshness, '확인 필요')} ({freshness})",
+        "current_session_verification": f"{session_labels.get(context_status, '확인 필요')} ({context_status})",
+        "request_accounting": f"{accounting_labels.get(accounting_status, '확인 필요')} ({accounting_status})",
+    }
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     evidence = report["evidence"]
     current_context = report["current_context"]
+    display = _dashboard_display_semantics(report)
     stage1 = report["stage1"]
     stage2 = report["stage2"]
     event = report["event_context"]
@@ -1204,6 +1234,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- 판단 시각: {evidence.get('decision_as_of') or '확인 필요'}",
         f"- Evidence Run: {evidence.get('run_id') or '확인 필요'}",
         f"- Evidence Grade: {evidence['portfolio_evidence_grade_display']}",
+        f"- 현재 자료 상태: {display['current_data_status']}",
+        f"- 현재 세션 확인 결과: {display['current_session_verification']}",
+        f"- 요청 회계 상태: {display['request_accounting']}",
         f"- 시장 단계: {evidence.get('market_phase') or '확인 필요'}", "",
         "> 수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.", "",
         "## 위험 축소 1단계", "", f"상태: {stage1['status']}", "",
@@ -1262,9 +1295,11 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines += [
         "## 근거·요청·이벤트", "",
         f"- Canonical schema SHA-256: {evidence['canonical_schema_sha256']}",
-        f"- 현재성 확인: {current_context['status']} — {_current_context_explanation(current_context['status'])}",
+        f"- 현재 세션 확인 결과: {display['current_session_verification']}",
+        f"- 현재 세션 설명: {_current_context_explanation(current_context['status'])}",
         f"- 현재성 차단 사유: {', '.join(current_context['blockers']) or '없음'}",
-        f"- Request accounting: {evidence['request_accounting_status']} — {_request_accounting_explanation(evidence['request_accounting_status'])}",
+        f"- 요청 회계 상태: {display['request_accounting']}",
+        f"- 요청 회계 설명: {_request_accounting_explanation(evidence['request_accounting_status'])}",
     ]
     for name, status in evidence.get("request_accounting", {}).items():
         lines.append(f"  - {name}: {status}")
@@ -1287,6 +1322,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 def render_html(report: dict[str, Any]) -> str:
     evidence = report["evidence"]
     current_context = report["current_context"]
+    display = _dashboard_display_semantics(report)
     stage1_rows = "".join(
         f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['current_shares'])}</td>"
         f"<td>{_display(row['target_shares_reference'])}</td><td>{_display(row['calculated_sell_shares'])}</td>"
@@ -1322,11 +1358,11 @@ body{{font-family:"Malgun Gothic","Segoe UI",sans-serif;margin:0;background:#f4f
 section{{background:white;padding:20px;margin:18px 0;border-radius:14px;box-shadow:0 5px 20px #16324f14}}table{{border-collapse:collapse;width:100%}}
 th,td{{border-bottom:1px solid #dce3ec;padding:10px;text-align:left}}.status{{font-weight:700;color:#8a4200}}pre{{white-space:pre-wrap;background:#f7f8fa;padding:12px}}
 </style></head><body><main>
-<header class="hero"><h1>포트폴리오 의사결정 대시보드</h1><p>판단 시각: {html.escape(str(evidence.get('decision_as_of') or '확인 필요'))}</p><p>Evidence Run: {html.escape(str(evidence.get('run_id') or '확인 필요'))} · Grade: {html.escape(evidence['portfolio_evidence_grade_display'])} · 시장 단계: {html.escape(str(evidence.get('market_phase') or '확인 필요'))}</p></header>
+<header class="hero"><h1>포트폴리오 의사결정 대시보드</h1><p>판단 시각: {html.escape(str(evidence.get('decision_as_of') or '확인 필요'))}</p><p>Evidence Run: {html.escape(str(evidence.get('run_id') or '확인 필요'))} · Grade: {html.escape(evidence['portfolio_evidence_grade_display'])}</p><p>현재 자료 상태: {html.escape(display['current_data_status'])}</p><p>현재 세션 확인 결과: {html.escape(display['current_session_verification'])}</p><p>요청 회계 상태: {html.escape(display['request_accounting'])}</p><p>시장 단계: {html.escape(str(evidence.get('market_phase') or '확인 필요'))}</p></header>
 <div class="notice">수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.</div>
 <section><h2>위험 축소 1단계</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>종목</th><th>현재 주식</th><th>목표 참고</th><th>계산 매도</th><th>근거</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
 <section><h2>2단계 매수</h2><p class="status">{html.escape(report['stage2']['status'])}</p><table><thead><tr><th>종목</th><th>목표 참고</th><th>목표 격차</th><th>계산 매수</th><th>기준 가격</th><th>예상 소요액</th></tr></thead><tbody>{buy_rows}</tbody></table><p>차단 사유: {html.escape(', '.join(report['stage2']['blockers']) or '없음')}</p></section>
-<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>현재성 확인: {html.escape(current_context['status'])} — {html.escape(_current_context_explanation(current_context['status']))}</p><p>현재성 차단 사유: {html.escape(', '.join(current_context['blockers']) or '없음')}</p><p>Request accounting: {html.escape(evidence['request_accounting_status'])} — {html.escape(_request_accounting_explanation(evidence['request_accounting_status']))}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
+<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>현재 세션 확인 결과: {html.escape(display['current_session_verification'])}</p><p>현재 세션 설명: {html.escape(_current_context_explanation(current_context['status']))}</p><p>현재성 차단 사유: {html.escape(', '.join(current_context['blockers']) or '없음')}</p><p>요청 회계 상태: {html.escape(display['request_accounting'])}</p><p>요청 회계 설명: {html.escape(_request_accounting_explanation(evidence['request_accounting_status']))}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
 <section><h2>권한</h2><p>Broker Order Authority = FALSE · execution_quantity = NULL · automatic_order = FALSE</p><p>현재 런타임 수동자문 권한: {html.escape(report['authority']['current_runtime_advisory_authority'])}</p><small>CLI authority input effect: {html.escape(report['authority']['runtime_authority_cli_input_effect'])}</small></section>
 <details><summary>동일 의미의 Markdown 원문</summary><pre>{html.escape(markdown)}</pre></details>
 </main></body></html>"""
