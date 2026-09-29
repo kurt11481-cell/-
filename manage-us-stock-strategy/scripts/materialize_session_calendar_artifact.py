@@ -219,9 +219,6 @@ def _validate_reviewed_packet(packet: dict[str, Any]) -> tuple[date, date, datet
     if generated_at < authority_as_of:
         raise CalendarMaterializationError("TEMPORAL_VIOLATION", "generated_at")
     et = ZoneInfo(TIMEZONE_IDENTITY)
-    if coverage_end > authority_as_of.astimezone(et).date():
-        raise CalendarMaterializationError("TEMPORAL_VIOLATION", "coverage_end")
-
     sources = packet["sources"]
     if not isinstance(sources, list) or len(sources) < 3:
         raise CalendarMaterializationError("SOURCE_UNAVAILABLE", "official sources")

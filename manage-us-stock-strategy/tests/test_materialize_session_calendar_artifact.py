@@ -27,6 +27,11 @@ PACKET_PATH = (
     / "workspace/calendar-authority/reviewed-inputs"
     / "us-equities-core-session-2026-through-20260821.reviewed.json"
 )
+FULL_YEAR_PACKET_PATH = (
+    REPO_ROOT
+    / "workspace/calendar-authority/reviewed-inputs"
+    / "us-equities-core-session-2026-full-year-as-of-20260903.reviewed.json"
+)
 
 
 def reviewed_packet() -> dict:
@@ -106,11 +111,31 @@ class SessionCalendarMaterializationTest(unittest.TestCase):
         with self.assertRaisesRegex(materializer.CalendarMaterializationError, "SOURCE_UNAVAILABLE"):
             materializer.build_materialization(packet)
 
-    def test_07_future_coverage_relative_to_authority_fails(self):
+    def test_07_published_future_coverage_within_source_effective_range_is_allowed(self):
         packet = reviewed_packet()
         packet["coverage_end"] = "2026-08-24"
-        with self.assertRaisesRegex(materializer.CalendarMaterializationError, "TEMPORAL_VIOLATION"):
+        packet["calendar_version"] = "synthetic-future-coverage-test-only"
+        _, _, artifact, _, _, _ = materializer.build_materialization(packet)
+        self.assertEqual("2026-08-24", artifact["coverage_end"])
+
+    def test_07a_coverage_beyond_official_source_effective_range_fails_closed(self):
+        packet = reviewed_packet()
+        packet["coverage_end"] = "2027-01-04"
+        packet["calendar_version"] = "synthetic-outside-source-range-test-only"
+        with self.assertRaisesRegex(materializer.CalendarMaterializationError, "SOURCE_UNAVAILABLE"):
             materializer.build_materialization(packet)
+
+    def test_07b_full_year_candidate_covers_target_sessions_and_labor_day(self):
+        packet = json.loads(FULL_YEAR_PACKET_PATH.read_text(encoding="utf-8"))
+        _, _, artifact, _, _, _ = materializer.build_materialization(packet)
+        sessions = {row["session_date"]: row for row in artifact["sessions"]}
+        closures = {row["closure_date"] for row in artifact["closures"]}
+        for session_date in ("2026-09-02", "2026-09-03", "2026-09-04"):
+            with self.subTest(session_date=session_date):
+                self.assertEqual("REGULAR", sessions[session_date]["close_type"])
+                self.assertTrue(sessions[session_date]["core_open_at"].endswith("09:30:00-04:00"))
+                self.assertTrue(sessions[session_date]["core_close_at"].endswith("16:00:00-04:00"))
+        self.assertIn("2026-09-07", closures)
 
     def test_08_full_closures_are_common_and_labels_may_differ(self):
         _, _, artifact, _, _, counts = materializer.build_materialization(reviewed_packet())

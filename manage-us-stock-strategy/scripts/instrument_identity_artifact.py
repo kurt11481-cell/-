@@ -26,6 +26,11 @@ ARTIFACT_FILENAME = "us-equity-instrument-identity-current-v1.registry.json"
 AUTHORITY_ID = "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"
 TICKER_NAMESPACE = "US_EXCHANGE_LISTED"
 EXPECTED_SCOPE = ("BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST")
+EXTENDED_SCOPE = (
+    "BE", "CME", "DRAM", "FSLY", "JPM", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "TOST", "V",
+)
+CONFIRMATION_SCOPE = tuple(sorted((*EXTENDED_SCOPE, "MRVL", "SOXX")))
+SUPPORTED_SCOPES = (EXPECTED_SCOPE, EXTENDED_SCOPE, CONFIRMATION_SCOPE)
 HASH_PATTERN = re.compile(r"[0-9a-f]{64}")
 RFC3339_PATTERN = re.compile(
     r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})"
@@ -76,7 +81,8 @@ def _semantic_validate_artifact(artifact: dict[str, Any]) -> None:
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
     if artifact.get("ticker_namespace") != TICKER_NAMESPACE:
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
-    if tuple(artifact.get("scope") or ()) != EXPECTED_SCOPE:
+    scope = tuple(artifact.get("scope") or ())
+    if scope not in SUPPORTED_SCOPES:
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
     if artifact.get("order_authority") is not False:
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
@@ -92,7 +98,7 @@ def _semantic_validate_artifact(artifact: dict[str, Any]) -> None:
     if not isinstance(records, list):
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
     tickers = [record.get("ticker") for record in records if isinstance(record, dict)]
-    if tickers != sorted(tickers) or tuple(tickers) != EXPECTED_SCOPE:
+    if tickers != sorted(tickers) or tuple(tickers) != scope:
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
     if len(tickers) != len(set(tickers)):
         raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
@@ -111,7 +117,7 @@ def _semantic_validate_artifact(artifact: dict[str, Any]) -> None:
             source_ref_ids = record["source_ref_ids"]
         except (KeyError, TypeError) as exc:
             raise InstrumentIdentityLoadError("INTEGRITY_FAILURE") from exc
-        if ticker not in EXPECTED_SCOPE or record.get("record_status") != "VERIFIED":
+        if ticker not in scope or record.get("record_status") != "VERIFIED":
             raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
         if MIC_PATTERN.fullmatch(str(segment_mic)) is None:
             raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
@@ -122,6 +128,8 @@ def _semantic_validate_artifact(artifact: dict[str, Any]) -> None:
         allowed_classes = (
             EQUITY_SECURITY_CLASSES if instrument_type == "EQUITY" else ETF_SECURITY_CLASSES
         )
+        if ticker == "SOXX" and scope == CONFIRMATION_SCOPE:
+            allowed_classes = {"INDEX_ETF"} if instrument_type == "ETF" else set()
         if security_class not in allowed_classes:
             raise InstrumentIdentityLoadError("INTEGRITY_FAILURE")
         if effective_from_basis == "CURRENT_AS_OF_ONLY":

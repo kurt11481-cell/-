@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "integrated-authority-activation.schema.json",
+  "title": "Combined Instrument Identity and Session Activation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "activation_schema_version",
+    "activation_status",
+    "activation_reason",
+    "activated_at",
+    "authority_modes_allowed",
+    "activation_cohort_id",
+    "instrument_identity",
+    "session_calendar"
+  ],
+  "properties": {
+    "activation_schema_version": {"const": "1.0"},
+    "activation_status": {"enum": ["ACTIVE", "SHADOW"]},
+    "activation_reason": {"type": "string", "minLength": 1},
+    "activated_at": {"type": "string", "format": "date-time"},
+    "authority_modes_allowed": {
+      "type": "array",
+      "const": ["CURRENT"],
+      "items": {"const": "CURRENT"},
+      "uniqueItems": true
+    },
+    "activation_cohort_id": {"type": "string", "minLength": 1},
+    "instrument_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_id",
+        "active_registry_hash",
+        "active_registry_version",
+        "ticker_namespace",
+        "scope",
+        "source_packet_id",
+        "source_packet_hash",
+        "authority_as_of"
+      ],
+      "properties": {
+        "authority_id": {"const": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"},
+        "active_registry_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "active_registry_version": {"type": "string", "minLength": 1},
+        "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
+        "scope": {
+          "type": "array",
+          "enum": [
+            ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+            ["BE", "CME", "DRAM", "FSLY", "JPM", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "TOST", "V"],
+            ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]
+          ],
+          "items": {"enum": ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]},
+          "uniqueItems": true
+        },
+        "source_packet_id": {"type": "string", "minLength": 1},
+        "source_packet_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "authority_as_of": {"type": "string", "format": "date-time"}
+      }
+    },
+    "session_calendar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calendar_policy_identity",
+        "active_calendar_hash",
+        "active_calendar_version",
+        "timezone_identity",
+        "operating_mic_scope",
+        "source_families",
+        "coverage_start",
+        "coverage_end",
+        "source_bundle_id",
+        "source_bundle_hash",
+        "authority_as_of"
+      ],
+      "properties": {
+        "calendar_policy_identity": {"const": "US_EQUITIES_CORE_SESSION_V2"},
+        "active_calendar_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "active_calendar_version": {"type": "string", "minLength": 1},
+        "timezone_identity": {"const": "America/New_York"},
+        "operating_mic_scope": {
+          "type": "array",
+          "const": ["XNYS", "XNAS", "XCBO"],
+          "items": {"enum": ["XNYS", "XNAS", "XCBO"]},
+          "uniqueItems": true
+        },
+        "source_families": {
+          "type": "array",
+          "const": ["NYSE_GROUP", "NASDAQ", "CBOE"],
+          "items": {"enum": ["NYSE_GROUP", "NASDAQ", "CBOE"]},
+          "uniqueItems": true
+        },
+        "coverage_start": {"type": "string", "format": "date"},
+        "coverage_end": {"type": "string", "format": "date"},
+        "source_bundle_id": {"type": "string", "minLength": 1},
+        "source_bundle_hash": {"type": "string", "pattern": "[0-9a-f]{64}"},
+        "authority_as_of": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

@@ -227,6 +227,86 @@ class AdjustedComparisonTests(unittest.TestCase):
     def test_adj_12_fault_detects_adjusted_conflict(self): self.assertIn("ADJUSTED_SERIES_CONFLICT",self.compare(synthetic_series(corruption=10))["results"][0]["adjusted_comparison_reason_codes"])
 
 
+class KiwoomTimingRecordTests(unittest.TestCase):
+    def calculate(self, raw=None, adjusted=None, **kwargs):
+        raw = raw if raw is not None else synthetic_series("RAW")
+        adjusted = adjusted if adjusted is not None else synthetic_series()
+        return calculate_kiwoom_technical(raw, adjusted, cutoff=raw["completed_session"],
+                                        minimum_history_bars=252, **kwargs)
+
+    def snapshot(self, record, *, crosscheck=False):
+        from validate_technical_snapshot import EXPECTED_SCHEMA_VERSION, EXPECTED_FORMULA_VERSION, EXPECTED_TIMING_FEATURE_VERSION
+        record = json.loads(json.dumps(record))
+        date = record["bar_date"]
+        if crosscheck:
+            record["quote_crosscheck"] = {
+                "status": "verified", "independent_of_builder": True,
+                "source": "SYNTHETIC_TEST_ONLY", "source_url": "https://example.invalid/test-close",
+                "bar_date": date, "verified_at_utc": date + "T22:00:00+00:00",
+                "completed_close": record["close"], "difference_usd": 0,
+                "tolerance_usd": max(0.05, 0.001 * record["close"]),
+            }
+        return {
+            "schema_version": EXPECTED_SCHEMA_VERSION, "generated_at_utc": date + "T22:00:00+00:00",
+            "session": {"us_session_date": date, "expected_us_session_date": date,
+                        "regular_session_complete": True, "is_early_close": False,
+                        "official_calendar_verified": True, "calendar_verification_status": "verified_trading_day",
+                        "calendar_source_type": "official_exchange_or_regulator", "calendar_source": "SYNTHETIC_TEST_ONLY",
+                        "calendar_verified_at_utc": date + "T22:00:00+00:00"},
+            "indicator_provenance": {"formula_version": EXPECTED_FORMULA_VERSION,
+                "timing_feature_version": EXPECTED_TIMING_FEATURE_VERSION,
+                "technical_price_basis": record["technical_price_basis"],
+                "ema_formula": "existing ewm adjust=False", "atr_formula": "existing Wilder ATR14"},
+            "symbols": {"AAPL": record}, "errors": [],
+        }
+
+    def test_optional_projection_preserves_legacy_calculation_and_inputs(self):
+        raw, adjusted = synthetic_series("RAW"), synthetic_series()
+        before = json.dumps([raw, adjusted], sort_keys=True)
+        legacy = self.calculate(raw, adjusted)
+        extended = self.calculate(raw, adjusted, include_timing_record=True)
+        self.assertEqual(legacy, {k: v for k, v in extended.items() if k != "timing_record"})
+        self.assertEqual(before, json.dumps([raw, adjusted], sort_keys=True))
+        row = extended["timing_record"]
+        self.assertEqual(len(row["timing_window"]), 30)
+        self.assertEqual(row["source_provider"], "KIWOOM_REST")
+        self.assertNotIn("Yahoo", row["source"])
+        self.assertIsNone(row["quote_crosscheck"])
+        self.assertTrue(row["corporate_action_unresolved"])
+        self.assertFalse(extended["order_authority"])
+
+    def test_real_technical_validator_accepts_calculation_only_with_fixture_crosscheck(self):
+        from validate_technical_snapshot import validate_snapshot
+        row = self.calculate(include_timing_record=True)["timing_record"]
+        missing = validate_snapshot(self.snapshot(row), required_symbols=["AAPL"])
+        self.assertEqual(missing["status"], "rejected")
+        self.assertTrue(any("cross-check" in error for error in missing["errors"]))
+        complete = validate_snapshot(self.snapshot(row, crosscheck=True), required_symbols=["AAPL"])
+        self.assertEqual(complete["errors"], [])
+        self.assertEqual(complete["status"], "verified")  # Synthetic numerical/schema test, not live source acceptance.
+
+    def test_binding_errors_do_not_produce_a_timing_record(self):
+        for field, value in (("ticker", "OTHER"), ("price_basis", "RAW"),
+                             ("status", "DATA_BLOCKED"), ("completed_session", "2099-01-01"),
+                             ("validation_errors", ["FUTURE_BAR_REJECTED"])):
+            adjusted = synthetic_series(); adjusted[field] = value
+            with self.subTest(field=field):
+                result = self.calculate(adjusted=adjusted, include_timing_record=True)
+                self.assertNotIn("timing_record", result)
+                self.assertIn("TIMING_INPUT_BINDING_INVALID", result["validation_errors"])
+
+    def test_short_history_does_not_lower_consumer_minimum(self):
+        adjusted = synthetic_series(); adjusted["bars"] = adjusted["bars"][-100:]
+        result = self.calculate(adjusted=adjusted, include_timing_record=True)
+        self.assertNotIn("timing_record", result)
+        self.assertIn("INSUFFICIENT_HISTORY", result["validation_errors"])
+        raw, adjusted = synthetic_series("RAW"), synthetic_series()
+        result = calculate_kiwoom_technical(raw, adjusted, cutoff=raw["completed_session"],
+                                          minimum_history_bars=1, include_timing_record=True)
+        self.assertNotIn("timing_record", result)
+        self.assertIn("TIMING_HISTORY_MINIMUM_NOT_MET", result["validation_errors"])
+
+
 class PointInTimeTests(unittest.TestCase):
     def checkpoint(self,session="2026-08-12",current="2026-08-12",previous=None): return build_checkpoint(market_session=session,current_completed_session=current,analysis_cutoff="2026-08-13T00:00:00+00:00",created_at="2026-08-13T00:01:00+00:00",portfolio_state_revision=13,portfolio_hash="a"*64,event_evidence_cutoff="2026-08-12T23:59:00+00:00",event_bundle_hash="b"*64,active_baselines=[{"baseline_id":"NBIS","baseline_hash":"c"*64}],policy_hashes={"alert":"d"*64},registry_hash="e"*64,source_artifact_hashes={"portfolio":"a"*64},previous_record_hash=previous)
     def test_pit_01_no_backfill(self):

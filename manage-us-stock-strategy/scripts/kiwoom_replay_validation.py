@@ -15,6 +15,7 @@ from build_market_snapshot import (
     indicator_validation,
     rsi,
     safe_float,
+    timing_window_records,
 )
 
 
@@ -42,12 +43,26 @@ def _frame(series: dict[str, Any], cutoff: str) -> pd.DataFrame:
 
 def calculate_kiwoom_technical(
     raw_series: dict[str, Any], adjusted_series: dict[str, Any], *,
-    cutoff: str, minimum_history_bars: int,
+    cutoff: str, minimum_history_bars: int, include_timing_record: bool = False,
 ) -> dict[str, Any]:
     """Calculate policy-authoritative local indicators from Kiwoom Adjusted OHLCV."""
     raw = _frame(raw_series, cutoff)
     adjusted = _frame(adjusted_series, cutoff)
     errors: list[str] = []
+    if include_timing_record:
+        # This projection is calculation output, not a new source-acceptance gate.
+        # Preserve the legacy replay output unless explicitly requested.
+        if (raw_series.get("status") != "PASS" or adjusted_series.get("status") != "PASS"
+                or raw_series.get("price_basis") != "RAW"
+                or adjusted_series.get("price_basis") != "ADJUSTED"
+                or not raw_series.get("ticker")
+                or raw_series.get("ticker") != adjusted_series.get("ticker")
+                or raw_series.get("completed_session") != cutoff
+                or adjusted_series.get("completed_session") != cutoff
+                or raw_series.get("validation_errors") or adjusted_series.get("validation_errors")):
+            errors.append("TIMING_INPUT_BINDING_INVALID")
+        if minimum_history_bars < 252:
+            errors.append("TIMING_HISTORY_MINIMUM_NOT_MET")
     if raw.empty or adjusted.empty:
         errors.append("SERIES_UNAVAILABLE")
     if not raw.empty and raw.index[-1].date().isoformat() != cutoff:
@@ -101,7 +116,7 @@ def calculate_kiwoom_technical(
     if any(value is None or not math.isfinite(float(value)) for value in indicators.values()):
         errors.append("NONFINITE_INDICATOR")
     signature = {field: bool(timing.get(field)) for field in DECISION_FIELDS}
-    return {
+    result = {
         "status": "KIWOOM_TECHNICAL_VALIDATED" if not errors else "KIWOOM_TECHNICAL_INVALID",
         "cutoff": cutoff, "history_rows": len(adjusted),
         "minimum_history_bars": minimum_history_bars,
@@ -111,6 +126,37 @@ def calculate_kiwoom_technical(
         "validation_errors": list(dict.fromkeys(errors)),
         "future_leakage": False, "order_authority": False,
     }
+    if include_timing_record and not errors:
+        # Use the already calculated series and the shared timing-window helper.
+        # No calendar, identity, corporate-action or independent-close approval
+        # is manufactured here; the unchanged downstream gates still own them.
+        latest = raw.iloc[-1]
+        record = {
+            "ticker": raw_series["ticker"], "bar_date": cutoff,
+            **{field: safe_float(latest[field]) for field in ("open", "high", "low", "close", "volume")},
+            "close_prev": safe_float(raw["close"].iloc[-2]) if len(raw) >= 2 else None,
+            **indicators,
+            "ema10_prev": safe_float(ema10.iloc[-2]),
+            "ema20_prev": safe_float(ema20.iloc[-2]),
+            "ema10_3d_ago": safe_float(ema10.iloc[-4]),
+            "ema20_3d_ago": safe_float(ema20.iloc[-4]),
+            "ema10_above_ema20": bool(ema10.iloc[-1] > ema20.iloc[-1]),
+            "ema20_rising_3d": bool(ema20.iloc[-1] > ema20.iloc[-4]),
+            "atr14_pct": safe_float(atr14.iloc[-1] / latest_raw),
+            "distance_from_ema20_fraction": safe_float(latest_raw / ema20.iloc[-1] - 1),
+            "prior_20d_high": safe_float(technical["high"].iloc[-21:-1].max()),
+            "volume_ratio_to_20d": rvol, "history_rows": len(adjusted),
+            "technical_price_basis": "split-adjusted OHLC rescaled to latest raw close",
+            "source": "Kiwoom RAW completed OHLCV / ADJUSTED history; local deterministic calculation",
+            "source_provider": "KIWOOM_REST",
+            "quote_crosscheck": None,
+            "corporate_action_unresolved": True,
+            "indicator_validation": validation,
+            "timing_window": timing_window_records(technical, ema10, ema20, atr14),
+        }
+        record.update(timing)
+        result["timing_record"] = record
+    return result
 
 
 def compare_technical_decisions(

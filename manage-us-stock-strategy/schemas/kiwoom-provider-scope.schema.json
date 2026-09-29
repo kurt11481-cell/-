@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "required": ["ticker", "identity_provider", "regular_close_primary", "extended_hours_primary", "technical_history_primary", "shadow_provider", "blocked_decision_classes", "fallback_reason", "effective_from", "acceptance_artifact_hash", "order_authority"],
   "properties": {
-    "ticker": {"type": "string"},
+    "ticker": {"enum": ["SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM", "PGR", "JPM", "CME", "V"]},
     "identity_provider": {"const": "KIWOOM_REST"},
     "regular_close_primary": {"enum": ["KIWOOM_REGULAR_CLOSE_PRIMARY_WHEN_FINALIZED", "YFINANCE_PRIMARY_VALIDATED_FALLBACK"]},
     "extended_hours_primary": {"const": "KIWOOM_OPERATIONAL_PRIMARY"},

@@ -39,17 +39,24 @@ AUTHORITY_TIMESTAMP = "2026-08-22T00:00:00+09:00"
 GENERATED_AT = "2026-08-22T12:00:00+09:00"
 RECORDS = {
     "BE": ("Bloom Energy Corporation Common Stock", "EQUITY", "COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", None, "CURRENT_AS_OF_ONLY"),
+    "CME": ("CME Group Inc. Class A Common Stock", "EQUITY", "CLASS_A_COMMON_STOCK", "Nasdaq Global Select Market", "XNGS", "XNAS", None, "CURRENT_AS_OF_ONLY"),
     "DRAM": ("Roundhill Memory ETF", "ETF", "ACTIVELY_MANAGED_ETF", "Cboe BZX Exchange", "BATS", "XCBO", "2026-04-02", "VERIFIED_DATE"),
     "FSLY": ("Fastly, Inc. Class A Common Stock", "EQUITY", "CLASS_A_COMMON_STOCK", "Nasdaq Global Select Market", "XNGS", "XNAS", "2025-12-09", "VERIFIED_DATE"),
+    "JPM": ("JPMorgan Chase & Co. Common Stock", "EQUITY", "COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", None, "CURRENT_AS_OF_ONLY"),
+    "MRVL": ("Marvell Technology, Inc. Common Stock", "EQUITY", "COMMON_STOCK", "Nasdaq Global Select Market", "XNGS", "XNAS", None, "CURRENT_AS_OF_ONLY"),
     "MVLL": ("GraniteShares 2x Long MRVL Daily ETF", "ETF", "LEVERAGED_ETF", "Nasdaq Global Market", "XNMS", "XNAS", "2025-03-07", "VERIFIED_DATE"),
     "NBIS": ("Nebius Group N.V. Class A Ordinary Shares", "EQUITY", "CLASS_A_ORDINARY_SHARES", "Nasdaq Global Select Market", "XNGS", "XNAS", "2024-10-21", "VERIFIED_DATE"),
     "NOW": ("ServiceNow, Inc. Common Stock", "EQUITY", "COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", None, "CURRENT_AS_OF_ONLY"),
+    "PGR": ("The Progressive Corporation Common Stock", "EQUITY", "COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", None, "CURRENT_AS_OF_ONLY"),
     "SOXL": ("Direxion Daily Semiconductor Bull 3X ETF", "ETF", "LEVERAGED_ETF", "NYSE Arca", "ARCX", "XNYS", None, "CURRENT_AS_OF_ONLY"),
+    "SOXX": ("iShares Semiconductor ETF", "ETF", "INDEX_ETF", "Nasdaq Global Market", "XNMS", "XNAS", None, "CURRENT_AS_OF_ONLY"),
     "TOST": ("Toast, Inc. Class A Common Stock", "EQUITY", "CLASS_A_COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", "2021-09-22", "VERIFIED_DATE"),
+    "V": ("Visa Inc. Class A Common Stock", "EQUITY", "CLASS_A_COMMON_STOCK", "New York Stock Exchange", "XNYS", "XNYS", None, "CURRENT_AS_OF_ONLY"),
 }
 EXCHANGE_FAMILY = {
-    "BE": "NYSE", "DRAM": "CBOE", "FSLY": "NASDAQ", "MVLL": "NASDAQ",
-    "NBIS": "NASDAQ", "NOW": "NYSE", "SOXL": "NYSE", "TOST": "NYSE",
+    "BE": "NYSE", "CME": "NASDAQ", "DRAM": "CBOE", "FSLY": "NASDAQ",
+    "JPM": "NYSE", "MRVL": "NASDAQ", "MVLL": "NASDAQ", "NBIS": "NASDAQ", "NOW": "NYSE",
+    "PGR": "NYSE", "SOXL": "NYSE", "SOXX": "NASDAQ", "TOST": "NYSE", "V": "NYSE",
 }
 
 
@@ -79,7 +86,7 @@ def source(
     }
 
 
-def valid_packet() -> dict:
+def valid_packet(scope=EXPECTED_SCOPE) -> dict:
     claims = [
         source(
             "ISO_REGISTER",
@@ -95,7 +102,7 @@ def valid_packet() -> dict:
         ),
     ]
     records = []
-    for ticker in EXPECTED_SCOPE:
+    for ticker in scope:
         exchange_id = f"{ticker}_EXCHANGE"
         class_id = f"{ticker}_CLASS"
         claims.extend(
@@ -115,7 +122,7 @@ def valid_packet() -> dict:
                 source(
                     class_id,
                     ticker=ticker,
-                    family="SPONSOR" if ticker in {"DRAM", "MVLL", "SOXL"} else "SEC",
+                    family="SPONSOR" if ticker in {"DRAM", "MVLL", "SOXL", "SOXX"} else "SEC",
                     scopes=["SECURITY_IDENTITY", "INSTRUMENT_TYPE", "SECURITY_CLASS", "FUND_IDENTITY"],
                 ),
             ]
@@ -159,7 +166,7 @@ def valid_packet() -> dict:
         "source_packet_id": "SYNTHETIC_II_B2_PACKET",
         "registry_version": "synthetic-2026-08-22",
         "ticker_namespace": "US_EXCHANGE_LISTED",
-        "scope": list(EXPECTED_SCOPE),
+        "scope": list(scope),
         "generated_at": GENERATED_AT,
         "authority_as_of": AUTHORITY_DATE,
         "artifact_authority_as_of": AUTHORITY_TIMESTAMP,
@@ -200,12 +207,12 @@ class InstrumentIdentityMaterializationTest(unittest.TestCase):
             for path in outside.rglob("*")
         }
 
-    def test_01_exact_eight_symbol_packet_is_accepted(self):
+    def test_01_exact_twelve_symbol_packet_is_accepted(self):
         result = validate_evidence_packet(valid_packet())
-        self.assertEqual(8, result["record_count"])
-        self.assertEqual(48, result["required_claim_count"])
+        self.assertEqual(12, result["record_count"])
+        self.assertEqual(72, result["required_claim_count"])
 
-    def test_02_candidate_has_exact_eight_records(self):
+    def test_02_candidate_has_exact_twelve_records(self):
         _, _, artifact, _, _, _ = build_materialization(valid_packet())
         self.assertEqual(list(EXPECTED_SCOPE), artifact["scope"])
         self.assertEqual(list(EXPECTED_SCOPE), [item["ticker"] for item in artifact["records"]])
@@ -366,7 +373,9 @@ class InstrumentIdentityMaterializationTest(unittest.TestCase):
 
     def test_23_production_activation_path_is_unchanged(self):
         activation = ROOT / "workspace" / "policies" / "instrument_identity_activation.json"
-        self.assertFalse(activation.exists())
+        before = activation.read_bytes()
+        build_materialization(valid_packet())
+        self.assertEqual(before, activation.read_bytes())
 
     def test_24_runtime_python_has_no_official_ticker_mapping(self):
         runtime_files = [
@@ -599,6 +608,359 @@ class InstrumentIdentityMaterializationTest(unittest.TestCase):
                     os.rmdir(rename_target)
                 if parked.exists():
                     os.replace(parked, rename_target)
+
+    def assert_target_materialization(
+        self, ticker: str, *, security_class: str, segment_mic: str, operating_mic: str,
+    ) -> None:
+        _, _, artifact, _, _, _ = build_materialization(valid_packet())
+        materialized = next(item for item in artifact["records"] if item["ticker"] == ticker)
+        self.assertEqual("EQUITY", materialized["instrument_type"])
+        self.assertEqual(security_class, materialized["security_class"])
+        self.assertEqual(segment_mic, materialized["primary_listing_segment_mic"])
+        self.assertEqual(operating_mic, materialized["primary_listing_operating_mic"])
+
+    def test_40_pgr_identity_materializes(self):
+        self.assert_target_materialization(
+            "PGR", security_class="COMMON_STOCK", segment_mic="XNYS", operating_mic="XNYS",
+        )
+
+    def test_41_jpm_identity_materializes(self):
+        self.assert_target_materialization(
+            "JPM", security_class="COMMON_STOCK", segment_mic="XNYS", operating_mic="XNYS",
+        )
+
+    def test_42_cme_identity_materializes(self):
+        self.assert_target_materialization(
+            "CME", security_class="CLASS_A_COMMON_STOCK", segment_mic="XNGS", operating_mic="XNAS",
+        )
+
+    def test_43_v_identity_materializes(self):
+        self.assert_target_materialization(
+            "V", security_class="CLASS_A_COMMON_STOCK", segment_mic="XNYS", operating_mic="XNYS",
+        )
+
+    def test_44_brk_b_is_outside_the_bounded_identity_scope(self):
+        packet = valid_packet()
+        packet["scope"][-1] = "BRK.B"
+        packet["records"][-1]["ticker"] = "BRK.B"
+        packet["records"][-1]["normalized_record"]["ticker"] = "BRK.B"
+        self.assert_invalid(packet)
+
+    def test_45_cost_is_outside_the_bounded_identity_scope(self):
+        packet = valid_packet()
+        packet["scope"][-1] = "COST"
+        packet["records"][-1]["ticker"] = "COST"
+        packet["records"][-1]["normalized_record"]["ticker"] = "COST"
+        self.assert_invalid(packet)
+
+    def test_46_preexisting_unchanged_activation_is_permitted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            activation.parent.mkdir(parents=True)
+            activation_bytes = canonical_json_bytes({
+                "activation_status": "ACTIVE",
+                "active_registry_hash": "a" * 64,
+                "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+            })
+            activation.write_bytes(activation_bytes)
+            expected_hash = hashlib.sha256(activation_bytes).hexdigest()
+
+            result = materialize_evidence_and_candidate(valid_packet(), trusted_root=root)
+
+            self.assertEqual("PRESENT", result.activation_boundary_state)
+            self.assertEqual(expected_hash, result.activation_boundary_sha256)
+            self.assertEqual(activation_bytes, activation.read_bytes())
+
+    def test_47_activation_creation_during_materialization_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            original_write = materializer._create_only_write
+            calls = 0
+
+            def write_then_create(*args, **kwargs):
+                nonlocal calls
+                result = original_write(*args, **kwargs)
+                calls += 1
+                if calls == 2:
+                    activation.parent.mkdir(parents=True, exist_ok=True)
+                    activation.write_bytes(b"{}\n")
+                return result
+
+            with mock.patch.object(materializer, "_create_only_write", side_effect=write_then_create):
+                with self.assertRaisesRegex(MaterializationError, "activation boundary changed"):
+                    materialize_evidence_and_candidate(valid_packet(), trusted_root=root)
+
+    def test_48_activation_deletion_during_materialization_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            activation.parent.mkdir(parents=True)
+            activation.write_bytes(b"{}\n")
+            original_write = materializer._create_only_write
+            calls = 0
+
+            def write_then_delete(*args, **kwargs):
+                nonlocal calls
+                result = original_write(*args, **kwargs)
+                calls += 1
+                if calls == 2:
+                    activation.unlink()
+                return result
+
+            with mock.patch.object(materializer, "_create_only_write", side_effect=write_then_delete):
+                with self.assertRaisesRegex(MaterializationError, "activation boundary changed"):
+                    materialize_evidence_and_candidate(valid_packet(), trusted_root=root)
+
+    def test_49_activation_binding_change_during_materialization_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            activation.parent.mkdir(parents=True)
+            activation.write_bytes(canonical_json_bytes({
+                "active_registry_hash": "a" * 64,
+                "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+            }))
+            original_write = materializer._create_only_write
+            calls = 0
+
+            def write_then_change_binding(*args, **kwargs):
+                nonlocal calls
+                result = original_write(*args, **kwargs)
+                calls += 1
+                if calls == 2:
+                    activation.write_bytes(canonical_json_bytes({
+                        "active_registry_hash": "b" * 64,
+                        "authority_id": "CHANGED_AUTHORITY_ID",
+                    }))
+                return result
+
+            with mock.patch.object(materializer, "_create_only_write", side_effect=write_then_change_binding):
+                with self.assertRaisesRegex(MaterializationError, "activation boundary changed"):
+                    materialize_evidence_and_candidate(valid_packet(), trusted_root=root)
+
+    def test_50_same_bytes_atomic_binding_replacement_fails_closed(self):
+        tests_root = ROOT / "manage-us-stock-strategy" / "tests"
+        with tempfile.TemporaryDirectory(dir=tests_root) as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            activation.parent.mkdir(parents=True)
+            activation_bytes = canonical_json_bytes({
+                "active_registry_hash": "a" * 64,
+                "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+            })
+            activation.write_bytes(activation_bytes)
+            unchanged_before = materializer._activation_boundary_snapshot(root)
+            unchanged_after = materializer._activation_boundary_snapshot(root)
+            self.assertEqual(unchanged_before.binding_identity, unchanged_after.binding_identity)
+            original_write = materializer._create_only_write
+            calls = 0
+            replacement_snapshot = None
+
+            def write_then_replace_same_bytes(*args, **kwargs):
+                nonlocal calls, replacement_snapshot
+                result = original_write(*args, **kwargs)
+                calls += 1
+                if calls == 2:
+                    replacement = activation.with_suffix(".replacement")
+                    replacement.write_bytes(activation_bytes)
+                    os.replace(replacement, activation)
+                    replacement_snapshot = materializer._activation_boundary_snapshot(root)
+                return result
+
+            with mock.patch.object(
+                materializer,
+                "_create_only_write",
+                side_effect=write_then_replace_same_bytes,
+            ):
+                with self.assertRaisesRegex(MaterializationError, "activation boundary changed"):
+                    materialize_evidence_and_candidate(valid_packet(), trusted_root=root)
+            self.assertIsNotNone(replacement_snapshot)
+            self.assertEqual(unchanged_before.sha256, replacement_snapshot.sha256)
+            self.assertNotEqual(
+                unchanged_before.binding_identity,
+                replacement_snapshot.binding_identity,
+            )
+
+    def test_51_activation_boundary_process_exit_codes(self):
+        tests_root = ROOT / "manage-us-stock-strategy" / "tests"
+        baseline_bytes = canonical_json_bytes({
+            "active_registry_hash": "a" * 64,
+            "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+        })
+        changed_binding_bytes = canonical_json_bytes({
+            "active_registry_hash": "b" * 64,
+            "authority_id": "CHANGED_AUTHORITY_ID",
+        })
+
+        def replace_bytes(activation: Path, payload: bytes) -> None:
+            replacement = activation.with_suffix(".replacement")
+            replacement.write_bytes(payload)
+            os.replace(replacement, activation)
+
+        cases = (
+            ("unchanged", baseline_bytes, None, 0),
+            ("absent", None, None, 0),
+            ("unexpected_create", None, lambda path: path.parent.mkdir(parents=True, exist_ok=True) or path.write_bytes(b"{}\n"), 2),
+            ("unexpected_delete", baseline_bytes, lambda path: path.unlink(), 2),
+            ("content_mutation", baseline_bytes, lambda path: path.write_bytes(b"changed\n"), 2),
+            ("same_bytes_atomic_replacement", baseline_bytes, lambda path: replace_bytes(path, baseline_bytes), 2),
+            ("different_bytes_atomic_replacement", baseline_bytes, lambda path: replace_bytes(path, b"different\n"), 2),
+            ("active_binding_change", baseline_bytes, lambda path: path.write_bytes(changed_binding_bytes), 2),
+        )
+        for name, initial_bytes, mutation, expected_exit in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory(dir=tests_root) as directory:
+                root = Path(directory)
+                activation = root / materializer.ACTIVATION_RELATIVE_PATH
+                if initial_bytes is not None:
+                    activation.parent.mkdir(parents=True)
+                    activation.write_bytes(initial_bytes)
+                original_write = materializer._create_only_write
+                calls = 0
+
+                def write_then_mutate(*args, **kwargs):
+                    nonlocal calls
+                    result = original_write(*args, **kwargs)
+                    calls += 1
+                    if calls == 2 and mutation is not None:
+                        mutation(activation)
+                    return result
+
+                argv = [
+                    "materialize_instrument_identity_artifact.py",
+                    "--packet", "ignored-by-test",
+                    "--trusted-root", str(root),
+                ]
+                with (
+                    mock.patch.object(sys, "argv", argv),
+                    mock.patch.object(materializer, "_load_packet", return_value=valid_packet()),
+                    mock.patch.object(materializer, "_create_only_write", side_effect=write_then_mutate),
+                    mock.patch("builtins.print"),
+                ):
+                    self.assertEqual(expected_exit, materializer.main())
+
+
+class ConfirmationIdentityCandidateTest(unittest.TestCase):
+    """Synthetic candidate evidence only; never an activation or live source."""
+
+    def packet(self):
+        return valid_packet(materializer.CANDIDATE_SCOPE)
+
+    def assert_invalid(self, packet):
+        with self.assertRaises(MaterializationError):
+            build_materialization(packet)
+
+    def test_candidate_exact_scope_and_classification(self):
+        _, _, artifact, _, _, validation = build_materialization(self.packet())
+        self.assertEqual(list(materializer.CANDIDATE_SCOPE), artifact["scope"])
+        self.assertEqual(14, validation["record_count"])
+        self.assertEqual(84, validation["required_claim_count"])
+        rows = {r["ticker"]: r for r in artifact["records"]}
+        self.assertEqual(("EQUITY", "COMMON_STOCK", "XNGS", "XNAS"), tuple(rows["MRVL"][k] for k in ("instrument_type", "security_class", "primary_listing_segment_mic", "primary_listing_operating_mic")))
+        self.assertEqual(("ETF", "INDEX_ETF", "XNMS", "XNAS"), tuple(rows["SOXX"][k] for k in ("instrument_type", "security_class", "primary_listing_segment_mic", "primary_listing_operating_mic")))
+        self.assertFalse(artifact["order_authority"])
+
+    def test_incomplete_scope_and_scope_record_disagreement(self):
+        for ticker in ("MRVL", "SOXX"):
+            for alter_scope in (False, True):
+                with self.subTest(ticker=ticker, alter_scope=alter_scope):
+                    packet = self.packet()
+                    packet["records"] = [r for r in packet["records"] if r["ticker"] != ticker]
+                    if alter_scope:
+                        packet["scope"].remove(ticker)
+                    self.assert_invalid(packet)
+        packet = self.packet()
+        packet["scope"] = list(EXPECTED_SCOPE)
+        self.assert_invalid(packet)
+
+    def test_duplicate_unsorted_and_unknown_records(self):
+        for change in ("duplicate", "unsorted", "unknown"):
+            with self.subTest(change=change):
+                packet = self.packet()
+                if change == "duplicate":
+                    packet["records"][-1] = deepcopy(packet["records"][0])
+                elif change == "unsorted":
+                    packet["records"].reverse()
+                else:
+                    packet["scope"][-1] = "UNAPPROVED"
+                    packet["records"][-1]["ticker"] = "UNAPPROVED"
+                self.assert_invalid(packet)
+
+    def test_new_symbols_require_all_six_claims(self):
+        for ticker in ("MRVL", "SOXX"):
+            for claim in REQUIRED_CLAIMS:
+                with self.subTest(ticker=ticker, claim=claim):
+                    packet = self.packet()
+                    record(packet, ticker)["claim_links"] = [x for x in record(packet, ticker)["claim_links"] if x["claim_type"] != claim]
+                    self.assert_invalid(packet)
+
+    def test_wrong_ticker_and_unsupported_source(self):
+        for wrong in ("MRVL_EXCHANGE", "missing"):
+            packet = self.packet()
+            link(packet, "SOXX", "PRIMARY_LISTING_VENUE")["source_ids"] = [wrong]
+            self.assert_invalid(packet)
+
+    def test_new_symbols_exact_facts_and_no_backdating(self):
+        for ticker in ("MRVL", "SOXX"):
+            for field, value in (("primary_listing_segment_mic", "XNYS"), ("primary_listing_operating_mic", "XNYS"), ("security_class", "LEVERAGED_ETF"), ("effective_from", "2001-07-10")):
+                with self.subTest(ticker=ticker, field=field):
+                    packet = self.packet()
+                    record(packet, ticker)["normalized_record"][field] = value
+                    self.assert_invalid(packet)
+
+    def test_future_retrieval_rejected(self):
+        packet = self.packet()
+        next(x for x in packet["claims"] if x["source_id"] == "SOXX_EXCHANGE")["retrieved_date"] = "2099-01-01"
+        self.assert_invalid(packet)
+
+    def test_existing_symbols_cannot_adopt_new_class(self):
+        packet = valid_packet()
+        record(packet, "SOXL")["normalized_record"]["security_class"] = "INDEX_ETF"
+        self.assert_invalid(packet)
+
+    def test_candidate_hashes_repeat_and_source_binding(self):
+        a, b = build_materialization(self.packet()), build_materialization(self.packet())
+        self.assertEqual(a[:5], b[:5])
+        self.assertEqual(a[1], a[2]["source_packet_hash"])
+        changed = self.packet()
+        next(x for x in changed["claims"] if x["source_id"] == "SOXX_CLASS")["evidence_note"] += " Changed."
+        c = build_materialization(changed)
+        self.assertNotEqual(a[1], c[1])
+        self.assertNotEqual(a[4], c[4])
+
+    def test_create_only_candidate_and_activation_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation = root / materializer.ACTIVATION_RELATIVE_PATH
+            activation.parent.mkdir(parents=True)
+            activation.write_bytes(b'{"synthetic_activation":true}\n')
+            before = activation.read_bytes()
+            first = materialize_evidence_and_candidate(self.packet(), trusted_root=root)
+            second = materialize_evidence_and_candidate(self.packet(), trusted_root=root)
+            self.assertEqual(14, first.scope_count)
+            self.assertEqual(first.candidate_registry_sha256, second.candidate_registry_sha256)
+            self.assertEqual(before, activation.read_bytes())
+            self.assertFalse(first.to_dict()["activation_created"])
+            self.assertEqual("none", first.to_dict()["quantity_authority"])
+            self.assertIsNone(first.to_dict()["execution_quantity"])
+
+    def test_candidate_support_does_not_replace_active_registry(self):
+        from instrument_identity_artifact import _semantic_validate_artifact
+        from instrument_identity_authority import resolve_instrument_identity
+        from validation_common import validate_instance
+        artifact = build_materialization(self.packet())[2]
+        _semantic_validate_artifact(artifact)
+        for name in ("instrument-identity-activation.schema.json", "integrated-authority-activation.schema.json"):
+            schema = json.loads((materializer.SCHEMA_ROOT / name).read_text(encoding="utf-8"))
+            props = schema["properties"]
+            scope_schema = props["scope"] if "scope" in props else props["instrument_identity"]["properties"]["scope"]
+            self.assertIn(list(materializer.CANDIDATE_SCOPE), scope_schema["enum"])
+        self.assertEqual([], validate_instance(artifact, materializer.SCHEMA_ROOT / "instrument-identity-artifact.schema.json"))
+        for ticker in ("MRVL", "SOXX"):
+            view = resolve_instrument_identity(ticker, decision_as_of="2026-09-23T00:00:00+00:00")
+            self.assertEqual("NOT_VERIFIED", view.authority_status)
+            self.assertEqual("UNKNOWN_SYMBOL", view.authority_reason)
 
 
 if __name__ == "__main__":

@@ -162,7 +162,11 @@ def assert_counter_authority_firewall(payload: dict[str, Any]) -> None:
         raise ValueError("ANALYTICS_AUTHORITY_FIREWALL_VIOLATION:" + ",".join(sorted(violations)))
 
 
-def manual_grade_b_eligible(run: dict[str, Any]) -> bool:
+def manual_grade_b_eligible(
+    run: dict[str, Any], *, direction_evidence: dict[str, Any] | None = None,
+    parent_capture_artifacts: list[tuple[bytes, str]] | None = None,
+    analysis_observed_at: str | None = None,
+) -> bool:
     """Preserve Grade B only for an explicitly verified real-data manual run."""
     required = {
         "evidence_grade": "GRADE_B",
@@ -172,15 +176,34 @@ def manual_grade_b_eligible(run: dict[str, Any]) -> bool:
         "orderable_cash_status": "VERIFIED",
         "current_price_status": "AVAILABLE",
         "historical_daily_evidence_status": "AVAILABLE",
-        "finalized_bar_preflight_status": "PASS",
         "identity_authority_status": "VERIFIED",
         "session_authority_status": "VERIFIED",
         "integrated_authority_cohort_status": "MATCHED",
-        "preflight_status": "PASS",
     }
     if any(run.get(key) != expected for key, expected in required.items()):
         return False
-    view = run.get("manual_analysis_view")
+    view = run.get("manual_analysis_view") or {}
+    scoped_local = view.get("decision_evidence_scope") == "EXISTING_HOLDINGS_AND_CASH_DIRECTION_ONLY"
+    if scoped_local:
+        local = view.get("local_regular_bar_coherence")
+        if (view.get("provider_finalization_verified") != "NOT_VERIFIED"
+                or not isinstance(local, dict) or not local
+                or any(not isinstance(item, dict) or item.get("status") != "PASS"
+                       for item in local.values())):
+            return False
+    elif run.get("finalized_bar_preflight_status") != "PASS":
+        return False
+    if run.get("preflight_status") != "PASS" or scoped_local:
+        if (run.get("execution_origin") != "MANUAL" or run.get("decision_mode") != "MANUAL_READ_ONLY"
+                or not isinstance(direction_evidence, dict) or analysis_observed_at is None
+                or any(run.get(k) != direction_evidence.get(k) for k in (*required, "preflight_status", "manual_analysis_view", "finalized_bar_preflight_status"))
+                or (run.get("provenance_evidence") or {}).get("manual_run_id") != direction_evidence.get("manual_run_id")):
+            return False
+        from run_manual_portfolio_analysis import validate_manual_direction_evidence
+        if not validate_manual_direction_evidence(
+            direction_evidence, parent_capture_artifacts, analysis_observed_at=analysis_observed_at,
+        ):
+            return False
     return bool(
         isinstance(view, dict)
         and view.get("holding_source") == "BROKER_OBSERVED_STATE"
@@ -193,7 +216,11 @@ def manual_grade_b_eligible(run: dict[str, Any]) -> bool:
     )
 
 
-def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
+def derive_run_provenance(
+    run: dict[str, Any], policy: dict[str, Any], *, direction_evidence: dict[str, Any] | None = None,
+    parent_capture_artifacts: list[tuple[bytes, str]] | None = None,
+    analysis_observed_at: str | None = None,
+) -> dict[str, Any]:
     """Derive provenance from evidence. A caller's origin label alone grants no authority."""
     origin = normalize_run_origin(run.get("execution_origin"))
     evidence = run.get("provenance_evidence") or {}
@@ -252,7 +279,10 @@ def derive_run_provenance(run: dict[str, Any], policy: dict[str, Any]) -> dict[s
             maturity_eligible = False
             reasons.append("DELIVERY_NOT_VERIFIED")
     evidence_grade = (
-        "GRADE_B" if status == "VERIFIED_MANUAL" and manual_grade_b_eligible(run)
+        "GRADE_B" if status == "VERIFIED_MANUAL" and manual_grade_b_eligible(
+            run, direction_evidence=direction_evidence, parent_capture_artifacts=parent_capture_artifacts,
+            analysis_observed_at=analysis_observed_at,
+        )
         else {
             "VERIFIED_SCHEDULED": "GRADE_A",
             "VERIFIED_REPLAY": "GRADE_C",

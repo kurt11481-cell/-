@@ -34,8 +34,12 @@
     "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
     "scope": {
       "type": "array",
-      "const": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
-      "items": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+      "enum": [
+        ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+        ["BE", "CME", "DRAM", "FSLY", "JPM", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "TOST", "V"],
+        ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]
+      ],
+      "items": {"enum": ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]},
       "uniqueItems": true
     },
     "source_packet_id": {"type": "string", "minLength": 1},

@@ -33,7 +33,11 @@ from authority_artifact_io import (  # noqa: E402
 from validation_common import validate_instance  # noqa: E402
 
 
-EXPECTED_SCOPE = ("BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST")
+EXPECTED_SCOPE = (
+    "BE", "CME", "DRAM", "FSLY", "JPM", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "TOST", "V",
+)
+CANDIDATE_SCOPE = tuple(sorted((*EXPECTED_SCOPE, "MRVL", "SOXX")))
+SUPPORTED_PACKET_SCOPES = (EXPECTED_SCOPE, CANDIDATE_SCOPE)
 AUTHORITY_ID = "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"
 TICKER_NAMESPACE = "US_EXCHANGE_LISTED"
 EVIDENCE_PACKET_FILENAME = "us-equity-instrument-identity-current-v1.sources.json"
@@ -56,13 +60,19 @@ MIC_CLAIMS = {
 }
 EXPECTED_RECORD_FACTS: dict[str, tuple[str, str, str, str, str, str | None, str]] = {
     "BE": ("EQUITY", "COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", None, "CURRENT_AS_OF_ONLY"),
+    "CME": ("EQUITY", "CLASS_A_COMMON_STOCK", "XNGS", "XNAS", "Nasdaq Global Select Market", None, "CURRENT_AS_OF_ONLY"),
     "DRAM": ("ETF", "ACTIVELY_MANAGED_ETF", "BATS", "XCBO", "Cboe BZX Exchange", "2026-04-02", "VERIFIED_DATE"),
     "FSLY": ("EQUITY", "CLASS_A_COMMON_STOCK", "XNGS", "XNAS", "Nasdaq Global Select Market", "2025-12-09", "VERIFIED_DATE"),
+    "JPM": ("EQUITY", "COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", None, "CURRENT_AS_OF_ONLY"),
+    "MRVL": ("EQUITY", "COMMON_STOCK", "XNGS", "XNAS", "Nasdaq Global Select Market", None, "CURRENT_AS_OF_ONLY"),
     "MVLL": ("ETF", "LEVERAGED_ETF", "XNMS", "XNAS", "Nasdaq Global Market", "2025-03-07", "VERIFIED_DATE"),
     "NBIS": ("EQUITY", "CLASS_A_ORDINARY_SHARES", "XNGS", "XNAS", "Nasdaq Global Select Market", "2024-10-21", "VERIFIED_DATE"),
     "NOW": ("EQUITY", "COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", None, "CURRENT_AS_OF_ONLY"),
+    "PGR": ("EQUITY", "COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", None, "CURRENT_AS_OF_ONLY"),
     "SOXL": ("ETF", "LEVERAGED_ETF", "ARCX", "XNYS", "NYSE Arca", None, "CURRENT_AS_OF_ONLY"),
+    "SOXX": ("ETF", "INDEX_ETF", "XNMS", "XNAS", "Nasdaq Global Market", None, "CURRENT_AS_OF_ONLY"),
     "TOST": ("EQUITY", "CLASS_A_COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", "2021-09-22", "VERIFIED_DATE"),
+    "V": ("EQUITY", "CLASS_A_COMMON_STOCK", "XNYS", "XNYS", "New York Stock Exchange", None, "CURRENT_AS_OF_ONLY"),
 }
 CLAIM_CAPABILITY_SCOPES = {
     "SECURITY_IDENTITY": {"SECURITY_IDENTITY", "CURRENT_SECURITY_NAME", "LEGAL_ISSUER"},
@@ -98,6 +108,13 @@ class MaterializationError(ValueError):
 
 
 @dataclass(frozen=True)
+class ActivationBoundarySnapshot:
+    state: str
+    sha256: str | None
+    binding_identity: str | None
+
+
+@dataclass(frozen=True)
 class MaterializationResult:
     evidence_packet_path: Path
     evidence_packet_sha256: str
@@ -112,6 +129,9 @@ class MaterializationResult:
     record_count: int
     source_count: int
     claim_link_count: int
+    activation_boundary_state: str
+    activation_boundary_sha256: str | None
+    activation_boundary_binding_identity: str | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -128,6 +148,10 @@ class MaterializationResult:
             "record_count": self.record_count,
             "source_count": self.source_count,
             "claim_link_count": self.claim_link_count,
+            "activation_boundary_state": self.activation_boundary_state,
+            "activation_boundary_sha256": self.activation_boundary_sha256,
+            "activation_boundary_binding_identity": self.activation_boundary_binding_identity,
+            "activation_boundary_unchanged": True,
             "order_authority": False,
             "quantity_authority": "none",
             "execution_quantity": None,
@@ -231,7 +255,8 @@ def validate_evidence_packet(packet: dict[str, Any]) -> dict[str, int]:
     errors = _schema_errors(packet)
     if errors:
         raise MaterializationError("INTEGRITY_FAILURE", "; ".join(errors[:4]))
-    if tuple(packet["scope"]) != EXPECTED_SCOPE:
+    scope = tuple(packet["scope"])
+    if scope not in SUPPORTED_PACKET_SCOPES:
         raise MaterializationError("INTEGRITY_FAILURE", "scope")
     authority_date = _parse_date(packet["authority_as_of"], "authority_as_of")
     artifact_authority = _parse_datetime(packet["artifact_authority_as_of"], "artifact_authority_as_of")
@@ -251,7 +276,7 @@ def validate_evidence_packet(packet: dict[str, Any]) -> dict[str, int]:
 
     records = packet["records"]
     tickers = [record["ticker"] for record in records]
-    if tuple(tickers) != EXPECTED_SCOPE or len(records) != len(EXPECTED_SCOPE):
+    if tuple(tickers) != scope or len(records) != len(scope):
         raise MaterializationError("INTEGRITY_FAILURE", "record scope/order")
     claim_link_count = 0
     used_source_ids: set[str] = set()
@@ -324,7 +349,7 @@ def build_candidate_artifact(packet: dict[str, Any], packet_hash: str) -> dict[s
         "authority_id": AUTHORITY_ID,
         "registry_version": packet["registry_version"],
         "ticker_namespace": TICKER_NAMESPACE,
-        "scope": list(EXPECTED_SCOPE),
+        "scope": list(packet["scope"]),
         "generated_at": packet["generated_at"],
         "authority_as_of": packet["artifact_authority_as_of"],
         "source_packet_id": packet["source_packet_id"],
@@ -362,6 +387,108 @@ def _confined_path(trusted_root: Path, relative: Path) -> Path:
     except ValueError as exc:
         raise MaterializationError("INTEGRITY_FAILURE", "PATH_NOT_CONFINED") from exc
     return target
+
+
+def _windows_file_binding_identity(descriptor: int) -> str:
+    """Return the stable volume/file ID for an already-open Windows file."""
+    from ctypes import wintypes
+    import msvcrt
+
+    class FileId128(ctypes.Structure):
+        _fields_ = [("identifier", ctypes.c_ubyte * 16)]
+
+    class FileIdInfo(ctypes.Structure):
+        _fields_ = [
+            ("volume_serial_number", ctypes.c_ulonglong),
+            ("file_id", FileId128),
+        ]
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    get_info = kernel32.GetFileInformationByHandleEx
+    get_info.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    get_info.restype = wintypes.BOOL
+    info = FileIdInfo()
+    handle = wintypes.HANDLE(msvcrt.get_osfhandle(descriptor))
+    if not get_info(handle, 18, ctypes.byref(info), ctypes.sizeof(info)):  # FileIdInfo
+        error_code = ctypes.get_last_error()
+        raise MaterializationError(
+            "ROBUST_FILE_IDENTITY_UNAVAILABLE",
+            f"GetFileInformationByHandleEx(FileIdInfo): {error_code}",
+        )
+    return (
+        f"WINDOWS_FILE_ID_INFO:{info.volume_serial_number:016x}:"
+        f"{bytes(info.file_id.identifier).hex()}"
+    )
+
+
+def _stable_file_binding_identity(descriptor: int, file_stat: os.stat_result) -> str:
+    """Return a file-object identity that changes across atomic replacement."""
+    if os.name == "nt":
+        return _windows_file_binding_identity(descriptor)
+    device = getattr(file_stat, "st_dev", None)
+    inode = getattr(file_stat, "st_ino", None)
+    if not isinstance(device, int) or not isinstance(inode, int) or inode == 0:
+        raise MaterializationError(
+            "ROBUST_FILE_IDENTITY_UNAVAILABLE",
+            "POSIX st_dev/st_ino",
+        )
+    return f"POSIX_STAT:{device}:{inode}"
+
+
+def _activation_boundary_snapshot(trusted_root: Path) -> ActivationBoundarySnapshot:
+    """Capture the activation path state and raw-byte hash without mutating it."""
+    activation_path = _confined_path(trusted_root, ACTIVATION_RELATIVE_PATH)
+    try:
+        path_stat = os.lstat(activation_path)
+    except FileNotFoundError:
+        return ActivationBoundarySnapshot(state="ABSENT", sha256=None, binding_identity=None)
+    except OSError as exc:
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary unreadable") from exc
+
+    reparse_attribute = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x00000400)
+    file_attributes = getattr(path_stat, "st_file_attributes", 0)
+    if stat.S_ISLNK(path_stat.st_mode) or file_attributes & reparse_attribute:
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary reparse point")
+    if not stat.S_ISREG(path_stat.st_mode):
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary file type")
+
+    descriptor: int | None = None
+    try:
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(activation_path, flags)
+        open_stat = os.fstat(descriptor)
+        if not stat.S_ISREG(open_stat.st_mode) or not os.path.samestat(path_stat, open_stat):
+            raise MaterializationError("INTEGRITY_FAILURE", "activation boundary substituted")
+        binding_identity = _stable_file_binding_identity(descriptor, open_stat)
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 65536)
+            if not chunk:
+                break
+            chunks.append(chunk)
+    except MaterializationError:
+        raise
+    except OSError as exc:
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary unreadable") from exc
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+    try:
+        final_stat = os.lstat(activation_path)
+    except OSError as exc:
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary changed during snapshot") from exc
+    if (
+        not os.path.samestat(open_stat, final_stat)
+        or open_stat.st_size != final_stat.st_size
+        or open_stat.st_mtime_ns != final_stat.st_mtime_ns
+    ):
+        raise MaterializationError("INTEGRITY_FAILURE", "activation boundary changed during snapshot")
+    return ActivationBoundarySnapshot(
+        state="PRESENT",
+        sha256=hashlib.sha256(b"".join(chunks)).hexdigest(),
+        binding_identity=binding_identity,
+    )
 
 
 def _writer_pre_create_test_seam() -> None:
@@ -794,6 +921,8 @@ def materialize_evidence_and_candidate(
     trusted_root: Path = REPO_ROOT,
 ) -> MaterializationResult:
     """Validate and create content-addressed packet/artifact files only."""
+    root = Path(os.path.abspath(os.fspath(trusted_root)))
+    activation_before = _activation_boundary_snapshot(root)
     (
         packet_bytes,
         packet_hash,
@@ -806,10 +935,10 @@ def materialize_evidence_and_candidate(
         raise MaterializationError("INTEGRITY_FAILURE", "hash")
     packet_relative = SOURCE_PACKET_DIRECTORY / packet_hash / EVIDENCE_PACKET_FILENAME
     artifact_relative = ARTIFACT_DIRECTORY / artifact_hash / ARTIFACT_FILENAME
-    packet_path, packet_status = _create_only_write(trusted_root, packet_relative, packet_bytes)
-    artifact_path, artifact_status = _create_only_write(trusted_root, artifact_relative, artifact_bytes)
-    activation_path = _confined_path(trusted_root, ACTIVATION_RELATIVE_PATH)
-    if activation_path.exists() or activation_path.is_symlink():
+    packet_path, packet_status = _create_only_write(root, packet_relative, packet_bytes)
+    artifact_path, artifact_status = _create_only_write(root, artifact_relative, artifact_bytes)
+    activation_after = _activation_boundary_snapshot(root)
+    if activation_before != activation_after:
         raise MaterializationError("INTEGRITY_FAILURE", "activation boundary changed")
     return MaterializationResult(
         evidence_packet_path=packet_path,
@@ -821,10 +950,13 @@ def materialize_evidence_and_candidate(
         registry_version=packet["registry_version"],
         authority_id=AUTHORITY_ID,
         authority_as_of=packet["artifact_authority_as_of"],
-        scope_count=len(EXPECTED_SCOPE),
+        scope_count=len(packet["scope"]),
         record_count=validation["record_count"],
         source_count=validation["source_count"],
         claim_link_count=validation["claim_link_count"],
+        activation_boundary_state=activation_before.state,
+        activation_boundary_sha256=activation_before.sha256,
+        activation_boundary_binding_identity=activation_before.binding_identity,
     )
 
 

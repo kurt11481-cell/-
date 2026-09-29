@@ -57,6 +57,23 @@ SAFE_FIELDS = {
     ),
 }
 
+# Existing account/transport classifications only; Worker strings are untrusted.
+SAFE_FAILURE_STATUSES = (
+    "KIWOOM_API_UNAVAILABLE", "KIWOOM_API_RESPONSE_ERROR", "KIWOOM_SCHEMA_MISMATCH",
+    "KIWOOM_PAGINATION_NO_PROGRESS", "BRIDGE_OUTPUT_INVALID", "BRIDGE_BATCH_OUTPUT_INVALID",
+    "BRIDGE_TRANSPORT_FAILURE", "RUNTIME_PYTHON_UNAVAILABLE",
+)
+SAFE_FAILURE_TYPES = (
+    "EMPTY_RESPONSE", "API_RESPONSE_ERROR", "SCHEMA_MISMATCH", "HTTP_429",
+    "AUTHENTICATION_FAILURE", "TIMEOUT", "LOCAL_PROTOCOL_FAILURE",
+    "LOCAL_TRANSPORT_FAILURE", "LOCAL_RUNTIME_UNAVAILABLE",
+)
+
+
+def _safe_failure_type(value: Any) -> str:
+    # Reuse the generic exception fallback; this does not prove an empty Broker response.
+    return value if isinstance(value, str) and value in SAFE_FAILURE_TYPES else "EMPTY_RESPONSE"
+
 
 def validate_request(value: Any) -> dict[str, str]:
     if not isinstance(value, dict) or value.get("operation") not in ACCOUNT_APIS:
@@ -109,10 +126,35 @@ def _read_pages(session: dict[str, Any], operation: str) -> tuple[list[dict[str,
             raw = [response.body]
         if not isinstance(raw, list):
             raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
+        if operation == "account_open_items" and any(not isinstance(item, dict) for item in raw):
+            raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
         fields = SAFE_FIELDS[operation]
         rows.extend({field: item.get(field) for field in fields} for item in raw if isinstance(item, dict))
         pages = page_index
         next_cont, next_value = _continuation(response)
+        if operation == "account_open_items":
+            continuation = getattr(response, "continuation", None)
+            indicator_present = ("cont_yn" in continuation if isinstance(continuation, dict)
+                                 else hasattr(continuation, "cont_yn"))
+            if (not indicator_present
+                    or (next_cont is not None and not isinstance(next_cont, str))
+                    or (next_value is not None and not isinstance(next_value, str))):
+                break
+            indicator = str(next_cont or "").upper()
+            if indicator not in {"", "N", "Y", "2", "MORE", "TRUE"}:
+                break
+            continuing = indicator in {"Y", "2", "MORE", "TRUE"}
+            has_next_present = ("has_next" in continuation if isinstance(continuation, dict)
+                                else hasattr(continuation, "has_next"))
+            has_next = (continuation.get("has_next") if isinstance(continuation, dict)
+                        else getattr(continuation, "has_next", None))
+            if has_next_present and (not isinstance(has_next, bool) or has_next != continuing):
+                break
+            # Every available field must agree: terminal states cannot retain a cursor.
+            if not continuing and next_value:
+                break
+            if continuing and (not next_value or not next_value.strip()):
+                break
         if str(next_cont or "").upper() not in {"Y", "2", "MORE", "TRUE"} or not next_value:
             exhausted = True
             break
@@ -125,15 +167,19 @@ def _read_pages(session: dict[str, Any], operation: str) -> tuple[list[dict[str,
 
 def external_worker(stdin_text: str, runtime: Path, minimum_interval_seconds: float = 0.25,
                     maximum_attempts: int = 1, maximum_pages: int = 10) -> dict[str, Any]:
+    failure_stage = "request_validation"
     try:
         raw = json.loads(stdin_text)
         requests = [validate_request(item) for item in raw]
+        failure_stage = "environment_load"
         _load_env_without_echo(runtime / ".env")
+        failure_stage = "runtime_initialization"
         session = _runtime_session(
             runtime, minimum_interval_seconds, maximum_attempts, 1.0,
             {"TIMEOUT", "EMPTY_RESPONSE", "SCHEMA_MISMATCH"},
             {"HTTP_429", "AUTHENTICATION_FAILURE"}, 1, 0, maximum_pages, 1,
         )
+        failure_stage = "account_batch"
         results = []
         for request in requests:
             try:
@@ -146,31 +192,53 @@ def external_worker(stdin_text: str, runtime: Path, minimum_interval_seconds: fl
                     "quantity_authority": "none", "order_authority": False,
                 })
             except Exception as exc:
-                failure = exc.failure_type if isinstance(exc, BridgeError) else _exception_failure(exc)
-                results.append({"bridge_status": getattr(exc, "status", "KIWOOM_API_UNAVAILABLE"),
-                                "failure_type": failure, "operation": request["operation"],
+                status = getattr(exc, "status", "KIWOOM_API_UNAVAILABLE")
+                if not isinstance(status, str) or status not in SAFE_FAILURE_STATUSES:
+                    status = "KIWOOM_API_UNAVAILABLE"
+                results.append({"bridge_status": status,
+                                "failure_type": _safe_failure_type(_exception_failure(exc)),
+                                "operation": request["operation"],
                                 "runtime_commit": session["commit"], "retrieved_at": utc_now(),
                                 "order_authority": False})
         return {"bridge_status": "PASS", "results": results, "order_authority": False}
     except Exception as exc:
         return {"bridge_status": "KIWOOM_API_UNAVAILABLE",
-                "failure_type": getattr(exc, "failure_type", _exception_failure(exc)),
+                "failure_type": _safe_failure_type(_exception_failure(exc)),
+                "failure_stage": failure_stage,
                 "order_authority": False}
 
 
 def _sanitize(value: dict[str, Any], operation: str) -> dict[str, Any]:
-    safe = {"bridge_status": str(value.get("bridge_status", "BRIDGE_OUTPUT_INVALID")),
+    status = value.get("bridge_status", "BRIDGE_OUTPUT_INVALID")
+    if not isinstance(status, str) or status not in ("PASS", "PARTIAL", *SAFE_FAILURE_STATUSES):
+        status = "BRIDGE_OUTPUT_INVALID"
+    safe = {"bridge_status": status,
             "operation": operation, "runtime_commit": value.get("runtime_commit"),
             "retrieved_at": value.get("retrieved_at"), "account_identifier_stored": False,
             "portfolio_mutation": False, "quantity_authority": "none", "order_authority": False}
     if isinstance(value.get("failure_type"), str):
-        safe["failure_type"] = value["failure_type"]
+        safe["failure_type"] = _safe_failure_type(value["failure_type"])
+    if type(value.get("child_exit_code")) is int:
+        safe["child_exit_code"] = value["child_exit_code"]
+    if value.get("failure_stage") in (
+            "request_validation", "environment_load", "runtime_initialization", "account_batch"):
+        safe["failure_stage"] = value["failure_stage"]
     data = value.get("data")
     safe["data"] = [{field: row.get(field) for field in SAFE_FIELDS[operation]}
                     for row in data if isinstance(row, dict)] if isinstance(data, list) else []
     if isinstance(value.get("pagination"), dict):
         safe["pagination"] = {key: value["pagination"].get(key)
                               for key in ("api_id", "pages", "exhausted", "complete", "secret_fields_retained")}
+    if (operation == "account_open_items" and safe["bridge_status"] in {"PASS", "PARTIAL"}
+            and (not isinstance(data, list) or any(not isinstance(row, dict) for row in data))):
+        # Worker-output sanitization must not erase evidence of malformed provider rows.
+        safe["bridge_status"] = "KIWOOM_SCHEMA_MISMATCH"
+        safe["failure_type"] = "SCHEMA_MISMATCH"
+    if safe["bridge_status"] not in {"PASS", "PARTIAL"}:
+        # Failed responses expose safe diagnostics, never Worker metadata or account values.
+        safe.update(runtime_commit=None, retrieved_at=None, data=[])
+        if "pagination" in safe:
+            safe["pagination"] = {"complete": False, "exhausted": False}
     return safe
 
 
@@ -181,6 +249,7 @@ def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path
     if not python_path.is_file():
         return [{"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "LOCAL_RUNTIME_UNAVAILABLE",
                  "operation": item["operation"], "order_authority": False} for item in sanitized]
+    child_exit_code = None
     try:
         completed = runner(
             [str(python_path), str(Path(__file__).resolve()), "--external-worker",
@@ -191,14 +260,38 @@ def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=int(policy["request_timeout_seconds"]) * max(1, len(sanitized)), check=False,
         )
+        child_exit_code = completed.returncode
         payload = _parse_last_json(completed.stdout)
+        # The worker's top-level failure envelope is not a malformed result batch.
+        # Never forward arbitrary worker fields, messages, stderr, or account data.
+        if ("results" not in payload
+                and payload.get("bridge_status") == "KIWOOM_API_UNAVAILABLE"
+                and isinstance(payload.get("failure_type"), str)
+                and payload["failure_type"]
+                and payload.get("order_authority") is False):
+            failure = {key: payload[key] for key in (
+                "bridge_status", "failure_type", "failure_stage"
+            ) if key in payload}
+            failure["child_exit_code"] = child_exit_code
+            return [_sanitize(failure, item["operation"]) for item in sanitized]
         raw_results = payload.get("results") if isinstance(payload, dict) else None
         if not isinstance(raw_results, list) or len(raw_results) != len(sanitized):
             raise BridgeError("BRIDGE_BATCH_OUTPUT_INVALID")
-        return [_sanitize(value if isinstance(value, dict) else {}, request["operation"])
-                for value, request in zip(raw_results, sanitized)]
+        results = []
+        for value, request in zip(raw_results, sanitized):
+            result = _sanitize(value if isinstance(value, dict) else {}, request["operation"])
+            # Exit metadata comes only from the parent, never from Worker stdout.
+            result.pop("child_exit_code", None)
+            if child_exit_code != 0 and result["bridge_status"] in {"PASS", "PARTIAL"}:
+                result = _sanitize(_classify_bridge_invocation_failure(OSError()), request["operation"])
+            if result["bridge_status"] not in {"PASS", "PARTIAL"}:
+                result["child_exit_code"] = child_exit_code
+            results.append(result)
+        return results
     except (OSError, subprocess.TimeoutExpired, BridgeError) as exc:
         failure = _classify_bridge_invocation_failure(exc)
+        if child_exit_code is not None:
+            failure["child_exit_code"] = child_exit_code
         return [{**failure, "operation": item["operation"]} for item in sanitized]
 
 

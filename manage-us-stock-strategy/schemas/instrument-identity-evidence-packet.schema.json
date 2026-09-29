@@ -25,8 +25,12 @@
     "ticker_namespace": {"const": "US_EXCHANGE_LISTED"},
     "scope": {
       "type": "array",
-      "const": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
-      "items": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+      "enum": [
+        ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"],
+        ["BE", "CME", "DRAM", "FSLY", "JPM", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "TOST", "V"],
+        ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]
+      ],
+      "items": {"enum": ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]},
       "uniqueItems": true
     },
     "generated_at": {"type": "string", "format": "date-time"},
@@ -62,7 +66,7 @@
           "source_id_semantics": {"const": "INTERNAL_EVIDENCE_PACKET_REFERENCE"},
           "ticker": {
             "type": ["string", "null"],
-            "enum": [null, "BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]
+            "enum": [null, "BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]
           },
           "source_family": {"enum": ["NYSE", "NASDAQ", "CBOE", "SEC", "SPONSOR", "ISO_10383"]},
           "publisher": {"type": "string", "minLength": 1},
@@ -137,7 +141,7 @@
           "unresolved_non_blocking_historical_gaps"
         ],
         "properties": {
-          "ticker": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+          "ticker": {"enum": ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]},
           "research_verdict": {"const": "VERIFIED"},
           "normalized_record": {
             "type": "object",
@@ -157,7 +161,7 @@
             ],
             "properties": {
               "record_status": {"const": "VERIFIED"},
-              "ticker": {"enum": ["BE", "DRAM", "FSLY", "MVLL", "NBIS", "NOW", "SOXL", "TOST"]},
+              "ticker": {"enum": ["BE", "CME", "DRAM", "FSLY", "JPM", "MRVL", "MVLL", "NBIS", "NOW", "PGR", "SOXL", "SOXX", "TOST", "V"]},
               "security_name": {"type": "string", "minLength": 1},
               "instrument_type": {"enum": ["EQUITY", "ETF"]},
               "security_class": {
@@ -166,7 +170,8 @@
                   "CLASS_A_COMMON_STOCK",
                   "CLASS_A_ORDINARY_SHARES",
                   "ACTIVELY_MANAGED_ETF",
-                  "LEVERAGED_ETF"
+                  "LEVERAGED_ETF",
+                  "INDEX_ETF"
                 ]
               },
               "primary_listing_venue_name": {"type": "string", "minLength": 1},

@@ -18,6 +18,8 @@ HASH_KEYS = [
     "evidence_packet_hash", "market_snapshot_hash", "event_snapshot_hash",
     "portfolio_state_hash", "strategy_policy_hash", "alert_policy_hash",
     "instrument_registry_hash", "candidate_universe_hash",
+    "combined_activation_manifest_hash", "instrument_identity_artifact_hash",
+    "session_calendar_artifact_hash",
 ]
 
 
@@ -30,7 +32,7 @@ def _git(args: list[str], cwd: Path) -> str:
             encoding="utf-8",
             errors="replace",
             stderr=subprocess.DEVNULL,
-        ).strip()
+        ).rstrip("\r\n")
     except (OSError, subprocess.CalledProcessError):
         return "UNAVAILABLE"
 

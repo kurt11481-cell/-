@@ -24,6 +24,8 @@ import authority_artifact_io  # noqa: E402
 import instrument_identity_authority as identity_authority  # noqa: E402
 from instrument_identity_artifact import (  # noqa: E402
     ARTIFACT_FILENAME,
+    CONFIRMATION_SCOPE,
+    EXTENDED_SCOPE,
     EXPECTED_SCOPE,
     LoadedInstrumentIdentityRegistry,
 )
@@ -34,6 +36,7 @@ from instrument_identity_authority import (  # noqa: E402
 
 
 DECISION_AS_OF = "2026-08-24T14:00:00+00:00"
+CURRENT_DECISION_AS_OF = "2026-09-02T18:00:00-04:00"
 COHORT = "synthetic-shared-authority-cohort"
 
 
@@ -50,26 +53,32 @@ def canonical_bytes(value: object) -> bytes:
     )
 
 
-def build_artifact() -> dict:
-    pairs = [
-        ("XNYS", "XNYS"),
-        ("XNGS", "XNAS"),
-        ("BATS", "XCBO"),
-        ("ARCX", "XNYS"),
-        ("XNMS", "XNAS"),
-        ("XNYS", "XNYS"),
-        ("XNGS", "XNAS"),
-        ("BATS", "XCBO"),
-    ]
+def build_artifact(scope: tuple[str, ...] = EXPECTED_SCOPE) -> dict:
+    pairs = {
+        "BE": ("XNYS", "XNYS"),
+        "CME": ("XNGS", "XNAS"),
+        "DRAM": ("BATS", "XCBO"),
+        "FSLY": ("XNGS", "XNAS"),
+        "JPM": ("XNYS", "XNYS"),
+        "MRVL": ("XNGS", "XNAS"),
+        "MVLL": ("XNMS", "XNAS"),
+        "NBIS": ("XNGS", "XNAS"),
+        "NOW": ("XNYS", "XNYS"),
+        "PGR": ("XNYS", "XNYS"),
+        "SOXL": ("ARCX", "XNYS"),
+        "SOXX": ("XNMS", "XNAS"),
+        "TOST": ("XNYS", "XNYS"),
+        "V": ("XNYS", "XNYS"),
+    }
     records = []
-    for index, ticker in enumerate(EXPECTED_SCOPE):
-        segment, operating = pairs[index]
+    for index, ticker in enumerate(scope):
+        segment, operating = pairs[ticker]
         records.append({
             "record_status": "VERIFIED",
             "ticker": ticker,
             "security_name": f"Synthetic Security {index + 1}",
-            "instrument_type": "EQUITY",
-            "security_class": "COMMON_STOCK",
+            "instrument_type": "ETF" if ticker == "SOXX" else "EQUITY",
+            "security_class": "INDEX_ETF" if ticker == "SOXX" else "COMMON_STOCK",
             "primary_listing_venue_name": f"Synthetic Venue {index + 1}",
             "primary_listing_segment_mic": segment,
             "primary_listing_operating_mic": operating,
@@ -83,7 +92,7 @@ def build_artifact() -> dict:
         "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
         "registry_version": "synthetic-registry-v1",
         "ticker_namespace": "US_EXCHANGE_LISTED",
-        "scope": list(EXPECTED_SCOPE),
+        "scope": list(scope),
         "generated_at": "2026-02-02T00:00:00+00:00",
         "authority_as_of": "2026-02-01T00:00:00+00:00",
         "source_packet_id": "synthetic-source-packet-v1",
@@ -396,12 +405,114 @@ class InstrumentIdentityAuthorityTest(unittest.TestCase):
                 view = resolve(root)
             self.assertEqual("VERIFIED", view.authority_status)
 
-    def test_15_materialized_candidate_does_not_activate_authority(self):
-        self.assertFalse((ROOT / "workspace/policies/instrument_identity_activation.json").exists())
+    def test_15_current_fixed_activation_is_exactly_bound(self):
+        self.assertTrue((ROOT / "workspace/policies/instrument_identity_activation.json").is_file())
         self.assertTrue((ROOT / "workspace/instrument-identity-authority/artifacts").is_dir())
-        view = resolve_instrument_identity("BE", decision_as_of=DECISION_AS_OF)
-        self.assertEqual("NOT_VERIFIED", view.authority_status)
-        self.assertEqual("ARTIFACT_NOT_ACTIVATED", view.authority_reason)
+        view = resolve_instrument_identity("BE", decision_as_of=CURRENT_DECISION_AS_OF)
+        self.assertEqual("VERIFIED", view.authority_status)
+        self.assertEqual(
+            "d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60",
+            view.registry_hash,
+        )
+        target = resolve_instrument_identity("PGR", decision_as_of=CURRENT_DECISION_AS_OF)
+        self.assertEqual("VERIFIED", target.authority_status)
+        self.assertEqual("XNYS", target.primary_listing_operating_mic)
+        self.assertEqual(view.registry_hash, target.registry_hash)
+
+    def test_16_extended_candidate_scope_resolves_all_four_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root, artifact=build_artifact(EXTENDED_SCOPE))
+            expected = {"PGR": "XNYS", "JPM": "XNYS", "CME": "XNAS", "V": "XNYS"}
+            for ticker, operating_mic in expected.items():
+                with self.subTest(ticker=ticker):
+                    view = resolve(root, ticker)
+                    self.assertEqual("VERIFIED", view.authority_status)
+                    self.assertEqual(operating_mic, view.primary_listing_operating_mic)
+
+
+class ConfirmationIdentityConsumerTest(unittest.TestCase):
+    def test_confirmations_resolve_only_from_explicit_bound_activation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root, artifact=build_artifact(CONFIRMATION_SCOPE))
+            for ticker, segment in (("MRVL", "XNGS"), ("SOXX", "XNMS")):
+                with self.subTest(ticker=ticker):
+                    view = resolve(root, ticker)
+                    self.assertEqual("VERIFIED", view.authority_status)
+                    self.assertEqual(segment, view.primary_listing_segment_mic)
+                    self.assertEqual("XNAS", view.primary_listing_operating_mic)
+
+    def test_candidate_without_activation_is_not_activated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            activation, _, _, _ = write_fixture(root, artifact=build_artifact(CONFIRMATION_SCOPE))
+            activation.unlink()
+            for ticker in ("MRVL", "SOXX"):
+                self.assertEqual("NOT_VERIFIED", resolve(root, ticker).authority_status)
+
+    def test_old_active_scope_does_not_auto_include_confirmations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root, artifact=build_artifact(EXTENDED_SCOPE))
+            for ticker in ("MRVL", "SOXX"):
+                view = resolve(root, ticker)
+                self.assertEqual("NOT_VERIFIED", view.authority_status)
+                self.assertEqual("UNKNOWN_SYMBOL", view.authority_reason)
+
+    def test_confirmation_hash_and_scope_mismatch_fail_closed(self):
+        for change in ("hash", "scope", "source_packet"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                def mutate(activation):
+                    if change == "hash":
+                        activation["active_registry_hash"] = "f" * 64
+                    elif change == "scope":
+                        activation["scope"] = list(EXTENDED_SCOPE)
+                    else:
+                        activation["source_packet_hash"] = "f" * 64
+                write_fixture(root, artifact=build_artifact(CONFIRMATION_SCOPE), activation_mutator=mutate)
+                self.assertEqual("NOT_VERIFIED", resolve(root, "SOXX").authority_status)
+
+    def test_partial_or_unknown_confirmation_scope_fails(self):
+        for change in ("partial", "unknown"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                artifact = build_artifact(CONFIRMATION_SCOPE)
+                if change == "partial":
+                    artifact["scope"].remove("MRVL")
+                    artifact["records"] = [x for x in artifact["records"] if x["ticker"] != "MRVL"]
+                else:
+                    artifact["scope"][-1] = "ZZUNKNOWN"
+                    artifact["records"][-1]["ticker"] = "ZZUNKNOWN"
+                write_fixture(root, artifact=artifact)
+                self.assertEqual("NOT_VERIFIED", resolve(root, "SOXX").authority_status)
+
+    def test_index_class_cannot_widen_legacy_or_other_tickers(self):
+        for scope, ticker in ((EXTENDED_SCOPE, "SOXL"), (CONFIRMATION_SCOPE, "SOXL"), (CONFIRMATION_SCOPE, "MRVL")):
+            with self.subTest(scope=scope, ticker=ticker), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                artifact = build_artifact(scope)
+                record = next(x for x in artifact["records"] if x["ticker"] == ticker)
+                record.update(instrument_type="ETF", security_class="INDEX_ETF")
+                write_fixture(root, artifact=artifact)
+                self.assertEqual("NOT_VERIFIED", resolve(root, ticker).authority_status)
+
+    def test_soxx_wrong_product_type_or_class_fails(self):
+        for typ, cls in (("EQUITY", "COMMON_STOCK"), ("ETF", "LEVERAGED_ETF"), ("ETF", "ACTIVELY_MANAGED_ETF")):
+            with self.subTest(typ=typ, cls=cls), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                artifact = build_artifact(CONFIRMATION_SCOPE)
+                next(x for x in artifact["records"] if x["ticker"] == "SOXX").update(instrument_type=typ, security_class=cls)
+                write_fixture(root, artifact=artifact)
+                self.assertEqual("NOT_VERIFIED", resolve(root, "SOXX").authority_status)
+
+    def test_confirmation_future_activation_and_current_only_history_fail(self):
+        for cutoff in ("2026-01-31T00:00:00+00:00", "2026-02-02T12:00:00+00:00"):
+            with self.subTest(cutoff=cutoff), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                write_fixture(root, artifact=build_artifact(CONFIRMATION_SCOPE))
+                self.assertEqual("NOT_VERIFIED", resolve(root, "SOXX", decision_as_of=cutoff).authority_status)
 
 
 if __name__ == "__main__":

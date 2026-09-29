@@ -12,8 +12,13 @@
     "provider_authority", "invariants", "operational_session_increment", "order_authority"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "evidence_state": {"const": "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACCEPTED_SCOPED"},
+    "schema_version": {"enum": ["1.0", "1.1"]},
+    "evidence_state": {
+      "enum": [
+        "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACCEPTED_SCOPED",
+        "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_SUPERSEDING_CANDIDATE_INACTIVE"
+      ]
+    },
     "generated_at": {"type": "string", "format": "date-time"},
     "repository_base_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
     "implementation_hashes": {
@@ -104,6 +109,71 @@
       }
     },
     "operational_session_increment": {"const": 0},
-    "order_authority": {"const": false}
+    "order_authority": {"const": false},
+    "candidate_status": {"const": "INACTIVE_SUPERSEDING_CANDIDATE"},
+    "supersedes_acceptance_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "hash_governance": {"const": "IMPLEMENTATION_BINDINGS_NORMALIZED_TEXT_SHA256"},
+    "authority_bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_scope_policy", "active_priority_policy", "source_registry", "active_acceptance_manifest"],
+      "properties": {
+        "provider_scope_policy": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository_path", "raw_sha256", "hash_mode"],
+          "properties": {
+            "repository_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "hash_mode": {"const": "RAW_BYTES_SHA256"}
+          }
+        },
+        "active_priority_policy": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository_path", "raw_sha256", "hash_mode"],
+          "properties": {
+            "repository_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "hash_mode": {"const": "RAW_BYTES_SHA256"}
+          }
+        },
+        "source_registry": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository_path", "raw_sha256", "hash_mode"],
+          "properties": {
+            "repository_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "hash_mode": {"const": "RAW_BYTES_SHA256"}
+          }
+        },
+        "active_acceptance_manifest": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository_path", "raw_sha256", "hash_mode"],
+          "properties": {
+            "repository_path": {"type": "string", "minLength": 1},
+            "raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "hash_mode": {"const": "RAW_BYTES_SHA256"}
+          }
+        }
+      }
+    },
+    "provider_scope_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "symbols", "provider_scope_policy_raw_sha256", "order_authority"],
+      "properties": {
+        "count": {"const": 15},
+        "symbols": {
+          "type": "array",
+          "minItems": 15,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"}
+        },
+        "provider_scope_policy_raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "order_authority": {"const": false}
+      }
+    },
+    "activation_performed": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"}
   }
 }

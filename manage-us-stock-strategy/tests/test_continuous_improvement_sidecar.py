@@ -29,6 +29,7 @@ from continuous_improvement_sidecar import (  # noqa: E402
     build_shadow_policy_experiment,
     compute_analytics_semantic_fingerprint,
     derive_run_provenance,
+    manual_grade_b_eligible,
     empty_ledger,
     empty_outcome_ledger,
     evaluate_forward_outcomes,
@@ -183,6 +184,27 @@ class ContinuousImprovementSidecarTests(unittest.TestCase):
         result = derive_run_provenance(failed_preflight, self.policy)
         self.assertEqual("UNVERIFIED", result["evidence_grade"])
         self.assertFalse(result["decision_quality_eligible"])
+
+    def test_local_bar_claim_cannot_promote_replay_scheduled_or_unbound_manual(self):
+        raw = copy.deepcopy(self.fixture["runs"][0])
+        raw.update(verified_manual_contract())
+        raw["finalized_bar_preflight_status"] = "FAIL"
+        raw["manual_analysis_view"].update(
+            decision_evidence_scope="EXISTING_HOLDINGS_AND_CASH_DIRECTION_ONLY",
+            provider_finalization_verified="NOT_VERIFIED",
+            local_regular_bar_coherence={"AAA": {"status": "PASS"}},
+        )
+        self.assertFalse(manual_grade_b_eligible(raw))
+        for origin, mode in (("REPLAY", "MANUAL_READ_ONLY"),
+                             ("SCHEDULED_GENUINE", "LIVE_READ_ONLY")):
+            with self.subTest(origin=origin):
+                bad = copy.deepcopy(raw)
+                bad.update(execution_origin=origin, decision_mode=mode)
+                self.assertFalse(manual_grade_b_eligible(bad, direction_evidence=raw,
+                    parent_capture_artifacts=[], analysis_observed_at="2026-08-14T22:00:00+00:00"))
+        replay = derive_run_provenance(self.fixture["runs"][1], self.policy)
+        self.assertNotEqual(replay["evidence_grade"], "GRADE_B")
+        self.assertFalse(replay["maturity_eligible"])
 
     def test_manual_system_portfolio_fallback_is_not_grade_b_or_actionable(self):
         raw = copy.deepcopy(self.fixture["runs"][0])

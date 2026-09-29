@@ -117,6 +117,78 @@ class KiwoomAdapterTests(unittest.TestCase):
         self.assertEqual(result["source_api_id"], "usa10099")
         self.assertFalse(result["mapping_guessed"])
 
+    def assert_simple_stock_mapping(self, ticker: str, exchange: str) -> None:
+        result = resolve_instrument(
+            ticker, stock_rows=[identity(ticker, exchange)], exchange_rows=[],
+            etf_rows=[], runtime_commit=COMMIT, verified_at=NOW,
+        )
+        self.assertEqual(result["mapping_status"], "VERIFIED")
+        self.assertEqual(result["ticker"], ticker)
+        self.assertEqual(result["stex_tp"], exchange)
+        self.assertFalse(result["mapping_guessed"])
+
+    def test_pgr_simple_one_to_one_mapping(self) -> None:
+        self.assert_simple_stock_mapping("PGR", "NY")
+
+    def test_jpm_simple_one_to_one_mapping(self) -> None:
+        self.assert_simple_stock_mapping("JPM", "NY")
+
+    def test_cme_simple_one_to_one_mapping(self) -> None:
+        self.assert_simple_stock_mapping("CME", "ND")
+
+    def test_v_simple_one_to_one_mapping(self) -> None:
+        self.assert_simple_stock_mapping("V", "NY")
+
+    def test_existing_mvll_nbis_and_soxl_mappings_are_unchanged(self) -> None:
+        for ticker, exchange, is_etf in (
+            ("MVLL", "ND", False),
+            ("NBIS", "ND", False),
+            ("SOXL", "NY", True),
+        ):
+            with self.subTest(ticker=ticker):
+                result = resolve_instrument(
+                    ticker,
+                    stock_rows=[identity(ticker, exchange, "Y" if is_etf else "N")],
+                    exchange_rows=[],
+                    etf_rows=[{"stex_tp": exchange, "code": ticker}] if is_etf else [],
+                    runtime_commit=COMMIT,
+                    verified_at=NOW,
+                )
+                self.assertEqual(result["mapping_status"], "VERIFIED")
+                self.assertEqual(result["stex_tp"], exchange)
+
+    def test_brk_b_special_mapping_remains_unsupported(self) -> None:
+        result = resolve_instrument(
+            "BRK.B", stock_rows=[identity("BRKb", "NY")], exchange_rows=[],
+            etf_rows=[], runtime_commit=COMMIT, verified_at=NOW,
+        )
+        self.assertEqual(result["mapping_status"], "NOT_FOUND")
+        self.assertIsNone(result["stex_tp"])
+
+    def test_brkb_does_not_silently_become_canonical_brk_b(self) -> None:
+        result = resolve_instrument(
+            "BRKb", stock_rows=[identity("BRKb", "NY")], exchange_rows=[],
+            etf_rows=[], runtime_commit=COMMIT, verified_at=NOW,
+        )
+        self.assertEqual(result["mapping_status"], "VERIFIED")
+        self.assertEqual(result["ticker"], "BRKB")
+        self.assertNotEqual(result["ticker"], "BRK.B")
+
+    def test_cost_remains_unresolved_without_authorized_evidence(self) -> None:
+        result = resolve_instrument(
+            "COST", stock_rows=[], exchange_rows=[], etf_rows=[],
+            runtime_commit=COMMIT, verified_at=NOW,
+        )
+        self.assertEqual(result["mapping_status"], "NOT_FOUND")
+
+    def test_bridge_request_preserves_all_four_target_symbols_exactly(self) -> None:
+        for ticker in ("PGR", "JPM", "CME", "V"):
+            with self.subTest(ticker=ticker):
+                request = validate_bridge_request({
+                    "operation": "stock_lookup", "ticker": ticker, "fx_applied": False,
+                })
+                self.assertEqual(request["ticker"], ticker)
+
     def test_unknown_ticker_never_falls_back_to_na(self) -> None:
         result = resolve_instrument(
             "ZZZZ", stock_rows=[], exchange_rows=[], etf_rows=[], runtime_commit=COMMIT, verified_at=NOW,
