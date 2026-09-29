@@ -75,6 +75,42 @@
           "evidence_reference": {"type": ["string", "null"]},
           "thesis_kill": {"type": "boolean"},
           "material_risk": {"type": ["string", "null"]},
+          "order_intent_terms": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "terms_status",
+              "production_target_approval_status",
+              "proposed_quantity",
+              "order_type",
+              "limit_price",
+              "approved_price_rule",
+              "time_in_force",
+              "valid_from",
+              "valid_until",
+              "why_now",
+              "decision_change_trigger",
+              "thesis_status",
+              "kill_condition",
+              "funding_source"
+            ],
+            "properties": {
+              "terms_status": {"const": "APPROVED_ORDER_INTENT_ONLY"},
+              "production_target_approval_status": {"const": "APPROVED_PRODUCTION_TARGET"},
+              "proposed_quantity": {"type": "integer", "minimum": 1},
+              "order_type": {"enum": ["LIMIT", "PRICE_RULE"]},
+              "limit_price": {"type": ["number", "null"], "minimum": 0},
+              "approved_price_rule": {"type": ["string", "null"]},
+              "time_in_force": {"enum": ["DAY"]},
+              "valid_from": {"type": "string", "format": "date-time"},
+              "valid_until": {"type": "string", "format": "date-time"},
+              "why_now": {"type": "string", "minLength": 1},
+              "decision_change_trigger": {"type": "string", "minLength": 1},
+              "thesis_status": {"enum": ["ACTIVE", "IMPAIRED", "KILLED", "NOT_APPLICABLE"]},
+              "kill_condition": {"type": ["string", "null"]},
+              "funding_source": {"enum": ["VERIFIED_ORDERABLE_CASH", "PENDING_SELL_PROCEEDS", "NOT_APPLICABLE"]}
+            }
+          },
           "decision_change_triggers": {
             "type": "array",
             "items": {"type": "string", "minLength": 1}

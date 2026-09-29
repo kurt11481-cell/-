@@ -273,7 +273,9 @@ def account_reader_for(
                 "operation": operation,
                 "data": data,
                 "pagination": {
-                    "api_id": "ust21070" if operation == "account_holdings_read" else "READ_ONLY",
+                    "api_id": ("ust21070" if operation == "account_holdings_read" else
+                               "ust21050" if operation == "account_open_items" else "READ_ONLY"),
+                    "pages": 1,
                     "complete": complete,
                     "exhausted": complete,
                 },
@@ -334,15 +336,23 @@ def market_reader_for(
             elif operation == "daily_chart":
                 rows = []
                 if ticker in same_day:
-                    rows.append({"dt": "20260821", "cur_prc": 101.0})
+                    rows.append({"dt": "20260821", "cur_prc": 101.0,
+                                 "open_pric": 100.0, "high_pric": 102.0,
+                                 "low_pric": 99.0, "acc_trde_qty": 1000000})
                 if ticker in previous:
-                    rows.append({"dt": "20260820", "cur_prc": 99.0})
+                    rows.append({"dt": "20260820", "cur_prc": 99.0,
+                                 "open_pric": 98.0, "high_pric": 100.0,
+                                 "low_pric": 97.0, "acc_trde_qty": 1000000})
                 result = {
                     "bridge_status": "PASS",
                     "operation": operation,
                     "ticker": ticker,
                     "data": rows,
-                    "pagination": {"api_id": "usa06012", "status": "SUFFICIENT"},
+                    "pagination": {"api_id": "usa06012", "status": "SUFFICIENT",
+                                   "pages_fetched": 1,
+                                   "pages": [{"page_index": 1, "api_id": "usa06012",
+                                              "retrieved_at": OBSERVED_AT}]},
+                    "requested_price_basis": "RAW",
                     "order_authority": False,
                 }
             timestamp_key = f"{operation}:{ticker}" if ticker is not None else operation
@@ -372,7 +382,315 @@ def system_portfolio(
     }
 
 
+
+def captured_handoff_fixture(*, mutate_capture=None, mutate_results=None, observed_at=POST_CUTOFF_RETRIEVED_AT):
+    """Synthetic local capture bytes; never an acquisition approval."""
+    import copy
+    import hashlib
+    state = system_portfolio()
+    tickers = sorted(state["holdings"])
+    account_requests = [{"operation": op} for op in manual_preflight_module.ACCOUNT_READ_OPERATIONS]
+    market_requests = [{"operation": "oauth_health"}]
+    market_requests += [{"operation": "market_quote", "ticker": t, "fx_applied": False} for t in tickers]
+    market_requests += [{"operation": "daily_chart", "ticker": t, "completed_session": PREVIOUS_DAY,
+                         "price_basis": "RAW", "fx_applied": False} for t in tickers]
+    accounts = account_reader_for(state["holdings"], state["average_cost_usd"])(account_requests)
+    markets = market_reader_for(tickers, include_same_day=set())(market_requests)
+    if mutate_results:
+        mutate_results(accounts + markets)
+    document = {"run_id": "manual-test-run-0001", "started_at": "2026-08-21T21:59:59+00:00",
+                "observed_at": "2026-08-21T22:00:01+00:00", "results": copy.deepcopy(accounts + markets),
+                "requests": copy.deepcopy(account_requests + market_requests),
+                "request_sha256": manual_preflight_module.canonical_hash(account_requests + market_requests)}
+    if mutate_capture:
+        mutate_capture(document)
+    raw = json.dumps(document, sort_keys=True).encode("utf-8")
+    artifacts = [(raw, hashlib.sha256(raw).hexdigest())]
+    def account_reader(requests):
+        return copy.deepcopy(accounts)
+    def market_reader(requests):
+        return copy.deepcopy(markets)
+    return {"observed_at": observed_at, "decision_as_of": observed_at,
+            "parent_capture_artifacts": artifacts, "account_reader_override": account_reader,
+            "market_reader_override": market_reader}, artifacts
+
+
 class ManualPortfolioAnalysisTest(unittest.TestCase):
+    def direction_fixture(self, *, omitted=False, mutate_results=None):
+        def fail_auxiliary(rows):
+            item = next(x for x in rows if x["operation"] == "account_open_items")
+            item.update(bridge_status="KIWOOM_API_RESPONSE_ERROR", failure_type="API_RESPONSE_ERROR",
+                        data=[], retrieved_at=None, pagination={"complete": False})
+            if mutate_results:
+                mutate_results(rows)
+        kwargs, artifacts = captured_handoff_fixture(mutate_results=fail_auxiliary)
+        if omitted:
+            doc = json.loads(artifacts[0][0])
+            accounts = ["account_deposit_read", "account_holdings_read", "account_open_items"]
+            pairs = [(q, r) for q, r in zip(doc["requests"], doc["results"])
+                     if not q["operation"].startswith("account_") or q["operation"] in accounts]
+            doc["requests"], doc["results"] = map(list, zip(*pairs))
+            doc["request_sha256"] = manual_preflight_module.canonical_hash(doc["requests"])
+            raw = json.dumps(doc, sort_keys=True).encode()
+            artifacts = [(raw, hashlib.sha256(raw).hexdigest())]
+            kwargs["parent_capture_artifacts"] = artifacts
+            kwargs["account_operations"] = accounts
+            kwargs["account_reader_override"] = lambda reqs: [dict(r) for q, r in pairs if q in reqs]
+        kwargs["direction_only"] = True
+        return kwargs, artifacts
+
+    def test_direction_alignment_auxiliary_failure_and_omission(self):
+        for omitted in (False, True):
+            with self.subTest(omitted=omitted):
+                kwargs, artifacts = self.direction_fixture(omitted=omitted)
+                report = self.build_report(**kwargs)
+                self.assertEqual(report["preflight_status"], "PARTIAL")
+                self.assertEqual(report["evidence_grade"], "GRADE_B")
+                self.assertTrue(report["provenance"]["decision_quality_eligible"])
+                self.assertFalse(report["broker_observed_state"]["scope_complete"])
+                self.assertEqual(report["broker_observed_state"]["operation_statuses"]["account_open_items"],
+                                 "KIWOOM_API_RESPONSE_ERROR")
+                self.assertIsNone(report["broker_observed_state"]["open_order_evidence"]["retrieved_at"])
+                if omitted:
+                    self.assertEqual(report["broker_observed_state"]["operation_statuses"]["account_fills_read"], "NOT_REQUESTED")
+                self.assertTrue(manual_preflight_module.validate_manual_acquisition_handoff(
+                    report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT, maximum_age_seconds=900))
+                self.assertEqual(validate_instance(report, SCHEMA), [])
+                self.assertEqual(report["quantity_authority"], "none")
+                self.assertIsNone(report["execution_quantity"])
+                self.assertFalse(report["order_authority"])
+
+    def test_local_same_day_completed_bar_can_be_grade_b_without_provider_finalization(self):
+        import copy
+        from continuous_improvement_sidecar import manual_grade_b_eligible
+        kwargs, artifacts = captured_handoff_fixture()
+        doc = json.loads(artifacts[0][0])
+        for request in doc["requests"]:
+            if request["operation"] == "daily_chart":
+                request["completed_session"] = SAME_DAY
+        daily = next(item for item in doc["results"] if item["operation"] == "daily_chart")
+        daily["data"] = [{"dt": "20260821", "cur_prc": 101.0, "open_pric": 100.0,
+                          "high_pric": 102.0, "low_pric": 99.0, "acc_trde_qty": 1000000}]
+        doc["request_sha256"] = manual_preflight_module.canonical_hash(doc["requests"])
+        raw = json.dumps(doc, sort_keys=True).encode()
+        artifacts = [(raw, hashlib.sha256(raw).hexdigest())]
+        market = [item for item in doc["results"] if item["operation"] in
+                  {"oauth_health", "market_quote", "daily_chart"}]
+        kwargs.update(parent_capture_artifacts=artifacts, direction_only=True,
+                      expected_completed_session=SAME_DAY,
+                      market_reader_override=lambda requests: copy.deepcopy(market))
+        report = self.build_report(**kwargs)
+        self.assertEqual(report["finalized_bar_preflight_status"], "FAIL")
+        self.assertEqual(report["last_verified_finalized_bar_status"], "NOT_VERIFIED")
+        self.assertEqual(report["manual_analysis_view"]["provider_finalization_verified"], "NOT_VERIFIED")
+        self.assertEqual(report["manual_analysis_view"]["local_regular_bar_coherence"]["AAA"]["status"], "PASS")
+        self.assertEqual(report["evidence_grade"], "GRADE_B")
+        run = dict(report, execution_origin="MANUAL", decision_mode="MANUAL_READ_ONLY",
+                   provenance_evidence={"manual_run_id": report["manual_run_id"]})
+        self.assertTrue(manual_grade_b_eligible(
+            run, direction_evidence=report, parent_capture_artifacts=artifacts,
+            analysis_observed_at=POST_CUTOFF_RETRIEVED_AT,
+        ))
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_direction_alignment_missing_core_values(self):
+        def missing_cash(rows):
+            item = next(x for x in rows if x["operation"] == "account_deposit_read")
+            item["data"] = []
+        kwargs, _ = self.direction_fixture(mutate_results=missing_cash)
+        self.assertEqual(self.build_report(**kwargs)["evidence_grade"], "UNVERIFIED")
+
+    def test_direction_alignment_rejects_status_and_source_forgery(self):
+        import copy
+        kwargs, artifacts = self.direction_fixture()
+        report = self.build_report(**kwargs)
+        mutations = [
+            lambda r: r.update(identity_registry_hash="f" * 64),
+            lambda r: r.update(calendar_hash="f" * 64),
+            lambda r: r.update(preflight_status="PASS"),
+            lambda r: r["manual_analysis_view"].pop("decision_evidence_scope"),
+            lambda r: r.update(run_mode="LIVE_READ_ONLY"),
+            lambda r: r["current_price_evidence"][0]["record"].update(close=999999),
+            lambda r: r["manual_analysis_view"]["acquisition_handoff"]["bindings"][0].update(source_sha256="f" * 64),
+            lambda r: r["manual_analysis_view"]["local_regular_bar_coherence"]["AAA"].update(input_sha256="f" * 64),
+            lambda r: r["manual_analysis_view"]["local_regular_bar_coherence"]["AAA"].update(status="FAIL"),
+        ]
+        for mutate in mutations:
+            bad = copy.deepcopy(report); mutate(bad)
+            self.assertFalse(manual_preflight_module.validate_manual_direction_evidence(
+                bad, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT))
+        self.assertFalse(manual_preflight_module.validate_manual_direction_evidence(
+            report, None, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT))
+        changed = json.loads(artifacts[0][0])
+        daily = next(x for x in changed["results"] if x["operation"] == "daily_chart")
+        daily["data"][-1].update(cur_prc=98.0, high_pric=100.0)
+        changed_bytes = json.dumps(changed, sort_keys=True).encode()
+        self.assertFalse(manual_preflight_module.validate_manual_direction_evidence(
+            report, [(changed_bytes, hashlib.sha256(changed_bytes).hexdigest())],
+            analysis_observed_at=POST_CUTOFF_RETRIEVED_AT))
+
+    def test_direction_alignment_stale_future_and_identity(self):
+        kwargs, artifacts = self.direction_fixture()
+        report = self.build_report(**kwargs)
+        for at in ("2026-08-21T22:20:00+00:00", "2026-08-21T21:59:59+00:00"):
+            self.assertFalse(manual_preflight_module.validate_manual_direction_evidence(
+                report, artifacts, analysis_observed_at=at))
+        self.identity_forced_reason = "IDENTITY_TEST_MISMATCH"
+        self.assertEqual(self.build_report(**kwargs)["evidence_grade"], "UNVERIFIED")
+
+    def test_direction_alignment_general_manual_is_unchanged(self):
+        kwargs, _ = self.direction_fixture()
+        kwargs.pop("direction_only")
+        report = self.build_report(**kwargs)
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_direction_alignment_core_operation_failure_cannot_be_promoted(self):
+        for op in ("account_holdings_read", "account_deposit_read", "oauth_health", "market_quote", "daily_chart"):
+            with self.subTest(operation=op):
+                def fail(rows):
+                    item = next(x for x in rows if x["operation"] == op)
+                    item.update(bridge_status="KIWOOM_API_RESPONSE_ERROR", failure_type="API_RESPONSE_ERROR",
+                                data=[], retrieved_at=None, pagination={"complete": False})
+                kwargs, _ = self.direction_fixture(mutate_results=fail)
+                self.assertNotEqual(self.build_report(**kwargs)["evidence_grade"], "GRADE_B")
+
+    def test_direction_alignment_sidecar_requires_bytes_and_exact_run_binding(self):
+        import copy
+        from continuous_improvement_sidecar import manual_grade_b_eligible
+        kwargs, artifacts = self.direction_fixture()
+        report = self.build_report(**kwargs)
+        run = dict(report, execution_origin="MANUAL", decision_mode="MANUAL_READ_ONLY",
+                   provenance_evidence={"manual_run_id": report["manual_run_id"]})
+        context = dict(direction_evidence=report, parent_capture_artifacts=artifacts,
+                       analysis_observed_at=POST_CUTOFF_RETRIEVED_AT)
+        self.assertFalse(manual_grade_b_eligible(run))
+        self.assertTrue(manual_grade_b_eligible(run, **context))
+        for mutate in (
+            lambda r: r.update(execution_origin="REPLAY"),
+            lambda r: r.update(execution_origin="SCHEDULED_GENUINE"),
+            lambda r: r.update(decision_mode="LIVE_READ_ONLY"),
+            lambda r: r["provenance_evidence"].update(manual_run_id="different-run"),
+            lambda r: r.update(manual_data_verification_status="FAILED"),
+        ):
+            bad = copy.deepcopy(run); mutate(bad)
+            self.assertFalse(manual_grade_b_eligible(bad, **context))
+
+    def test_direction_alignment_cash_zero_unknown_and_proceeds(self):
+        def zero_cash(rows):
+            item = next(x for x in rows if x["operation"] == "account_deposit_read")
+            for row in item["data"]:
+                for field in ("fc_entra", "fc_pymn_alowa", "fc_ord_alowa"):
+                    row[field] = "0"
+        kwargs, _ = self.direction_fixture(mutate_results=zero_cash)
+        report = self.build_report(**kwargs)
+        self.assertEqual(report["evidence_grade"], "GRADE_B")
+        self.assertEqual(report["verified_orderable_cash_usd"], 0)
+        self.assertEqual(report["broker_observed_state"]["cash"]["cash_status"], "VERIFIED_ZERO")
+        for field in ("fc_entra", "fc_pymn_alowa", "fc_ord_alowa"):
+            def missing(rows):
+                item = next(x for x in rows if x["operation"] == "account_deposit_read")
+                for row in item["data"]:
+                    row.pop(field, None)
+                    row["expected_sale_proceeds_usd"] = "9999"
+            kwargs, _ = self.direction_fixture(mutate_results=missing)
+            self.assertNotEqual(self.build_report(**kwargs)["evidence_grade"], "GRADE_B")
+
+    def test_direction_alignment_default_handoff_rejects_forged_upgrade(self):
+        kwargs, artifacts = self.direction_fixture()
+        kwargs.pop("direction_only")
+        report = self.build_report(**kwargs)
+        report.update(evidence_grade="GRADE_B", manual_data_verification_status="VERIFIED_REAL_DATA")
+        self.assertFalse(manual_preflight_module.validate_manual_acquisition_handoff(
+            report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT, maximum_age_seconds=900))
+
+    def test_direction_alignment_dashboard_rechecks_consumed_inputs(self):
+        from portfolio_decision_dashboard import _canonical_evidence_gate, MANUAL_EVIDENCE_SCHEMA
+        kwargs, artifacts = self.direction_fixture()
+        report = self.build_report(**kwargs)
+        plan = {"evidence_binding": {"manual_run_id": report["manual_run_id"], "decision_as_of": report["decision_as_of"]}}
+        def blockers(mode="INITIAL_COMPILE", inputs=artifacts, input_mode="MANUAL_READ_ONLY"):
+            return _canonical_evidence_gate(report, plan, mode, MANUAL_EVIDENCE_SCHEMA.read_bytes(),
+                input_mode=input_mode, parent_capture_artifacts=inputs,
+                analysis_observed_at=POST_CUTOFF_RETRIEVED_AT)[1]
+        self.assertNotIn("PREFLIGHT_NOT_PASS", blockers())
+        self.assertIn("PREFLIGHT_NOT_PASS", blockers(inputs=None))
+        self.assertIn("PREFLIGHT_NOT_PASS", blockers(mode="HISTORICAL_REPLAY"))
+        self.assertIn("PREFLIGHT_NOT_PASS", blockers(input_mode="LIVE_READ_ONLY"))
+
+    def _assert_direction_compile(self, *, full_scope=False):
+        import copy
+        import portfolio_decision_dashboard as dashboard
+        from test_portfolio_decision_dashboard import current_context, canonical_runtime_resolver
+        kwargs, artifacts = captured_handoff_fixture() if full_scope else self.direction_fixture()
+        kwargs["direction_only"] = True
+        evidence = self.build_report(**kwargs)
+        self.assertEqual(evidence["preflight_status"], "PASS" if full_scope else "PARTIAL")
+        policy = json.loads(dashboard.DEFAULT_RISK_POLICY.read_bytes())
+        tickers = [row["ticker"] for row in evidence["broker_observed_state"]["holdings"]]
+        # Synthetic instruments reuse the existing normal-stock fixture mapping.
+        for ticker in tickers:
+            policy["fallback_instrument_mapping"][ticker] = copy.deepcopy(policy["fallback_instrument_mapping"]["NBIS"])
+        plan = {"plan_id": "synthetic-direction-only-plan", "as_of": evidence["decision_as_of"],
+                "plan_status": "CURRENT_APPROVED", "target_type": "TRANSITIONAL_RISK_FEASIBLE_TARGET",
+                "cash_target_pct": 80, "evidence_binding": {"expected_run_id": evidence["manual_run_id"],
+                "expected_decision_as_of": evidence["decision_as_of"]}, "material_unknowns": [],
+                "decision_change_triggers": [], "positions": [
+                    {"ticker": t, "action": "TRIM", "target_weight_pct": 10,
+                     "rationale": "synthetic", "investment_horizon": "synthetic", "target_status": "APPROVED"}
+                    for t in tickers]}
+        digest = hashlib.sha256(dashboard._json_bytes(evidence)).hexdigest()
+        context = current_context(evidence)
+        context["context_generated_at"] = POST_CUTOFF_RETRIEVED_AT
+        context["expected_evidence_sha256"] = digest
+        report, validation = dashboard.compile_dashboard(
+            evidence, plan, policy, generated_at=POST_CUTOFF_RETRIEVED_AT,
+            current_session_context=context, current_session_authority_resolver=canonical_runtime_resolver(context),
+            evidence_sha256=digest, parent_capture_artifacts=artifacts,
+        )
+        self.assertEqual(report["evidence"]["portfolio_evidence_status"], "BLOCKED")
+        self.assertIn("FINALIZED_BAR_PREFLIGHT_NOT_PASS", report["evidence"]["canonical_gate_blockers"])
+        self.assertIn("FINALIZED_BAR_NOT_VERIFIED", report["evidence"]["canonical_gate_blockers"])
+        self.assertEqual(validation["status"], "BLOCKED")
+        self.assertEqual(report["stage1"]["status"], "BLOCKED")
+        self.assertEqual(report["stage2"]["status"], "BLOCKED")
+        self.assertEqual(report["stage2"]["buy_advisories"], [])
+        for row in report["portfolio"]["positions"]:
+            self.assertIsNone(row["target_shares_reference"]["value"])
+            self.assertIsNone(row["share_delta"]["value"])
+            self.assertIn("DIRECTION_ONLY_EVIDENCE_NO_QUANTITY_AUTHORITY", row["blockers"])
+        for row in report["swing_action_plan"]["rows"]:
+            self.assertEqual(row["direction"], "DEFERRED")
+            self.assertIsNone(row["price"])
+            self.assertIsNone(row["shadow_sell_qty"])
+            self.assertEqual(row["execution_status"], "DISABLED")
+
+    def test_direction_alignment_full_compile_never_unlocks_quantity(self):
+        self._assert_direction_compile()
+
+    def test_direction_alignment_full_scope_still_has_no_quantity_authority(self):
+        self._assert_direction_compile(full_scope=True)
+        # Opt-in without captured bytes does not inherit the generic PASS route.
+        self.assertEqual(self.build_report(direction_only=True)["evidence_grade"], "UNVERIFIED")
+
+    def test_direction_alignment_pass_label_cannot_remove_source_boundary(self):
+        import copy
+        from continuous_improvement_sidecar import manual_grade_b_eligible
+        from portfolio_decision_dashboard import _canonical_evidence_gate, MANUAL_EVIDENCE_SCHEMA
+        kwargs, artifacts = self.direction_fixture()
+        report = self.build_report(**kwargs)
+        forged = copy.deepcopy(report)
+        forged.update(preflight_status="PASS", observed_at=forged["decision_as_of"])
+        forged["manual_analysis_view"].pop("acquisition_handoff")
+        run = dict(forged, execution_origin="MANUAL", decision_mode="MANUAL_READ_ONLY",
+                   provenance_evidence={"manual_run_id": forged["manual_run_id"]})
+        self.assertFalse(manual_grade_b_eligible(run))
+        plan = {"evidence_binding": {"expected_run_id": forged["manual_run_id"],
+                                     "expected_decision_as_of": forged["decision_as_of"]}}
+        blockers = _canonical_evidence_gate(forged, plan, "INITIAL_COMPILE", MANUAL_EVIDENCE_SCHEMA.read_bytes(),
+                                           analysis_observed_at=POST_CUTOFF_RETRIEVED_AT)[1]
+        self.assertIn("DIRECTION_SCOPE_INPUTS_NOT_VERIFIED", blockers)
+
     @classmethod
     def setUpClass(cls):
         cls.provenance_policy = json.loads(PROVENANCE_POLICY.read_text(encoding="utf-8"))
@@ -450,6 +768,138 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.authority_patch.stop()
         self.identity_patch.stop()
 
+
+    def test_handoff_rewire_late_complete_capture_is_eligible_without_backdating(self):
+        kwargs, artifacts = captured_handoff_fixture()
+        report = self.build_report(**kwargs)
+        self.assertEqual(report["observed_at"], POST_CUTOFF_RETRIEVED_AT)
+        self.assertEqual(report["decision_as_of"], OBSERVED_AT)
+        self.assertEqual(report["preflight_status"], "PASS")
+        self.assertEqual(report["evidence_grade"], "GRADE_B")
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+        proof = report["manual_analysis_view"]["acquisition_handoff"]
+        self.assertEqual(proof["assurance"], "CONSUMED_INPUT_CONSISTENCY_ONLY")
+        self.assertTrue(manual_preflight_module.validate_manual_acquisition_handoff(
+            report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT, maximum_age_seconds=900))
+        self.assertNotIn('"data"', json.dumps(proof))
+        self.assertFalse(report["order_authority"])
+        self.assertIsNone(report["execution_quantity"])
+
+    def test_handoff_rewire_incomplete_or_changed_capture_never_unlocks(self):
+        for change in [lambda d: d["results"].pop(),
+                       lambda d: d["results"][0].update(data=[]),
+                       lambda d: d["results"].append(dict(d["results"][0]))]:
+            with self.subTest(change=change):
+                kwargs, _ = captured_handoff_fixture(mutate_capture=change)
+                report = self.build_report(**kwargs)
+                self.assertIn("POST_ACQUISITION_ANALYSIS_REQUIRES_FRESH_EVIDENCE", report["partial_reasons"])
+                self.assertNotIn("acquisition_handoff", report["manual_analysis_view"])
+
+    def test_handoff_rewire_capture_hash_and_run_mismatch_fail_closed(self):
+        kwargs, artifacts = captured_handoff_fixture()
+        kwargs["parent_capture_artifacts"] = [(artifacts[0][0], "0" * 64)]
+        with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_INVALID$"):
+            self.build_report(**kwargs)
+        kwargs, _ = captured_handoff_fixture(mutate_capture=lambda d: d.update(run_id="manual-other-run"))
+        with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_INVALID$"):
+            self.build_report(**kwargs)
+
+    def test_handoff_rewire_age_and_future_capture_fail_closed(self):
+        kwargs, _ = captured_handoff_fixture(observed_at="2026-08-21T22:15:01+00:00")
+        report = self.build_report(**kwargs)
+        self.assertIn("PARENT_CAPTURE_REPLAY_STALE", report["hard_fail_reasons"])
+        self.assertNotEqual(report["preflight_status"], "PASS")
+        kwargs, _ = captured_handoff_fixture(mutate_capture=lambda d: d.update(observed_at="2026-08-21T22:00:08+00:00"))
+        with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_INVALID$"):
+            self.build_report(**kwargs)
+
+
+    def test_handoff_rewire_bound_failure_is_never_broker_success(self):
+        def fail_open(rows):
+            row = next(x for x in rows if x["operation"] == "account_open_items")
+            row.update(bridge_status="KIWOOM_API_RESPONSE_ERROR", failure_type="API_RESPONSE_ERROR",
+                       retrieved_at=None, data=[], pagination={"complete": False})
+        kwargs, artifacts = captured_handoff_fixture(mutate_results=fail_open)
+        report = self.build_report(**kwargs)
+        self.assertIn("acquisition_handoff", report["manual_analysis_view"])
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertIn("ACCOUNT_EVIDENCE_NOT_VERIFIED:account_open_items", report["partial_reasons"])
+        self.assertNotEqual(report["evidence_grade"], "GRADE_B")
+        self.assertIsNone(report["broker_observed_state"]["open_order_evidence"]["retrieved_at"])
+        self.assertTrue(manual_preflight_module.validate_manual_acquisition_handoff(
+            report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT, maximum_age_seconds=900))
+
+
+    def test_handoff_rewire_failed_input_cannot_claim_verified_grade(self):
+        def fail_open(rows):
+            row = next(x for x in rows if x["operation"] == "account_open_items")
+            row.update(bridge_status="KIWOOM_API_RESPONSE_ERROR", failure_type="API_RESPONSE_ERROR",
+                       retrieved_at=None, data=[], pagination={"complete": False})
+        kwargs, artifacts = captured_handoff_fixture(mutate_results=fail_open)
+        report = self.build_report(**kwargs)
+        report.update(preflight_status="PASS", evidence_grade="GRADE_B",
+                      manual_data_verification_status="VERIFIED_REAL_DATA")
+        self.assertFalse(manual_preflight_module.validate_manual_acquisition_handoff(
+            report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT, maximum_age_seconds=900))
+
+    def test_handoff_rewire_missing_or_contradictory_original_requests_fail_closed(self):
+        mutations = [
+            lambda d: d.pop("requests"),
+            lambda d: d.update(requests=[{"operation": "daily_chart", "ticker": "WRONG",
+                                         "price_basis": "ADJUSTED", "completed_session": "2000-01-01",
+                                         "fx_applied": True}], request_sha256="f" * 64),
+            lambda d: d.update(request_sha256="f" * 64),
+            lambda d: d["requests"][-1].update(price_basis="ADJUSTED"),
+            lambda d: d["requests"].reverse(),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutation=mutations.index(mutate)):
+                def mutation(document):
+                    mutate(document)
+                    if mutations.index(mutate) >= 3:
+                        document["request_sha256"] = manual_preflight_module.canonical_hash(document["requests"])
+                kwargs, artifacts = captured_handoff_fixture(mutate_capture=mutation)
+                report = self.build_report(**kwargs)
+                self.assertNotIn("acquisition_handoff", report["manual_analysis_view"])
+                self.assertNotEqual("PASS", report["preflight_status"])
+                self.assertFalse(manual_preflight_module.validate_manual_acquisition_handoff(
+                    report, artifacts, analysis_observed_at=POST_CUTOFF_RETRIEVED_AT,
+                    maximum_age_seconds=900))
+
+    def test_handoff_rewire_result_outside_capture_window_is_rejected(self):
+        kwargs, _ = captured_handoff_fixture(
+            mutate_capture=lambda d: d.update(started_at="2026-08-21T22:00:00.500000+00:00"))
+        report = self.build_report(**kwargs)
+        self.assertNotIn("acquisition_handoff", report["manual_analysis_view"])
+        self.assertNotEqual(report["preflight_status"], "PASS")
+
+
+    def test_loop_fix_cash_preserves_broker_orderable_separate_from_settled(self):
+        state = system_portfolio()
+        base = account_reader_for(state["holdings"], state["average_cost_usd"], orderable_cash=2.97)
+        def reader(requests):
+            values = base(requests)
+            for value in values:
+                if value["operation"] == "account_deposit_read":
+                    value["data"][0]["fc_pymn_alowa"] = "0.00"
+                    value["data"][0]["fc_entra"] = "0.00"
+            return values
+        report = self.build_report(account_reader_override=reader)
+        self.assertEqual(report["verified_orderable_cash_usd"], 2.97)
+        self.assertEqual(report["manual_analysis_view"]["verified_orderable_cash_usd"], 2.97)
+        self.assertEqual(report["broker_observed_state"]["cash"]["settled_available_cash"], 0)
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_loop_fix_later_analysis_keeps_original_cutoff_and_is_not_fresh(self):
+        report = self.build_report(observed_at=POST_CUTOFF_RETRIEVED_AT)
+        self.assertEqual(report["observed_at"], POST_CUTOFF_RETRIEVED_AT)
+        self.assertEqual(report["decision_as_of"], OBSERVED_AT)
+        self.assertEqual(report["manual_analysis_view"]["analysis_observed_at"], POST_CUTOFF_RETRIEVED_AT)
+        self.assertEqual(report["manual_analysis_view"]["acquisition_completed_at"], OBSERVED_AT)
+        self.assertIn("POST_ACQUISITION_ANALYSIS_REQUIRES_FRESH_EVIDENCE", report["partial_reasons"])
+        self.assertNotEqual(report["preflight_status"], "PASS")
+        self.assertNotEqual(report["evidence_grade"], "GRADE_B")
+
     def build_report(
         self,
         *,
@@ -472,6 +922,8 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         market_retrieved_at_by_operation: dict[str, str | None] | None = None,
         observed_at: str = OBSERVED_AT,
         decision_as_of: str = OBSERVED_AT,
+        account_operations=None, market_operations=None, parent_capture_artifacts=None,
+        account_reader_override=None, market_reader_override=None, direction_only=False,
     ) -> dict:
         self.authority_expected_session = expected_completed_session
         state = portfolio or system_portfolio()
@@ -489,7 +941,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             system_portfolio_source="TEST_ONLY/system-portfolio.json",
             system_portfolio_sha256="a" * 64,
             provenance_policy=self.provenance_policy,
-            account_reader=account_reader_for(
+            account_reader=account_reader_override or account_reader_for(
                 holdings,
                 costs,
                 holdings_status=holdings_status,
@@ -497,7 +949,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
                 orderable_cash=orderable_cash,
                 retrieved_at=account_retrieved_at,
             ),
-            market_reader=market_reader_for(
+            market_reader=market_reader_override or market_reader_for(
                 tickers,
                 health=health,
                 quote_missing=quote_missing,
@@ -510,7 +962,274 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
             maximum_broker_age_seconds=900,
             decision_as_of=decision_as_of,
             observed_at=observed_at,
+            account_operations=account_operations, market_operations=market_operations,
+            parent_capture_artifacts=parent_capture_artifacts,
+            direction_only=direction_only,
         )
+
+    @staticmethod
+    def captured_failure(*, run_id="manual-test-run-0001", operation="account_open_items",
+                         started_at=OBSERVED_AT, observed_at=ACCOUNT_RETRIEVED_AT,
+                         retrieved_at=None, uppercase=False, mutate=None):
+        failure = {
+            "operation": operation, "bridge_status": "KIWOOM_API_RESPONSE_ERROR",
+            "failure_type": "API_RESPONSE_ERROR", "retrieved_at": retrieved_at,
+            "runtime_commit": None, "data": [], "order_authority": False,
+            "quantity_authority": "none", "portfolio_mutation": False,
+        }
+        document = {"run_id": run_id, "started_at": started_at, "observed_at": observed_at,
+                    "safe_bridge_results": [failure], "diagnostic": "SYNTHETIC_NOT_FOR_OUTPUT"}
+        if uppercase:
+            for key in ("run_id", "started_at", "observed_at"):
+                document[key.upper()] = document.pop(key)
+        if mutate is not None:
+            mutate(document)
+        raw = json.dumps(document).encode("utf-8")
+        return failure, (raw, hashlib.sha256(raw).hexdigest())
+
+    def report_with_failure(self, failure, artifacts=None, **kwargs):
+        normal = account_reader_for({"AAA": 1.0}, {"AAA": 80.0})
+        def reader(requests):
+            return [dict(failure) if r["operation"] == failure["operation"] else normal([r])[0]
+                    for r in requests]
+        return self.build_report(account_reader_override=reader, parent_capture_artifacts=artifacts,
+                                 observed_at=kwargs.pop("observed_at", POST_CUTOFF_RETRIEVED_AT), **kwargs)
+
+    def report_with_quote_failures(self, failures, captures, *, tickers=("AAA",)):
+        normal = market_reader_for(list(tickers))
+        def reader(requests):
+            rows = []
+            for request in requests:
+                if request["operation"] == "market_quote":
+                    failure = next((r for r in failures if r.get("ticker") == request["ticker"]), failures[0])
+                    rows.append(dict(failure))
+                else:
+                    rows.extend(normal([request]))
+            return rows
+        return self.build_report(
+            portfolio=system_portfolio({ticker: 1.0 for ticker in tickers}, {ticker: 80.0 for ticker in tickers}),
+            market_reader_override=reader, parent_capture_artifacts=captures,
+            observed_at=POST_CUTOFF_RETRIEVED_AT,
+        )
+
+    def test_judgefix_f1_market_failure_is_not_hidden_by_daily_fallback(self):
+        failure, capture = self.captured_failure(operation="market_quote",
+            mutate=lambda d: d["safe_bridge_results"][0].update(ticker="AAA"))
+        report = self.report_with_quote_failures([failure], [capture])
+        self.assertEqual(report["current_price_status"], "AVAILABLE")
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertIn("MARKET_EVIDENCE_NOT_VERIFIED:market_quote:AAA", report["partial_reasons"])
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_judgefix_f2_tickerless_capture_does_not_bind_multiple_requests(self):
+        failure, capture = self.captured_failure(operation="market_quote")
+        report = self.report_with_quote_failures([failure], [capture], tickers=("AAA", "BBB"))
+        self.assertEqual(report["broker_observed_state"]["acquisition_scope"]["parent_failure_timing"], [])
+        self.assertIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_judgefix_f3_failure_parent_time_is_not_broker_snapshot_time(self):
+        failure, capture = self.captured_failure()
+        report = self.report_with_failure(failure, [capture],
+            account_operations=["account_open_items"], market_operations=[])
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
+        self.assertIsNone(report["broker_snapshot_as_of"])
+        self.assertIsNone(report["broker_observed_state"]["as_of"])
+        self.assertIsNone(report["broker_observed_state"]["open_order_evidence"]["retrieved_at"])
+        self.assertIsNone(report["verified_orderable_cash_usd"])
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_judgefix_market_failure_with_own_timestamp_stays_partial(self):
+        failure, _ = self.captured_failure(operation="market_quote", retrieved_at=OBSERVED_AT,
+            mutate=lambda d: d["safe_bridge_results"][0].update(ticker="AAA"))
+        report = self.report_with_quote_failures([failure], None)
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertIn("MARKET_EVIDENCE_NOT_VERIFIED:market_quote:AAA", report["partial_reasons"])
+
+    def test_judgefix_explicit_ticker_captures_remain_separately_bound(self):
+        failures, captures = [], []
+        for ticker in ("AAA", "BBB"):
+            failure, capture = self.captured_failure(operation="market_quote",
+                mutate=lambda d, t=ticker: d["safe_bridge_results"][0].update(ticker=t))
+            failures.append(failure)
+            captures.append(capture)
+        report = self.report_with_quote_failures(failures, captures, tickers=("AAA", "BBB"))
+        bindings = report["broker_observed_state"]["acquisition_scope"]["parent_failure_timing"]
+        self.assertEqual([(r["ticker"], r["source_sha256"]) for r in bindings],
+                         [(ticker, capture[1]) for ticker, capture in zip(("AAA", "BBB"), captures)])
+        self.assertNotIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+
+    def test_judgefix_broker_time_uses_actual_success_timestamp(self):
+        failure, _ = self.captured_failure(retrieved_at=ACCOUNT_RETRIEVED_AT)
+        report = self.report_with_failure(failure)
+        self.assertEqual(report["broker_snapshot_as_of"], OBSERVED_AT)
+        self.assertEqual(report["broker_observed_state"]["as_of"], OBSERVED_AT)
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
+
+    def test_scope_limited_dispatch_and_not_requested_are_distinct(self):
+        accounts = ["account_holdings_read", "account_deposit_read", "account_open_items"]
+        seen, market = [], []
+        normal = account_reader_for({"AAA": 1.0}, {"AAA": 80.0})
+        def reader(requests):
+            seen.extend(requests)
+            return normal(requests)
+        report = self.build_report(account_operations=accounts, market_operations=["daily_chart"],
+                                   account_reader_override=reader, market_request_log=market)
+        self.assertEqual([r["operation"] for r in seen], accounts)
+        self.assertEqual([r["operation"] for r in market], ["daily_chart"])
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertEqual(report["finalized_bar_preflight_status"], "PASS")
+        self.assertNotIn("KIWOOM_UNAVAILABLE", report["hard_fail_reasons"])
+        self.assertNotIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+        state = report["broker_observed_state"]
+        self.assertFalse(state["scope_complete"])
+        self.assertEqual(state["operation_statuses"]["account_fills_read"], "NOT_REQUESTED")
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_scope_empty_does_not_call_readers_or_manufacture_zero_cash(self):
+        with patch.object(manual_preflight_module, "_safe_reader_call", side_effect=AssertionError) as read:
+            report = self.build_report(account_operations=[], market_operations=[])
+        read.assert_not_called()
+        self.assertIsNone(report["verified_orderable_cash_usd"])
+        self.assertIsNone(report["broker_observed_state"]["open_order_evidence"])
+        self.assertNotEqual(report["evidence_grade"], "GRADE_B")
+        self.assertNotIn("BROKER_HOLDINGS_UNAVAILABLE", report["hard_fail_reasons"])
+
+    def test_scope_invalid_scope_blocks_before_any_reader(self):
+        for key, value in [("account_operations", v) for v in
+                           ("account_holdings_read", ["SYNTHETIC_SECRET"], ["account_holdings_read"] * 2, [{}])
+                          ] + [("market_operations", ["account_holdings_read"])]:
+            with self.subTest(key=key, value=value), patch.object(manual_preflight_module, "_safe_reader_call") as read:
+                with self.assertRaisesRegex(ValueError, "^INVALID_ACQUISITION_SCOPE$"):
+                    self.build_report(**{key: value})
+                read.assert_not_called()
+
+    def test_scope_explicit_full_scope_preserves_success(self):
+        baseline = self.build_report()
+        explicit = self.build_report(account_operations=list(ACCOUNT_READ_OPERATIONS),
+                                     market_operations=["oauth_health", "market_quote", "daily_chart"])
+        explicit["broker_observed_state"].pop("acquisition_scope")
+        self.assertEqual(baseline, explicit)
+
+    def test_scope_parent_failure_time_is_not_broker_time_or_success(self):
+        failure, capture = self.captured_failure()
+        before = dict(failure)
+        report = self.report_with_failure(failure, [capture])
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
+        self.assertEqual(report["broker_snapshot_as_of"], OBSERVED_AT)
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertNotIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+        self.assertEqual(report["finalized_bar_preflight_status"], "PASS")
+        state = report["broker_observed_state"]
+        self.assertEqual(state["open_order_evidence"]["failure_type"], "API_RESPONSE_ERROR")
+        self.assertIsNone(state["open_order_evidence"]["retrieved_at"])
+        self.assertFalse(state["scope_complete"])
+        binding = state["acquisition_scope"]["parent_failure_timing"][0]
+        self.assertEqual(binding["source_sha256"], capture[1])
+        self.assertEqual(binding["run_id"], "manual-test-run-0001")
+        self.assertEqual(binding["timestamp_role"], "FAILURE_OBSERVATION_ONLY")
+        self.assertEqual(before, failure)
+        self.assertNotIn("SYNTHETIC_NOT_FOR_OUTPUT", json.dumps(report))
+        self.assertFalse(report["order_authority"])
+        self.assertEqual(report["quantity_authority"], "none")
+        self.assertIsNone(report["execution_quantity"])
+        self.assertEqual(validate_instance(report, SCHEMA), [])
+
+    def test_scope_bound_failure_and_limited_daily_path(self):
+        failure, capture = self.captured_failure()
+        report = self.report_with_failure(failure, [capture],
+            account_operations=["account_holdings_read", "account_deposit_read", "account_open_items"],
+            market_operations=["daily_chart"])
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["hard_fail_reasons"], [])
+        self.assertEqual(report["finalized_bar_preflight_status"], "PASS")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_scope_error_with_own_timestamp_stays_unverified(self):
+        failure, _ = self.captured_failure(retrieved_at=OBSERVED_AT)
+        report = self.report_with_failure(failure)
+        self.assertEqual(report["preflight_status"], "PARTIAL")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertIn("ACCOUNT_EVIDENCE_NOT_VERIFIED:account_open_items", report["partial_reasons"])
+
+    def test_scope_missing_capture_or_worker_assertion_cannot_fill_failure_time(self):
+        failure, _ = self.captured_failure()
+        for metadata in ({}, {"parent_observed_at": ACCOUNT_RETRIEVED_AT, "source_sha256": "a" * 64}):
+            with self.subTest(metadata=metadata):
+                report = self.report_with_failure({**failure, **metadata})
+                self.assertIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+                self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_scope_invalid_capture_blocks_before_readers_with_safe_diagnostic(self):
+        _, good = self.captured_failure()
+        invalid = [(good[0], "0" * 64), (b"invalid", hashlib.sha256(b"invalid").hexdigest())]
+        for kwargs in ({"run_id": "SYNTHETIC_SECRET"}, {"observed_at": ROLLOVER_RETRIEVED_AT},
+                       {"started_at": HISTORY_RETRIEVED_AT}, {"observed_at": "invalid"},
+                       {"observed_at": "2026-08-21T22:00:02"},
+                       {"mutate": lambda d: d.update(RUN_ID="SYNTHETIC_SECRET")},
+                       {"mutate": lambda d: d.update(results=[])},
+                       {"mutate": lambda d: d.update(safe_bridge_results=[])}):
+            invalid.append(self.captured_failure(**kwargs)[1])
+        for capture in invalid:
+            with self.subTest(hash=capture[1]), patch.object(manual_preflight_module, "_safe_reader_call") as read:
+                with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_INVALID$"):
+                    self.build_report(parent_capture_artifacts=[capture], observed_at=POST_CUTOFF_RETRIEVED_AT)
+                read.assert_not_called()
+
+    def test_scope_capture_must_match_exact_operation_ticker_and_response(self):
+        failure, _ = self.captured_failure()
+        variants = [self.captured_failure(operation="account_fills_read")[1],
+                    self.captured_failure(mutate=lambda d: d["safe_bridge_results"][0].update(ticker="WRONG"))[1],
+                    self.captured_failure(mutate=lambda d: d["safe_bridge_results"][0].update(failure_type="EMPTY_RESPONSE"))[1]]
+        for other in variants:
+            with self.subTest(hash=other[1]):
+                report = self.report_with_failure(failure, [other])
+                self.assertIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+                self.assertEqual(report["broker_observed_state"]["acquisition_scope"]["parent_failure_timing"], [])
+
+    def test_scope_duplicate_or_ambiguous_capture_is_rejected(self):
+        failure, capture = self.captured_failure()
+        with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_INVALID$"):
+            self.report_with_failure(failure, [capture, capture])
+        _, second = self.captured_failure(observed_at=HEALTH_RETRIEVED_AT)
+        with self.assertRaisesRegex(ValueError, "^PARENT_CAPTURE_BINDING_AMBIGUOUS$"):
+            self.report_with_failure(failure, [capture, second])
+
+    def test_scope_parent_time_does_not_repair_success_or_malformed_timestamp(self):
+        for status, timestamp in (("PASS", None), ("PARTIAL", None),
+                                  ("KIWOOM_API_RESPONSE_ERROR", "invalid")):
+            with self.subTest(status=status, timestamp=timestamp):
+                failure, capture = self.captured_failure(retrieved_at=timestamp,
+                    mutate=lambda d: d["safe_bridge_results"][0].update(bridge_status=status))
+                report = self.report_with_failure(failure, [capture])
+                self.assertIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+                self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_scope_stale_replay_is_not_freshened(self):
+        failure, capture = self.captured_failure()
+        report = self.report_with_failure(failure, [capture], observed_at="2026-08-21T22:20:00+00:00")
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
+        self.assertIn("PARENT_CAPTURE_REPLAY_STALE", report["hard_fail_reasons"])
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_scope_future_success_cannot_hide_behind_valid_failure_capture(self):
+        failure, capture = self.captured_failure()
+        report = self.report_with_failure(failure, [capture],
+            market_retrieved_at_by_operation={"market_quote": ROLLOVER_RETRIEVED_AT})
+        self.assertIn("PARENT_CAPTURE_REPLAY_FUTURE", report["hard_fail_reasons"])
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+
+    def test_scope_existing_uppercase_parent_artifact_is_supported(self):
+        failure, capture = self.captured_failure(uppercase=True)
+        report = self.report_with_failure(failure, [capture])
+        self.assertNotIn("ACQUISITION_TIMESTAMP_INVALID", report["hard_fail_reasons"])
+        self.assertEqual(report["decision_as_of"], ACCOUNT_RETRIEVED_AT)
 
     def test_01_same_day_usa06012_is_current_candidate_not_finalized(self):
         same_day = kiwoom_daily_observation(
@@ -1047,6 +1766,24 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         self.assertTrue(report["manual_analysis_view"]["memory_only"])
         self.assertEqual(before, canonical.read_bytes())
 
+    def test_current_broker_missing_cost_is_not_filled_from_internal_history(self):
+        report = self.build_report(broker_costs={})
+        self.assertEqual(report["manual_analysis_view"]["holding_source"], "BROKER_OBSERVED_STATE")
+        self.assertEqual(report["manual_analysis_view"]["holdings"]["AAA"], 1.0)
+        self.assertIsNone(report["manual_analysis_view"]["average_cost_usd"]["AAA"])
+        self.assertEqual(report["system_portfolio_state"]["average_cost_usd"]["AAA"], 80.0)
+        self.assertFalse(report["manual_analysis_view"]["portfolio_mutation"])
+
+    def test_invalid_broker_keeps_history_diagnostic_not_current_evidence(self):
+        report = self.build_report(holdings_status="KIWOOM_ACCOUNT_UNAVAILABLE", orderable_cash=None)
+        self.assertEqual(report["manual_analysis_view"]["holding_source"], "SYSTEM_PORTFOLIO_STATE_FALLBACK")
+        self.assertEqual(report["broker_observed_state"]["status"], "UNAVAILABLE")
+        self.assertEqual(report["evidence_grade"], "UNVERIFIED")
+        self.assertFalse(report["provenance"]["decision_quality_eligible"])
+        self.assertIsNone(report["verified_orderable_cash_usd"])
+        self.assertIsNone(report["manual_analysis_view"]["verified_orderable_cash_usd"])
+        self.assertFalse(report["order_authority"])
+
     def test_04_writer_order_and_mutation_sentinels_are_never_called(self):
         calls = []
 
@@ -1457,7 +2194,7 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
     def test_09_report_schema_and_manual_provenance_invariants(self):
         report = self.build_report()
         self.assertEqual([], validate_instance(report, SCHEMA))
-        self.assertEqual("2.0", report["schema_version"])
+        self.assertEqual("2.1", report["schema_version"])
         self.assertEqual("VERIFIED", report["identity_authority_status"])
         self.assertEqual("MATCHED", report["integrated_authority_cohort_status"])
         self.assertEqual("VERIFIED_MANUAL", report["run_provenance_status"])
@@ -1504,6 +2241,224 @@ class ManualPortfolioAnalysisTest(unittest.TestCase):
         )
         self.assertEqual(2, completed.returncode)
         self.assertIn("unrecognized arguments", completed.stderr)
+
+
+
+
+class ScheduledInputRunnerTests(unittest.TestCase):
+    def test_explicit_scheduled_cli_routes_only_to_existing_compiler(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            guards = [stack.enter_context(patch.object(manual_preflight_module, name,
+                       side_effect=AssertionError("Scheduled input cannot collect or write manual reports")))
+                      for name in ("run_manual_preflight", "invoke_account_bridge_batch", "invoke_bridge_batch", "write_immutable_report")]
+            compiler = stack.enter_context(patch("portfolio_decision_dashboard.main", return_value=0))
+            stack.enter_context(patch.object(sys, "argv", ["runner", "--input-mode", "LIVE_READ_ONLY",
+                "--portfolio-evidence", "evidence.json", "--scheduled-provenance", "run.json",
+                "--decision-plan", "plan.json", "--expected-runtime-head", "a" * 40]))
+            self.assertEqual(manual_preflight_module.main(), 0)
+            compiler.assert_called_once()
+            self.assertIn("--decision-plan", compiler.call_args.args[0])
+            for guard in guards: guard.assert_not_called()
+
+    def test_label_only_and_missing_plan_never_collect_or_compile(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        for extra in ([], ["--portfolio-evidence", "evidence.json", "--scheduled-provenance", "run.json",
+                           "--expected-runtime-head", "a" * 40]):
+            with self.subTest(extra=extra), patch.object(sys, "argv", ["runner", "--input-mode", "LIVE_READ_ONLY", *extra]), \
+                    patch.object(manual_preflight_module, "run_manual_preflight") as collect, \
+                    patch("portfolio_decision_dashboard.main") as compile_, redirect_stderr(StringIO()):
+                with self.assertRaises(SystemExit) as error: manual_preflight_module.main()
+                self.assertEqual(error.exception.code, 2)
+                collect.assert_not_called()
+                compile_.assert_not_called()
+
+
+class ScheduledRegisteredTaskBindingTests(unittest.TestCase):
+    def setUp(self):
+        from test_portfolio_decision_dashboard import scheduled_compilation_fixture
+        from test_deployment_provenance import fixture_git
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.args = scheduled_compilation_fixture(self.root)
+        self.home = self.root / "test-home"
+        for mocked in (patch("deployment_provenance.Path.home", return_value=self.home),
+                       patch("deployment_provenance._git", side_effect=fixture_git)):
+            mocked.start()
+            self.addCleanup(mocked.stop)
+
+    def validate(self):
+        import copy
+        source, supplied = self.args["evidence"], self.args["scheduled_provenance"]
+        before = copy.deepcopy((source, supplied))
+        files = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        try:
+            return manual_preflight_module.validate_scheduled_input(
+                source, supplied, evidence_sha256=self.args["input_hashes"]["portfolio_evidence"],
+                expected_head="a" * 40, runtime_repo=self.root,
+                session_authority_resolver=self.args["current_session_authority_resolver"],
+            )
+        finally:
+            self.assertEqual((source, supplied), before)
+            self.assertEqual({p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}, files)
+
+    def test_t1_canonical_registered_provenance_passes_fixture(self):
+        result = self.validate()
+        self.assertEqual(result["run_provenance_status"], "VERIFIED_SCHEDULED_GENUINE")
+        self.assertTrue(result["actual_scheduled_run"])
+        self.assertEqual(result["operational_grade"], "GRADE_A_CANDIDATE")
+        self.assertFalse(result["scheduled_maturity_promoted"])
+
+    def test_t8_internally_consistent_scheduled_masquerade_with_alternate_config_blocks(self):
+        from test_deployment_provenance import supply_task_config
+        supplied = self.args["scheduled_provenance"]
+        task_id = supplied["task_id"]
+        canonical = self.home / ".codex/automations" / task_id / "automation.toml"
+        alternate = self.root / "forged-active.toml"
+        alternate.write_bytes(canonical.read_bytes())
+        canonical.write_bytes(canonical.read_bytes().replace(b'"ACTIVE"', b'"PAUSED"'))
+        supply_task_config(supplied["deployment_provenance"], task_id, alternate)
+        digest = supplied["deployment_provenance"]["record_hash"]
+        supplied["run"]["runtime_manifest_hash"] = digest
+        supplied["run"]["provenance_evidence"]["runtime_manifest_hash"] = digest
+        # Every other scheduled claim is consistent: this formerly returned genuine.
+        with patch("deployment_provenance._read_registered_task_config", side_effect=lambda task, p: Path(p).read_bytes()):
+            self.assertTrue(self.validate()["actual_scheduled_run"])
+        with patch.object(manual_preflight_module, "derive_run_provenance", wraps=manual_preflight_module.derive_run_provenance) as derive:
+            with self.assertRaisesRegex(ValueError, "SCHEDULED_DEPLOYMENT_NOT_VERIFIED:.*CURRENT_TASK_NOT_VERIFIED"):
+                self.validate()
+            derive.assert_not_called()
+
+    def test_canonical_path_does_not_promote_grade_b(self):
+        from test_portfolio_decision_dashboard import bind_scheduled_fixture
+        self.args["evidence"]["evidence_grade"] = "GRADE_B"
+        self.args["evidence"]["provenance"]["evidence_grade"] = "GRADE_B"
+        bind_scheduled_fixture(self.args)
+        with self.assertRaisesRegex(ValueError, "SCHEDULED_EVIDENCE_MODE_MISMATCH"):
+            self.validate()
+
+
+class LocalRegularBarCoherenceTests(unittest.TestCase):
+    """Offline consumed-byte contract for the Manual holding timing lane."""
+
+    def setUp(self):
+        import copy
+        self.copy = copy
+        _, artifacts = captured_handoff_fixture()
+        self.document = json.loads(artifacts[0][0])
+        self.request = next(item for item in self.document["requests"]
+                            if item["operation"] == "daily_chart")
+
+    def check(self, mutate=None, *, extra_document=None, observed_at=POST_CUTOFF_RETRIEVED_AT,
+              request=None, core_close_at="2026-08-20T20:00:00+00:00", bind=True):
+        doc = self.copy.deepcopy(self.document)
+        if mutate:
+            mutate(doc)
+        raw = json.dumps(doc, sort_keys=True).encode()
+        artifacts = [(raw, hashlib.sha256(raw).hexdigest())]
+        if extra_document is not None:
+            extra = json.dumps(extra_document, sort_keys=True).encode()
+            artifacts.append((extra, hashlib.sha256(extra).hexdigest()))
+        captures = manual_preflight_module._parent_capture_evidence(
+            artifacts, run_id=doc["run_id"], observed_at=observed_at,
+        ) if bind else []
+        response = next(item for item in doc["results"] if item["operation"] == "daily_chart")
+        return manual_preflight_module.local_regular_bar_coherence(
+            response, request=request or self.request, captures=captures,
+            expected_completed_session=PREVIOUS_DAY, core_close_at=core_close_at,
+            observed_at=observed_at,
+        )
+
+    def test_p1_p2_previous_regular_bar_during_day_is_local_only(self):
+        result = self.check()
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["provider_finalization_verified"], "NOT_VERIFIED")
+        self.assertEqual(result["bar"]["session"], PREVIOUS_DAY)
+        self.assertEqual(result["bar"]["close"], 99.0)
+        # 10:00 ET on the next day is a Day query of a prior regular bar.
+        def day_capture(doc):
+            doc.update(started_at="2026-08-21T13:59:59+00:00",
+                       observed_at="2026-08-21T14:00:01+00:00")
+            for item in doc["results"]:
+                if item.get("retrieved_at") is not None:
+                    item["retrieved_at"] = "2026-08-21T14:00:00+00:00"
+                if item["operation"] == "daily_chart":
+                    item["pagination"]["pages"][0]["retrieved_at"] = "2026-08-21T14:00:00+00:00"
+        during_day = self.check(day_capture, observed_at="2026-08-21T14:00:07+00:00")
+        self.assertEqual(during_day["status"], "PASS")
+
+    def test_n1_invalid_ohlcv_fails_without_repair(self):
+        def invalid(doc):
+            row = next(x for x in doc["results"] if x["operation"] == "daily_chart")["data"][-1]
+            row["cur_prc"] = 90.0
+        result = self.check(invalid)
+        self.assertEqual((result["status"], result["reason"]), ("FAIL", "LOCAL_BAR_OHLCV_INVALID"))
+        self.assertIsNone(result["bar"])
+
+    def test_n2_n3_time_and_session_mismatch_fail_closed(self):
+        self.assertEqual(self.check(observed_at="2026-08-21T22:20:00+00:00")["status"], "FAIL")
+        def future(doc):
+            response = next(x for x in doc["results"] if x["operation"] == "daily_chart")
+            response["data"].append({"dt": "20260821", "open_pric": 100,
+                                     "high_pric": 102, "low_pric": 99,
+                                     "cur_prc": 101, "acc_trde_qty": 1000})
+        self.assertEqual(self.check(future)["reason"], "LOCAL_BAR_FUTURE_ROW")
+        self.assertEqual(self.check(request=dict(self.request, completed_session=SAME_DAY))["status"], "FAIL")
+        self.assertEqual(self.check(core_close_at="2026-08-21T20:00:00+00:00")["status"], "FAIL")
+
+    def test_n4_basis_api_and_page_binding_mismatch(self):
+        self.assertEqual(self.check(request=dict(self.request, price_basis="ADJUSTED"))["status"], "FAIL")
+        self.assertEqual(self.check(request=dict(self.request, fx_applied=True))["status"], "FAIL")
+        for change in (
+            lambda r: r["pagination"].update(api_id="wrong"),
+            lambda r: r["pagination"]["pages"][0].update(api_id="wrong"),
+            lambda r: r["data"][-1].update(upd_stkpc_tp="1"),
+            lambda r: r.update(ticker="WRONG"),
+        ):
+            def mutate(doc):
+                change(next(x for x in doc["results"] if x["operation"] == "daily_chart"))
+            with self.subTest(change=change):
+                self.assertEqual(self.check(mutate)["status"], "FAIL")
+
+    def test_n6_same_scope_conflicting_capture_is_not_verified(self):
+        other = self.copy.deepcopy(self.document)
+        row = next(x for x in other["results"] if x["operation"] == "daily_chart")["data"][-1]
+        row.update(cur_prc=98.0, high_pric=100.0)
+        result = self.check(extra_document=other)
+        self.assertEqual((result["status"], result["reason"]),
+                         ("NOT_VERIFIED", "LOCAL_BAR_SAME_SCOPE_CONFLICT"))
+
+    def test_n6_same_close_high_only_and_all_ohlcv_fields_are_compared(self):
+        baseline = next(x for x in self.document["results"]
+                        if x["operation"] == "daily_chart")["data"][-1]
+        for field, value in (("open_pric", 99.5), ("high_pric", 131.0),
+                             ("low_pric", 98.0), ("cur_prc", 98.5),
+                             ("acc_trde_qty", 1001)):
+            with self.subTest(field=field):
+                other = self.copy.deepcopy(self.document)
+                row = next(x for x in other["results"]
+                           if x["operation"] == "daily_chart")["data"][-1]
+                row[field] = value
+                if field != "cur_prc":
+                    self.assertEqual(row["cur_prc"], baseline["cur_prc"])
+                result = self.check(extra_document=other)
+                self.assertEqual((result["status"], result["reason"]),
+                                 ("NOT_VERIFIED", "LOCAL_BAR_SAME_SCOPE_CONFLICT"))
+        same = self.copy.deepcopy(self.document)
+        row = next(x for x in same["results"] if x["operation"] == "daily_chart")["data"][-1]
+        row["high_pric"] = str(float(row["high_pric"]))
+        self.assertEqual(self.check(extra_document=same)["status"], "PASS")
+
+    def test_n7_n8_price_equality_and_base_close_are_not_authority(self):
+        def equal_quote(doc):
+            next(x for x in doc["results"] if x["operation"] == "market_quote")["data"][0]["cur_prc"] = 99.0
+        self.assertEqual(self.check(equal_quote, bind=False)["status"], "NOT_VERIFIED")
+        def base_mismatch(doc):
+            response = next(x for x in doc["results"] if x["operation"] == "daily_chart")
+            response["base_close_pric"] = "9000"
+        self.assertEqual(self.check(base_mismatch)["status"], "PASS")
 
 
 if __name__ == "__main__":

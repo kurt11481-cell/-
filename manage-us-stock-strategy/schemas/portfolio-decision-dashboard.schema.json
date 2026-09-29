@@ -21,18 +21,42 @@
     "safety"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "report_type": {"const": "PORTFOLIO_DECISION_DASHBOARD_MANUAL_ADVISORY"},
-    "run_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,160}$"},
-    "generated_at": {"type": "string", "format": "date-time"},
-    "compile_mode": {"enum": ["INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"]},
+    "schema_version": {
+      "const": "1.0"
+    },
+    "report_type": {
+      "const": "PORTFOLIO_DECISION_DASHBOARD_MANUAL_ADVISORY"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,160}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "compile_mode": {
+      "enum": [
+        "INITIAL_COMPILE",
+        "POST_SELL_RECOMPILE",
+        "HISTORICAL_REPLAY"
+      ]
+    },
     "evidence": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["request_accounting_status", "current_freshness"],
+      "required": [
+        "request_accounting_status",
+        "current_freshness"
+      ],
       "properties": {
         "request_accounting_status": {
-          "enum": ["ABSENT", "PRESENT_INVALID", "PRESENT_UNVERIFIED", "VERIFIED"]
+          "enum": [
+            "ABSENT",
+            "PRESENT_INVALID",
+            "PRESENT_UNVERIFIED",
+            "VERIFIED"
+          ]
         },
         "current_freshness": {
           "enum": [
@@ -46,26 +70,472 @@
     "current_context": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["status", "verified", "blockers"],
+      "required": [
+        "status",
+        "verified",
+        "blockers"
+      ],
       "properties": {
-        "status": {"enum": ["ABSENT", "PRESENT_INVALID", "PRESENT_MISMATCH", "VERIFIED"]},
-        "verified": {"type": "boolean"},
-        "blockers": {"type": "array", "items": {"type": "string"}}
+        "status": {
+          "enum": [
+            "ABSENT",
+            "PRESENT_INVALID",
+            "PRESENT_MISMATCH",
+            "VERIFIED"
+          ]
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-    "plan": {"type": "object", "additionalProperties": true},
-    "portfolio": {"type": "object", "additionalProperties": true},
-    "stage1": {"type": "object", "additionalProperties": true},
-    "stage2": {"type": "object", "additionalProperties": true},
-    "cash_semantics": {"type": "object", "additionalProperties": true},
+    "plan": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "portfolio": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "holding_timing_evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "event_type",
+                  "side",
+                  "grade",
+                  "session",
+                  "policy_version",
+                  "tranche_id",
+                  "trigger_path",
+                  "snapshot_sha256",
+                  "state_sha256",
+                  "policy_sha256",
+                  "manual_evidence_sha256"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "VERIFIED_REDUCTION_REVIEW"
+                  },
+                  "event_type": {
+                    "const": "holding_timing_review"
+                  },
+                  "side": {
+                    "const": "reduce"
+                  },
+                  "grade": {
+                    "const": "B"
+                  },
+                  "session": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "policy_version": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]{1,100}$"
+                  },
+                  "tranche_id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]{1,100}$"
+                  },
+                  "trigger_path": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]{1,100}$"
+                  },
+                  "snapshot_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "state_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "policy_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "manual_evidence_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "timing_source_mode": {
+                    "const": "KIWOOM_ONLY"
+                  },
+                  "independent_close_status": {
+                    "const": "NOT_VERIFIED"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stage1": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "stage2": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "cash_semantics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "swing_action_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "stage",
+        "scope",
+        "source_binding",
+        "rows",
+        "cash",
+        "order_authority",
+        "quantity_authority",
+        "execution_quantity",
+        "broker_submission"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "1.0"
+        },
+        "stage": {
+          "const": "CONTRACT_ONLY"
+        },
+        "scope": {
+          "const": "EXISTING_HOLDINGS_AND_CASH_FIRST"
+        },
+        "source_binding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evidence_run_id",
+            "evidence_sha256",
+            "plan_id",
+            "plan_content_sha256",
+            "risk_policy_version",
+            "risk_policy_content_sha256",
+            "decision_as_of",
+            "broker_snapshot_as_of",
+            "account_identity_status",
+            "policy_approval_binding",
+            "freshness"
+          ],
+          "properties": {
+            "evidence_run_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "evidence_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan_id": {
+              "type": "string"
+            },
+            "plan_content_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "risk_policy_version": {
+              "type": "string"
+            },
+            "risk_policy_content_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "decision_as_of": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "broker_snapshot_as_of": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "account_identity_status": {
+              "const": "NOT_VERIFIED"
+            },
+            "policy_approval_binding": {
+              "const": "NOT_VERIFIED"
+            },
+            "freshness": {
+              "enum": [
+                "HISTORICAL_REPLAY",
+                "CURRENT_SESSION_CONTEXT_NOT_VERIFIED",
+                "CURRENT_SESSION_CONTEXT_VERIFIED"
+              ]
+            }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ticker",
+              "candidate_direction",
+              "direction",
+              "current_qty",
+              "current_qty_status",
+              "price",
+              "price_status",
+              "price_session",
+              "timing_status",
+              "quantity_status",
+              "shadow_target_qty",
+              "shadow_delta_qty",
+              "shadow_buy_qty",
+              "shadow_sell_qty",
+              "shadow_cash_impact",
+              "target_weight_pct",
+              "reason",
+              "invalidation",
+              "blockers",
+              "execution_status"
+            ],
+            "properties": {
+              "ticker": {
+                "type": "string"
+              },
+              "candidate_direction": {
+                "enum": [
+                  "HOLD",
+                  "TRIM",
+                  "EXIT",
+                  "BUY",
+                  "ADD"
+                ]
+              },
+              "direction": {
+                "enum": [
+                  "HOLD",
+                  "TRIM",
+                  "EXIT",
+                  "BUY",
+                  "ADD",
+                  "DEFERRED"
+                ]
+              },
+              "current_qty": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "current_qty_status": {
+                "type": "string"
+              },
+              "price": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "price_status": {
+                "type": "string"
+              },
+              "price_session": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "timing_status": {
+                "enum": [
+                  "NOT_VERIFIED",
+                  "VERIFIED_REDUCTION_REVIEW"
+                ]
+              },
+              "quantity_status": {
+                "enum": [
+                  "POLICY_REQUIRED",
+                  "NOT_VERIFIED"
+                ]
+              },
+              "shadow_target_qty": {
+                "type": "null"
+              },
+              "shadow_delta_qty": {
+                "type": "null"
+              },
+              "shadow_buy_qty": {
+                "type": "null"
+              },
+              "shadow_sell_qty": {
+                "type": "null"
+              },
+              "shadow_cash_impact": {
+                "type": "null"
+              },
+              "target_weight_pct": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "invalidation": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "blockers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "execution_status": {
+                "const": "DISABLED"
+              }
+            }
+          }
+        },
+        "cash": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "alternative",
+            "decision_status",
+            "nav_cash_usd",
+            "orderable_cash_usd",
+            "snapshot_alignment",
+            "shadow_cash_impact",
+            "expected_proceeds_are_orderable"
+          ],
+          "properties": {
+            "alternative": {
+              "const": "KEEP_CASH"
+            },
+            "decision_status": {
+              "const": "REVIEW_REQUIRED"
+            },
+            "nav_cash_usd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "value_status",
+                "unit"
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "value_status": {
+                  "enum": [
+                    "VERIFIED",
+                    "NOT_VERIFIED"
+                  ]
+                },
+                "unit": {
+                  "const": "USD"
+                }
+              }
+            },
+            "orderable_cash_usd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "value_status",
+                "unit"
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "value_status": {
+                  "enum": [
+                    "VERIFIED",
+                    "NOT_VERIFIED"
+                  ]
+                },
+                "unit": {
+                  "const": "USD"
+                }
+              }
+            },
+            "snapshot_alignment": {
+              "const": "NOT_VERIFIED"
+            },
+            "shadow_cash_impact": {
+              "type": "null"
+            },
+            "expected_proceeds_are_orderable": {
+              "const": false,
+              "type": "boolean"
+            }
+          }
+        },
+        "order_authority": {
+          "const": false,
+          "type": "boolean"
+        },
+        "quantity_authority": {
+          "const": "none"
+        },
+        "execution_quantity": {
+          "type": "null"
+        },
+        "broker_submission": {
+          "const": "disabled"
+        }
+      }
+    },
     "authority": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["broker_order_authority", "execution_quantity", "automatic_order"],
+      "required": [
+        "broker_order_authority",
+        "execution_quantity",
+        "automatic_order"
+      ],
       "properties": {
-        "broker_order_authority": {"const": false},
-        "execution_quantity": {"type": "null"},
-        "automatic_order": {"const": false}
+        "broker_order_authority": {
+          "const": false
+        },
+        "execution_quantity": {
+          "type": "null"
+        },
+        "automatic_order": {
+          "const": false
+        }
       }
     },
     "safety": {
@@ -82,14 +552,30 @@
         "orders"
       ],
       "properties": {
-        "network_access": {"const": false},
-        "kiwoom_call": {"const": false},
-        "broker_call": {"const": false},
-        "sec_live_request": {"const": false},
-        "task_scheduler_mutation": {"const": false},
-        "portfolio_mutation": {"const": false},
-        "policy_mutation": {"const": false},
-        "orders": {"const": "NONE"}
+        "network_access": {
+          "const": false
+        },
+        "kiwoom_call": {
+          "const": false
+        },
+        "broker_call": {
+          "const": false
+        },
+        "sec_live_request": {
+          "const": false
+        },
+        "task_scheduler_mutation": {
+          "const": false
+        },
+        "portfolio_mutation": {
+          "const": false
+        },
+        "policy_mutation": {
+          "const": false
+        },
+        "orders": {
+          "const": "NONE"
+        }
       }
     }
   }

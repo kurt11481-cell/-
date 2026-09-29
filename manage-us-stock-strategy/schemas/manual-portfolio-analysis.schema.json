@@ -46,6 +46,7 @@
     "calendar_hash",
     "session_activation_cohort_id",
     "integrated_authority_cohort_status",
+    "integrated_authority_snapshot_provenance",
     "expected_completed_us_session",
     "finalized_bar_preflight_status",
     "current_session_finalization_status",
@@ -72,16 +73,16 @@
     "technical_evidence_status"
   ],
   "properties": {
-    "schema_version": {"const": "2.0"},
-    "report_type": {"const": "MANUAL_PORTFOLIO_ANALYSIS_PREFLIGHT"},
+    "schema_version": {"const": "2.1"},
+    "report_type": {"enum": ["MANUAL_PORTFOLIO_ANALYSIS_PREFLIGHT", "SCHEDULED_PORTFOLIO_ANALYSIS_PREFLIGHT"]},
     "manual_run_id": {
       "type": "string",
       "minLength": 8,
       "pattern": "[A-Za-z0-9][A-Za-z0-9._-]{7,127}"
     },
-    "run_mode": {"const": "MANUAL_READ_ONLY"},
-    "trigger_type": {"const": "USER_INITIATED"},
-    "operator_initiated": {"const": true},
+    "run_mode": {"enum": ["MANUAL_READ_ONLY", "LIVE_READ_ONLY"]},
+    "trigger_type": {"enum": ["USER_INITIATED", "SCHEDULED_GENUINE"]},
+    "operator_initiated": {"type": "boolean"},
     "decision_as_of": {"type": "string", "format": "date-time"},
     "observed_at": {"type": "string", "format": "date-time"},
     "market_phase": {
@@ -97,8 +98,8 @@
       ]
     },
     "trading_date": {"type": "string", "format": "date"},
-    "run_provenance_status": {"const": "VERIFIED_MANUAL"},
-    "evidence_grade": {"enum": ["GRADE_B", "UNVERIFIED"]},
+    "run_provenance_status": {"enum": ["VERIFIED_MANUAL", "VERIFIED_SCHEDULED"]},
+    "evidence_grade": {"enum": ["GRADE_B", "GRADE_A", "UNVERIFIED"]},
     "maturity_eligible": {"const": false},
     "operational_maturity_eligible": {"const": false},
     "policy_evolution_eligible": {"const": false},
@@ -114,10 +115,10 @@
         "policy_evolution_eligible"
       ],
       "properties": {
-        "execution_origin": {"const": "MANUAL"},
-        "decision_mode": {"const": "MANUAL_READ_ONLY"},
-        "run_provenance_status": {"const": "VERIFIED_MANUAL"},
-        "evidence_grade": {"enum": ["GRADE_B", "UNVERIFIED"]},
+        "execution_origin": {"enum": ["MANUAL", "SCHEDULED_GENUINE"]},
+        "decision_mode": {"enum": ["MANUAL_READ_ONLY", "LIVE_READ_ONLY"]},
+        "run_provenance_status": {"enum": ["VERIFIED_MANUAL", "VERIFIED_SCHEDULED"]},
+        "evidence_grade": {"enum": ["GRADE_B", "GRADE_A", "UNVERIFIED"]},
         "maturity_eligible": {"const": false},
         "operational_maturity_eligible": {"const": false},
         "policy_evolution_eligible": {"const": false}
@@ -204,6 +205,36 @@
     "calendar_hash": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
     "session_activation_cohort_id": {"type": ["string", "null"]},
     "integrated_authority_cohort_status": {"enum": ["MATCHED", "NOT_VERIFIED"]},
+    "integrated_authority_snapshot_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_source",
+        "combined_activation_manifest_sha256",
+        "activation_cohort_id",
+        "instrument_identity_artifact_sha256",
+        "session_calendar_artifact_sha256",
+        "identity_registry_version",
+        "session_calendar_version",
+        "authority_resolved_at",
+        "snapshot_decision_as_of",
+        "report_decision_as_of",
+        "run_id"
+      ],
+      "properties": {
+        "authority_source": {"enum": ["LEGACY_INDEPENDENT", "K3_COMBINED_SHADOW", "K3_COMBINED_PRODUCTION"]},
+        "combined_activation_manifest_sha256": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+        "activation_cohort_id": {"type": ["string", "null"]},
+        "instrument_identity_artifact_sha256": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+        "session_calendar_artifact_sha256": {"type": ["string", "null"], "pattern": "[0-9a-f]{64}"},
+        "identity_registry_version": {"type": ["string", "null"]},
+        "session_calendar_version": {"type": ["string", "null"]},
+        "authority_resolved_at": {"type": ["string", "null"], "format": "date-time"},
+        "snapshot_decision_as_of": {"type": "string", "format": "date-time"},
+        "report_decision_as_of": {"type": "string", "format": "date-time"},
+        "run_id": {"type": "string", "minLength": 1}
+      }
+    },
     "expected_completed_us_session": {"type": ["string", "null"], "format": "date"},
     "finalized_bar_preflight_status": {"enum": ["PASS", "FAIL"]},
     "current_session_finalization_status": {"enum": ["VERIFIED", "NOT_VERIFIED"]},
@@ -229,7 +260,7 @@
     "quantity_authority": {"const": "none"},
     "execution_quantity": {"type": "null"},
     "backfill": {"const": false},
-    "scheduled_occurrence_id": {"type": "null"},
+    "scheduled_occurrence_id": {"type": ["string", "null"]},
     "scheduled_pair_eligible": {"const": false},
     "mutation_status": {"const": "REPORT_ONLY_CREATE_ONLY"},
     "broker_observed_state": {
