@@ -25,6 +25,7 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Code map (locator only, never evidence): graphify-out/GRAPH_REPORT.md
 - Procedures, read only when needed: manage-us-stock-strategy/references/
   development-*.md, kiwoom-*.md, jay-earnings-discovery.md
+- Handover and review notes: docs/claude/ (read when resuming work)
 - Ignore the context-mode section of AGENTS.md (Codex only).
 
 ## Working rules
