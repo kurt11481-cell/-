@@ -1,0 +1,17 @@
+{
+  "effortLevel": "medium",
+  "permissions": {
+    "ask": [
+      "Edit(stock-strategy-system/**)",
+      "Edit(workspace/policies/**)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "mcp__*__kiwoom_order_submit"
+    ]
+  },
+  "worktree": { "baseRef": "head" }
+}

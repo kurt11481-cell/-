@@ -1,4 +1,4 @@
-﻿default_permissions = ":read-only"
+default_permissions = ":read-only"
 
 # ============================================================
 # 1. Calendar Official Source Review
@@ -148,3 +148,146 @@ workspace_roots = { 'E:\사업\##금동한\코덱스저장소\manage-us-stock-st
 
 [permissions.k2-live-manual-builder.network]
 enabled = false
+
+# ============================================================
+# 8. K3 Identity + K2 Authority Candidate Materializer
+#
+# Repository read-only except the two canonical candidate roots.
+# Source/schema/tests are frozen read-only in this phase.
+# Network disabled.
+# No Production activation authority.
+# ============================================================
+
+[permissions.k3-authority-candidate-builder]
+description = "K3 Identity and K2 INACTIVE candidate materialization only."
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\workspace\instrument-identity-authority' = true, 'E:\사업\##금동한\코덱스저장소\workspace\research\provider-evidence\kiwoom' = true }
+
+[permissions.k3-authority-candidate-builder.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'E:\사업\##금동한\코덱스저장소\workspace\instrument-identity-authority' = "write"
+'E:\사업\##금동한\코덱스저장소\workspace\research\provider-evidence\kiwoom' = "write"
+
+[permissions.k3-authority-candidate-builder.network]
+enabled = false
+
+# ============================================================
+# 9. K3 Combined Minimum Repair Builder
+#
+# Purpose:
+# - Identity materializer minimal process fix
+# - New K2 Acceptance candidate rebuild
+# - Candidate deterministic revalidation
+#
+# No Production activation.
+# No policies write.
+# Network disabled.
+# ============================================================
+
+[permissions.k3-combined-repair-builder]
+description = "K3 combined minimum repair: Identity materializer process fix plus K2 Acceptance candidate rebuild."
+
+workspace_roots = { 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\scripts' = true, 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\schemas' = true, 'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\tests' = true, 'E:\사업\##금동한\코덱스저장소\workspace\instrument-identity-authority' = true, 'E:\사업\##금동한\코덱스저장소\workspace\research\provider-evidence\kiwoom' = true }
+
+[permissions.k3-combined-repair-builder.filesystem]
+":minimal" = "read"
+
+'E:\사업\##금동한\코덱스저장소' = "read"
+
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\scripts' = "write"
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\schemas' = "write"
+'E:\사업\##금동한\코덱스저장소\manage-us-stock-strategy\tests' = "write"
+
+'E:\사업\##금동한\코덱스저장소\workspace\instrument-identity-authority' = "write"
+'E:\사업\##금동한\코덱스저장소\workspace\research\provider-evidence\kiwoom' = "write"
+
+[permissions.k3-combined-repair-builder.network]
+enabled = false
+
+# ============================================================
+# Graphify Read-Only Structural Analysis
+# Repository read-only
+# Network disabled
+# No writable project or external workspace required
+# ============================================================
+
+[permissions.graphify-readonly]
+description = "Graphify read-only structural and change-impact analysis."
+
+[permissions.graphify-readonly.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+
+[permissions.graphify-readonly.network]
+enabled = false
+
+# ============================================================
+# Graphify External Graph Refresh
+# Target repository read-only
+# External Graphify workspace write only
+# Network disabled
+# No source / policy / runtime mutation
+# ============================================================
+
+[permissions.graphify-external-refresh]
+description = "Graphify external structural graph refresh with target repository read-only."
+
+workspace_roots = { 'C:\Users\금동한\.codex\graphify-workspaces\stock-strategy' = true }
+
+[permissions.graphify-external-refresh.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'C:\Users\금동한\.codex\graphify-workspaces\stock-strategy' = "write"
+
+[permissions.graphify-external-refresh.network]
+enabled = false
+
+# ============================================================
+# Graphify User-Scope Skill Patch
+# Repository read-only
+# Graphify skill directory write only
+# Network disabled
+# No Production / runtime mutation
+# ============================================================
+
+[permissions.graphify-skill-patch]
+description = "Minimal user-scope Graphify skill patch with repository read-only."
+
+workspace_roots = { 'C:\Users\금동한\.codex\skills\graphify' = true }
+
+[permissions.graphify-skill-patch.filesystem]
+":minimal" = "read"
+'E:\사업\##금동한\코덱스저장소' = "read"
+'C:\Users\금동한\.codex\skills\graphify' = "write"
+
+[permissions.graphify-skill-patch.network]
+enabled = false
+
+[sandbox_workspace_write]
+network_access = true
+
+# Credential-free Kiwoom documentation only; pinned isolated installation.
+[mcp_servers.kiwoom_spec]
+command = "E:/사업/##금동한/코덱스저장소/.runtime-cache/kiwoom-spec/953e5dbff123f437ab4d11a78a95191a685eb51f/mcp_spec/.venv/Scripts/python.exe"
+args = ["-I", "-B", "-m", "kiwoom_spec_mcp.server"]
+cwd = "E:/사업/##금동한/코덱스저장소/.runtime-cache/kiwoom-spec/953e5dbff123f437ab4d11a78a95191a685eb51f/mcp_spec"
+enabled = true
+required = false
+startup_timeout_sec = 30
+tool_timeout_sec = 30
+env_vars = []
+enabled_tools = ["spec_search", "spec_show", "spec_groups", "get_example"]
+
+[mcp_servers.kiwoom_spec.env]
+KIWOOM_MCP_TRANSPORT = "stdio"
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUTF8 = "1"
+OTEL_SDK_DISABLED = "true"
+FASTMCP_CHECK_FOR_UPDATES = "off"
+FASTMCP_SHOW_SERVER_BANNER = "false"
+APP_KEY = ""
+APP_SECRET = ""
+APP_KEY_MOCK = ""
+APP_SECRET_MOCK = ""
+KIWOOM_ACCESS_TOKEN = ""
+KIWOOM_PROFILE = ""

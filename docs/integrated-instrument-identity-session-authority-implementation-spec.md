@@ -1049,4 +1049,255 @@ quantity_authority = none
 execution_quantity = null
 ```
 
-The Specification terminates here. It authorizes no Builder, code/schema changes beyond this document, artifact creation, activation, network acquisition, Live Manual run, scheduler change, cohort activation, M2, quantity calculation, or order.
+The original Specification terminated here. The later user-approved K3 amendment
+below supersedes only the activation-coordination and integrated-loader clauses
+that conflict with it. All Identity, Session, broker, portfolio, risk, quantity,
+execution, scheduler, and human-approval boundaries remain in force.
+
+## W. K3 COMBINED IDENTITY/SESSION ACTIVATION AMENDMENT
+
+### W.1 Classification and approval boundary
+
+```text
+CLASSIFICATION = K3
+PRODUCTION_SEMANTICS_CHANGE = YES
+K3_SOURCE_SCHEMA_SPEC_TEST_IMPLEMENTATION = APPROVED
+NON_AUTHORITATIVE_MIGRATION_AND_SHADOW_VALIDATION = APPROVED
+PRODUCTION_CUTOVER = NOT_APPROVED
+PROTECTED_PRODUCTION_STATE_MUTATION = NOT_APPROVED
+EXECUTION_AUTHORITY_CHANGE = NO
+```
+
+This amendment authorizes the dormant source, schema, specification, test, and
+non-authoritative Shadow path only. It does not authorize creation or
+replacement of the fixed Production combined activation manifest, mutation of
+either legacy Production manifest, activation of a Session candidate, a live
+broker query, a scheduler change, a quantity, or an order.
+
+### W.2 OLD SEMANTICS
+
+The current default Production path reads these manifests independently:
+
+```text
+workspace/policies/instrument_identity_activation.json
+workspace/policies/session_calendar_activation.json
+```
+
+The integrated caller may resolve them once per ticker and compare
+`activation_cohort_id` only after both reads. This consumer-side fail-closed
+equality gate can reject a mixed pair, but it cannot prevent a reader from
+observing `Identity C1 / Session C0` or `Identity C0 / Session C1` during a
+two-file transition.
+
+### W.3 NEW SEMANTICS
+
+After a separately approved future cutover, one Combined Activation Manifest
+is the sole Production activation-coordination authority for the integrated
+Identity + Session path:
+
+```text
+READ COMBINED MANIFEST EXACTLY ONCE
+-> VALIDATE CLOSED SCHEMA AND SHARED COHORT
+-> RESOLVE IDENTITY CONTENT-ADDRESSED ARTIFACT
+-> RESOLVE SESSION CONTENT-ADDRESSED ARTIFACT
+-> VALIDATE BOTH EXISTING SEMANTIC/BINDING CONTRACTS
+-> VALIDATE TEMPORAL ELIGIBILITY
+-> FREEZE ONE INTEGRATED AUTHORITY SNAPSHOT
+-> REUSE THAT SNAPSHOT FOR THE ENTIRE RUN
+```
+
+Instrument Identity semantic ownership remains separate from Session Calendar
+semantic ownership. Only activation coordination is combined. The manifest
+contains one opaque caller-supplied nonempty `activation_cohort_id`; no cohort
+generator, format, timestamp rule, persistent counter, pair bundle, pointer to
+a pair bundle, database, transaction service, or rollback state machine is
+introduced.
+
+The minimum manifest consists of common activation metadata, the one shared
+cohort, one Identity binding, and one Session binding. The bindings reuse the
+existing artifact identity/version, raw artifact SHA-256, scope, source
+packet/bundle, authority cutoff, timezone, and source-family field meanings.
+It contains no portfolio target, broker state, execution state, scheduler
+state, order authority, or quantity.
+
+### W.4 MIGRATION RULE
+
+Before cutover, the current default Production call graph remains unchanged.
+The new path is reachable only through an explicit non-authoritative Shadow
+combined-manifest input and requires `activation_status = SHADOW`.
+
+A future Production cutover requires both:
+
+1. source deployment that makes the fixed combined-manifest path the mandatory
+   integrated Production loader input; and
+2. separately approved state activation that atomically replaces exactly that
+   one combined manifest with `activation_status = ACTIVE` after staging and
+   validation.
+
+The immutable Identity and Session artifacts are placed and validated before
+the manifest replacement. Artifact immutability and one-file activation
+replacement are separate guarantees.
+
+### W.5 BACKWARD COMPATIBILITY
+
+Existing Identity/Session artifact formats, historical manifests, standalone
+low-level tools, and historical records may remain readable in their approved
+domains. Before cutover, the legacy two-manifest path remains the current
+default Production source.
+
+New M1 reports emitted by this amendment use
+`manual-portfolio-analysis.schema.json` version `2.1` and must retain the
+required `integrated_authority_snapshot_provenance` object. Historical version
+`2.0` reports remain replay-readable through a deterministic compatibility
+view of the same checked-in contract that changes only the version constant and
+removes the newly introduced provenance field from the required list. Version
+`2.0` is not emitted for new runs, and unknown versions fail validation.
+
+After cutover, the integrated Production path must not fall back to the two
+legacy manifests when the combined manifest is missing, corrupt, truncated,
+schema-invalid, temporally invalid, hash-mismatched, or bound to an invalid
+artifact. Every such condition fails closed. Legacy independent activation
+fallback would recreate the mixed-cohort defect and is forbidden.
+
+### W.6 AFFECTED STATES / FIELDS
+
+Affected source-state fields are limited to:
+
+- combined activation schema/version and status;
+- one shared `activation_cohort_id`;
+- common `activated_at` and `authority_modes_allowed`;
+- Identity artifact hash/version/authority/namespace/scope/source/cutoff
+  binding;
+- Session artifact hash/version/policy/timezone/MIC/source/coverage/cutoff
+  binding;
+- frozen snapshot and run provenance hashes/timestamps/run binding.
+- M1 report schema version `2.1` and the required
+  `integrated_authority_snapshot_provenance` field.
+
+Unaffected states include portfolio holdings, cash, cost basis, stage, risk
+envelope, decision plan, broker truth, order state, runtime dedup state,
+scheduler state, execution authority, and quantities.
+
+### W.7 TEST / REPLAY IMPACT
+
+Tests must prove one manifest authority read per snapshot construction, no
+manifest or legacy-authority reopen for additional tickers, frozen behavior
+after mid-run manifest or external artifact changes, old-or-new coherent
+observation across one-file replacement, crash-before-replace preservation,
+corruption/substitution rejection, absence of legacy fallback, and integrated
+provenance retention. Deleting `integrated_authority_snapshot_provenance` from
+a new version `2.1` report must make it schema-invalid, while an unchanged
+historical version `2.0` fixture must remain replay-valid.
+
+CURRENT mode replay remains fail closed: every manifest activation timestamp
+and both artifacts' `authority_as_of` and `generated_at` values must be no later
+than `decision_as_of`. A current or future K3 snapshot cannot be silently
+injected into a past decision.
+
+### W.8 PRODUCTION IMPACT
+
+This implementation phase has no Production state impact and performs no
+cutover. The future cutover changes the integrated Production authority source
+from two independently read manifests to one combined manifest. The standalone
+Authority semantics and their immutable artifacts do not change.
+
+### W.9 AUTHORITY IMPACT
+
+```text
+Identity Authority != Session Authority
+Activation Coordination = Combined
+order_authority = false
+quantity_authority = none
+execution_quantity = null
+automatic_order = false
+broker_submission = disabled
+```
+
+No LLM, manifest, loader, test, or migration output receives order, broker,
+scheduler, portfolio, or automatic rollback authority.
+
+### W.10 ROLLBACK CONDITION
+
+No automatic restoration of old pointer bytes is introduced. A future rollback
+requires a separately approved explicit Combined Activation Manifest for a
+previously accepted immutable Identity/Session pair, with one new or otherwise
+explicitly approved matched cohort and normal stage/validate/one-file atomic
+replacement. Rollback failure also fails closed; it never falls back to the
+legacy manifests.
+
+### W.11 USER APPROVAL REQUIREMENT
+
+Independent Judge acceptance of the Builder package is required before the
+implementation can be considered ready. Even after that judgment, the exact
+Production cohort, fixed Production combined manifest bytes, source-default
+switch, Production state activation, and any rollback activation each require
+their applicable separate explicit approval. No approval in this amendment
+extends to a broker action, scheduler action, quantity, or order.
+
+## X. K3 PRODUCTION CUTOVER ACTIVATION
+
+### X.1 Explicit approval and cohort
+
+The user separately approved the first Production cutover with the exact opaque
+caller-supplied cohort:
+
+```text
+K3_PRODUCTION_CUTOVER = GRANTED
+PRODUCTION_COHORT = identity-session-k3-prod-20260902-v1
+COHORT_SEMANTICS = OPAQUE_CALLER_SUPPLIED
+```
+
+This value is not a generator rule. The activation reuses Identity artifact
+`d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60`
+and Session artifact
+`a8a3aef243c2be0abaa10b82663db383143f1fdd6c98e243b0663467d3bc7ed7`
+without modifying either artifact.
+
+### X.2 Fixed Production source
+
+The integrated Production runtime authority source is the fixed path:
+
+```text
+workspace/policies/integrated_identity_session_activation.json
+```
+
+The normal M1 CLI passes this path with required status `ACTIVE`. An explicit
+`--k3-shadow-combined-activation` remains a validation-only override. A missing,
+corrupt, invalid, stale, substituted, or temporally ineligible Production
+combined manifest fails before Broker or market reads and never invokes either
+legacy authority loader.
+
+### X.3 Activation mechanism
+
+The Production writer accepts only an `ACTIVE` manifest and owns no arbitrary
+destination parameter. It stages in the same directory, validates the complete
+Identity and Session binding and temporal contract, verifies the expected prior
+Production target state, and performs one `os.replace` of the fixed combined
+manifest. The final bytes are re-read without reparse, hash-compared to the
+staged bytes, and loaded again through the fixed Production loader.
+
+The first cutover requires the Production target to be absent. Any existing
+target, stale expected hash, staging failure, or crash before replacement stops
+without automatic fallback or rollback. A failure after authoritative replace
+is preserved fail-closed and requires a separately approved explicit matched
+cohort activation.
+
+### X.4 Unchanged authority boundaries
+
+The legacy Identity and Session manifests remain unchanged as historical audit
+evidence but are no longer the integrated Production authority source. Identity
+and Session semantic ownership remains separate; only their activation
+coordination is combined.
+
+```text
+order_authority = false
+quantity_authority = none
+execution_quantity = null
+automatic_order = false
+broker_submission = disabled
+genuine_broker_run = not_performed
+scheduler_mutation = none
+```
+
+The cutover does not approve a portfolio target, Decision Plan, new-buy action,
+LMT policy mutation, delivery, Scheduler change, quantity, or order.

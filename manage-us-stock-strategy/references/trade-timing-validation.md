@@ -374,3 +374,39 @@ Lead with `Buy review`, `Hold`, `Take-profit review`, `Reduction review`,
 6. strongest failure case and exact invalidation;
 7. evidence ledger status and direct supporting sources;
 8. a statement that no order was placed or scheduled.
+
+
+## Manual existing-holding Kiwoom-only exception (K3, 2026-09-23)
+
+The user-approved scope is owned by
+`alert_policy.json / holding_timing_rules / second_quote_crosscheck /
+manual_existing_holding_exception`. The default independent-close requirement
+remains true. Only the canonical Dashboard's bound Manual existing-holding
+reduction timing projection may make absence alone non-blocking.
+
+This requires verified acquisition request/response bytes, matching Kiwoom
+RAW/ADJUSTED calculation inputs, official completed-session and identity,
+corporate-action safety, approved timing/rearm and unchanged cutoff/future/stale
+and 900-second gates. The projection reuses the existing technical calculator
+and timing engine; it does not reconcile the ledger or authorize quantity.
+Provide saved technical captures with `--holding-timing-capture`; files are read
+only, hashed and bound to the same Manual run. No acquisition is performed.
+
+Absent independent evidence remains `NOT_VERIFIED`; timing evidence and the
+primary Swing reason explicitly say `KIWOOM_ONLY`. Present malformed,
+inconsistent or conflicting evidence is never converted into absence.
+BUY/ADD, Scheduled, other decision scopes and the public technical validator
+retain the strict requirement. This exception grants no Order Intent or
+execution authority. Calculation output with unresolved corporate actions or
+missing source/session proof remains blocked. Historical results are unchanged.
+
+
+## Manual timing evidence sufficiency (approved P1–P5)
+
+Both ordinary and Kiwoom-only existing-holding reduction reviews require actual RAW and ADJUSTED capture bytes for the required holding/confirmation pair, request/response/run/hash and provider/basis binding, identity/session/page/time checks, recomputed technical fields, and the existing hard-risk/rearm constraints. An ordinary event or independent close does not bypass those checks. A parent RAW bar and a self-asserted snapshot do not establish an approved alternative provenance path. Explicit invalid capture input must remain invalid.
+
+`corporate_action_unresolved=False` remains a defensive row check, not a clearance receipt. The approved `corporate_action_artifacts` input contains `event_bundle_artifact`, `source_artifacts` and `adjustment_bindings`. `validate_manual_corporate_actions` validates the existing source-domain/category-coverage, consumed-history, event-treatment, policy-context and reviewed-receipt bindings; it performs no I/O or adjudication. The canonical owner is `holding_timing_rules.manual_corporate_action_clearance` with `APPROVED`, `manual-ca-clearance-v1`, `MANUAL_EXISTING_HOLDING_ONLY`, `USER_APPROVED_CA_CLEARANCE_AND_INPUT_BINDING`, and `reviewed_receipt_sha256`. The candidate policy pin list is empty and clears nothing. Synthetic receipts/pins belong only to isolated test policies. No new domains, thresholds or authority are introduced.
+
+A genuine absent timing request (`None`) retains the existing eligible direction-only gate. Supplied but insufficient timing input does not become `None`, timing VERIFIED, or technical YES; direction still depends on its own existing gates. CLI input without sufficient CA evidence remains unverified; no new CLI parameter is introduced.
+
+Compilation and input-aware validation use the same final projection and consumed inputs. Replay must re-evaluate the supplied run/session/as-of/policy and capture/CA evidence; two calls to that projection are not an Independent Judge. Report-only format/hash checks and persisted JSON do not prove present evidence eligibility. Markdown/HTML display the generation time and identify the output as a historical generated result, not current reacceptance. Historical viewing needs no new broker access. CA raw bytes, document text, URLs and receipts must not be projected into Dashboard outputs or logs.

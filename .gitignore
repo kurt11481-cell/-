@@ -131,3 +131,9 @@ workspace/**/*_normalized-row.json
 # ============================================================
 workspace/outputs/**/*-analysis.json
 workspace/outputs/**/*_analysis.json
+
+# Claude Code
+.claude/worktrees/
+.claude/settings.local.json
+CLAUDE.local.md
+graphify-out/
