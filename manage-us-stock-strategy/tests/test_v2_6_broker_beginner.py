@@ -46,11 +46,15 @@ class V26BrokerBeginnerTests(unittest.TestCase):
         state = self.state(); before = canonical_hash(state); build_proposal(self.fixture, state); self.assertEqual(before, canonical_hash(state))
 
     def test_bs_03_explicit_confirmation_atomic_apply_only(self):
-        state = self.state(); proposal = build_proposal(self.fixture, state)
+        # apply_confirmed refuses unresolved proposals, so the three user-confirmation items are resolved first.
+        resolved = copy.deepcopy(self.fixture)
+        resolved.update(capture_date_status="VERIFIED", holdings_complete_status="VERIFIED", position_currency_status="VERIFIED")
+        state = self.state(); proposal = build_proposal(resolved, state); self.assertEqual(proposal["unresolved_fields"], [])
         directory = ROOT / "workspace/outputs/v2_5_shadow"; state_path = directory / "test-v26-state.json"; audit = directory / "test-v26-audit.json"
+        scratch = tempfile.TemporaryDirectory(); self.addCleanup(scratch.cleanup)
         try:
             state_path.write_text(json.dumps(state), encoding="utf-8")
-            apply_confirmed(state_path=state_path, proposal=proposal, confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"], "account_id_masked": "****5546", "evidence_sha256": "a"*64, "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT", "as_of": "2026-08-13", "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T05:00:00Z"}, proposal_schema=self.proposal_schema, audit_path=audit)
+            apply_confirmed(state_path=state_path, proposal=proposal, confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"], "account_id_masked": "****5546", "evidence_sha256": "a"*64, "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT", "as_of": "2026-08-13", "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T05:00:00Z"}, proposal_schema=self.proposal_schema, audit_path=audit, backup_directory=Path(scratch.name) / "backups", ledger_path=Path(scratch.name) / "ledger.jsonl")
             self.assertEqual(load_json(state_path)["state_revision"], 2)
         finally: state_path.unlink(missing_ok=True); audit.unlink(missing_ok=True)
 

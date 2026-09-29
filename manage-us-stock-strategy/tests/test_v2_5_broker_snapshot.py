@@ -63,9 +63,15 @@ class V25BrokerSnapshotTests(unittest.TestCase):
         self.assertEqual(before, canonical_hash(state))
 
     def test_v25_bs_05_confirmed_proposal_atomic_apply(self):
-        state = self.state(); proposal = build_proposal(self.sample, state)
+        # apply_confirmed refuses unresolved proposals, so the three user-confirmation items are resolved first.
+        resolved = copy.deepcopy(self.sample)
+        resolved.update(capture_date_status="VERIFIED", holdings_complete_status="VERIFIED",
+                        position_currency_status="VERIFIED")
+        state = self.state(); proposal = build_proposal(resolved, state)
+        self.assertEqual(proposal["unresolved_fields"], [])
         directory = ROOT / "workspace/outputs/v2_5_shadow"
         state_path = directory / "test-broker-apply-state.json"; audit = directory / "test-broker-apply-audit.json"
+        scratch = tempfile.TemporaryDirectory(); self.addCleanup(scratch.cleanup)
         try:
             state_path.write_text(json.dumps(state), encoding="utf-8")
             result = apply_confirmed(state_path=state_path, proposal=proposal,
@@ -73,7 +79,8 @@ class V25BrokerSnapshotTests(unittest.TestCase):
                               "account_id_masked": "****5546", "evidence_sha256": "a" * 64, "as_of": "2026-08-13",
                               "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT",
                               "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T01:00:00+00:00"},
-                proposal_schema=self.schema, audit_path=audit)
+                proposal_schema=self.schema, audit_path=audit,
+                backup_directory=Path(scratch.name) / "backups", ledger_path=Path(scratch.name) / "ledger.jsonl")
             updated = load_json(state_path)
             self.assertEqual(updated["state_revision"], 2)
             self.assertEqual(updated["holdings"], {"SOXL": 75, "MVLL": 396, "NBIS": 15})

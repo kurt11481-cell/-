@@ -10,7 +10,12 @@
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",
-      "mcp__*__kiwoom_order_submit"
+      "mcp__*__kiwoom_order_submit",
+      "Bash(*reconcile_broker_state.py apply*)",
+      "PowerShell(*reconcile_broker_state.py apply*)",
+      "Edit(/stock-strategy-system/portfolio_state.json)",
+      "Edit(/stock-strategy-system/reconciliation_ledger.jsonl)",
+      "Edit(/stock-strategy-system/backups/**)"
     ]
   },
   "worktree": { "baseRef": "head" }

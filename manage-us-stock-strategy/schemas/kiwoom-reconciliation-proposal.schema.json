@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-reconciliation-proposal.schema.json",
+  "title": "Kiwoom broker reconciliation proposal (I0)",
+  "description": "Non-mutating proposal produced by reconcile_broker_state.py propose. Only apply_confirmed may write it to portfolio state, after the user's explicit confirmation code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "proposal_type", "proposal_id", "confirm_code", "bundle_id", "status", "change_kind",
+    "authority_state", "scope", "generated_at", "expires_at", "maximum_age_seconds", "source",
+    "portfolio_state_path", "expected_state_revision", "expected_portfolio_hash_before", "state_last_updated_at",
+    "changes", "proposed_patch", "cost_basis_derivation", "cost_basis_crosscheck", "cash_semantics",
+    "confirmed_snapshot_record", "never_touched", "post_apply_checks", "recent_fills", "warnings",
+    "unresolved_fields", "open_orders_verified", "auto_apply", "fill_inference_performed", "inferred_fills",
+    "quantity_authority", "order_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "kiwoom-reconciliation-1.0"},
+    "proposal_type": {"const": "KIWOOM_BROKER_RECONCILIATION"},
+    "proposal_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "confirm_code": {"type": "string", "pattern": "^[A-F0-9]{8}$"},
+    "bundle_id": {"type": "string", "pattern": "^KIWOOM-[a-f0-9]{20}$"},
+    "status": {"enum": ["USER_CONFIRMATION_REQUIRED", "NO_CHANGE_REQUIRED", "BLOCKED"]},
+    "change_kind": {"enum": ["VALUES", "METADATA_ONLY", "NONE"]},
+    "authority_state": {"const": "BROKER_READ_PENDING_USER_CONFIRMATION"},
+    "scope": {"const": "HOLDINGS_AND_AVAILABLE_CASH"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "maximum_age_seconds": {"type": "integer", "minimum": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "snapshot_hash", "snapshot_path", "runtime_commit", "broker_snapshot_as_of",
+                   "earliest_required_retrieved_at", "retrieved_at", "operation_statuses",
+                   "required_operations", "display_only_operations"],
+      "properties": {
+        "kind": {"const": "KIWOOM_READONLY_API"},
+        "snapshot_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "snapshot_path": {"type": ["string", "null"]},
+        "runtime_commit": {"type": ["string", "null"]},
+        "broker_snapshot_as_of": {"type": ["string", "null"]},
+        "earliest_required_retrieved_at": {"type": ["string", "null"]},
+        "retrieved_at": {"type": "object", "additionalProperties": {"type": "string", "format": "date-time"}},
+        "operation_statuses": {"type": "object", "additionalProperties": {"type": "string"}},
+        "required_operations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "display_only_operations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "portfolio_state_path": {"type": "string", "minLength": 1},
+    "expected_state_revision": {"type": "integer", "minimum": 0},
+    "expected_portfolio_hash_before": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "state_last_updated_at": {"type": ["string", "null"]},
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "key", "old_value", "new_value"],
+        "properties": {
+          "field": {"enum": ["holdings", "average_cost_usd", "position_cost_basis_usd", "aggregate_cost_basis_usd",
+                             "available_cash_usd", "last_confirmed_broker_snapshot"]},
+          "key": {"type": ["string", "null"]},
+          "old_value": {},
+          "new_value": {}
+        }
+      }
+    },
+    "proposed_patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "holdings": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "average_cost_usd": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "position_cost_basis_usd": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "aggregate_cost_basis_usd": {"type": "number", "minimum": 0},
+        "available_cash_usd": {"type": "number", "minimum": 0}
+      }
+    },
+    "cost_basis_derivation": {"const": "QUANTITY_X_AVERAGE_COST_DECIMAL_ROUND_HALF_UP_CENTS"},
+    "cost_basis_crosscheck": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "derived_cost_basis_usd", "evaluation_minus_pnl", "status"],
+        "properties": {
+          "ticker": {"type": "string"},
+          "derived_cost_basis_usd": {"type": "number"},
+          "evaluation_minus_pnl": {"type": ["number", "null"]},
+          "status": {"enum": ["WITHIN_ONE_DOLLAR", "DIFFERS", "UNAVAILABLE"]}
+        }
+      }
+    },
+    "cash_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available_cash_usd_basis", "cash_verified_scope", "settled_cash", "unsettled_funds_included",
+                   "margin_or_credit_included"],
+      "properties": {
+        "available_cash_usd_basis": {"const": "MIN_WITHDRAWABLE_AND_ORDER_AVAILABLE_USD"},
+        "cash_verified_scope": {"const": "available_cash_only"},
+        "settled_cash": {"const": false},
+        "unsettled_funds_included": {"const": false},
+        "margin_or_credit_included": {"const": false}
+      }
+    },
+    "confirmed_snapshot_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "evidence_sha256", "as_of", "as_of_timestamp", "scope", "holdings_complete",
+                   "cash_verified", "cash_verified_scope", "open_orders_verified"],
+      "properties": {
+        "source": {"const": "KIWOOM_READONLY_API"},
+        "evidence_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "as_of": {"type": "string", "format": "date"},
+        "as_of_timestamp": {"type": "string", "format": "date-time"},
+        "scope": {"const": "HOLDINGS_AND_AVAILABLE_CASH"},
+        "holdings_complete": {"const": true},
+        "cash_verified": {"const": true},
+        "cash_verified_scope": {"const": "available_cash_only"},
+        "open_orders_verified": {"type": "boolean"}
+      }
+    },
+    "never_touched": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "minItems": 1},
+    "post_apply_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check", "session_date", "status", "errors", "policy_positions_mismatch"],
+      "properties": {
+        "check": {"type": ["string", "null"]},
+        "session_date": {"type": ["string", "null"]},
+        "status": {"enum": ["PASS", "FAIL", "NOT_RUN", "NOT_APPLICABLE"]},
+        "errors": {"type": "array", "items": {"type": "string"}},
+        "policy_positions_mismatch": {"type": "boolean"}
+      }
+    },
+    "recent_fills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "side", "filled_quantity", "time"],
+        "properties": {
+          "ticker": {"type": ["string", "null"]},
+          "side": {},
+          "filled_quantity": {},
+          "time": {}
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["OPEN_ORDERS_UNVERIFIED", "TIMING_PLAN_TICKER_CHANGED", "POLICY_POSITIONS_MISMATCH",
+                         "STATE_CHANGED_OUTSIDE_LEDGER", "LEDGER_INTEGRITY_FAILED",
+                         "POST_APPLY_ALERT_ENGINE_CHECK_FAILED"]}
+    },
+    "unresolved_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "open_orders_verified": {"type": "boolean"},
+    "auto_apply": {"const": false},
+    "fill_inference_performed": {"const": false},
+    "inferred_fills": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "order_authority": {"const": false}
+  }
+}

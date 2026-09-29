@@ -14,7 +14,7 @@ from typing import Any, Callable
 from kiwoom_runtime_bridge import (
     BridgeError, _classify_bridge_invocation_failure, _continuation,
     _exception_failure, _load_env_without_echo, _parse_last_json,
-    _return_code_ok, _runtime_session, utc_now,
+    _runtime_session, utc_now,
 )
 
 ACCOUNT_APIS = {
@@ -75,6 +75,16 @@ def _safe_failure_type(value: Any) -> str:
     return value if isinstance(value, str) and value in SAFE_FAILURE_TYPES else "EMPTY_RESPONSE"
 
 
+def _account_return_code_ok(body: dict[str, Any]) -> bool:
+    """Account reads succeed only with an explicit zero return_code; absence is a failure."""
+    if "return_code" not in body:
+        return False
+    value = body["return_code"]
+    if isinstance(value, bool):
+        return False
+    return (isinstance(value, int) and value == 0) or value == "0"
+
+
 def validate_request(value: Any) -> dict[str, str]:
     if not isinstance(value, dict) or value.get("operation") not in ACCOUNT_APIS:
         raise BridgeError("OPERATION_NOT_ALLOWLISTED")
@@ -96,7 +106,7 @@ def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str,
             payload = getattr(response, "body", None)
             if not isinstance(payload, dict):
                 raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
-            if not _return_code_ok(payload):
+            if not _account_return_code_ok(payload):
                 raise BridgeError("KIWOOM_API_RESPONSE_ERROR", "API_RESPONSE_ERROR")
             return response
         except Exception as exc:
