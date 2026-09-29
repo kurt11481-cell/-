@@ -780,7 +780,11 @@ class ManualDirectionCombinedReplayTest(unittest.TestCase):
         )(self.requests[3:])
         self.results[2].update(bridge_status="KIWOOM_API_RESPONSE_ERROR", failure_type="API_RESPONSE_ERROR",
                                data=[], pagination={"complete": False})
-        self.results[-1]["data"] = [{"dt": "20260901", "cur_prc": 99.0}]
+        # market_reader_for emits a legacy-shaped daily_chart; complete it to the current contract.
+        self.results[-1]["data"] = [{"dt": "20260901", "cur_prc": 99.0, "open_pric": 98.0,
+                                     "high_pric": 100.0, "low_pric": 97.0, "acc_trde_qty": 1000000}]
+        for page in self.results[-1]["pagination"]["pages"]:
+            page["retrieved_at"] = self.retrieved
 
     def build(self, *, direction_only=True):
         doc = {"run_id": "manual-combined-direction-fixture", "started_at": CUTOFF,
@@ -830,7 +834,8 @@ class ManualDirectionCombinedReplayTest(unittest.TestCase):
                                      "expected_decision_as_of": report["decision_as_of"]}}
         gate = _canonical_evidence_gate(report, plan, "INITIAL_COMPILE", MANUAL_EVIDENCE_SCHEMA.read_bytes(),
                                        parent_capture_artifacts=self.captures, analysis_observed_at=self.observed)
-        self.assertEqual(gate[1], [])
+        # Direction-only evidence keeps finalized-bar blockers visible; _manual_local_timing_gate tolerates exactly these two.
+        self.assertEqual(gate[1], ["FINALIZED_BAR_NOT_VERIFIED", "FINALIZED_BAR_PREFLIGHT_NOT_PASS"])
         run = dict(report, execution_origin="MANUAL", decision_mode="MANUAL_READ_ONLY",
                    provenance_evidence={"manual_run_id": report["manual_run_id"]})
         self.assertTrue(manual_grade_b_eligible(run, direction_evidence=report,

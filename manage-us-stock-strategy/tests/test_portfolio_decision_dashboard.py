@@ -3917,9 +3917,9 @@ class ManualCorporateActionClearanceTests(ManualKiwoomOnlyTimingTests):
         self.assertEqual(self.timing()[0],"NOT_VERIFIED")
 
     def test_ca_projection_and_compile_replay_use_same_proof(self):
-        import bundle_support
+        import ca_projection_support
         inputs=self.case.base.inputs
-        records=bundle_support.technical_projection(inputs["capture_artifacts"],run_id=self.doc["run_id"],
+        records=ca_projection_support.technical_projection(inputs["capture_artifacts"],run_id=self.doc["run_id"],
             completed_session="2026-09-01",generated_at=self.case.stamp,policy=inputs["policy"],
             decision_as_of=self.proof_cutoff(),corporate_action_artifacts=self.proof())
         self.assertTrue(all(row["corporate_action_unresolved"] is False for row in records.values()))
@@ -3938,8 +3938,8 @@ class ManualCorporateActionClearanceTests(ManualKiwoomOnlyTimingTests):
         self.assertTrue(errors)
 
     def test_ca_producer_without_proof_stays_unresolved(self):
-        import bundle_support
-        records=bundle_support.technical_projection(self.case.base.inputs["capture_artifacts"],
+        import ca_projection_support
+        records=ca_projection_support.technical_projection(self.case.base.inputs["capture_artifacts"],
             run_id=self.doc["run_id"],completed_session="2026-09-01",generated_at=self.case.stamp)
         self.assertTrue(all(r["corporate_action_unresolved"] is True for r in records.values()))
 
@@ -4046,9 +4046,9 @@ class ManualCorporateActionClearanceTests(ManualKiwoomOnlyTimingTests):
 
     def test_ca_confirmed_projection_uses_external_compile_and_replay(self):
         # Only the approved offline r9 technical producer is exercised.
-        import bundle_support
+        import ca_projection_support
         inputs = self.case.base.inputs
-        records = bundle_support.technical_projection(inputs["capture_artifacts"], run_id=self.doc["run_id"],
+        records = ca_projection_support.technical_projection(inputs["capture_artifacts"], run_id=self.doc["run_id"],
             completed_session="2026-09-01", generated_at=self.case.stamp, policy=inputs["policy"],
             decision_as_of=self.proof_cutoff(), corporate_action_artifacts=self.proof())
         self.snapshot["symbols"].update(records)
@@ -4159,7 +4159,7 @@ class ManualTimingEvidenceContractTests(ManualCorporateActionClearanceTests):
                 for representation in (raw.decode(), raw.hex(), base64.b64encode(raw).decode()):
                     self.assertNotIn(representation, content)
         # Explicitly authorized raw fixture retention is separate from Dashboard output.
-        retained = Path(tempfile.mkdtemp(prefix="test-only-ca-evidence-", dir=os.environ["TMP"]))
+        retained = Path(tempfile.mkdtemp(prefix="test-only-ca-evidence-", dir=tempfile.gettempdir()))
         fixture_manifest = {"synthetic_only": True, "operating_authority": False, "files": {}}
         artifacts = {"event-bundle.json": self.proof()["event_bundle_artifact"][0],
             "adjustment-bindings.json": _ca_pair({"bindings": self.proof()["adjustment_bindings"]})[0],

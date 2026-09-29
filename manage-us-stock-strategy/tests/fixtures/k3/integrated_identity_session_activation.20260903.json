@@ -1,0 +1,54 @@
+{
+  "activation_schema_version": "1.0",
+  "activation_status": "ACTIVE",
+  "activation_reason": "User-approved K3 Production Session Calendar coverage recovery using reviewed 2026 official exchange calendars; Instrument Identity is unchanged.",
+  "activated_at": "2026-09-03T14:40:25Z",
+  "authority_modes_allowed": [
+    "CURRENT"
+  ],
+  "activation_cohort_id": "identity-session-k3-prod-20260903-v1",
+  "instrument_identity": {
+    "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+    "active_registry_hash": "d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60",
+    "active_registry_version": "us-equity-current-2026-08-22-pgr-jpm-cme-v-candidate-v1",
+    "ticker_namespace": "US_EXCHANGE_LISTED",
+    "scope": [
+      "BE",
+      "CME",
+      "DRAM",
+      "FSLY",
+      "JPM",
+      "MVLL",
+      "NBIS",
+      "NOW",
+      "PGR",
+      "SOXL",
+      "TOST",
+      "V"
+    ],
+    "source_packet_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1_SOURCES_2026-08-22_PGR_JPM_CME_V_CANDIDATE",
+    "source_packet_hash": "951a41a5315c51a78bb52873cd510de345494745d932b6578365fecda362f548",
+    "authority_as_of": "2026-08-22T00:00:00+09:00"
+  },
+  "session_calendar": {
+    "calendar_policy_identity": "US_EQUITIES_CORE_SESSION_V2",
+    "active_calendar_hash": "2421eeb7e115ad640b6b0ec76d0d88cfe2a49499c12c39dc35ea5f71c1fed22b",
+    "active_calendar_version": "2026-09-03.1",
+    "timezone_identity": "America/New_York",
+    "operating_mic_scope": [
+      "XNYS",
+      "XNAS",
+      "XCBO"
+    ],
+    "source_families": [
+      "NYSE_GROUP",
+      "NASDAQ",
+      "CBOE"
+    ],
+    "coverage_start": "2026-01-01",
+    "coverage_end": "2026-12-31",
+    "source_bundle_id": "US_EQUITIES_CORE_SESSION_2026_THROUGH_20261231_V1",
+    "source_bundle_hash": "2bc1212764229074ed6cfca2550e7a78d96cc395aa8f6b0c912091b3e88f9f05",
+    "authority_as_of": "2026-09-03T10:38:02-04:00"
+  }
+}

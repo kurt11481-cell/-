@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -14,7 +16,9 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from integrated_authority_snapshot import (  # noqa: E402
+    COMBINED_ACTIVATION_RELATIVE_PATH,
     derive_us_market_session_authority_from_snapshot,
+    load_integrated_authority_snapshot,
     load_production_integrated_authority_snapshot,
 )
 
@@ -23,12 +27,19 @@ COHORT = "identity-session-k3-prod-20260903-v1"
 IDENTITY_HASH = "d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60"
 SESSION_HASH = "2421eeb7e115ad640b6b0ec76d0d88cfe2a49499c12c39dc35ea5f71c1fed22b"
 MANIFEST_HASH = "8a23e784cbdbe244c6dbe220937be0b7e023de417eec56009e8f03191ecde200"
+FIXTURE = (
+    ROOT
+    / "manage-us-stock-strategy/tests/fixtures/k3"
+    / "integrated_identity_session_activation.20260903.json"
+)
 
 
 def session_view(timestamp: str):
-    snapshot = load_production_integrated_authority_snapshot(
+    snapshot = load_integrated_authority_snapshot(
+        FIXTURE,
         trusted_root=ROOT,
         decision_as_of=timestamp,
+        required_activation_status="ACTIVE",
         resolved_at=timestamp,
         run_id="k3-calendar-recovery-test",
     )
@@ -92,6 +103,23 @@ class K3SessionCalendarCoverageRecoveryTest(unittest.TestCase):
         _, view = session_view("2027-01-04T15:00:00Z")
         self.assertEqual("NOT_VERIFIED", view.authority_status)
         self.assertEqual("OUT_OF_COVERAGE", view.authority_reason)
+
+    def test_06_current_production_loads_and_postdates_recovery(self):
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        snapshot = load_production_integrated_authority_snapshot(
+            trusted_root=ROOT,
+            decision_as_of=now,
+            resolved_at=now,
+            run_id="k3-calendar-recovery-current-production-test",
+        )
+        self.assertTrue(snapshot.activation_cohort_id)
+        manifest = json.loads(
+            (ROOT / COMBINED_ACTIVATION_RELATIVE_PATH).read_text(encoding="utf-8")
+        )
+        activated_at = datetime.fromisoformat(manifest["activated_at"])
+        self.assertGreater(
+            activated_at, datetime(2026, 9, 3, 14, 40, 25, tzinfo=timezone.utc)
+        )
 
 
 if __name__ == "__main__":
