@@ -35,5 +35,16 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Identifiers, schemas, commands in English; user-facing reports in Korean.
 - Do not commit or push unless asked. Never force-push.
 
+## Session hygiene (투자_V2 setup guide, apply automatically)
+- At task start, state the recommended model/effort in one line: simple = low, routine = medium,
+  analysis/dev = high, cross-file design / K3 / Judge = Opus xhigh. If the session differs, ask the
+  user to restart with it; never suggest switching model or effort mid-session.
+- When the topic changes, tell the user to run /clear; if the task continues but context is long,
+  suggest /compact at a natural stopping point.
+- Before multi-file edits, present a plan first (or ask the user to press Shift+Tab for plan mode).
+- Builder work runs in a worktree (claude --worktree <name>); a Judge runs in a separate session
+  and never edits files.
+- Talk to the user in Korean, one step at a time, giving the exact command to type.
+
 ## Compact instructions
 Keep: current goal, changed files, failing tests, approvals given, open K3 items.
