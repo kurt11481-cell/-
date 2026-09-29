@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 import sys
 import tempfile
@@ -16,7 +17,7 @@ sys.path.insert(0, str(SCRIPTS))
 from build_kiwoom_session_observation import build_session_snapshot
 from build_kiwoom_market_snapshot import build_snapshot
 from kiwoom_runtime_bridge import blocked_api_target, validate_bridge_request
-from run_kiwoom_session_aware_validation import build_validation, provider_scopes
+from run_kiwoom_session_aware_validation import DEFAULT_TICKERS, build_validation, provider_scopes
 from session_aware_market_data import (
     apply_extended_hours_guard,
     compare_price_observations,
@@ -256,7 +257,7 @@ class PriorityAndScopeTests(unittest.TestCase):
         policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
         registry = load_json(ROOT / "workspace/policies/source_capabilities.json")
         manifest_path = current_acceptance_manifest_path(policy, registry)
-        expected = {"SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM"}
+        expected = {"SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM", "PGR", "JPM", "CME", "V"}
         scopes = policy["provider_scopes"]
         self.assertEqual({row["ticker"] for row in scopes}, expected)
         self.assertEqual(len(scopes), len(expected))
@@ -271,8 +272,83 @@ class PriorityAndScopeTests(unittest.TestCase):
         self.assertEqual(by_ticker["MVLL"]["volume_decision_class"], "RVOL20")
         self.assertRegex(by_ticker["MVLL"]["volume_acceptance_artifact_hash"], r"^[a-f0-9]{64}$")
 
+    def test_scope_05_active_default_scope_is_unchanged(self):
+        self.assertEqual(
+            DEFAULT_TICKERS,
+            ("SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM"),
+        )
+
+    def test_scope_06_all_four_target_provider_scopes_are_schema_valid(self):
+        rows = provider_scopes(
+            ["PGR", "JPM", "CME", "V"], effective_from=AFTER, acceptance_hash="a" * 64,
+        )
+        self.assertEqual([row["ticker"] for row in rows], ["PGR", "JPM", "CME", "V"])
+        for row in rows:
+            with self.subTest(ticker=row["ticker"]):
+                self.assertEqual(
+                    validate_instance(row, SCHEMAS / "kiwoom-provider-scope.schema.json"),
+                    [],
+                )
+                self.assertFalse(row["order_authority"])
+
 
 class InvariantAndContractTests(unittest.TestCase):
+    def validate_scope_mutation(self, mutate) -> list[str]:
+        manifest_path = current_acceptance_manifest_path()
+        policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
+        registry = load_json(ROOT / "workspace/policies/source_capabilities.json")
+        mutate(policy, normalized_text_sha256(manifest_path).lower())
+        return validate_acceptance(
+            manifest=load_json(manifest_path), manifest_path=manifest_path,
+            manifest_schema=SCHEMAS / "kiwoom-session-aware-acceptance-manifest.schema.json",
+            priority_policy=policy,
+            priority_schema=SCHEMAS / "kiwoom-session-aware-priority-policy.schema.json",
+            source_registry=registry,
+            source_schema=SCHEMAS / "source-capability.schema.json", repo_root=ROOT,
+        )
+
+    def test_extended_provider_scope_candidate_validates_without_activation(self):
+        def extend(policy, acceptance_hash):
+            # These symbols are already active in the checked-in policy; remove them
+            # first so the pre-activation extension path is still exercised.
+            added = {"PGR", "JPM", "CME", "V"}
+            policy["provider_scopes"] = [
+                row for row in policy["provider_scopes"] if row["ticker"] not in added
+            ]
+            policy["provider_scopes"].extend(provider_scopes(
+                ["PGR", "JPM", "CME", "V"],
+                effective_from=AFTER,
+                acceptance_hash=acceptance_hash,
+            ))
+
+        self.assertEqual(self.validate_scope_mutation(extend), [])
+
+    def test_duplicate_provider_scope_fails_closed(self):
+        def duplicate(policy, _acceptance_hash):
+            policy["provider_scopes"].append(deepcopy(policy["provider_scopes"][0]))
+
+        errors = self.validate_scope_mutation(duplicate)
+        self.assertIn("duplicate provider scope ticker: SOXL", errors)
+
+    def test_malformed_provider_scope_fails_closed(self):
+        def malformed(policy, _acceptance_hash):
+            policy["provider_scopes"].append("malformed")
+
+        with self.assertRaises(AttributeError):
+            self.validate_scope_mutation(malformed)
+
+    def test_unapproved_provider_symbols_fail_closed(self):
+        for ticker in ("BRK.B", "BRKb", "COST", "ZZZZ"):
+            with self.subTest(ticker=ticker):
+                def unsupported(policy, acceptance_hash, symbol=ticker):
+                    row = deepcopy(policy["provider_scopes"][0])
+                    row["ticker"] = symbol
+                    row["acceptance_artifact_hash"] = acceptance_hash
+                    policy["provider_scopes"].append(row)
+
+                errors = self.validate_scope_mutation(unsupported)
+                self.assertTrue(errors)
+
     def test_inv_01_to_05_strategy_and_threshold_files_unchanged_by_helpers(self):
         portfolio = (ROOT / "stock-strategy-system/portfolio_state.json").read_bytes()
         alert = load_json(ROOT / "stock-strategy-system/alert_policy.json")
