@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "run_phase": "VALIDATION",
+  "run_id": "k3-identity-binding-repair-20260828T233609KST",
+  "analysis_id": "k3-identity-materializer-same-bytes-rebinding-fix",
+  "run_type": "VALIDATION_TEST",
+  "generated_at": "2026-08-28T23:36:09.2956368+09:00",
+  "analysis_cutoff": "2026-08-28T23:36:09.2956368+09:00",
+  "market_session": null,
+  "code_provenance": {
+    "git_commit": "10569eee1d69b5d0d561165de363a0ba103d99ee",
+    "git_branch": "codex/master-recovery-expansion",
+    "git_dirty": true,
+    "working_tree_diff_hash": "e026ac0bbb2d26eeecdfa1c136ec1150fe08b995f733a3fe83dc4548e849e26f",
+    "skill_version": "manage-us-stock-strategy-local",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "k3-identity-materializer-binding-v2",
+    "policy_version": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1"
+  },
+  "llm_provenance": {
+    "provider": null,
+    "model": null,
+    "model_identifier": null,
+    "temperature": null,
+    "max_debate_rounds": 0,
+    "max_risk_rounds": 0
+  },
+  "input_hashes": {
+    "evidence_packet_hash": "951a41a5315c51a78bb52873cd510de345494745d932b6578365fecda362f548",
+    "market_snapshot_hash": null,
+    "event_snapshot_hash": null,
+    "portfolio_state_hash": null,
+    "strategy_policy_hash": null,
+    "alert_policy_hash": null,
+    "instrument_registry_hash": "d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60",
+    "candidate_universe_hash": null
+  },
+  "tool_provenance": {
+    "python_version": "3.13.15",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": null,
+    "decision_record_hash": null,
+    "tactical_screen_hash": null,
+    "deterministic_gate_hash": null,
+    "deterministic_gate_result": "PASS"
+  },
+  "secrets_recorded": false
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "cohort_status": "COHORT_SUPERSEDED",
+  "superseded_at": "2026-09-27T07:36:29.4043902Z",
+  "superseded_by": "integrated-shadow-628c60818f3beeb2",
+  "reason": "APPROVED_MANUAL_TIMING_M1_M5_TRANSITION",
+  "prior_progress": {
+    "schema_version": "2.6",
+    "cohort_id": "integrated-shadow-246c0aa2eb76b27f",
+    "semantic_fingerprint": "246c0aa2eb76b27f42ae7fb950773b524d42075ca6c0d60a22a917bf22ca4214",
+    "started_at": "2026-08-14T17:12:40.7131578Z",
+    "observed_attempts": 0,
+    "valid_shadow_sessions": 0,
+    "valid_finalized_sessions": 0,
+    "valid_paired_operational_days": 0,
+    "preopen_success_count": 0,
+    "postclose_success_count": 0,
+    "paired_operational_days": [],
+    "pending_preopen_sessions": [],
+    "excluded_attempts": 0,
+    "critical_violations": [],
+    "counted_sessions": [],
+    "baseline_overlay_sessions": {
+      "NBIS": 0,
+      "MVLL": 0,
+      "SOXL": 0
+    },
+    "independent_price_covered_sessions": 0,
+    "missing_expected_sessions": [],
+    "last_attempt_hash": null,
+    "checkpoint_status": "FIRST_VALID_SESSION_PENDING",
+    "promotion_status": "EXPLICIT_USER_APPROVAL_REQUIRED",
+    "order_authority": false
+  },
+  "order_authority": false
+}

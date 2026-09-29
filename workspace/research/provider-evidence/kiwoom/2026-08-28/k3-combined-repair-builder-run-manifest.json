@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "K3_COMBINED_REPAIR_BUILDER_RUN_MANIFEST",
+  "run_id": "k3-combined-repair-builder-20260828T224313KST",
+  "generated_at": "2026-08-28T22:43:13.2587673+09:00",
+  "repository": "E:\\사업\\##금동한\\코덱스저장소",
+  "branch": "codex/master-recovery-expansion",
+  "head_before": "10569eee1d69b5d0d561165de363a0ba103d99ee",
+  "head_after": "10569eee1d69b5d0d561165de363a0ba103d99ee",
+  "worktree_dirty": true,
+  "judge_findings": {
+    "identity_materializer_process_blocker": "CLOSED",
+    "k2_acceptance_rebuild": "CLOSED_BY_INACTIVE_CANDIDATE",
+    "shadow_fingerprint_failure": "PRE_EXISTING_NOT_TOUCHED"
+  },
+  "identity_materializer": {
+    "target": "manage-us-stock-strategy/scripts/materialize_instrument_identity_artifact.py#materialize_evidence_and_candidate",
+    "exit_code_before": 2,
+    "exit_code_after": 0,
+    "activation_snapshot_state": "PRESENT",
+    "activation_snapshot_raw_sha256": "337a7221f3b49a226e1af19ea04e9ee40e9385996137da5236e58d5b28298c74",
+    "activation_unchanged": true,
+    "candidate_id": "d8b03aa434c969e8fba338865eb3e6567bc78821d9b7b702e47d7403f2bc5e60",
+    "candidate_write_status": "ALREADY_PRESENT_VERIFIED"
+  },
+  "k2_acceptance_candidate": {
+    "candidate_id": "fdbda8e489acbd61dd31ed7596c8d002ddcd290e82e60c31dbe5ddb5156f19c1",
+    "candidate_status": "INACTIVE_SUPERSEDING_CANDIDATE",
+    "candidate_path": "workspace/research/provider-evidence/kiwoom/2026-08-28/fdbda8e489acbd61dd31ed7596c8d002ddcd290e82e60c31dbe5ddb5156f19c1/session-aware-priority-acceptance-pgr-jpm-cme-v-inactive-superseding-candidate.json",
+    "candidate_raw_sha256": "fdbda8e489acbd61dd31ed7596c8d002ddcd290e82e60c31dbe5ddb5156f19c1",
+    "repeat_write_status": "ALREADY_PRESENT_VERIFIED",
+    "supersedes_acceptance_sha256": "2994192ec8e370607f60661758a69777b150d510fe841d759c936b24fea0e295",
+    "provider_scope_policy_raw_sha256": "9604570d9fa1b21095bd03b2c3ca7aee4cd1ba12308ea3fff8c2829342befa29",
+    "provider_scope_count": 15,
+    "provider_scope_symbols": [
+      "SOXL", "MVLL", "NBIS", "BE", "TOST", "NOW", "FSLY", "SOXX", "MRVL", "AAPL", "IBM", "PGR", "JPM", "CME", "V"
+    ],
+    "raw_sha_governance": "PASS",
+    "binding_validation": "PASS"
+  },
+  "active_authority_before_after": {
+    "identity_activation_raw_sha256": "337a7221f3b49a226e1af19ea04e9ee40e9385996137da5236e58d5b28298c74",
+    "calendar_activation_raw_sha256": "aa89bced469e3e2c93b514b0abc9d3ed187ea7764b7df4182d9200155e3a13a4",
+    "k2_priority_policy_raw_sha256": "53dd98717cf453d6120468a3430a9e98eab0f7c63ee87525dde8c5974c66eb0e",
+    "source_registry_raw_sha256": "d8e3886b0a7818ec678fc348c22f03e01d592eaf42fb13dfe1bcebb4a90ce0fc",
+    "active_identity_id": "502148a4fd4fa9f4b06365f0b02c630839315c79c8bfddcfac4addf7519261d6",
+    "active_calendar_id": "0553eb641cc932fd8fe9a00d910f5b782cb2459df5a75f556282ccee89ff772f",
+    "active_cohort_id": "identity-calendar-coordinated-activation-20260828T1446KST",
+    "active_k2_acceptance_id": "2994192ec8e370607f60661758a69777b150d510fe841d759c936b24fea0e295",
+    "all_unchanged": true
+  },
+  "repair_source_raw_sha256": {
+    "manage-us-stock-strategy/schemas/kiwoom-session-aware-acceptance-manifest.schema.json": "6b6936f59c61b2c57f90e11e35f3d066e566c297a327b9328262e44943951aa4",
+    "manage-us-stock-strategy/scripts/materialize_instrument_identity_artifact.py": "ce3c26d29deae6aff4aa0c1e975d2df2251c966b33eba67e049c37d539a04e66",
+    "manage-us-stock-strategy/tests/test_materialize_instrument_identity_artifact.py": "c4fbf5e40339ddcb12839415870279719b6e8d9a289619900d59ffd85592e6dd",
+    "manage-us-stock-strategy/scripts/materialize_kiwoom_session_aware_acceptance_candidate.py": "5f059def8b623976963dfae67fe388595aa5a7910d148689b470d6d95d1e410b",
+    "manage-us-stock-strategy/scripts/validate_kiwoom_session_aware_acceptance_candidate.py": "84cdb805f46c734c36c0fcc1171e5674b6d044538df93004e3cdaef6a3095aef",
+    "manage-us-stock-strategy/tests/test_materialize_kiwoom_session_aware_acceptance_candidate.py": "cf09115d061c74fc37e3808e369a7623331853b4b60d9a0cb8a84d8bee3e0be0"
+  },
+  "validation": {
+    "identity_materializer_tests": {"total": 49, "pass": 49, "fail": 0},
+    "bounded_green_regression": {"total": 120, "pass": 120, "fail": 0},
+    "legacy_k2_full_regression": {"total": 42, "pass": 41, "fail": 1, "known_pre_existing_failures": ["test_provider_authority_change_starts_zero_count_cohort"]},
+    "active_acceptance_validator": "PASS",
+    "candidate_acceptance_validator": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "scope_firewall": {
+    "included_extension_symbols": ["PGR", "JPM", "CME", "V"],
+    "excluded_symbols": ["BRK.B", "BRKb", "COST"],
+    "special_mapping_added": false,
+    "new_state": false,
+    "new_engine": false,
+    "new_counter": false,
+    "new_authority_type": false
+  },
+  "operational_firewall": {
+    "activation_performed": false,
+    "workspace_policies_mutated": false,
+    "kiwoom_quote_request_count": 0,
+    "account_request_count": 0,
+    "grade_b_run_started": false,
+    "order_endpoint_call_count": 0,
+    "orders": "NONE",
+    "order_intent": "NONE",
+    "holdings_mutation": false,
+    "system_portfolio_mutation": false,
+    "order_authority": false,
+    "quantity_authority": "none",
+    "execution_quantity": null
+  }
+}

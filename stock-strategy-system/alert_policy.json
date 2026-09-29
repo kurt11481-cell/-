@@ -174,7 +174,7 @@
     },
     "instrument_registry_authority": {
       "canonical_path": "workspace/policies/instrument_registry.json",
-      "required_canonical_sha256": "4f1561dc7dfb49261c51a1fb729d9714c11a199da1d0973229e97fe0657e50bc",
+      "required_canonical_sha256": "750a0b4b4a8ee219603be3acf1e5e3afd40d803a68bc83b4fcce0244b901e1dc",
       "embedded_registry_role": "non_authoritative_operational_cache",
       "mismatch_code": "POLICY_REGISTRY_MISMATCH",
       "research_scan_on_mismatch": "continue_with_canonical_registry_and_display_mismatch",
@@ -406,6 +406,13 @@
     }
   },
   "holding_timing_rules": {
+    "manual_corporate_action_clearance": {
+      "status": "APPROVED",
+      "version": "manual-ca-clearance-v1",
+      "scope": "MANUAL_EXISTING_HOLDING_ONLY",
+      "approval_source": "USER_APPROVED_CA_CLEARANCE_AND_INPUT_BINDING",
+      "reviewed_receipt_sha256": []
+    },
     "status": "approved_review_only",
     "policy_version": "2026-08-05-ema-timing-v4",
     "maximum_alert_grade": "B",
@@ -439,7 +446,15 @@
     "second_quote_crosscheck": {
       "required": true,
       "maximum_difference_formula": "max(USD 0.05, 0.001 * raw_completed_close)",
-      "independent_source_required": true
+      "independent_source_required": true,
+      "manual_existing_holding_exception": {
+        "status": "APPROVED",
+        "version": "2026-09-23-manual-existing-holding-kiwoom-only-v1",
+        "approval_source": "USER_K3_BOUNDARY_RESET_MANUAL_EXISTING_HOLDING_KIWOOM_ONLY",
+        "scope": "MANUAL_EXISTING_HOLDING_ONLY",
+        "missing_independent_close": "CONDITIONAL_NON_BLOCKING",
+        "conflicting_independent_close": "EXISTING_POLICY_PRESERVED"
+      }
     },
     "definitions": {
       "ema_test_zone_atr": 0.25,

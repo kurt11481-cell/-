@@ -1,0 +1,56 @@
+{
+  "activation_schema_version": "1.0",
+  "activation_status": "ACTIVE",
+  "activation_reason": "Explicit user-approved MRVL/SOXX identity activation; existing 12 records and current calendar preserved. No Broker acquisition or execution authority change.",
+  "activated_at": "2026-09-22T23:42:29.180887+00:00",
+  "authority_modes_allowed": [
+    "CURRENT"
+  ],
+  "activation_cohort_id": "identity-confirmation-approved-20260922T234229Z",
+  "instrument_identity": {
+    "authority_id": "US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+    "active_registry_hash": "4664e82b3c8968f850857c0de5849f33a24a4e862c3c60fc47b4746b1e7988c9",
+    "active_registry_version": "candidate-2026-09-23-mrvl-soxx-not-activated",
+    "ticker_namespace": "US_EXCHANGE_LISTED",
+    "scope": [
+      "BE",
+      "CME",
+      "DRAM",
+      "FSLY",
+      "JPM",
+      "MRVL",
+      "MVLL",
+      "NBIS",
+      "NOW",
+      "PGR",
+      "SOXL",
+      "SOXX",
+      "TOST",
+      "V"
+    ],
+    "source_packet_id": "MRVL_SOXX_INACTIVE_CANDIDATE_20260923",
+    "source_packet_hash": "0e12b7133fa91305a07e734a35fb042bd903b3b8f3b6a259669ad0cd2d82cd93",
+    "authority_as_of": "2026-09-23T00:00:00+09:00"
+  },
+  "session_calendar": {
+    "calendar_policy_identity": "US_EQUITIES_CORE_SESSION_V2",
+    "active_calendar_hash": "2421eeb7e115ad640b6b0ec76d0d88cfe2a49499c12c39dc35ea5f71c1fed22b",
+    "active_calendar_version": "2026-09-03.1",
+    "timezone_identity": "America/New_York",
+    "operating_mic_scope": [
+      "XNYS",
+      "XNAS",
+      "XCBO"
+    ],
+    "source_families": [
+      "NYSE_GROUP",
+      "NASDAQ",
+      "CBOE"
+    ],
+    "coverage_start": "2026-01-01",
+    "coverage_end": "2026-12-31",
+    "source_bundle_id": "US_EQUITIES_CORE_SESSION_2026_THROUGH_20261231_V1",
+    "source_bundle_hash": "2bc1212764229074ed6cfca2550e7a78d96cc395aa8f6b0c912091b3e88f9f05",
+    "authority_as_of": "2026-09-03T10:38:02-04:00"
+  }
+}

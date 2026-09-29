@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "run_phase": "VALIDATION",
+  "run_id": "k3-k2-normalized-candidate-repair-20260829T013613KST",
+  "analysis_id": "k3-k2-normalized-candidate-contract-alignment",
+  "run_type": "VALIDATION_TEST",
+  "generated_at": "2026-08-29T01:39:46+09:00",
+  "analysis_cutoff": "2026-08-29T01:39:46+09:00",
+  "market_session": null,
+  "code_provenance": {
+    "git_commit": "10569eee1d69b5d0d561165de363a0ba103d99ee",
+    "git_branch": "codex/master-recovery-expansion",
+    "git_dirty": true,
+    "working_tree_diff_hash": "546ee314e99e5e1752d8865ef816cc971ffeabe3cdc9482a265d6347e6d5e712",
+    "skill_version": "manage-us-stock-strategy-local",
+    "schema_versions": {
+      "decision": "2.0",
+      "event": "1.0",
+      "manifest": "1.0",
+      "evaluation": "1.0"
+    },
+    "strategy_version": "k3-k2-acceptance-candidate-normalized-text-v1",
+    "policy_version": "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACTIVE_UNCHANGED"
+  },
+  "llm_provenance": {
+    "provider": null,
+    "model": null,
+    "model_identifier": null,
+    "temperature": null,
+    "max_debate_rounds": 0,
+    "max_risk_rounds": 0
+  },
+  "input_hashes": {
+    "evidence_packet_hash": "9604570d9fa1b21095bd03b2c3ca7aee4cd1ba12308ea3fff8c2829342befa29",
+    "market_snapshot_hash": null,
+    "event_snapshot_hash": null,
+    "portfolio_state_hash": null,
+    "strategy_policy_hash": "53dd98717cf453d6120468a3430a9e98eab0f7c63ee87525dde8c5974c66eb0e",
+    "alert_policy_hash": null,
+    "instrument_registry_hash": null,
+    "candidate_universe_hash": null
+  },
+  "tool_provenance": {
+    "python_version": "3.13.15",
+    "yfinance_version": "1.5.2",
+    "schema_validator_version": "repo-subset-2020-12-v1",
+    "event_validator_version": "1.0",
+    "manifest_validator_version": "1.0"
+  },
+  "result_provenance": {
+    "research_packet_hash": "f0bab7101b618a0598a6c4faf0c1feabd2b9e9617352df697d27f75df5267c25",
+    "decision_record_hash": null,
+    "tactical_screen_hash": null,
+    "deterministic_gate_hash": null,
+    "deterministic_gate_result": "PASS"
+  },
+  "secrets_recorded": false
+}

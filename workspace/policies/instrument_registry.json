@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "registry_version": "2026-08-13-integrated-shadow-v2.6",
+  "registry_version": "2026-09-02-lmt-instrument-registry-v1",
   "status": "canonical_research_registry_no_order_authority",
   "canonical_authority": true,
   "authority": {
@@ -181,6 +181,28 @@
     "SNOW": {"instrument_type": "stock", "identity_status": "user_supplied_pending_primary_verification", "leverage_factor": 1.0, "leverage_factor_status": "provisional_not_usable_for_live_policy", "confirmation_proxy": null, "watchlist_approved": false, "new_buy_instrument_approved": false, "short_sale_approved": false, "candidate_status": "inactive", "portfolio_bucket": "historical_research_registry", "theme": "user_defined_ai_agent", "subtheme": "data_database"},
     "CRWD": {"instrument_type": "stock", "identity_status": "user_supplied_pending_primary_verification", "leverage_factor": 1.0, "leverage_factor_status": "provisional_not_usable_for_live_policy", "confirmation_proxy": null, "watchlist_approved": false, "new_buy_instrument_approved": false, "short_sale_approved": false, "candidate_status": "inactive", "portfolio_bucket": "historical_research_registry", "theme": "user_defined_ai_agent", "subtheme": "security_data_protection"},
     "PANW": {"instrument_type": "stock", "identity_status": "user_supplied_pending_primary_verification", "leverage_factor": 1.0, "leverage_factor_status": "provisional_not_usable_for_live_policy", "confirmation_proxy": null, "watchlist_approved": false, "new_buy_instrument_approved": false, "short_sale_approved": false, "candidate_status": "inactive", "portfolio_bucket": "historical_research_registry", "theme": "user_defined_ai_agent", "subtheme": "security_data_protection"},
-    "PLTR": {"instrument_type": "stock", "identity_status": "user_supplied_pending_primary_verification", "leverage_factor": 1.0, "leverage_factor_status": "provisional_not_usable_for_live_policy", "confirmation_proxy": null, "watchlist_approved": false, "new_buy_instrument_approved": false, "short_sale_approved": false, "candidate_status": "inactive", "portfolio_bucket": "historical_research_registry", "theme": "user_defined_ai_agent", "subtheme": "application_workflow"}
+    "PLTR": {"instrument_type": "stock", "identity_status": "user_supplied_pending_primary_verification", "leverage_factor": 1.0, "leverage_factor_status": "provisional_not_usable_for_live_policy", "confirmation_proxy": null, "watchlist_approved": false, "new_buy_instrument_approved": false, "short_sale_approved": false, "candidate_status": "inactive", "portfolio_bucket": "historical_research_registry", "theme": "user_defined_ai_agent", "subtheme": "application_workflow"},
+    "LMT": {
+      "legal_issuer_name": "Lockheed Martin Corporation",
+      "instrument_type": "stock",
+      "security_class": "Common Stock, $1 par value",
+      "exchange": "New York Stock Exchange",
+      "trading_currency": "USD",
+      "identity_status": "verified_primary_source",
+      "identity_verification_status": "VERIFIED",
+      "official_identity_source_url": "https://www.sec.gov/Archives/edgar/data/936468/000162828026004195/lmt-20251231.htm",
+      "official_identity_source_type": "SEC_10_K",
+      "identity_verified_at": "2026-09-02T11:45:20+09:00",
+      "leverage_factor": 1.0,
+      "leverage_factor_status": "verified",
+      "confirmation_proxy": null,
+      "watchlist_approved": false,
+      "new_buy_instrument_approved": false,
+      "short_sale_approved": false,
+      "candidate_status": "reference_only",
+      "portfolio_bucket": "research_reference",
+      "theme": "defense",
+      "subtheme": "defense_technology"
+    }
   }
 }
