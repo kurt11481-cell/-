@@ -16,9 +16,9 @@ from urllib.parse import urlparse
 TOOLS = {"spec_search", "spec_show", "spec_groups", "get_example"}
 CASES = [
     ("P1-01", "ust21050", "ust21050"),
-    ("P1-02", "해외주식 예수금", "ust21110"),
-    ("P1-03", "미국주식 원장잔고확인", "ust21070"),
-    ("P1-04", "미국주식 일 차트", "usa06012"),
+    ("P1-02", "\uD574\uC678\uC8FC\uC2DD \uC608\uC218\uAE08", "ust21110"),
+    ("P1-03", "\uBBF8\uAD6D\uC8FC\uC2DD \uC6D0\uC7A5\uC794\uACE0\uD655\uC778", "ust21070"),
+    ("P1-04", "\uBBF8\uAD6D\uC8FC\uC2DD \uC77C \uCC28\uD2B8", "usa06012"),
     ("P1-05", "exrt_appl_tp", "usa06012"),
 ]
 

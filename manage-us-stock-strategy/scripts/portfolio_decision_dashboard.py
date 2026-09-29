@@ -48,6 +48,9 @@ DEFAULT_RISK_POLICY = ROOT / "manage-us-stock-strategy/assets/portfolio-decision
 DEFAULT_ALERT_POLICY = ROOT / "stock-strategy-system/alert_policy.json"
 DEFAULT_PORTFOLIO_STATE = ROOT / "stock-strategy-system/portfolio_state.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "workspace/outputs/portfolio-decision-dashboard"
+DASHBOARD_TEXT_PATH = ROOT / "manage-us-stock-strategy/assets/locales/portfolio-decision-dashboard-ko-KR.json"
+# Korean display text lives in the locale file so this module stays ASCII-only.
+_T = load_json(DASHBOARD_TEXT_PATH)
 ALLOWED_MODES = {"INITIAL_COMPILE", "POST_SELL_RECOMPILE", "HISTORICAL_REPLAY"}
 CURRENT_PLAN_STATUS = "CURRENT_APPROVED"
 
@@ -143,7 +146,7 @@ def implementation_provenance_paths(risk_path: Path) -> list[Path]:
         Path(__file__).with_name("instrument_identity_authority.py"),
         Path(__file__).with_name("instrument_identity_artifact.py"),
         Path(__file__).with_name("integrated_authority_snapshot.py"),
-        MANUAL_EVIDENCE_SCHEMA, PLAN_SCHEMA, DASHBOARD_SCHEMA,
+        MANUAL_EVIDENCE_SCHEMA, PLAN_SCHEMA, DASHBOARD_SCHEMA, DASHBOARD_TEXT_PATH,
         CURRENT_SESSION_CONTEXT_SCHEMA, REQUEST_ACCOUNTING_SCHEMA, risk_path.resolve(),
         ORDER_INTENT_SCHEMA, ORDER_INTENT_SCRIPT,
         *[Path(__file__).with_name(name) for name in (
@@ -256,7 +259,7 @@ def _safe_swing_text(value: str) -> str:
     # separators cannot split a sensitive label. Return the original text below.
     label_working_value = unicodedata.normalize("NFKC", value)
     labels = re.findall(
-        r"\b(\w+(?:(?:[^\S\r\n]|[-－])+\w+)*)[\"']?\s*[:=：＝]", label_working_value)
+        r"\b(\w+(?:(?:[^\S\r\n]|[-\uFF0D])+\w+)*)[\"']?\s*[:=\uFF1A\uFF1D]", label_working_value)
     sensitive = {"app_key", "app_secret", "account", "account_id", "account_number",
                  "account_no", "token", "authorization", "cookie", "raw_broker_response",
                  "order_id", "credential_path"}
@@ -268,11 +271,11 @@ def _safe_swing_text(value: str) -> str:
             canonical = re.sub(r"[\s_-]+", "", candidate)
             # Suffixes allow prose before a label, but must end at its delimiter.
             if canonical in sensitive or SECRET_KEY.search(candidate):
-                return "[민감정보 제거]"
+                return "[\uBBFC\uAC10\uC815\uBCF4 \uC81C\uAC70]"
     if re.search(r"\b(?:Bearer|Basic)\s+\S+|-----BEGIN [^-]*PRIVATE KEY-----|"
                  r"(?:^|[\\/])\.env(?:\b|$)|[a-z]:[\\/][^\r\n]*(?:credential|secret)",
                  value, re.IGNORECASE):
-        return "[민감정보 제거]"
+        return "[\uBBFC\uAC10\uC815\uBCF4 \uC81C\uAC70]"
     return value
 
 
@@ -620,9 +623,9 @@ def _swing_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
             "shadow_cash_impact": None, "target_weight_pct": None,
             "reason": _safe_swing_text(row["rationale"]) + (
                 " [LOCAL_REGULAR_BAR_COHERENCE=PASS; PROVIDER_FINALIZATION=NOT_VERIFIED; "
-                + ("KIWOOM_ONLY; 독립 종가 NOT_VERIFIED; "
+                + ("KIWOOM_ONLY; \uB3C5\uB9BD \uC885\uAC00 NOT_VERIFIED; "
                    if timing.get("timing_source_mode") == "KIWOOM_ONLY" else "")
-                + "Manual 기존 보유 timing 한정]"
+                + "Manual \uAE30\uC874 \uBCF4\uC720 timing \uD55C\uC815]"
                 if local_timing else ""),
             "invalidation": [_safe_swing_text(item) for item in row.get("decision_change_triggers") or []],
             "blockers": sorted(set(issues + [
@@ -1964,7 +1967,7 @@ def compile_dashboard(
 
 def _fmt(value: Any, digits: int = 2) -> str:
     if value is None:
-        return "확인 필요"
+        return _T["fmt.01"]
     if isinstance(value, int):
         return f"{value:,}"
     if isinstance(value, float):
@@ -1975,19 +1978,19 @@ def _fmt(value: Any, digits: int = 2) -> str:
 def _render_markdown_legacy(report: dict[str, Any]) -> str:
     stage1 = report["stage1"]
     stage2 = report["stage2"]
-    conclusion = "위험 축소 우선" if any((row.get("calculated_sell_shares") or 0) > 0 for row in stage1["sell_advisories"]) else (
-        "매수 검토" if stage2["buy_advisories"] else "현금 유지 / 보유 검토"
+    conclusion = _T["render_markdown_legacy.01"] if any((row.get("calculated_sell_shares") or 0) > 0 for row in stage1["sell_advisories"]) else (
+        _T["render_markdown_legacy.02"] if stage2["buy_advisories"] else _T["render_markdown_legacy.03"]
     )
     lines = [
-        "# 포트폴리오 조정안", "",
-        f"- 기준 시각: {report['evidence'].get('decision_as_of') or '확인 필요'}",
+        _T["render_markdown_legacy.04"], "",
+        f"{_T['render_markdown_legacy.05']} {report['evidence'].get('decision_as_of') or _T['fmt.01']}",
         f"- Evidence Grade: {report['evidence']['portfolio_evidence_grade_display']}",
-        f"- 시장 상태: {report['evidence'].get('market_phase') or '확인 필요'}",
-        f"- 오늘의 결론: **{conclusion}**", "",
-        "> 이 문서는 계산된 수동 검토 자료입니다. 매수·매도 주문을 만들거나 전송하지 않습니다.", "",
-        "## 지금 할 일 — 1단계", "",
-        f"상태: {stage1['status']}", "",
-        "| 종목 | 현재 주수 | 목표 참고 주수 | 수동 매도 참고 | 현재 비중 | 목표 비중 | 이유 |",
+        f"{_T['render_markdown_legacy.06']} {report['evidence'].get('market_phase') or _T['fmt.01']}",
+        f"{_T['render_markdown_legacy.07']}{conclusion}**", "",
+        ("> " + _T["render_markdown_legacy.08"]), "",
+        _T["render_markdown_legacy.09"], "",
+        f"{_T['render_markdown_legacy.10']} {stage1['status']}", "",
+        _T["render_markdown_legacy.11"],
         "|---|---:|---:|---:|---:|---:|---|",
     ]
     if stage1["sell_advisories"]:
@@ -1998,51 +2001,51 @@ def _render_markdown_legacy(report: dict[str, Any]) -> str:
                 f"{_fmt(row['target_weight_pct'])}% | {row['reason']} |"
             )
     else:
-        lines.append("| 해당 없음 | - | - | - | - | - | 현재 계획에 축소·정리 항목 없음 |")
-    lines += ["", "## 2단계 매수", "", f"상태: {stage2['status']}", ""]
+        lines.append(_T["render_markdown_legacy.12"])
+    lines += ["", _T["render_markdown_legacy.13"], "", f"{_T['render_markdown_legacy.10']} {stage2['status']}", ""]
     if stage2["status"] == "BLOCKED_POST_SELL_BROKER_REFRESH_REQUIRED":
-        lines.append("매도 체결 후 Kiwoom 계좌를 다시 확인해야 매수 수량을 계산할 수 있습니다.")
+        lines.append(_T["render_markdown_legacy.14"])
     if stage2["buy_advisories"]:
-        lines += ["", "| 종목 | 계산된 수동 매수 참고 | 예상 소요액 |", "|---|---:|---:|"]
+        lines += ["", _T["render_markdown_legacy.15"], "|---|---:|---:|"]
         for row in stage2["buy_advisories"]:
-            lines.append(f"| {row['ticker']} | {_fmt(row['calculated_buy_shares'])}주 | ${_fmt(row['estimated_cost_usd'])} |")
+            lines.append(f"| {row['ticker']} | {_fmt(row['calculated_buy_shares'])}{_T['render_markdown_legacy.16']}{_fmt(row['estimated_cost_usd'])} |")
     else:
-        candidates = ", ".join(stage2["buy_candidates"]) or "없음"
-        lines += [f"매수 후보: {candidates}", "", "현재 최종 매수 수량: 계산 금지 / BLOCKED"]
-    lines += ["", "## 종목별 판단 카드", ""]
-    action_ko = {"ADD": "늘림", "HOLD": "유지", "TRIM": "축소", "EXIT": "정리 검토"}
+        candidates = ", ".join(stage2["buy_candidates"]) or _T["render_markdown_legacy.17"]
+        lines += [f"{_T['render_markdown_legacy.18']} {candidates}", "", _T["render_markdown_legacy.19"]]
+    lines += ["", _T["render_markdown_legacy.20"], ""]
+    action_ko = {"ADD": _T["render_markdown_legacy.action_ko.ADD"], "HOLD": _T["render_markdown_legacy.action_ko.HOLD"], "TRIM": _T["render_markdown_legacy.action_ko.TRIM"], "EXIT": _T["render_markdown_legacy.action_ko.EXIT"]}
     for row in report["portfolio"]["positions"]:
         lines += [
             f"### {row['ticker']}", "",
-            f"- 판단: {action_ko[row['action']]}",
-            f"- 현재 비중 / 목표 비중: {_fmt(row['current_weight_pct']['value'])}% / {_fmt(row['target_weight_pct']['value'])}%",
-            f"- 현재 주수 / 목표 참고 주수: {_fmt(row['current_quantity']['value'])}주 / {_fmt(row['target_shares_reference']['value'])}주",
-            f"- 조정 참고: {_fmt(row['share_delta']['value'])}주",
-            f"- 핵심 이유: {row['rationale']}",
-            f"- 가장 큰 위험: {row.get('material_risk') or '계획에 명시되지 않음'}",
-            f"- 판단이 바뀌는 조건: {', '.join(row['decision_change_triggers']) or '계획에 명시되지 않음'}", "",
+            f"{_T['render_markdown_legacy.21']} {action_ko[row['action']]}",
+            f"{_T['render_markdown_legacy.22']} {_fmt(row['current_weight_pct']['value'])}% / {_fmt(row['target_weight_pct']['value'])}%",
+            f"{_T['render_markdown_legacy.23']} {_fmt(row['current_quantity']['value'])}{_T['render_markdown_legacy.24']} {_fmt(row['target_shares_reference']['value'])}{_T['render_markdown_legacy.25']}",
+            f"{_T['render_markdown_legacy.26']} {_fmt(row['share_delta']['value'])}{_T['render_markdown_legacy.25']}",
+            f"{_T['render_markdown_legacy.27']} {row['rationale']}",
+            f"{_T['render_markdown_legacy.28']} {row.get('material_risk') or _T['render_markdown_legacy.29']}",
+            f"{_T['render_markdown_legacy.30']} {', '.join(row['decision_change_triggers']) or _T['render_markdown_legacy.29']}", "",
         ]
     risk = report["portfolio"].get("current_risk") or {}
-    lines += ["## 포트폴리오 건강", "", "| 항목 | 현재 | 상태 |", "|---|---:|---|"]
+    lines += [_T["render_markdown_legacy.31"], "", _T["render_markdown_legacy.32"], "|---|---:|---|"]
     labels = {
-        "CASH_PCT": "현금", "LEVERAGED_PRODUCTS_PCT": "레버리지 상품",
-        "GROWTH_AI_SEMI_BOOK_PCT": "Growth/AI/Semi 장부",
-        "GROWTH_AI_SEMI_LEVERAGE_ADJUSTED_PCT": "Growth/AI/Semi 레버리지 조정",
-        "OVERALL_LEVERAGE_ADJUSTED_PROXY_PCT": "전체 레버리지 조정 proxy",
+        "CASH_PCT": _T["render_markdown_legacy.labels.CASH_PCT"], "LEVERAGED_PRODUCTS_PCT": _T["render_markdown_legacy.labels.LEVERAGED_PRODUCTS_PCT"],
+        "GROWTH_AI_SEMI_BOOK_PCT": _T["render_markdown_legacy.labels.GROWTH_AI_SEMI_BOOK_PCT"],
+        "GROWTH_AI_SEMI_LEVERAGE_ADJUSTED_PCT": _T["render_markdown_legacy.labels.GROWTH_AI_SEMI_LEVERAGE_ADJUSTED_PCT"],
+        "OVERALL_LEVERAGE_ADJUSTED_PROXY_PCT": _T["render_markdown_legacy.labels.OVERALL_LEVERAGE_ADJUSTED_PROXY_PCT"],
     }
     for check in risk.get("checks", []):
         if check["metric"].startswith("POSITION_PCT:"):
             continue
         lines.append(f"| {labels.get(check['metric'], check['metric'])} | {_fmt(check['value'])}% | {check['status']} |")
     if "OPEN_ITEMS_VISIBILITY_UNAVAILABLE" in report["evidence"]["warnings"]:
-        lines += ["", "> 실제 주문 전 Kiwoom에서 미체결 주문이 없는지 확인이 필요합니다."]
+        lines += ["", ("> " + _T["render_markdown_legacy.33"])]
     lines += [
-        "", "## 권한과 현금 구분", "",
-        f"- 현재 현금: ${_fmt(report['cash_semantics']['current_cash_usd']['value'])}",
-        f"- 검증된 주문가능 현금: ${_fmt(report['cash_semantics']['verified_orderable_cash_usd']['value'])}",
-        f"- 매도 후 추정 현금: ${_fmt(report['cash_semantics']['post_sell_estimated_cash_usd']['value'])}",
-        f"- 전체 목표 참고 현금: ${_fmt(report['cash_semantics']['full_target_reference_cash_usd']['value'])}",
-        f"- 현재 수동 검토 권한: {report['authority']['current_runtime_advisory_authority']}",
+        "", _T["render_markdown_legacy.34"], "",
+        f"{_T['render_markdown_legacy.35']}{_fmt(report['cash_semantics']['current_cash_usd']['value'])}",
+        f"{_T['render_markdown_legacy.36']}{_fmt(report['cash_semantics']['verified_orderable_cash_usd']['value'])}",
+        f"{_T['render_markdown_legacy.37']}{_fmt(report['cash_semantics']['post_sell_estimated_cash_usd']['value'])}",
+        f"{_T['render_markdown_legacy.38']}{_fmt(report['cash_semantics']['full_target_reference_cash_usd']['value'])}",
+        f"{_T['render_markdown_legacy.39']} {report['authority']['current_runtime_advisory_authority']}",
         "- Broker Order Authority: FALSE",
         "- execution_quantity: NULL",
         "- automatic_order: FALSE", "",
@@ -2057,36 +2060,36 @@ def _render_html_legacy(report: dict[str, Any]) -> str:
         f"<tr><td>{html.escape(row['ticker'])}</td><td>{_fmt(row['current_shares'])}</td>"
         f"<td>{_fmt(row['target_shares_reference'])}</td><td>{_fmt(row['calculated_sell_shares'])}</td>"
         f"<td>{html.escape(row['reason'])}</td></tr>" for row in first
-    ) or "<tr><td colspan='5'>현재 계획에 축소·정리 항목이 없습니다.</td></tr>"
+    ) or ("<tr><td colspan='5'>" + _T["render_html_legacy.01"] + "</td></tr>")
     cards = "".join(
-        f"<article><h3>{html.escape(row['ticker'])}</h3><p><strong>{html.escape(row['action'])}</strong></p>"
-        f"<p>현재 {_fmt(row['current_quantity']['value'])}주 · 목표 참고 {_fmt(row['target_shares_reference']['value'])}주</p>"
-        f"<p>{html.escape(row['rationale'])}</p></article>" for row in report["portfolio"]["positions"]
+        (f"<article><h3>{html.escape(row['ticker'])}</h3><p><strong>{html.escape(row['action'])}</strong></p>" +
+        f"<p>{_T['render_html_legacy.02']} {_fmt(row['current_quantity']['value'])}{_T['render_html_legacy.03']} {_fmt(row['target_shares_reference']['value'])}{_T['render_markdown_legacy.25']}</p>" +
+        f"<p>{html.escape(row['rationale'])}</p></article>") for row in report["portfolio"]["positions"]
     )
     blocked = report["stage2"]["status"] == "BLOCKED_POST_SELL_BROKER_REFRESH_REQUIRED"
-    buy_text = "매도 체결 후 Kiwoom 계좌를 다시 확인해야 매수 수량을 계산할 수 있습니다." if blocked else report["stage2"]["status"]
+    buy_text = _T["render_markdown_legacy.14"] if blocked else report["stage2"]["status"]
     return f"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>포트폴리오 조정안</title><style>
-body{{font-family:"Malgun Gothic","맑은 고딕","Segoe UI",Arial,sans-serif;margin:0;background:#f4f7fb;color:#172033}}
+<title>{_T['render_html_legacy.04']}</title><style>
+body{{font-family:"Malgun Gothic","\uB9D1\uC740 \uACE0\uB515","Segoe UI",Arial,sans-serif;margin:0;background:#f4f7fb;color:#172033}}
 main{{max-width:1120px;margin:auto;padding:28px}}.hero{{background:#173b66;color:white;padding:26px;border-radius:18px}}
 .notice{{background:#fff4d6;border-left:5px solid #d39500;padding:14px;margin:18px 0}}section{{background:white;padding:20px;margin:18px 0;border-radius:14px;box-shadow:0 5px 20px #16324f14}}
 table{{border-collapse:collapse;width:100%}}th,td{{border-bottom:1px solid #dce3ec;padding:10px;text-align:left}}.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}}article{{border:1px solid #dce3ec;border-radius:12px;padding:14px}}
 .status{{font-size:1.1rem;font-weight:700;color:#8a4200}}small{{color:#526173}}pre{{white-space:pre-wrap;background:#f7f8fa;padding:12px;border-radius:8px}}
 </style></head><body><main>
-<header class="hero"><h1>포트폴리오 조정안</h1><p>기준 시각: {html.escape(str(report['evidence'].get('decision_as_of') or '확인 필요'))}</p><p>Evidence Grade: {html.escape(report['evidence']['portfolio_evidence_grade_display'])} · 시장 상태: {html.escape(str(report['evidence'].get('market_phase') or '확인 필요'))}</p></header>
-<div class="notice">계산된 수동 검토 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.</div>
-<section><h2>지금 할 일 — 1단계</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>종목</th><th>현재 주수</th><th>목표 참고</th><th>수동 매도 참고</th><th>이유</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
-<section><h2>2단계 매수</h2><p class="status">{html.escape(report['stage2']['status'])}</p><p>{html.escape(buy_text)}</p><p>매수 후보: {html.escape(', '.join(report['stage2']['buy_candidates']) or '없음')}</p></section>
-<section><h2>종목별 판단</h2><div class="cards">{cards}</div></section>
-<section><h2>권한</h2><p>Broker Order Authority = FALSE · execution_quantity = NULL · automatic_order = FALSE</p><small>현재 수동 검토 권한: {html.escape(report['authority']['current_runtime_advisory_authority'])}</small></section>
-<details><summary>동일 의미의 Markdown 원문</summary><pre>{html.escape(markdown)}</pre></details>
+<header class="hero"><h1>{_T['render_html_legacy.04']}</h1><p>{_T['render_html_legacy.05']} {html.escape(str(report['evidence'].get('decision_as_of') or _T['fmt.01']))}</p><p>Evidence Grade: {html.escape(report['evidence']['portfolio_evidence_grade_display'])} {_T['render_html_legacy.06']} {html.escape(str(report['evidence'].get('market_phase') or _T['fmt.01']))}</p></header>
+<div class="notice">{_T['render_html_legacy.07']}</div>
+<section><h2>{_T['render_html_legacy.08']}</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>{_T['render_html_legacy.09']}</th><th>{_T['render_html_legacy.10']}</th><th>{_T['render_html_legacy.11']}</th><th>{_T['render_html_legacy.12']}</th><th>{_T['render_html_legacy.13']}</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
+<section><h2>{_T['render_html_legacy.14']}</h2><p class="status">{html.escape(report['stage2']['status'])}</p><p>{html.escape(buy_text)}</p><p>{_T['render_markdown_legacy.18']} {html.escape(', '.join(report['stage2']['buy_candidates']) or _T['render_markdown_legacy.17'])}</p></section>
+<section><h2>{_T['render_html_legacy.15']}</h2><div class="cards">{cards}</div></section>
+<section><h2>{_T['render_html_legacy.16']}</h2><p>Broker Order Authority = FALSE \u00B7 execution_quantity = NULL \u00B7 automatic_order = FALSE</p><small>{_T['render_html_legacy.17']} {html.escape(report['authority']['current_runtime_advisory_authority'])}</small></section>
+<details><summary>{_T['render_html_legacy.18']}</summary><pre>{html.escape(markdown)}</pre></details>
 </main></body></html>"""
 
 
 def _display(value: Any, digits: int = 2) -> str:
     if value is None:
-        return "확인 필요"
+        return _T["fmt.01"]
     if isinstance(value, bool):
         return str(value).upper()
     if isinstance(value, int):
@@ -2098,20 +2101,20 @@ def _display(value: Any, digits: int = 2) -> str:
 
 def _current_context_explanation(status: str) -> str:
     return {
-        "VERIFIED": "현재 세션 확인 자료가 Grade B 원본 실행·해시·판단 시각·세션과 정확히 일치합니다.",
-        "ABSENT": "현재 세션 확인 자료가 없어 계산은 계획 준비용이며 최종 수동 검토는 차단됩니다.",
-        "PRESENT_INVALID": "현재 세션 확인 자료의 형식이 유효하지 않아 최종 수동 검토는 차단됩니다.",
-        "PRESENT_MISMATCH": "현재 세션 확인 자료가 Grade B 원본 또는 정규 세션과 일치하지 않아 최종 수동 검토는 차단됩니다.",
-    }.get(status, "현재 세션 확인 상태를 판정할 수 없습니다.")
+        "VERIFIED": _T["current_context_explanation.map.VERIFIED"],
+        "ABSENT": _T["current_context_explanation.map.ABSENT"],
+        "PRESENT_INVALID": _T["current_context_explanation.map.PRESENT_INVALID"],
+        "PRESENT_MISMATCH": _T["current_context_explanation.map.PRESENT_MISMATCH"],
+    }.get(status, _T["current_context_explanation.01"])
 
 
 def _request_accounting_explanation(status: str) -> str:
     return {
-        "VERIFIED": "요청 횟수가 같은 Grade B 실행과 원본 해시에 정확히 결속되어 검증되었습니다.",
-        "ABSENT": "검증 가능한 요청 회계 자료가 없습니다.",
-        "PRESENT_INVALID": "요청 회계의 형식 또는 합계가 유효하지 않습니다.",
-        "PRESENT_UNVERIFIED": "요청 흔적은 있으나 같은 Grade B 원본 실행과 정확히 결속되지 않았습니다.",
-    }.get(status, "요청 회계 상태를 판정할 수 없습니다.")
+        "VERIFIED": _T["request_accounting_explanation.map.VERIFIED"],
+        "ABSENT": _T["request_accounting_explanation.map.ABSENT"],
+        "PRESENT_INVALID": _T["request_accounting_explanation.map.PRESENT_INVALID"],
+        "PRESENT_UNVERIFIED": _T["request_accounting_explanation.map.PRESENT_UNVERIFIED"],
+    }.get(status, _T["request_accounting_explanation.01"])
 
 
 def _dashboard_display_semantics(report: dict[str, Any]) -> dict[str, str]:
@@ -2120,26 +2123,26 @@ def _dashboard_display_semantics(report: dict[str, Any]) -> dict[str, str]:
     context_status = str(report["current_context"].get("status") or "NOT_AVAILABLE")
     accounting_status = str(report["evidence"].get("request_accounting_status") or "NOT_AVAILABLE")
     current_data_labels = {
-        "CURRENT_SESSION_CONTEXT_VERIFIED": "현재 자료",
-        "CURRENT_SESSION_CONTEXT_NOT_VERIFIED": "현재 자료 여부 확인 불가",
-        "HISTORICAL_REPLAY": "과거 자료 / 현재 판단 사용 불가",
+        "CURRENT_SESSION_CONTEXT_VERIFIED": _T["dashboard_display_semantics.current_data_labels.CURRENT_SESSION_CONTEXT_VERIFIED"],
+        "CURRENT_SESSION_CONTEXT_NOT_VERIFIED": _T["dashboard_display_semantics.current_data_labels.CURRENT_SESSION_CONTEXT_NOT_VERIFIED"],
+        "HISTORICAL_REPLAY": _T["dashboard_display_semantics.current_data_labels.HISTORICAL_REPLAY"],
     }
     session_labels = {
-        "VERIFIED": "확인됨",
-        "ABSENT": "확인되지 않음",
-        "PRESENT_MISMATCH": "확인되지 않음",
-        "PRESENT_INVALID": "확인되지 않음",
+        "VERIFIED": _T["dashboard_display_semantics.session_labels.VERIFIED"],
+        "ABSENT": _T["dashboard_display_semantics.session_labels.ABSENT"],
+        "PRESENT_MISMATCH": _T["dashboard_display_semantics.session_labels.PRESENT_MISMATCH"],
+        "PRESENT_INVALID": _T["dashboard_display_semantics.session_labels.PRESENT_INVALID"],
     }
     accounting_labels = {
-        "VERIFIED": "검증됨",
-        "PRESENT_UNVERIFIED": "미검증",
-        "ABSENT": "없음",
-        "PRESENT_INVALID": "형식 오류",
+        "VERIFIED": _T["dashboard_display_semantics.accounting_labels.VERIFIED"],
+        "PRESENT_UNVERIFIED": _T["dashboard_display_semantics.accounting_labels.PRESENT_UNVERIFIED"],
+        "ABSENT": _T["dashboard_display_semantics.accounting_labels.ABSENT"],
+        "PRESENT_INVALID": _T["dashboard_display_semantics.accounting_labels.PRESENT_INVALID"],
     }
     return {
-        "current_data_status": f"{current_data_labels.get(freshness, '확인 필요')} ({freshness})",
-        "current_session_verification": f"{session_labels.get(context_status, '확인 필요')} ({context_status})",
-        "request_accounting": f"{accounting_labels.get(accounting_status, '확인 필요')} ({accounting_status})",
+        "current_data_status": f"{current_data_labels.get(freshness, _T['fmt.01'])} ({freshness})",
+        "current_session_verification": f"{session_labels.get(context_status, _T['fmt.01'])} ({context_status})",
+        "request_accounting": f"{accounting_labels.get(accounting_status, _T['fmt.01'])} ({accounting_status})",
     }
 
 
@@ -2149,45 +2152,45 @@ def _render_swing_action_plan(report: dict[str, Any], *, as_html: bool = False) 
     if view is None:
         return ""
     summary = [
-        "지금 할 일 = 보유·현금 정책과 Manual 근거 준비 상태 확인",
-        "현재 판단 = 기존 방향 후보 검토; 새 Shadow 수량은 산출 보류",
-        "보류 이유 = 정책 승인 결속·Manual 준비·기술 신호 미확인",
-        "개발·운영 상태 = 출력 계약 구현; 수량 기능과 실행은 비활성",
-        "다음 확인 = 해당 종목의 정책 공백과 근거 시점",
+        _T["render_swing_action_plan.01"],
+        _T["render_swing_action_plan.02"],
+        _T["render_swing_action_plan.03"],
+        _T["render_swing_action_plan.04"],
+        _T["render_swing_action_plan.05"],
     ]
-    labels = {"HOLD": "유지", "TRIM": "축소", "EXIT": "청산", "BUY": "신규매수", "ADD": "추가", "DEFERRED": "보류"}
-    headers = ["종목", "근거 시점 보유", "원래 후보", "현재 검토", "시점", "Shadow 수량", "수량 상태", "실행", "근거", "무효화·재평가"]
+    labels = {"HOLD": _T["render_swing_action_plan.labels.HOLD"], "TRIM": _T["render_swing_action_plan.labels.TRIM"], "EXIT": _T["render_swing_action_plan.labels.EXIT"], "BUY": _T["render_swing_action_plan.labels.BUY"], "ADD": _T["render_swing_action_plan.labels.ADD"], "DEFERRED": _T["render_swing_action_plan.labels.DEFERRED"]}
+    headers = [_T["render_html_legacy.09"], _T["render_swing_action_plan.06"], _T["render_swing_action_plan.07"], _T["render_swing_action_plan.08"], _T["render_swing_action_plan.09"], _T["render_swing_action_plan.10"], _T["render_swing_action_plan.11"], _T["render_swing_action_plan.12"], _T["render_swing_action_plan.13"], _T["render_swing_action_plan.14"]]
     def concise(value: str) -> str:
         return value if len(value) <= 120 else value[:117] + "..."
     rows = [[
         row["ticker"], _display(row["current_qty"]), labels[row["candidate_direction"]],
-        labels[row["direction"]], row["timing_status"], "미산출", row["quantity_status"], row["execution_status"],
-        concise(row["reason"]), concise("; ".join(row["invalidation"]) or "확인 필요"),
+        labels[row["direction"]], row["timing_status"], _T["render_swing_action_plan.15"], row["quantity_status"], row["execution_status"],
+        concise(row["reason"]), concise("; ".join(row["invalidation"]) or _T["fmt.01"]),
     ] for row in view["rows"]]
     cash = view["cash"]
     notes = [
-        f"판단 기준시각: {view['source_binding']['decision_as_of'] or '확인 필요'} · 자료 상태: {view['source_binding']['freshness']}",
-        "Cash는 독립 검토 대안이며, 현금 유지가 확정된 것은 아닙니다.",
-        f"NAV용 현금: {_display(cash['nav_cash_usd']['value'])} USD · 주문가능현금: {_display(cash['orderable_cash_usd']['value'])} USD",
-        "현금 시점 정합성: NOT_VERIFIED · 예상 매도대금은 주문가능현금이 아닙니다.",
-        "아래 기존 수동 참고 계산은 새 Swing 수량 승인이나 주문 지시가 아닙니다.",
-        "출처 해시는 입력 없는 표시 검증에서 형식만 확인합니다. 원본 진위·승인은 NOT_VERIFIED입니다.",
+        f"{_T['render_swing_action_plan.16']} {view['source_binding']['decision_as_of'] or _T['fmt.01']} {_T['render_swing_action_plan.17']} {view['source_binding']['freshness']}",
+        _T["render_swing_action_plan.18"],
+        f"{_T['render_swing_action_plan.19']} {_display(cash['nav_cash_usd']['value'])} {_T['render_swing_action_plan.20']} {_display(cash['orderable_cash_usd']['value'])} USD",
+        _T["render_swing_action_plan.21"],
+        _T["render_swing_action_plan.22"],
+        _T["render_swing_action_plan.23"],
     ]
     details = [
-        f"{row['ticker']}: {row['reason']} | 무효화·재평가: {', '.join(row['invalidation']) or '확인 필요'} | 미확인: {', '.join(row['blockers'])}"
+        f"{row['ticker']}: {row['reason']} {_T['render_swing_action_plan.24']} {', '.join(row['invalidation']) or _T['fmt.01']} {_T['render_swing_action_plan.25']} {', '.join(row['blockers'])}"
         for row in view["rows"]
     ]
     if as_html:
         table = "<thead><tr>" + "".join(f"<th>{html.escape(x)}</th>" for x in headers) + "</tr></thead><tbody>"
         table += "".join("<tr>" + "".join(f"<td>{html.escape(x)}</td>" for x in row) + "</tr>" for row in rows) + "</tbody>"
-        return ("<section><h2>[한눈에 보기]</h2>" + "".join(f"<p>{html.escape(x)}</p>" for x in summary)
-                + "<h2>Swing Action Plan — 계약 준비</h2><table>" + table + "</table>"
+        return (("<section><h2>" + _T["render_swing_action_plan.26"] + "</h2>") + "".join(f"<p>{html.escape(x)}</p>" for x in summary)
+                + ("<h2>" + _T["render_swing_action_plan.27"] + "</h2><table>") + table + "</table>"
                 + "".join(f"<p>{html.escape(x)}</p>" for x in notes)
-                + "<details><summary>근거와 미확인</summary>" + "".join(f"<p>{html.escape(x)}</p>" for x in details)
+                + ("<details><summary>" + _T["render_swing_action_plan.28"] + "</summary>") + "".join(f"<p>{html.escape(x)}</p>" for x in details)
                 + "</details></section>")
     def cell(value: str) -> str:
         return html.escape(value).replace("|", "&#124;").replace("\n", " ").replace("\r", " ")
-    lines = ["[한눈에 보기]", ""] + summary + ["", "## Swing Action Plan — 계약 준비", ""]
+    lines = [_T["render_swing_action_plan.26"], ""] + summary + ["", _T["render_swing_action_plan.29"], ""]
     lines += ["| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
     lines += ["| " + " | ".join(cell(x) for x in row) + " |" for row in rows]
     lines += [""] + ["- " + cell(x) for x in notes] + [""] + ["- " + cell(x) for x in details]
@@ -2204,18 +2207,18 @@ def render_markdown(report: dict[str, Any]) -> str:
     event = report["event_context"]
     lines = [_render_swing_action_plan(report)] if report.get("swing_action_plan") is not None else []
     lines += [
-        "# 포트폴리오 의사결정 대시보드", "",
-        f"- 생성 시각: {report['generated_at']} — 생성 당시 결과의 표시이며 현재 재수용 검증이 아닙니다.",
-        f"- 판단 시각: {evidence.get('decision_as_of') or '확인 필요'}",
-        f"- Evidence Run: {evidence.get('run_id') or '확인 필요'}",
+        _T["render_markdown.01"], "",
+        f"{_T['render_markdown.02']} {report['generated_at']} {_T['render_markdown.03']}",
+        f"{_T['render_markdown.04']} {evidence.get('decision_as_of') or _T['fmt.01']}",
+        f"- Evidence Run: {evidence.get('run_id') or _T['fmt.01']}",
         f"- Evidence Grade: {evidence['portfolio_evidence_grade_display']}",
-        f"- 현재 자료 상태: {display['current_data_status']}",
-        f"- 현재 세션 확인 결과: {display['current_session_verification']}",
-        f"- 요청 회계 상태: {display['request_accounting']}",
-        f"- 시장 단계: {evidence.get('market_phase') or '확인 필요'}", "",
-        "> 수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.", "",
-        "## 위험 축소 1단계", "", f"상태: {stage1['status']}", "",
-        "| 종목 | 현재 주식 | 목표 참고 주식 | 계산 매도 주식 | 현재 비중 | 목표 비중 | 근거 |",
+        f"{_T['render_markdown.05']} {display['current_data_status']}",
+        f"{_T['render_markdown.06']} {display['current_session_verification']}",
+        f"{_T['render_markdown.07']} {display['request_accounting']}",
+        f"{_T['render_markdown.08']} {evidence.get('market_phase') or _T['fmt.01']}", "",
+        ("> " + _T["render_markdown.09"]), "",
+        _T["render_markdown.10"], "", f"{_T['render_markdown_legacy.10']} {stage1['status']}", "",
+        _T["render_markdown.11"],
         "|---|---:|---:|---:|---:|---:|---|",
     ]
     if stage1["sell_advisories"]:
@@ -2226,68 +2229,68 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"{_display(row['target_weight_pct'])}% | {row['reason']} |"
             )
     else:
-        lines.append("| 해당 없음 | - | - | - | - | - | 계획상 축소·청산 항목 없음 |")
+        lines.append(_T["render_markdown.12"])
 
-    lines += ["", "## 2단계 매수", "", f"상태: {stage2['status']}", ""]
+    lines += ["", _T["render_markdown_legacy.13"], "", f"{_T['render_markdown_legacy.10']} {stage2['status']}", ""]
     if stage2["status"] == "BLOCKED_POST_SELL_BROKER_REFRESH_REQUIRED":
-        lines.append("매도 체결 후 새 broker-observed Grade B run으로 다시 계산해야 합니다.")
+        lines.append(_T["render_markdown.13"])
     if stage2["buy_advisories"]:
         lines += [
-            "| 종목 | 목표 참고 주식 | 목표 격차 | 계산 매수 주식 | 기준 가격 | 예상 소요액 |",
+            _T["render_markdown.14"],
             "|---|---:|---:|---:|---:|---:|",
         ]
         references = {item["ticker"]: item["target_shares_reference"] for item in stage2["buy_candidate_references"]}
         for row in stage2["buy_advisories"]:
             lines.append(
-                f"| {row['ticker']} | {_display(references.get(row['ticker']))}주 | {_display(row['target_gap_shares'])}주 | "
-                f"{_display(row['calculated_buy_shares'])}주 | ${_display(row['price_usd'])} | "
-                f"${_display(row['estimated_cost_usd'])} |"
+                (f"| {row['ticker']} | {_display(references.get(row['ticker']))}{_T['render_markdown.15']} {_display(row['target_gap_shares'])}{_T['render_markdown.15']} " +
+                f"{_display(row['calculated_buy_shares'])}{_T['render_markdown_legacy.16']}{_display(row['price_usd'])} | " +
+                f"${_display(row['estimated_cost_usd'])} |")
             )
     else:
-        lines += ["| 종목 | 목표 참고 주식 | 최종 매수 주식 |", "|---|---:|---|"]
+        lines += [_T["render_markdown.16"], "|---|---:|---|"]
         if stage2["buy_candidate_references"]:
             for row in stage2["buy_candidate_references"]:
-                lines.append(f"| {row['ticker']} | {_display(row['target_shares_reference'])}주 | 산출 보류 / BLOCKED |")
+                lines.append(f"| {row['ticker']} | {_display(row['target_shares_reference'])}{_T['render_markdown.17']}")
         else:
-            lines.append("| 없음 | - | 산출 보류 / BLOCKED |")
+            lines.append(_T["render_markdown.18"])
     if stage2["blockers"]:
-        lines.append(f"차단 사유: {', '.join(stage2['blockers'])}")
+        lines.append(f"{_T['render_markdown.19']} {', '.join(stage2['blockers'])}")
 
-    lines += ["", "## 종목 판단", ""]
-    actions = {"ADD": "늘림", "HOLD": "유지", "TRIM": "축소", "EXIT": "전량 정리"}
+    lines += ["", _T["render_markdown.20"], ""]
+    actions = {"ADD": _T["render_markdown.actions.ADD"], "HOLD": _T["render_markdown.actions.HOLD"], "TRIM": _T["render_markdown.actions.TRIM"], "EXIT": _T["render_markdown.actions.EXIT"]}
     for row in report["portfolio"]["positions"]:
         lines += [
             f"### {row['ticker']}", "",
-            f"- 판단: {actions[row['action']]}",
-            f"- 현재/목표 비중: {_display(row['current_weight_pct']['value'])}% / {_display(row['target_weight_pct']['value'])}%",
-            f"- 현재/목표 참고 주식: {_display(row['current_quantity']['value'])}주 / {_display(row['target_shares_reference']['value'])}주",
-            f"- 계산 변화: {_display(row['share_delta']['value'])}주",
-            f"- 근거: {row['rationale']}",
-            f"- 주요 위험: {row.get('material_risk') or '계획에 기재되지 않음'}",
-            f"- 판단 변경 조건: {', '.join(row['decision_change_triggers']) or '계획에 기재되지 않음'}", "",
+            f"{_T['render_markdown_legacy.21']} {actions[row['action']]}",
+            f"{_T['render_markdown.21']} {_display(row['current_weight_pct']['value'])}% / {_display(row['target_weight_pct']['value'])}%",
+            f"{_T['render_markdown.22']} {_display(row['current_quantity']['value'])}{_T['render_markdown_legacy.24']} {_display(row['target_shares_reference']['value'])}{_T['render_markdown_legacy.25']}",
+            f"{_T['render_markdown.23']} {_display(row['share_delta']['value'])}{_T['render_markdown_legacy.25']}",
+            f"{_T['render_markdown.24']} {row['rationale']}",
+            f"{_T['render_markdown.25']} {row.get('material_risk') or _T['render_markdown.26']}",
+            f"{_T['render_markdown.27']} {', '.join(row['decision_change_triggers']) or _T['render_markdown.26']}", "",
         ]
 
     lines += [
-        "## 근거·요청·이벤트", "",
+        _T["render_markdown.28"], "",
         f"- Canonical schema SHA-256: {evidence['canonical_schema_sha256']}",
-        f"- 현재 세션 확인 결과: {display['current_session_verification']}",
-        f"- 현재 세션 설명: {_current_context_explanation(current_context['status'])}",
-        f"- 현재성 차단 사유: {', '.join(current_context['blockers']) or '없음'}",
-        f"- 요청 회계 상태: {display['request_accounting']}",
-        f"- 요청 회계 설명: {_request_accounting_explanation(evidence['request_accounting_status'])}",
+        f"{_T['render_markdown.06']} {display['current_session_verification']}",
+        f"{_T['render_markdown.29']} {_current_context_explanation(current_context['status'])}",
+        f"{_T['render_markdown.30']} {', '.join(current_context['blockers']) or _T['render_markdown_legacy.17']}",
+        f"{_T['render_markdown.07']} {display['request_accounting']}",
+        f"{_T['render_markdown.31']} {_request_accounting_explanation(evidence['request_accounting_status'])}",
     ]
     for name, status in evidence.get("request_accounting", {}).items():
         lines.append(f"  - {name}: {status}")
     lines += [
         f"- Event context: {event['status']}",
         f"- HIGH events (current/new): {_display(event['current_high_count'])}/{_display(event['new_high_count'])}",
-        f"- Affected tickers: {', '.join(event['affected_tickers']) or '없음'}",
+        f"- Affected tickers: {', '.join(event['affected_tickers']) or _T['render_markdown_legacy.17']}",
         f"- Automatic target change: {_display(event['automatic_target_change'])}", "",
-        "## 권한과 현금 의미", "",
-        f"- 현재 현금: ${_display(report['cash_semantics']['current_cash_usd']['value'])}",
-        f"- 검증된 주문 가능 현금: ${_display(report['cash_semantics']['verified_orderable_cash_usd']['value'])}",
-        f"- 매도 후 추정 현금: ${_display(report['cash_semantics']['post_sell_estimated_cash_usd']['value'])}",
-        f"- 현재 런타임 수동자문 권한: {report['authority']['current_runtime_advisory_authority']}",
+        _T["render_markdown.32"], "",
+        f"{_T['render_markdown_legacy.35']}{_display(report['cash_semantics']['current_cash_usd']['value'])}",
+        f"{_T['render_markdown.33']}{_display(report['cash_semantics']['verified_orderable_cash_usd']['value'])}",
+        f"{_T['render_markdown_legacy.37']}{_display(report['cash_semantics']['post_sell_estimated_cash_usd']['value'])}",
+        f"{_T['render_markdown.34']} {report['authority']['current_runtime_advisory_authority']}",
         f"- CLI authority input effect: {report['authority']['runtime_authority_cli_input_effect']}",
         "- Broker Order Authority: FALSE", "- execution_quantity: NULL", "- automatic_order: FALSE", "",
     ]
@@ -2303,7 +2306,7 @@ def render_html(report: dict[str, Any]) -> str:
         f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['current_shares'])}</td>"
         f"<td>{_display(row['target_shares_reference'])}</td><td>{_display(row['calculated_sell_shares'])}</td>"
         f"<td>{html.escape(row['reason'])}</td></tr>" for row in report["stage1"]["sell_advisories"]
-    ) or "<tr><td colspan='5'>계획상 축소·청산 항목이 없습니다.</td></tr>"
+    ) or ("<tr><td colspan='5'>" + _T["render_html.01"] + "</td></tr>")
     references = {
         item["ticker"]: item["target_shares_reference"]
         for item in report["stage2"]["buy_candidate_references"]
@@ -2316,10 +2319,10 @@ def render_html(report: dict[str, Any]) -> str:
     )
     if not buy_rows:
         buy_rows = "".join(
-            f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['target_shares_reference'])}</td>"
-            "<td>-</td><td>산출 보류 / BLOCKED</td><td>-</td><td>-</td></tr>"
+            (f"<tr><td>{html.escape(row['ticker'])}</td><td>{_display(row['target_shares_reference'])}</td>" +
+            ("<td>-</td><td>" + _T["render_html.02"] + "</td><td>-</td><td>-</td></tr>"))
             for row in report["stage2"]["buy_candidate_references"]
-        ) or "<tr><td colspan='6'>후보 없음 · 산출 보류 / BLOCKED</td></tr>"
+        ) or ("<tr><td colspan='6'>" + _T["render_html.03"] + "</td></tr>")
     request_rows = "".join(
         f"<li>{html.escape(name)}: {html.escape(str(status))}</li>"
         for name, status in evidence.get("request_accounting", {}).items()
@@ -2328,20 +2331,20 @@ def render_html(report: dict[str, Any]) -> str:
     markdown = render_markdown(report)
     return f"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>포트폴리오 의사결정 대시보드</title><style>
+<title>{_T['render_html.04']}</title><style>
 body{{font-family:"Malgun Gothic","Segoe UI",sans-serif;margin:0;background:#f4f7fb;color:#172033}}main{{max-width:1120px;margin:auto;padding:28px}}
 .hero{{background:#173b66;color:white;padding:26px;border-radius:18px}}.notice{{background:#fff4d6;border-left:5px solid #d39500;padding:14px;margin:18px 0}}
 section{{background:white;padding:20px;margin:18px 0;border-radius:14px;box-shadow:0 5px 20px #16324f14}}table{{border-collapse:collapse;width:100%}}
 th,td{{border-bottom:1px solid #dce3ec;padding:10px;text-align:left}}.status{{font-weight:700;color:#8a4200}}pre{{white-space:pre-wrap;background:#f7f8fa;padding:12px}}
 </style></head><body><main>
 {_render_swing_action_plan(report, as_html=True)}
-<header class="hero"><h1>포트폴리오 의사결정 대시보드</h1><p>판단 시각: {html.escape(str(evidence.get('decision_as_of') or '확인 필요'))}</p><p>Evidence Run: {html.escape(str(evidence.get('run_id') or '확인 필요'))} · Grade: {html.escape(evidence['portfolio_evidence_grade_display'])}</p><p>현재 자료 상태: {html.escape(display['current_data_status'])}</p><p>현재 세션 확인 결과: {html.escape(display['current_session_verification'])}</p><p>요청 회계 상태: {html.escape(display['request_accounting'])}</p><p>시장 단계: {html.escape(str(evidence.get('market_phase') or '확인 필요'))}</p></header>
-<div class="notice">생성 시각: {html.escape(str(report['generated_at']))} — 생성 당시 결과의 표시이며 현재 재수용 검증이 아닙니다.<br>수동 검토용 계산 자료이며, 매수·매도 주문을 만들거나 전송하지 않습니다.</div>
-<section><h2>위험 축소 1단계</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>종목</th><th>현재 주식</th><th>목표 참고</th><th>계산 매도</th><th>근거</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
-<section><h2>2단계 매수</h2><p class="status">{html.escape(report['stage2']['status'])}</p><table><thead><tr><th>종목</th><th>목표 참고</th><th>목표 격차</th><th>계산 매수</th><th>기준 가격</th><th>예상 소요액</th></tr></thead><tbody>{buy_rows}</tbody></table><p>차단 사유: {html.escape(', '.join(report['stage2']['blockers']) or '없음')}</p></section>
-<section><h2>근거·요청·이벤트</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>현재 세션 확인 결과: {html.escape(display['current_session_verification'])}</p><p>현재 세션 설명: {html.escape(_current_context_explanation(current_context['status']))}</p><p>현재성 차단 사유: {html.escape(', '.join(current_context['blockers']) or '없음')}</p><p>요청 회계 상태: {html.escape(display['request_accounting'])}</p><p>요청 회계 설명: {html.escape(_request_accounting_explanation(evidence['request_accounting_status']))}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} · HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} · affected: {html.escape(', '.join(event['affected_tickers']) or '없음')} · automatic target change: {_display(event['automatic_target_change'])}</p></section>
-<section><h2>권한</h2><p>Broker Order Authority = FALSE · execution_quantity = NULL · automatic_order = FALSE</p><p>현재 런타임 수동자문 권한: {html.escape(report['authority']['current_runtime_advisory_authority'])}</p><small>CLI authority input effect: {html.escape(report['authority']['runtime_authority_cli_input_effect'])}</small></section>
-<details><summary>동일 의미의 Markdown 원문</summary><pre>{html.escape(markdown)}</pre></details>
+<header class="hero"><h1>{_T['render_html.04']}</h1><p>{_T['render_html.05']} {html.escape(str(evidence.get('decision_as_of') or _T['fmt.01']))}</p><p>Evidence Run: {html.escape(str(evidence.get('run_id') or _T['fmt.01']))} \u00B7 Grade: {html.escape(evidence['portfolio_evidence_grade_display'])}</p><p>{_T['render_html.06']} {html.escape(display['current_data_status'])}</p><p>{_T['render_html.07']} {html.escape(display['current_session_verification'])}</p><p>{_T['render_html.08']} {html.escape(display['request_accounting'])}</p><p>{_T['render_html.09']} {html.escape(str(evidence.get('market_phase') or _T['fmt.01']))}</p></header>
+<div class="notice">{_T['render_html.10']} {html.escape(str(report['generated_at']))} {_T['render_markdown.03']}<br>{_T['render_markdown.09']}</div>
+<section><h2>{_T['render_html.11']}</h2><p class="status">{html.escape(report['stage1']['status'])}</p><table><thead><tr><th>{_T['render_html_legacy.09']}</th><th>{_T['render_html.12']}</th><th>{_T['render_html_legacy.11']}</th><th>{_T['render_html.13']}</th><th>{_T['render_swing_action_plan.13']}</th></tr></thead><tbody>{stage1_rows}</tbody></table></section>
+<section><h2>{_T['render_html_legacy.14']}</h2><p class="status">{html.escape(report['stage2']['status'])}</p><table><thead><tr><th>{_T['render_html_legacy.09']}</th><th>{_T['render_html_legacy.11']}</th><th>{_T['render_html.14']}</th><th>{_T['render_html.15']}</th><th>{_T['render_html.16']}</th><th>{_T['render_html.17']}</th></tr></thead><tbody>{buy_rows}</tbody></table><p>{_T['render_markdown.19']} {html.escape(', '.join(report['stage2']['blockers']) or _T['render_markdown_legacy.17'])}</p></section>
+<section><h2>{_T['render_html.18']}</h2><p>Canonical schema SHA-256: {html.escape(evidence['canonical_schema_sha256'])}</p><p>{_T['render_html.07']} {html.escape(display['current_session_verification'])}</p><p>{_T['render_html.19']} {html.escape(_current_context_explanation(current_context['status']))}</p><p>{_T['render_html.20']} {html.escape(', '.join(current_context['blockers']) or _T['render_markdown_legacy.17'])}</p><p>{_T['render_html.08']} {html.escape(display['request_accounting'])}</p><p>{_T['render_html.21']} {html.escape(_request_accounting_explanation(evidence['request_accounting_status']))}</p><ul>{request_rows}</ul><p>Event context: {html.escape(event['status'])} \u00B7 HIGH current/new: {_display(event['current_high_count'])}/{_display(event['new_high_count'])} \u00B7 affected: {html.escape(', '.join(event['affected_tickers']) or _T['render_markdown_legacy.17'])} \u00B7 automatic target change: {_display(event['automatic_target_change'])}</p></section>
+<section><h2>{_T['render_html_legacy.16']}</h2><p>Broker Order Authority = FALSE \u00B7 execution_quantity = NULL \u00B7 automatic_order = FALSE</p><p>{_T['render_html.22']} {html.escape(report['authority']['current_runtime_advisory_authority'])}</p><small>CLI authority input effect: {html.escape(report['authority']['runtime_authority_cli_input_effect'])}</small></section>
+<details><summary>{_T['render_html_legacy.18']}</summary><pre>{html.escape(markdown)}</pre></details>
 </main></body></html>"""
 
 
