@@ -13,29 +13,27 @@
 - S4 후보 등록·검증 → 게이트 통과 없음, 신호 채택 없음(NO_CHANGE). 결과 병합 커밋 `63c9f20`.
 - S4-2(여유 비례 + 변동성 조정, CPV) 사전 등록 검증 착수 요청.
 - NBIL은 과거 소량 보유 후 정리 완료(오타 아님). 키움 조회 데이터가 맞음.
+- S4-2(CPV) 판정 **기각**, Cowork 독립 검증 완료(해시·재실행·게이트 재계산 일치). 사용자 결정(10-01): −20% 최대 선은 **검토선**(자동 현금화 없음, 테제 재점검), 기본 노출은 **1.0배 + 변동성 조절**(BV10 형태) 방향으로 S5 제안 준비. 감수 위험: 1년 창 최악 −34%(2010~ 실제), −55%(1994~2010 합성).
 
-## 3. 현재 상태 (2026-10-01)
+## 3. 현재 상태 (2026-10-01, S4-2 병합 후)
 
-- 저장소 브랜치 `codex/master-recovery-expansion`, HEAD `6a59328`(S0~S4 문서 커밋). 미커밋: S1 메모 수정, S3b·S4-2 지시문·이 인계 문서.
-- S4-2 Builder: worktree `s4-2-cpv`(브랜치 `worktree-s4-2-cpv`). 1단계 기준선(테스트 미통과 314, S4와 동일)과 2단계 계획 승인 완료. Cowork가 명확화 1~12 승인 + 결과 전 추가 A·B·C 지시(지시문 문서 진행 기록 참고). 사용자가 붙여 넣은 뒤 3단계(사전 등록)부터 진행 중일 것.
-- 정책·상태 파일 해시(변경 없음): alert_policy.json `184008bd…`, portfolio_state.json `28fd77c5…`.
+- 저장소 브랜치 `codex/master-recovery-expansion`, HEAD `4379813`(merge: S4-2 CPV, Builder 커밋 `7878451`, 새 파일 12개만). 미커밋: 이 인계 문서와 S4-2 지시문 진행 기록 수정(Cowork).
+- S4-2 Builder 완료·병합: worktree `s4-2-cpv`(브랜치 `worktree-s4-2-cpv`). 새 실패 0(314 동일). 보고: `docs/claude/s4-2-builder-report-2026-10-01.md`. 사용자가 부록 1의 13~16 동의(커밋 승인 때).
+- Cowork 검증: 프로토콜 해시 `3406d65e…70cf` = sidecar = 결과 JSON, 러너 `67b463e1…`, 입력 해시 일치, 재실행 결과 동일, 게이트 재계산 동일. 병합 후 메인에서도 입력 CSV·출처 JSON raw 해시, 프로토콜 LF 해시 일치. 러너는 메인 체크아웃이 CRLF라 raw 해시 `a279f349…`로 다르고 LF 정규화 해시는 기록값 `67b463e1…`과 같다(내용 동일).
+- 정책·상태 파일 내용 변경 없음: 메인 alert_policy.json `184008bd…`, portfolio_state.json `28fd77c5…`. worktree의 alert_policy.json raw 해시(`b8dd1b1a…`)는 체크아웃 줄바꿈 차이일 뿐 LF 정규화 해시 동일.
+- 참고(보고 전용): 2026-09-29 변동성 기준 CPV 규칙 유효 레버리지 상한 약 0.76배(v 0.63), 구조적 상한 1.20배. 현재 실제 2.29배.
 
-## 4. 새 세션 첫 작업
+## 4. 다음 작업 순서
 
-1. 사용자가 "Builder 완료, worktree s4-2-cpv, 새 실패 수 N"을 주면 Cowork가 직접 확인한다(붙여넣기 요청 금지).
-   - git: `R=$HOME/mnt/코덱스저장소; W=$R/.claude/worktrees/s4-2-cpv; git --no-optional-locks -c core.autocrlf=true --git-dir=$R/.git/worktrees/s4-2-cpv --work-tree=$W status --short` → 새 파일만인지.
-   - 해시: 프로토콜 원본·LF sha256이 sidecar·결과 JSON과 같은지, 러너 해시.
-   - 재실행: `PYTHONDONTWRITEBYTECODE=1 python3 window_study_soxl_cpv_2026-10-01.py --self-test`, `--run --output-dir $HOME/<임시>`(지원 시) → 결과 JSON·windows CSV가 저장본과 같은지(줄바꿈 정규화).
-   - 게이트 H1~H6와 판정, U(2010년 이전 합성) 결과를 먼저 본다(m=2는 2010년 이후를 보고 골랐으므로 U가 유일한 깨끗한 검증).
-2. 사용자에게 결론 먼저 보고하고 다음 결정 하나를 묻는다(아래 5절).
-3. 병합은 사용자가 Windows 터미널에서: `git merge --no-ff -m "merge: S4-2 CPV window study (worktree-s4-2-cpv <커밋>)" worktree-s4-2-cpv` (Builder 커밋 승인 뒤).
+1. 사용자가 Windows 터미널에서 이 인계 문서·S4-2 지시문 수정 커밋(`git add docs/claude/handover-loss-limit-review-2026-10-01.md docs/claude/s4-2-cpv-builder-prompt-2026-10-01.md` → `git commit -m "docs: S4-2 verification and loss-line direction"`).
+2. 다음 결정(5절)을 하나씩. 첫 번째: 1.0배 기본 노출을 실제 보유 구성의 포트폴리오 유효 레버리지로 어떻게 정할지.
 
 ## 5. 남은 결정 (한 번에 하나씩)
 
-- 손실 예산과 레버리지 맞추기: Cowork 추천은 CPV(바닥 −20%, SOXL 비중 = min(63.3%, 2×여유)×변동성 조정). 대안은 1.0배 + 변동성 조절(손실선은 검토용). S4-2 결과로 판단.
-- 손실선 행동(결정 3): 앞서 추천한 "1차 A + 최대 D"는 1.9배 고정 위에서는 손실을 확정해 **정정됨**. CPV를 쓰면 행동이 규칙에 포함된다.
+- (결정됨 10-01) 손실 예산과 레버리지: −20% 검토선 + 1.0배·변동성 조절 방향. 남은 세부: 변동성 조절 공식(σ20 확장 중앙값, 0.333×v)을 그대로 제안할지, 1.0배를 포트폴리오 전체 유효 레버리지로 어떻게 환산할지(SOXL 단일 모형 → 실제 보유 구성), 1차 −10%·최대 −20% 선에서 하는 검토 절차.
+- 손실선 행동(결정 3): 검토선 방향이므로 자동 매도 없음. 검토 때 볼 항목(테제·집중도·현금·대안)을 정한다.
 - 기준점 재설정·재진입(결정 4), 루트 테제 집중 상한·현금 예비분(결정 5), 종목별 배분 방식(결정 6).
-- S2 MVLL 매도 전용 계획(매수 불가, 되살 수 없음)과 현재 2.29배 → 새 상한으로 줄이는 순서.
+- S2 MVLL 매도 전용 계획(매수 불가, 되살 수 없음)과 현재 2.29배 → 새 기본 노출로 줄이는 순서.
 - 그 뒤 S5 정책 제안(적용 안 함) → S6 Independent Judge(Opus xhigh, 별도 Claude Code 세션) → S7 사용자 승인·적용.
 
 ## 6. 핵심 근거 요약
@@ -50,6 +48,7 @@
 - Cowork의 git은 `--no-optional-locks -c core.autocrlf=true` 읽기 전용만. 커밋·병합은 사용자가 Windows 터미널에서, 병합은 `-m`으로 메시지를 넣어 편집기 대기를 피한다.
 - 2026-09-30 병합 사고: 첫 병합이 리눅스 형식 색인 기록(uid 1013)을 남긴 비대화형 환경에서 시작돼 빈 MERGE_HEAD로 멈춤(이 대화에서 실행한 것은 아님, 실행 주체 확인 필요). 해결: `git update-index --refresh` → `git merge --abort` → `git merge --no-ff -m ...`.
 - 이미 기기에 쓴 문서를 고칠 때는 기기에서 직접 수정한다(클라우드 산출물 재커밋 때 첫 스냅샷이 반영된 오류가 있었음).
+- 입력·결과 해시 검증은 줄바꿈을 먼저 본다: VM(autocrlf 없음)에서 만든 LF 파일은 Windows 체크아웃 뒤 CRLF가 되어 raw 해시가 달라진다. LF 정규화 해시로 비교하고, raw 해시가 기록된 파일(입력 CSV 등)은 원래 CRLF라 그대로 맞는다.
 - worktree 테스트 기준선 314건(고정 해시·한글 경로·pypdf 등)은 작업과 무관. 전후 수·ID 동일 여부만 본다.
 - 가격·계좌 근거는 키움이 우선이고, 과거 검증용 외부 가격(Yahoo·Nasdaq)은 참고용(D/C 등급).
 
@@ -61,8 +60,9 @@
 - `loss-limit-review-s3b-market-regime-2026-10-01.md` — 최근 시장 국면 검토
 - `s4-signal-walk-forward-builder-prompt-2026-10-01.md`, `s4-builder-report-2026-10-01.md` — S4 지시문·결과(병합됨)
 - `s4-2-cpv-builder-prompt-2026-10-01.md` — S4-2 지시문·진행 기록
-- 결과 파일: `stock-strategy-system/backtests/SOXL_SIGNAL_WALK_FORWARD_*`, (S4-2 완료 후) `SOXL_CPV_WINDOW_*`
+- `s4-2-builder-report-2026-10-01.md` — S4-2 결과(기각)
+- 결과 파일: `stock-strategy-system/backtests/SOXL_SIGNAL_WALK_FORWARD_*`, `SOXL_CPV_WINDOW_*`(병합 후)
 
 ## 9. 새 세션 시작 문구 (붙여넣기용)
 
-"docs/claude/handover-loss-limit-review-2026-10-01.md를 읽고 이어가. S4-2 Builder 완료, worktree s4-2-cpv, 새 실패 수 N" (Builder가 아직 끝나지 않았으면 앞 문장만)
+"docs/claude/handover-loss-limit-review-2026-10-01.md를 읽고 이어가. S4-2 병합·문서 커밋 완료, 5절 다음 결정부터"
