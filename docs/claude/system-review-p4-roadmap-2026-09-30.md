@@ -87,7 +87,7 @@ S0 문서·.worktreeinclude 커밋 ─┬─► S1  I0 Builder (Claude Code) ─
   ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
   ├─► S5 카드 파일럿 #2 ─► [G3] ─┐
   └─► S6 I7 상태 점검·H1 ────────┴─► S7a I1 카드 코드화 ─► S7b I2 원장·채점 ─► S8 I4 R6~R9 ─► [G4]
-대기(트리거): I0-b, 복원 절차, H2, 묶음 명령, 만료 조정, SPY 범위, I8 (§5)
+대기(트리거): I0-b, 복원 절차, H2, 묶음 명령, 만료 조정, SPY 범위, I8, SAVE 입력 3건, 시장 레짐 연구, 신규매수 RS·ATR (§5)
 ```
 
 | 단계 | 내용 | 작업 위치 | 모델 · 추론 노력 | K | 선행 |
@@ -241,6 +241,13 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 ### S5. 카드 파일럿 #2와 G3 판정
 
 - **할 일:** 조정된 상태로 S2를 반복한다. "상태 파일 미조정" 라벨과 확신도 상한이 풀리고, "지난 카드 대비 변화" 칸이 처음 채워진다.
+- **시장 환경 메모(선택, 2026-09-30 추가, 근거: `trading-skill-materials-review-2026-09-30.md` §7~8)**
+  - 입력: 카드를 쓰는 날에만 사용자가 SAVE(saveticker.com) "장 전 주요 뉴스" 글 텍스트를 붙여 넣거나 SAVE Daily PDF 경로를 준다. 매일 받지 않는다.
+  - PDF면 VM에서 기존 `save_daily_pipeline.py --source <PDF>`를 돌리고, 텍스트면 Cowork가 직접 읽는다. `MARKET_VOLATILITY`·`BANK_CREDIT`·`FED`·`MACRO` 성격의 항목만 고른다.
+  - 머리말에 1~2줄로 적는다: 시장 관련 상위 이벤트 1~3건, 48시간 안 일정(공식 일정으로 확인 못 하면 "일정 확인 필요"). 라벨 `EXTERNAL_REFERENCE / 판단 규칙 아님`.
+  - **입력이 없으면** "시장 환경: SAVE 미입수"로 적고 카드는 그대로 쓴다. 카드 작성을 막지 않는다.
+  - 메모는 종목 판단을 자동으로 바꾸지 않는다. 메모 때문에 판단을 바꿨다면 원문을 확인하고 이유를 적는다. 수치는 공식 통계·키움으로 확인한 것만 쓴다.
+  - 하지 않는 것: saveticker.com 자동 조회, 비공개 API 호출, 제3자 수집 확장 설치(검토 문서 §8).
 - **G2가 늦어질 때:** S1 시작 뒤 2주가 지나도 G2가 안 되면, 파일럿 #2를 "미조정" 라벨로 먼저 진행하고 G3 판정은 G2 뒤로 미룬다(제안).
 - **G3 판정(Cowork)**
   - **통과:** 2회 중 "판단에 씀"이 1회 이상이면 S7a로 간다. 이때 함께 정한다.
@@ -249,6 +256,7 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
     - baseline을 카드가 대체할지(REMOVE 후보)
     - 카드 행동 → sidecar `DECISION_ACTIONS` 대응표
     - 결정 원장 경로(P3 제안: `stock-strategy-system/decision_journal.json`)
+  - **함께 기록(통과·미달 공통):** 시장 환경 메모가 판단에 쓰였는가(판단에 씀 / 참고만 / 안 씀), SAVE 미입수 횟수. 메모를 카드 형식에 남길지 여기서 정한다.
   - **미달:** 0/2면 코드화를 보류한다. 원인을 형식, 판단 내용, 데이터로 나눠 정리하고 형식을 고쳐 파일럿 #3을 한다. #3에서도 "판단에 씀"이 없으면 I1 방향을 다시 본다(예: 판단 작성을 Chat 깊은 분석으로 옮김).
 
 ### S6. I7 상태 점검과 H1 알림 한 줄 (S5와 병행)
@@ -325,6 +333,11 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 | I8 `validate_decision_record.py`·`evaluate_outcome.py` 은퇴 | K2 | S7b 뒤 30일간 사용 없음 | P6 월간 점검에서 판정 |
 | Windows 전용 테스트 실패 6건(PowerShell 5, pypdf 1) | K2 | 새 작업 검증을 가릴 때 | `docs/claude/test-run-latest.md` 참조 |
 | 옛 worktree `k2-pin-safe-fixes` 정리 | 없음 | 언제든 | 1단계 변경은 원본 폴더로 옮겨 커밋됐다(`4db8c51`). worktree는 `locked` 상태라 삭제 전 unlock이 필요하다. 삭제는 사용자 승인 |
+| SAVE 규칙 파일 보유 목록 정리 | K1 | SAVE Daily PDF를 파이프라인으로 처음 돌리기 전, 또는 HOLDINGS IMPACT 칸을 쓸 때 | `assets/save-daily-rules-v0.1.json`의 holdings가 8월 기준(MRVL 포함)이다. 상태 파일 기준으로 고치거나 상태에서 읽게 한다. 대상 테스트 `test_save_daily_pipeline.py`(VM에서 실행, Windows는 `pypdf` 없음) |
+| SAVE 텍스트 입력 어댑터 | K2 | G3에서 시장 환경 메모가 "판단에 씀"이고 텍스트 붙여넣기가 주 경로일 때 | 붙여넣은 "장 전 주요 뉴스" 텍스트를 기존 SAVE 이벤트 스키마로 변환한다. 네트워크 금지(`OFFLINE_REPLAY`) 경계는 유지한다 |
+| SAVE 자동 수집 | K2~K3 | SAVE가 공식 피드·API 제공을 확인해 줄 때 | 그 전에는 자동 조회·비공개 API 호출·제3자 수집 확장을 쓰지 않는다(검토 문서 §8, 약관 확인 필요) |
+| 수치형 시장 레짐 연구 | Cold Path 연구 | S8(G4) 뒤 | 지수 추세, breadth, 소형/대형 비율, 신용 스프레드, VIX 기간구조 후보를 사전 등록 → 여러 레짐 walk-forward → 같은 후보군 무작위 기준선과 비교한다. 수치는 공식 통계·키움 기준. 검토 문서 §3 |
+| 신규매수 후보 RS·ATR 확장 시험 | K2 이상 | 신규매수 흐름을 다시 열 때 | RS 리더십 필터와 50MA 대비 ATR% 배수 상한을 `technical-strategy.md`의 절차(하나씩 제거 시험, 여러 레짐 walk-forward)로 시험한다. 그 전에는 규칙으로 쓰지 않는다. 검토 문서 §2~3 |
 
 ---
 
@@ -439,6 +452,7 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
   - 병합 후 첫 실제 실행(`manual-20260930T063917375338Z-3c02fdaf2b5f`): 미체결 조회에 `provider_return_code=20`, `no_data_declared=true`. preflight는 FAIL 그대로다(안 A는 관측만 추가하므로 정상). 새 코드로 관측한 횟수는 1회이고, 기준까지 평소 분석 때 쌓는다.
   - **확인 필요:** 안 B로 GRADE_B에 도달하는지는 코드 추론이다(안 B 병합 뒤 라이브 1회로 확정). ET 자정 근처 실행은 `ACQUISITION_SESSION_ROLLOVER`로 FAIL이 되며 이는 올바른 동작이다.
 
+- 2026-09-30 **Trading_Skill 자료 검토 반영(K0):** `trading-skill-materials-review-2026-09-30.md`. 6개 자료는 Knowledge·정책으로 넣지 않고 연구 후보로만 둔다(증거 등급 D, 스윙 원칙 대부분 기존 규칙과 중복). 시장 환경 판단 공백은 S5 "시장 환경 메모"(SAVE, 카드 날 수동 입력, 없으면 "미입수"로 진행)로 먼저 확인한다. saveticker.com 직접 모니터링은 자동 조회 차단(403)과 제3자 확장의 비공개 API 자동 호출 때문에 채택하지 않았다(사용자 결정). 대기 항목 5건을 §5에 추가했다. 코드·정책·Skill 파일 변경 없음.
 ---
 
 ## 10. 반론 검토 반영 기록 (2026-09-30)
@@ -688,7 +702,7 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 
 | 단계 | 모델 · 추론 노력 | 첫 메시지 |
 |---|---|---|
-| S2·S5 카드 파일럿 | Sonnet · high | `docs/claude/system-review-p4-roadmap-2026-09-30.md §4 S2(두 번째면 S5)대로 카드 파일럿을 해줘. 수동 분석은 방금 돌렸어.` |
+| S2·S5 카드 파일럿 | Sonnet · high | `docs/claude/system-review-p4-roadmap-2026-09-30.md §4 S2(두 번째면 S5)대로 카드 파일럿을 해줘. 수동 분석은 방금 돌렸어.` S5부터 끝에 한 줄 추가: `SAVE: <"장 전 주요 뉴스" 텍스트 붙여넣기 / PDF 경로 / 없음>` |
 | S3 Judge 결과 기록 | Sonnet · medium | `P4 로드맵 S3 Judge 결과를 붙여 넣을게. §9에 기록해줘.` + Judge 출력 |
 | S4 첫 조정 | Opus · xhigh | `P4 로드맵 §4 S4대로 병합 확인, VM 사전 확인, 첫 조정을 진행해줘. Judge PASS 커밋 <ID>.` |
 | 매번 조정 | Sonnet · medium | `조정 확인해줘.` |
@@ -700,7 +714,7 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 
 ## 근거 파일
 
-- **설계·결정:** `docs/claude/system-review-p3-design-2026-09-30.md`(§2, §4~8, §10~12), `docs/claude/system-review-phase1-2026-09-30.md`(§1-2, §1-3, §7-3), `docs/claude/handover-system-review-2026-09-30.md`
+- **설계·결정:** `docs/claude/system-review-p3-design-2026-09-30.md`(§2, §4~8, §10~12), `docs/claude/system-review-phase1-2026-09-30.md`(§1-2, §1-3, §7-3), `docs/claude/handover-system-review-2026-09-30.md`, `docs/claude/trading-skill-materials-review-2026-09-30.md`(시장 환경 메모·대기 항목)
 - **실행 환경:** `CLAUDE.md`(Hard safety, Change classes, Working rules, Session hygiene), `AGENTS.md`(35), `.claude/settings.json`(permissions, `worktree.baseRef`), `.gitignore`(27-37), 투자_V2 Claude 설정 가이드(worktree, `.worktreeinclude`, `/model`, `/effort`)
 - **제안·적용 불일치:** `manage-us-stock-strategy/scripts/run_kiwoom_broker_shadow.py`(21-38), `kiwoom_broker_shadow.py`(101-122), `apply_user_confirmed_broker_snapshot.py`(23-86), `validation_common.py`(35-41, 100-108), `kiwoom_account_readonly_bridge.py`(43-46, 84-100)
 - **테스트·픽스처:** `tests/test_kiwoom_broker_shadow.py`(56-66), `tests/test_manual_portfolio_analysis.py`(1756, 1807-1827), `tests/test_v2_5_broker_snapshot.py`·`tests/test_v2_6_broker_beginner.py`(추적된 `workspace/outputs/v2_5_shadow/` 픽스처), `tests/test_k2_evidence_contract.py`, `tests/test_k2_bridge_evidence_integrity.py`, `tests/test_v2_6_4_kiwoom_adapter.py`, `tests/test_broker_visibility_audit.py`, `docs/claude/test-run-latest.md`
