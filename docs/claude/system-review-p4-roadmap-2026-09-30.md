@@ -48,7 +48,7 @@
 | 1-5 | 적용 함수는 텍스트 모드로 쓴다(`:27`). Windows에서는 CRLF, Linux VM에서는 LF가 된다 | 적용한 곳에 따라 상태 파일 줄바꿈이 바뀐다. canonical 해시를 쓰면 판정에는 영향이 없다 | Builder가 줄바꿈 방침을 정한다. 상태 파일을 원시 바이트 해시로 비교하는 다른 코드가 있는지 찾아 보고한다 |
 | 1-6 | 확인 코드 검사는 P3에서 적용 명령(CLI)에만 있다(P3 §4-4). 라이브러리를 직접 부르면 코드 없이 적용된다 | 8/14 같은 직접 호출에서 코드 검사가 빠진다 | (제안) 라이브러리에도 `confirm_code` 일치 검사를 넣는다. 다만 코드는 제안 파일에 있으므로 이 검사는 **실수 방지용**이다. 최종 방어는 규칙, 권한 거부, 확인 기록이다(§8-3) |
 | 1-7 | `CLAUDE.md` Hard safety와 `AGENTS.md:35`: "explicit user confirmation **or** a verified read-only broker snapshot" | I0 뒤에는 "조회 스냅샷이 있으니 확인 없이 적용해도 된다"로 읽힐 수 있다. P3 §2는 사람의 명시적 확인만 허용한다 | 문구를 "검증된 조회 스냅샷 **그리고** 해당 제안에 대한 사용자의 명시적 확인"으로 바꾼다(I0 범위, Judge 14번) |
-| 1-8 | Cowork 세션 시작 때 연결 폴더의 `CLAUDE.md` 사본이 업로드 폴더에 복사된다. 하지만 이번 대화 맥락에는 자동으로 들어오지 않았고 직접 읽어서 확인했다. `AGENTS.md`는 복사되지 않는다 | P3 §2 네 겹 중 ③(에이전트 규칙)이 Cowork에서 확실히 작동한다고 볼 수 없다 | 적용 절차를 `references/broker-snapshot-reconciliation.md`에 넣고, Cowork는 "조정 확인" 요청 때 이 문서를 먼저 읽는다. 같은 규칙을 프로젝트 메모리에도 저장한다(§8-4) |
+| 1-8 | Cowork에도 연결 폴더의 `CLAUDE.md` 사본이 전달된다(이 작업 2번째 턴에 시스템 알림으로 들어온 것을 확인). 다만 세션 시작 시점의 사본이다. `AGENTS.md`는 전달되지 않는다 | P3 §2 네 겹 중 ③(에이전트 규칙)은 Cowork에서도 작동한다. 하지만 I0의 문구 변경은 새 작업부터 반영되고, `AGENTS.md` 규칙은 빠진다 | 적용 절차를 `references/broker-snapshot-reconciliation.md`에 넣고, Cowork는 "조정 확인" 요청 때 이 문서를 먼저 읽는다. 같은 규칙을 프로젝트 메모리에도 저장한다(§8-4) |
 | 1-9 | worktree에서 만든 실데이터 제안 파일에는 보유·현금 값이 들어간다 | worktree 안 임시 폴더에 두면 커밋에 섞일 수 있다 | 출력은 git 제외 폴더 `workspace/outputs/reconciliation/`에만 쓴다. 커밋 전에 `git status`로 확인한다 |
 | 1-10 | VM에서 git 커밋을 하면 잠금·임시 파일(`.git/index.lock`, `tmp_obj_*` 등)이 남는다. VM은 삭제 권한이 없으면 이 파일을 지우지 못한다(`kiwoom-acceptance-pin-diagnosis` 진행 기록) | S0 커밋과 S4 병합을 Cowork에서 하면 정리 작업이 생긴다 | **커밋과 병합은 사용자가 Windows 터미널에서** 명령을 붙여 넣어 실행한다. Cowork는 결과를 읽기 전용으로 확인한다 |
 | 1-11 | 적용 명령은 Cowork VM에서 돈다. Claude Code Builder·Judge는 VM에 접근할 수 없다 | VM에서 도는지 아무도 확인하지 않은 채 첫 실제 적용을 하게 된다 | S4에서 첫 적용 전에 Cowork가 VM 사전 확인을 한다: 신규 테스트 실행, 시스템 임시 폴더의 상태 복사본에 적용 1회 |
@@ -314,7 +314,14 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 | 분석 + 제안 묶음 명령 | K1 | 첫 4회 중 2회 이상 "번거로움"(§2) | Claude Code, 고정 파일 수정 없음 |
 | 제안 만료 시간 조정 | K3 | 첫 4회 중 2회 이상 만료(§2) | 정책 변경, 사용자 승인 |
 | SPY를 키움 수용 범위에 추가 | K3 | G4 뒤, 채점 가격을 등급 B로 올릴 필요가 생길 때 | 새 acceptance 증거가 필요한 범위 확장 |
-| 미체결 조회 수정 | S1b 결과에 따름 | S1b 진단 완료 | K 등급에 맞는 단계로 |
+| 미체결·실현손익 "내역 없음" 처리 | 안 A K2 → 안 B K3 | 안 A: I0 병합(G2) 뒤. 안 B: 안 A로 "없음 선언" 빈도를 몇 회 모은 뒤 | 안 A는 `return_code`·메시지 관측만 추가(게이트 불변). 안 B는 좁은 조건의 "없음"을 빈 PASS로 인정해 `OPEN_ORDERS_UNVERIFIED`를 없앤다. 미체결 `VERIFIED_NONE`이 주문 의도 차단 해제 근거라 K3, Judge 필요(S1b §5) |
+| `SKILL.md:130` 문구 정렬("또는" → "그리고") | K3 | Codex 자동화 재개 전, 또는 S8 | `alert_policy.json` 배포 게이트의 skill 해시 재고정과 설치 사본(`~/.codex/skills`) 갱신. 사용자 승인. 그 전까지는 `CLAUDE.md`·`AGENTS.md`·절차 문서가 우선 |
+| 예약 런타임 manifest의 `portfolio_hash` 고정 | K2~K3 | 예약 자동화 재개 전 | `runtime_contract_suite.py:113`이 상태 파일 원시 해시를 배포 manifest와 비교한다. 적용할 때마다 값이 바뀌므로 재설계가 필요하다. 지금 예약 자동화는 PAUSED이고 테스트는 순수 함수만 쓴다 |
+| 스크린샷(2.5) 경로 제거(REMOVE) | K2~K3(적용 라이브러리를 건드리므로 Judge 권장) | S4(G2) 뒤, I8 은퇴 작업과 묶어서 | 사용자 결정으로 쓰지 않는 경로다. v1은 F1로 적용만 막았다. 스크린샷 전용 코드·스키마·테스트를 걷어낸다. 정확한 범위는 착수 때 확인한다 |
+| I0 선택 보강(Judge 2차 권고 ①②) | K3 | 다음 I0 관련 변경 때 함께 | ① 해시 필드 없는 원장 줄을 `chain_ok=False`로 본다(원장 파일을 직접 위조해야 가능한 우회) ② `expires_at`을 "가장 이른 필수 조회 시각 + 최대 나이"로 다시 계산하고 최대 나이를 정책값 900초 이하로 제한한다(재해시 위조는 받아들인 절충) |
+| Judge 결과를 파일로 남기기 | K1(규칙 변경) | 결과 복사·붙여넣기 부담이 계속될 때 | 지금은 Cowork가 Claude Code 세션에 직접 요청하거나 결과를 읽을 방법이 없다(2026-09-30 확인: 연결 가능한 세션 없음). Judge가 git 제외 폴더에 판정 파일 1개만 쓰도록 허용하면 Cowork가 직접 읽을 수 있다. `CLAUDE.md`의 "Judge never edits files" 조정이 필요하다 |
+| `METADATA_ONLY` 확인 부담과 `holding_change_reconciliations` 누적 | K2 | 첫 4회 사용 뒤 | 거의 매 분석일 확인이 필요하다(S3 16번). 값 변화 없는 적용은 원장에만 남길지 정한다 |
+| `unreconciled_holding_changes` 정리 규칙 | K2 | 첫 조정 뒤 | 조정 뒤 이 목록을 비울지 정한다 |
 | I8 `validate_decision_record.py`·`evaluate_outcome.py` 은퇴 | K2 | S7b 뒤 30일간 사용 없음 | P6 월간 점검에서 판정 |
 | Windows 전용 테스트 실패 6건(PowerShell 5, pypdf 1) | K2 | 새 작업 검증을 가릴 때 | `docs/claude/test-run-latest.md` 참조 |
 | 옛 worktree `k2-pin-safe-fixes` 정리 | 없음 | 언제든 | 1단계 변경은 원본 폴더로 옮겨 커밋됐다(`4db8c51`). worktree는 `locked` 상태라 삭제 전 unlock이 필요하다. 삭제는 사용자 승인 |
@@ -387,7 +394,33 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 
 - 2026-09-30 P4 초안 작성, 반론 검토 반영.
 - 2026-09-30 **G0 통과:** 로드맵, §2 결정안 5개, §8-3 보완 3건을 모두 승인했다. 커밋·병합은 사용자가 Windows 터미널에서 실행한다. §8-4 메모리 저장은 S4에서 정한다.
-- 2026-09-30 S0 시작: Cowork가 `.worktreeinclude`를 만들었다. 커밋은 사용자 실행 대기.
+- 2026-09-30 **S0 완료:** 커밋 `6a5a167`(`.worktreeinclude`와 docs 4개, 5개 파일). push 안 함. staged에 다른 파일이 없음을 Cowork가 확인했다.
+- 2026-09-30 §1-8 정정(미커밋): `CLAUDE.md`가 Cowork 대화에도 전달됨을 확인했다. 다음 docs 커밋에 포함한다.
+- 2026-09-30 **S1 완료:** Builder 커밋 `dfb7f7b`(브랜치 `worktree-i0-reconcile`, 17개 파일). 보고서 `docs/claude/i0-builder-report-2026-09-30.md`.
+  - 테스트: 대상 테스트 기준선 대비 새 실패 0, 신규 `test_reconcile_broker_state.py` 48건 통과, 전체 테스트 새 실패 0(worktree 기준선 실패 314건은 줄바꿈으로 인한 원시 해시 불일치), 스키마 감사 PASS, 고정 16개·정책 파일 diff 없음.
+  - `return_code`: 정상 응답 3개(잔고·예수금·체결) 모두 있고 값은 0.
+  - 실데이터 제안 1회 성공: 경고는 `OPEN_ORDERS_UNVERIFIED` 하나, 적용 후 알림 엔진 사전 검사 PASS. 미체결에 더해 실현손익(ust21630) 조회도 과거 16회 모두 실패였다 → S1b 범위에 추가.
+  - 수동 분석 명령: `python manage-us-stock-strategy/scripts/run_manual_portfolio_analysis.py`(인자 없음).
+  - `SKILL.md`는 배포 게이트 해시에 묶여 있어 수정하지 않았다(§5 대기).
+- 2026-09-30 Builder 세션의 사용자 결정 2건(P3 변경, Judge 확인 대상): ① 값이 같아도 브로커 확인 기록이 오래되면 확인 기록만 갱신하는 제안(`METADATA_ONLY`)을 만든다 ② 원장 밖 상태 변경(`STATE_CHANGED_OUTSIDE_LEDGER`)이 보이면 적용을 거부한다.
+- 2026-09-30 Cowork 사전 점검(Judge 판정 아님): 변경 파일에 고정 16개·정책 파일 없음, `CLAUDE.md`·`AGENTS.md` 문구가 "스냅샷 그리고 사용자 확인"으로 바뀜, 추가된 deny 규칙 확인, 커밋 diff에서 금액·계좌번호 패턴 없음.
+- 2026-09-30 원가 교차검증 `DIFFERS` 참고: 키움 스펙 ust21070 응답 예시에서도 `evlt_amt − pl_amt`(112,003.75)가 `poss_qty × frgn_stk_book_uv`와 `frgn_stk_book_amt`(둘 다 111,453.32)보다 약 0.49% 크다. `pl_amt`의 기준이 매입금액과 다른 것으로 보인다(수수료 추정, 확인 필요). 파생 원가는 스펙의 매입금액과 맞는다.
+- 2026-09-30 **S1b 완료:** `docs/claude/open-orders-diagnosis-2026-09-30.md`(미커밋). 원인(확정, 오늘 재현 2회): 키움이 미체결·당일 실현손익 "내역 없음"을 `return_code=20`으로 돌려주고, 브리지가 0이 아닌 값을 모두 `KIWOOM_API_RESPONSE_ERROR`로 분류한다. 요청 결함은 아니다. 과거 16회도 같은 원인이라는 것은 추정이다(당시 응답이 저장되지 않음). 코드 20은 스펙 오류 코드 표에 없다. 수정안: 안 A 관측 추가(K2), 안 B "없음 선언"을 빈 PASS로 인정(K3). 권고: I0 병합 뒤 그 위에서 A, 빈도를 모은 뒤 Judge와 함께 B.
+- 2026-09-30 **S3 1차: FAIL**(커밋 `dfb7f7b`, BASE `6a5a167`). 대상 9개 모듈은 BASE와 같은 ERROR 3건(worktree 줄바꿈)뿐이고 새 실패 0. 2~9, 11~15번 PASS, 10·16·17번 동의.
+  - 1번 FAIL: ① 스크린샷(2.5) 제안은 라이브러리에서 코드·방법·메시지 없이 적용된다 ② 호출자가 `now`를 과거로 넘기면 만료 제안이 적용된다.
+  - 추가 우회: 라이브러리·CLI에 다른 원장 경로를 주면 원장 검사를 건너뛴다. 원장·백업을 git 추적 폴더에 쓸 수도 있다.
+  - 16번 비용: `as_of`가 날짜 단위라 거의 매 분석일 `METADATA_ONLY` 확인이 필요하고, `holding_change_reconciliations`가 하루 1건씩 는다.
+  - 17번: 원장 밖 변경을 모두 거부하면 문서화된 정상 편집(체결 기록, strategy_version 수정)에도 걸리고 해제 절차가 없다.
+- 2026-09-30 **Judge FAIL 대응 사용자 결정:** F1 = v1에서 2.5 제안 적용을 라이브러리에서 차단. F2 = 만료·`confirmed_at`에 실제 시계 사용(`now`는 미래 쪽으로만). F3 = 원장·백업 경로 인자 제거(상태 경로에서 파생). 17번 = JSON 손상과 "원장 기록 뒤 상태 쓰기 실패"만 거부하고, 그 밖의 원장 밖 변경은 경고 후 사용자 확인으로 적용.
+- 2026-09-30 **사용자 결정: 스크린샷(2.5) 경로는 쓰지 않는다.** 계좌 정보는 키움 API로 연계되므로 사용자 계좌 스크린샷은 의미 있는 입력이 아니다. 복잡도를 늘리는 기능은 고려하지 않는다. P3 §4-3의 "스크린샷 경로는 키움 장애 때의 대안으로 남긴다"를 대체한다. 이번 수정은 F1(라이브러리 차단)까지만 하고, 코드 제거는 S4 뒤 별도 REMOVE 작업으로 한다. 키움 장애 때는 그날 조정을 건너뛰고 카드·분석에 "상태 미조정" 라벨을 붙인다.
+- 2026-09-30 **S3 FAIL 수정 완료(커밋 대기):** Builder가 같은 worktree에서 F1·F2·F3·17번을 반영했다(9개 파일, 보고서 §12). `test_reconcile_broker_state` 48 → 56건 통과, 관련 3개 모듈 그대로 통과, 전체 테스트 새 실패 0, 스키마 감사 PASS, 고정 16개·정책·`SKILL.md`·상태 파일 diff 없음. 신규·변경 테스트가 옛 코드(`dfb7f7b`)에서는 실패함을 확인했다. Builder 추가 판단 1건(Judge 확인 대상): 원장 밖 변경이 감지됐는데 제안 경고에 없으면 `OUTSIDE_LEDGER_WARNING_NOT_IN_PROPOSAL`로 거부.
+- 2026-09-30 **S3 2차: PASS**(커밋 `90a11b8`, BASE `6a5a167`, 새 Judge 세션 `judge-i0-r2`). 1~17번 모두 PASS, 10번 동의. 대상 9개 모듈은 기준선과 같고 신규 56건 통과, 스키마 감사 PASS. 전체 테스트의 새 ERROR 1건은 detached HEAD라 `git_branch`가 비어 나는 것으로, 기준선도 detached면 똑같이 난다(실질 새 실패 0). 고정 16개·정책·`SKILL.md`·2.5 스키마 diff 없음. 1차 우회 3건이 모두 막혔다. Judge는 CLI apply를 직접 실행하지 않고 테스트와 코드 추적으로 판정했다(거부 규칙과 Judge 금지 규칙).
+- 2026-09-30 결정 17로 §1-12의 "손상" 정의가 좁아졌다: 적용을 거부하는 것은 JSON 파싱 실패와 "원장 기록 뒤 상태 쓰기 실패"(현재 상태 = 원장 마지막 줄의 before-hash)뿐이다. 그 밖의 원장 밖 변경은 경고 후 사용자 확인으로 적용하고 원장에 기록한다(Judge 권고 ④).
+- 2026-09-30 Judge 권고 ③ 반영(미커밋): `references/alert-automation.md:53`의 옛 "또는" 문구를 "스냅샷 그리고 해당 제안의 사용자 확인"으로 바꿨다(고정 파일 아님, K0). `SKILL.md:130`은 여전히 §5 대기.
+- 2026-09-30 **G1 통과, S4-1 병합 완료:** 사용자가 Windows 터미널에서 `git merge --no-ff 90a11b8` → 병합 커밋 `5c02146`(부모 `6a5a167`, `90a11b8`). Cowork 확인: 병합 결과 트리가 Judge PASS 커밋 `90a11b8`의 트리와 같다(판정받은 내용 그대로). 바뀐 파일 17개가 Builder 커밋과 같다. push 안 함.
+- 2026-09-30 **S4-2 VM 사전 확인 PASS:** Cowork VM(Python 3.10.12)에서 `test_reconcile_broker_state.py` 56건 통과(라이브러리·CLI 적용 경로 포함, 임시 폴더 사용). 실제 상태 파일 해시 전후 동일(`017225ec…`), 원장·백업 파일 생성 없음. 실제 상태 복사본에 적용해 보는 것은 실제 제안과 확인 코드가 있어야 하므로 첫 조정 때 필요하면 한다.
+- 2026-09-30 첫 실제 조정(S4-4)은 새 Cowork 작업에서 한다. 병합으로 바뀐 `CLAUDE.md` 적용 규칙이 새 작업을 열 때 반영되기 때문이다(§1-8).
+- 2026-09-30 **§8-4 결정: 저장.** Cowork 적용 규칙(이번 대화의 "확인 <코드>"만, 코드 입력·재사용 금지, 예약 작업 금지, 실행 전 절차 문서 읽기)을 프로젝트 메모리에 저장했다.
 
 ---
 
@@ -400,7 +433,7 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 - **[안전] `CLAUDE.md`·`AGENTS.md`의 "또는 조회 스냅샷" 문구.** → §1-7에 반영하고 Judge 14번에 넣었다.
 - **[실행불가·안전] 확인 코드 검사가 CLI에만 있어 멈춤 조건이 모호했다.** → 라이브러리 검사를 제안하고(§1-6), 코드가 사람의 확인을 증명하지 못한다는 한계를 명시했다. 멈춤 조건은 CLI와 라이브러리로 나눴다.
 - **[실행불가] VM 실행을 Builder가 확인할 수 없다.** → S4에 VM 사전 확인을 넣었다(§1-11).
-- **[사실오류] "Cowork는 CLAUDE.md를 읽지 않는다".** → "사본은 복사되지만 대화 맥락에 자동으로 들어오지 않았다"로 정정했다(§1-8).
+- **[사실오류] "Cowork는 CLAUDE.md를 읽지 않는다".** → 정정했다. 2번째 턴에 `CLAUDE.md`가 Cowork 대화에 전달되는 것을 확인했다(§1-8).
 - **[안전] 백업 복사가 두 번째 쓰기 경로가 된다.** → v1 복원 없음, 손상 정의, 대기 항목으로 옮겼다(§1-12, §5).
 - **[결정위반] 미체결 진단을 말없이 S6로 미뤘다**(P3 §4-2는 병행). → S1b로 되돌렸다.
 - **[실행불가] `return_code` 실제 확인 방법이 비어 있었다**(`_sanitize`가 버림). → A1 2단계에 방법과 승인 절차를 적었다.
@@ -419,6 +452,8 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 ## 부록 A. Claude Code 지시문
 
 공통 조작: Windows 터미널에서 `cd "E:\사업\##금동한\코덱스저장소"` → 아래 시작 명령 → 세션 안에서 `/model`, `/effort`로 헤더의 설정을 고른다 → 지시문을 붙여 넣는다. A5~A8은 초안이며 착수 전에 Cowork에서 갱신한다.
+
+실행 위치(2026-09-30 확인, 공식 문서 기준): Windows 터미널 CLI 대신 **Claude 데스크톱 앱의 Code 탭**을 써도 된다. 세션이 사용자 PC에서 돌고, 세션마다 worktree 옵션을 켤 수 있으며, `CLAUDE.md`·`.claude/settings.json` 권한 규칙과 `.worktreeinclude`를 따르고, 모델·추론 노력을 고를 수 있다. Builder와 Judge는 각각 새 세션에서 worktree를 켜고 연다. **앱의 브랜치 선택은 `codex/master-recovery-expansion`으로 둔다.** `main`은 예약 런타임용 옛 브랜치(`41f7b3f`)라 현재 브랜치보다 42커밋 뒤처져 있고 서로 갈라져 있다. 앱의 권한 모드는 K3 작업에서 승인을 받을 수 있게 "묻기" 계열로 둔다. 클라우드 세션(claude.ai/code 웹)은 키움 런타임과 미푸시 저장소에 접근할 수 없어 쓰지 않는다. VS Code 확장은 worktree를 직접 만들지 않으므로 권장하지 않는다.
 
 ### A1. S1 I0 Builder
 
@@ -551,8 +586,8 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 시작 명령: `claude`
 
 ```text
-역할: 미체결 조회(ust21050, account_open_items) 진단 (K2, 읽기 전용). 코드와 설정을 수정하지 않는다. 주문 API·주문 도구 금지.
-배경: 수동 분석 16회 모두 KIWOOM_API_RESPONSE_ERROR였다(docs/claude/system-review-p3-design-2026-09-30.md §1-3).
+역할: 미체결 조회(ust21050, account_open_items)와 실현손익 조회(ust21630) 진단 (K2, 읽기 전용). 코드와 설정을 수정하지 않는다. 주문 API·주문 도구 금지.
+배경: 수동 분석 16회 모두 두 조회가 KIWOOM_API_RESPONSE_ERROR였다(P3 §1-3, docs/claude/i0-builder-report-2026-09-30.md §6).
 그래서 scope_complete가 항상 false이고 기존 렌더러도 막힌다.
 1. kiwoom_account_readonly_bridge.py에서 ust21050 요청 구성(필수 파라미터, 연속조회 헤더)과 오류로 분류하는 조건을 추적한다.
 2. 키움 스펙(스펙 조회 도구가 있으면 ust21050, 없으면 references/kiwoom-*.md)과 요청 파라미터를 비교한다.

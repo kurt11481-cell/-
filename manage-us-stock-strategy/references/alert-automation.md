@@ -50,7 +50,7 @@ Persist only in `alert_runtime_state.json`:
 - event active/inactive states;
 - delivery IDs and audit log.
 
-Update holdings, cash, stage, or fills only from explicit user confirmation or a verified read-only broker snapshot. A price touching a band is never a fill. A scheduled run may atomically update `alert_runtime_state.json`; it must never change brokerage facts in `portfolio_state.json`.
+Update holdings, cash, stage, or fills only from a verified read-only broker snapshot AND the user's explicit confirmation of that proposal. A price touching a band is never a fill. A scheduled run may atomically update `alert_runtime_state.json`; it must never change brokerage facts in `portfolio_state.json`.
 
 Reject a broker snapshot older than the configured calendar-day limit. A scheduled workflow without a broker connector must therefore be periodically reconciled by the user and must freeze with `F`, not guess, once that timestamp expires.
 
