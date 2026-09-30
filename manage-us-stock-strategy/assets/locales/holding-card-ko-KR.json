@@ -1,0 +1,116 @@
+{
+  "locale": "ko-KR",
+  "messages": {
+    "header_title": "포트폴리오 머리말 · {date}",
+    "header_run_line": "분석: `{run_id}` ({as_of}) · 분석 전용, 주문·수량·목표 비중 없음 · 결정은 사용자.",
+    "banner_capped": "증거 {grade}·확신도 상한 유지 ({reasons})",
+    "banner_open": "확신도 상한 없음 (증거 {grade})",
+    "header_labels": {
+      "conclusion_primary": "결론 1 (가장 중요한 행동)",
+      "conclusion_secondary": "결론 2",
+      "status": "상태",
+      "exposure": "노출",
+      "upcoming_events": "이번 주~다음 주 확인할 것"
+    },
+    "market_label": "시장 환경 메모 · `EXTERNAL_REFERENCE / 판단 규칙 아님`",
+    "market_not_received": "시장 환경: SAVE 미입수",
+    "card_title": "{ticker} 카드 · {date}",
+    "card_run_line": "분석 `{run_id}` · 분석 전용, 수량·시점 제시 안 함",
+    "column_header": "칸",
+    "column_content": "내용",
+    "rows": {
+      "rule_result": "규칙 결과",
+      "judgment": "판단",
+      "cash_and_alternatives": "현금·대안 대비",
+      "numbers": "숫자",
+      "thesis": "thesis",
+      "material_risk": "틀릴 수 있는 이유",
+      "kill_criteria": "kill 기준",
+      "next_event": "다음 이벤트",
+      "change_conditions": "판단이 바뀌는 조건",
+      "data_status": "데이터 상태",
+      "past_performance": "지난 판단 성과"
+    },
+    "actions": {
+      "ADD": "ADD",
+      "HOLD": "HOLD",
+      "TRIM": "TRIM",
+      "EXIT": "EXIT",
+      "WITHHELD": "판단 보류"
+    },
+    "conviction_label": "확신도 {value}",
+    "convictions": {"HIGH": "높음", "MEDIUM": "중간", "LOW": "낮음"},
+    "cap_suffix": "(상한)",
+    "withheld_reasons": {
+      "BROKER_UNAVAILABLE": "브로커 조회 UNAVAILABLE",
+      "IDENTITY_UNVERIFIED": "종목 identity 미검증"
+    },
+    "agreement_same": "규칙과 같음",
+    "agreement_different": "규칙과 다름: {reason}",
+    "review_required_true": "검토 필요 표시",
+    "review_required_false": "검토 필요 표시 없음",
+    "no_quantity_notice": "수량·시점은 제시하지 않는다.",
+    "hard_risk_line": "손실 한도 {rule_id}: 기준선 ${boundary}, {session} 확정 종가 ${close} → {verdict}(종가 대비 {remaining}% 남음{reference}).",
+    "hard_risk_reference": ", 프리마켓 마크 기준 {value}%는 참고값",
+    "verdict_ok": "**위반 아님**",
+    "verdict_breach": "**위반**",
+    "hard_risk_not_evaluated": "손실 한도 미평가({reason})",
+    "direction_line": "결정론 규칙 방향 **{direction}**({basis})",
+    "direction_none": "결정론 규칙 방향 없음",
+    "directions": {"REDUCE": "reduce", "HOLD": "hold", "NONE": "없음"},
+    "direction_basis": {
+      "HARD_RISK_BREACH": "손실 한도 위반",
+      "TIMING_REDUCE_REVIEW": "타이밍 감축 검토",
+      "POLICY_DEFAULT_REDUCE": "정책 기본방향 reduce",
+      "POLICY_DEFAULT_HOLD": "정책 기본방향 hold"
+    },
+    "timing_line": "타이밍: {status}",
+    "timing_statuses": {
+      "EVALUATED": "평가됨",
+      "NOT_EVALUATED": "미평가",
+      "NOT_APPLICABLE": "해당 규칙 없음"
+    },
+    "unknown": "확인 필요",
+    "numbers": {
+      "quantity": "{value}주",
+      "average_cost": "평단 ${value}",
+      "mark": "마크 ${value}(참고용)",
+      "market_value": "평가액 ${value}",
+      "weight": "비중 {value}%",
+      "pnl": "평가손익 {usd} ({pct}%)",
+      "leverage": "레버리지 {value}배",
+      "confirmed_close": "확정 종가 ${value}",
+      "display_only": "표시 전용"
+    },
+    "thesis_line": "**{status}** · {statement}",
+    "thesis_change": "**지난 카드 대비:** {value}",
+    "thesis_statuses": {
+      "VALID": "유효",
+      "CONTESTED": "논쟁",
+      "INVALIDATED": "훼손",
+      "STALE": "오래됨",
+      "UNVERIFIED": "미검증"
+    },
+    "kill_conditions": "조건",
+    "kill_distance": "현재 거리",
+    "missing_prefix": "빠진 것",
+    "missing_codes": {
+      "HOLDING_NOT_OBSERVED_BY_BROKER": "브로커 보유 관측 없음",
+      "MARK_PRICE_MISSING": "현재가 마크 없음",
+      "CONFIRMED_CLOSE_MISSING": "확정 종가 없음",
+      "LOSS_LIMIT_NOT_EVALUATED": "손실 한도 미평가",
+      "TIMING_NOT_EVALUATED": "타이밍 미평가",
+      "LEVERAGE_FACTOR_NOT_IN_POLICY": "레버리지 배수가 정책에 없음",
+      "BASELINE_MISSING": "baseline 없음",
+      "WEIGHT_NOT_COMPUTABLE": "비중 계산 불가"
+    },
+    "cap_reasons": {
+      "EVIDENCE_GRADE_NOT_ALLOWLISTED": "증거 등급이 허용 목록 밖",
+      "PREFLIGHT_NOT_PASS": "preflight PASS 아님",
+      "STATE_UNRECONCILED_BROKER_DIFF_NOT_MATCH": "상태 미조정(브로커 MATCH 아님)",
+      "BROKER_NOT_AVAILABLE": "브로커 조회 AVAILABLE 아님",
+      "STATE_CHANGED_SINCE_ANALYSIS": "분석 뒤 상태가 바뀜"
+    },
+    "rejected": "카드 검증 실패: {codes}"
+  }
+}
