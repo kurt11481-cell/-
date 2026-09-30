@@ -30,8 +30,8 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
 1. 사용자: Windows 터미널에서 문서 커밋.
    `git add docs/claude/handover-loss-limit-review-2026-10-01.md docs/claude/loss-limit-review-s5-prep-decisions-2026-10-01.md`
    `git commit -m "docs: S5 prep decisions (fixed 1.0x, HWM review lines, S2 plan)"`
-2. 사용자: S2 1회차(본인 수동 판단) — 키움 잔고 재확인 후 MVLL 비중 20% 이하로. SOXL·NBIS 그대로.
-3. 새 작업(Cowork, Sonnet · high): MVLL 보유 카드 → 최종 MVLL 20/10/0% → 2회차 비중 계획(SOX 환산 1.0). 1~2주 안에 마침.
+2. 새 작업(Cowork, Sonnet · high): 키움 잔고 확인 → MVLL 보유 카드(테제·뉴스·기술적 분석·단기 고점 신호) → 매도 근거가 확인되면 사용자가 1회차 수동 매도(MVLL 비중 20% 이하) → 매도 뒤 잔고 대조("확인 <코드>") → 최종 MVLL 20/10/0% → 2회차 비중 계획(SOX 환산 1.0). 매도 근거 대기 기한 2026-10-15(한국 시간), 없으면 그 뒤 나눠 매도. 대기 중 1차 선($25,226) 닿으면 즉시 점검(결정 기록 S2-2 보완).
+3. (2번과 합침)
 4. 새 작업(Opus · xhigh): S5 정책 제안 초안(적용 안 함). 결정 기록 문서의 "S5 주의"(SOXL 단일 결과 → 포트폴리오 미검증 불변식, 1.9배 상한 정리, 미검증 항목) 포함. 이후 S6 Judge(별도 Claude Code 세션) → S7 승인.
 
 ## 5. 남은 결정 (한 번에 하나씩)
@@ -74,4 +74,4 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
 
 ## 9. 새 세션 시작 문구 (붙여넣기용)
 
-"docs/claude/handover-loss-limit-review-2026-10-01.md를 읽고 이어가. S5 준비 결정 커밋 완료, 4절 3번(MVLL 카드)부터" (S5 초안으로 갈 때는 "4절 4번부터", Opus · xhigh)
+"docs/claude/handover-loss-limit-review-2026-10-01.md를 읽고 이어가. 4절 2번(MVLL 카드·매도 근거)부터" (S5 초안으로 갈 때는 "4절 4번부터", Opus · xhigh)
