@@ -1,0 +1,32 @@
+{
+  "locale": "ko-KR",
+  "messages": {
+    "state_ok": "상태 기준 {date} ({days}일)",
+    "state_missing": "상태 파일 없음",
+    "state_invalid": "상태 파일 읽기 실패",
+    "broker_snapshot_ok": "브로커 확인 {date} ({days}일 전)",
+    "broker_snapshot_missing": "브로커 확인 기록 없음",
+    "diff_match": "브로커 일치",
+    "diff_different": "브로커 불일치: 조정 대기",
+    "diff_unknown": "브로커 비교 불가",
+    "diff_missing": "수동 분석 기록 없음",
+    "open_orders_pass": "미체결 조회 정상",
+    "open_orders_error": "미체결 조회 오류({code})",
+    "open_orders_missing": "미체결 조회 기록 없음",
+    "reconciliation_ok": "마지막 조정 {date} ({count}건)",
+    "reconciliation_missing": "마지막 조정 없음",
+    "card_ok": "마지막 카드 {date}",
+    "card_missing": "마지막 카드 없음",
+    "journal_ok": "채점 대기 {count}건",
+    "journal_missing": "채점 대기 없음",
+    "warning_prefix": "경고",
+    "warnings": {
+      "STATE_MISSING": "상태 파일 없음",
+      "STATE_STALE": "상태가 오래됨",
+      "BROKER_SNAPSHOT_MISSING": "브로커 확인 기록 없음",
+      "BROKER_SNAPSHOT_STALE": "브로커 확인이 오래됨",
+      "BROKER_DIFF_NOT_MATCH": "브로커와 상태가 일치하지 않음",
+      "OPEN_ORDERS_NOT_PASS": "미체결 조회가 정상이 아님"
+    }
+  }
+}
