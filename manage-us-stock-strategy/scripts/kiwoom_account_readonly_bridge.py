@@ -68,6 +68,9 @@ SAFE_FAILURE_TYPES = (
     "AUTHENTICATION_FAILURE", "TIMEOUT", "LOCAL_PROTOCOL_FAILURE",
     "LOCAL_TRANSPORT_FAILURE", "LOCAL_RUNTIME_UNAVAILABLE",
 )
+# The provider's undocumented "no records" declaration (observation only; it never changes a status).
+NO_DATA_RETURN_CODE = 20
+NO_DATA_MESSAGE_PREFIX = "[2000]"
 
 
 def _safe_failure_type(value: Any) -> str:
@@ -83,6 +86,19 @@ def _account_return_code_ok(body: dict[str, Any]) -> bool:
     if isinstance(value, bool):
         return False
     return (isinstance(value, int) and value == 0) or value == "0"
+
+
+def _provider_marks(return_code: Any, return_msg: Any) -> tuple[int | None, bool]:
+    """Sanitized observation marks; return_msg is inspected here and never stored (it can carry account numbers)."""
+    code = return_code if type(return_code) is int else None
+    declared = code == NO_DATA_RETURN_CODE and isinstance(return_msg, str) and return_msg.startswith(NO_DATA_MESSAGE_PREFIX)
+    return code, declared
+
+
+def _exception_provider_marks(exc: Exception) -> tuple[int | None, bool]:
+    code = getattr(exc, "provider_return_code", None)
+    code = code if type(code) is int else None
+    return code, code == NO_DATA_RETURN_CODE and getattr(exc, "no_data_declared", None) is True
 
 
 def validate_request(value: Any) -> dict[str, str]:
@@ -107,7 +123,10 @@ def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str,
             if not isinstance(payload, dict):
                 raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
             if not _account_return_code_ok(payload):
-                raise BridgeError("KIWOOM_API_RESPONSE_ERROR", "API_RESPONSE_ERROR")
+                error = BridgeError("KIWOOM_API_RESPONSE_ERROR", "API_RESPONSE_ERROR")
+                error.provider_return_code, error.no_data_declared = _provider_marks(
+                    payload.get("return_code"), payload.get("return_msg"))
+                raise error
             return response
         except Exception as exc:
             last_error = exc
@@ -205,8 +224,11 @@ def external_worker(stdin_text: str, runtime: Path, minimum_interval_seconds: fl
                 status = getattr(exc, "status", "KIWOOM_API_UNAVAILABLE")
                 if not isinstance(status, str) or status not in SAFE_FAILURE_STATUSES:
                     status = "KIWOOM_API_UNAVAILABLE"
+                provider_return_code, no_data_declared = _exception_provider_marks(exc)
                 results.append({"bridge_status": status,
                                 "failure_type": _safe_failure_type(_exception_failure(exc)),
+                                "provider_return_code": provider_return_code,
+                                "no_data_declared": no_data_declared,
                                 "operation": request["operation"],
                                 "runtime_commit": session["commit"], "retrieved_at": utc_now(),
                                 "order_authority": False})
@@ -247,6 +269,11 @@ def _sanitize(value: dict[str, Any], operation: str) -> dict[str, Any]:
     if safe["bridge_status"] not in {"PASS", "PARTIAL"}:
         # Failed responses expose safe diagnostics, never Worker metadata or account values.
         safe.update(runtime_commit=None, retrieved_at=None, data=[])
+        # Worker marks are untrusted: keep them only for a provider error and re-derive the declaration.
+        code = value.get("provider_return_code")
+        code = code if type(code) is int and safe["bridge_status"] == "KIWOOM_API_RESPONSE_ERROR" else None
+        safe.update(provider_return_code=code,
+                    no_data_declared=code == NO_DATA_RETURN_CODE and value.get("no_data_declared") is True)
         if "pagination" in safe:
             safe["pagination"] = {"complete": False, "exhausted": False}
     return safe

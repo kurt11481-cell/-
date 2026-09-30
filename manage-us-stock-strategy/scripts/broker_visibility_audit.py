@@ -6,6 +6,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from kiwoom_account_readonly_bridge import NO_DATA_RETURN_CODE
 from validation_common import canonical_hash
 
 
@@ -37,9 +38,13 @@ def _visibility(item: dict[str, Any] | None, *, empty_means_none: bool = False) 
         "RUNTIME_PYTHON_UNAVAILABLE": "REQUEST_CONFIGURATION_ERROR",
     }.get(str(status), "API_RESPONSE_ERROR" if value.get("failure_type") == "API_RESPONSE_ERROR"
           else "PARTIAL_PROVIDER_SUPPORT")
+    # Observation only: a provider "no records" declaration never turns UNKNOWN into AVAILABLE.
+    code = value.get("provider_return_code")
+    code = code if type(code) is int and status == "KIWOOM_API_RESPONSE_ERROR" else None
     return {"status": "UNKNOWN", "record_count": None,
             "empty_result_interpreted_as_none": False, "gap_classification": classification,
-            "bridge_status": status}
+            "bridge_status": status, "provider_return_code": code,
+            "no_data_declared": code == NO_DATA_RETURN_CODE and value.get("no_data_declared") is True}
 
 
 def build_audit(*, results: list[dict[str, Any]], snapshot: dict[str, Any]) -> dict[str, Any]:
