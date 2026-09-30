@@ -1,0 +1,76 @@
+{
+  "generated_at_utc": "2026-09-30T16:52:36.580562+00:00",
+  "end_date": "2026-09-29",
+  "protocol_lf_sha256": "3406d65e4ebfd72f74904dddff695a3f78465b574febc9942ee6b530ac1870cf",
+  "single_source": "Yahoo chart API (index data; no second source)",
+  "calendar": {
+    "generator": "cpv_full_closures in this script (S4 generator + pre-2009 rules)"
+  },
+  "series": {
+    "SOX": {
+      "ticker": "^SOX",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ESOX?period1=768009600&period2=1790726400&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "single_source": true,
+      "csv": {
+        "path": "SOX_yahoo_raw.csv",
+        "rows": 8156,
+        "sha256": "a261cc8473368e29722a42fa120808d4f48ccdfc4d6ba91826ec0831e2f95167"
+      },
+      "null_or_nonpositive_close_dates": [],
+      "null_ohlc_other_rows": 0,
+      "first_date": "1994-05-04",
+      "last_date": "2026-09-29",
+      "extra_sessions_vs_calendar": [],
+      "missing_sessions_vs_calendar": [],
+      "extra_count": 0,
+      "missing_count": 0
+    },
+    "NDX": {
+      "ticker": "^NDX",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENDX?period1=768009600&period2=1790726400&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "single_source": true,
+      "csv": {
+        "path": "NDX_yahoo_raw.csv",
+        "rows": 8156,
+        "sha256": "cb17eb80b0bbcef1b9bcd7453c06d46ff727143ea865a9349216d0b921b12748"
+      },
+      "null_or_nonpositive_close_dates": [],
+      "null_ohlc_other_rows": 0,
+      "first_date": "1994-05-04",
+      "last_date": "2026-09-29",
+      "extra_sessions_vs_calendar": [],
+      "missing_sessions_vs_calendar": [],
+      "extra_count": 0,
+      "missing_count": 0
+    },
+    "SOXX_2001_2010": {
+      "ticker": "SOXX",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/SOXX?period1=994982400&period2=1268265600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "single_source": true,
+      "csv": {
+        "path": "SOXX_yahoo_2001_2010_raw.csv",
+        "rows": 2176,
+        "sha256": "c0e9a9e83c765f2ec18bf9c97389f09616745305b6bbf27cf0cd9a1a4cb22782"
+      },
+      "first_date": "2001-07-13",
+      "last_date": "2010-03-10"
+    }
+  },
+  "treasury": {
+    "status": "passed",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS3MO&cosd=1981-01-01&coed=2026-09-29",
+    "rows": 11268,
+    "attempts": 1,
+    "first": "1981-09-01",
+    "last": "2026-09-28",
+    "csv": {
+      "path": "DGS3MO_full.csv",
+      "rows": 11268,
+      "sha256": "cee08fd9882231c94777e70a62b6de4d8bd005298bb94195b5135e954c7097b5"
+    },
+    "sessions_without_same_day_observation": 63,
+    "missing_handling": "last observation before the session is carried (rate_array); count recorded"
+  },
+  "status": "passed",
+  "stop_reasons": []
+}
