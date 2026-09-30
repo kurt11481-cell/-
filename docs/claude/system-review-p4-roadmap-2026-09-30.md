@@ -432,6 +432,12 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
   - 파생 원가(수량 × 평단, 센트 반올림)가 키움 매입금액보다 1센트 미만~수 센트 작다. 키움 평단이 소수 넷째 자리까지만 오기 때문이다. 개선 후보: 키움 매입금액을 그대로 쓴다(K2 이상, §5 대기).
   - 가용 현금은 장 마감 뒤에도 배당 입금 같은 현금 이벤트로 바뀐다(이번에는 1차 제안 조회 11:38 KST와 적용 뒤 분석 11:49 KST 사이). 배당은 체결이 아니므로 현금만 다른 재조정으로 반영된다. 이런 재조정이 얼마나 자주 필요한지 P5에서 센다.
   - **확인 필요:** 오늘 수동 분석 5회가 모두 `preflight_status=FAIL`이다(hard fail: `ACQUISITION_TIMESTAMP_INVALID`, `AUTHORITY_REVALIDATION_AT_ACQUISITION_CUTOFF_FAILED`, `TEMPORAL_EVIDENCE_VIOLATION`, `acquisition_completed_at` 없음). 첫 적용 전 실행(02:34, 02:37 UTC)부터 같으므로 조정이 원인은 아니다. 9/9~9/17 실행은 PASS였다. 원인은 진단하지 않았다. S5 카드 파일럿 전에 읽기 전용으로 진단한다.
+- 2026-09-30 **S4 관찰의 preflight FAIL 진단 완료:** `preflight-fail-diagnosis-2026-09-30.md`(커밋 `b76d5e7`). 원인(확정): 브리지 `_sanitize`가 실패한 계좌 조회(미체결·실현손익, 키움 "내역 없음" `return_code=20`)의 `retrieved_at`을 지워(`52fb932`) 취득 완료 시각(cutoff)이 None이 되고, hard fail 3종이 연쇄로 붙는다. 9/17까지 PASS였던 것은 그 이전 코드 때문이다. 조정은 원인이 아니다.
+- 2026-09-30 **K3 설계 결정:** `preflight-fail-fix-design-2026-09-30.md`(커밋 `baea3f5`). 라이브 부모 시계 방식(ADD-T, `run_manual_portfolio_analysis.py` 수정)은 결과가 PARTIAL·UNVERIFIED에 그쳐 S5 목표(확신도 상한 해제)에 미달하고 "S8 전 고정 파일 16개 수정 금지"(§3)와 충돌해 보류한다(S8 R6 선택 항목). 경로는 S1b 안 A(K2) → 빈도 수집 → 안 B(K3, 독립 Judge)다.
+  - 사용자 결정: 안 B 착수 기준은 2거래일 이상에 걸쳐 3회 이상 관측. S5는 먼저 진행하고 확신도 상한 해제는 안 B 뒤로 한다.
+- 2026-09-30 **S1b 안 A 완료·병합:** 커밋 `98a660b`(사용자가 Windows 터미널에서 `merge --ff-only`). 브리지·감사 스크립트·스키마·신규 테스트 `test_s1b_provider_marks.py`(20건). 고정 파일·정책·상태 파일은 바뀌지 않았다. Builder 기록: `s1b-plan-a-builder-2026-09-30.md`.
+  - 병합 후 첫 실제 실행(`manual-20260930T063917375338Z-3c02fdaf2b5f`): 미체결 조회에 `provider_return_code=20`, `no_data_declared=true`. preflight는 FAIL 그대로다(안 A는 관측만 추가하므로 정상). 새 코드로 관측한 횟수는 1회이고, 기준까지 평소 분석 때 쌓는다.
+  - **확인 필요:** 안 B로 GRADE_B에 도달하는지는 코드 추론이다(안 B 병합 뒤 라이브 1회로 확정). ET 자정 근처 실행은 `ACQUISITION_SESSION_ROLLOVER`로 FAIL이 되며 이는 올바른 동작이다.
 
 ---
 
