@@ -18,7 +18,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from apply_user_confirmed_broker_snapshot import (
-    CONFIRMATION_METHODS, apply_confirmed, default_ledger_path, ledger_status, preview_updated_state,
+    CONFIRMATION_METHODS, apply_confirmed, default_backup_directory, default_ledger_path, ledger_status,
+    preview_updated_state,
 )
 from kiwoom_broker_shadow import DEFAULT_PORTFOLIO_STATE_PATH, PROPOSAL_SCHEMA_VERSION, reconciliation_proposal
 from run_kiwoom_broker_shadow import collect_broker_snapshot, repo_relative
@@ -130,8 +131,11 @@ def render_proposal(proposal: dict[str, Any], *, now: datetime | None = None) ->
         lines.append(messages["show_no_change"])
         return lines
     if status != "USER_CONFIRMATION_REQUIRED":
+        blocking = set(proposal.get("unresolved_fields") or [])
         for warning in proposal.get("warnings") or []:
-            key = f"warning_{warning}"
+            # A ledger code that blocks this proposal has its own stop message.
+            key = (f"blocked_{warning}" if warning in blocking and f"blocked_{warning}" in messages
+                   else f"warning_{warning}")
             if key in messages and warning in {"STATE_CHANGED_OUTSIDE_LEDGER", "LEDGER_INTEGRITY_FAILED"}:
                 lines.append(messages[key])
         lines.append(messages["show_blocked"].format(codes=", ".join(proposal.get("unresolved_fields") or [])))
@@ -189,7 +193,7 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
         runtime=runtime, rate_policy=load_json(args.rate_policy), broker_policy=broker_policy,
         snapshot_role=args.snapshot_role, portfolio_state=state_path, **extra,
     )
-    ledger = ledger_status(args.ledger or default_ledger_path(state_path))
+    ledger = ledger_status(default_ledger_path(state_path))
     output_directory = _unique_directory(
         Path(args.output_root) / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     proposal = reconciliation_proposal(
@@ -197,7 +201,8 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
         maximum_age_seconds=int(broker_policy["maximum_age_seconds"]),
         portfolio_state_path=repo_relative(state_path),
         snapshot_path=repo_relative(output_directory / SNAPSHOT_FILE),
-        ledger_last_hash_after=ledger["last_portfolio_hash_after"], ledger_integrity_ok=ledger["chain_ok"],
+        ledger_last_hash_after=ledger["last_portfolio_hash_after"],
+        ledger_last_hash_before=ledger["last_portfolio_hash_before"], ledger_integrity_ok=ledger["chain_ok"],
         post_apply_check=alert_engine_check(load_json(args.alert_policy)),
     )
     if file_hash(state_path) != before:
@@ -254,14 +259,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
         audit = apply_confirmed(
             state_path=state_path, proposal=proposal, confirmation=confirmation,
             audit_path=proposal_path.parent / f"apply_audit.{stamp}.json",
-            backup_directory=args.backup_directory, ledger_path=args.ledger,
         )
     except (ValueError, KeyError, TypeError, OSError) as exc:
         print(messages["apply_rejected"].format(reason=str(exc) or type(exc).__name__))
         return 2
-    backup_root = Path(args.backup_directory) if args.backup_directory else state_path.parent / "backups"
-    print(messages["apply_success"].format(before=audit["state_revision_before"], after=audit["state_revision_after"],
-                                           backup=repo_relative(backup_root / audit["backup_file"])))
+    print(messages["apply_success"].format(
+        before=audit["state_revision_before"], after=audit["state_revision_after"],
+        backup=repo_relative(default_backup_directory(state_path) / audit["backup_file"])))
     return 0
 
 
@@ -276,7 +280,6 @@ def build_parser() -> argparse.ArgumentParser:
                          default=REPO_ROOT / "workspace/policies/kiwoom-broker-readonly-policy.json")
     propose.add_argument("--alert-policy", type=Path, default=REPO_ROOT / "stock-strategy-system/alert_policy.json")
     propose.add_argument("--portfolio-state", type=Path, default=REPO_ROOT / DEFAULT_PORTFOLIO_STATE_PATH)
-    propose.add_argument("--ledger", type=Path)
     propose.add_argument("--snapshot-role", default="POST_CLOSE_BROKER_SNAPSHOT",
                          choices=("PRE_OPEN_BROKER_SNAPSHOT", "POST_CLOSE_BROKER_SNAPSHOT"))
     propose.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
@@ -290,8 +293,6 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument("--proposal", default="latest")
     apply.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     apply.add_argument("--portfolio-state", type=Path)
-    apply.add_argument("--ledger", type=Path)
-    apply.add_argument("--backup-directory", type=Path)
     return parser
 
 

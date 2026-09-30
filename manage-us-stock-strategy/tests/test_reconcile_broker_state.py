@@ -373,10 +373,28 @@ class ProposalFormatTests(unittest.TestCase):
         self.assertEqual(proposal["proposed_patch"], {})
 
     def test_state_changed_outside_ledger_blocks(self):
-        proposal = make_proposal(base_state(), ledger_last_hash_after="f" * 64)
-        self.assertEqual(proposal["status"], "BLOCKED")
-        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", proposal["warnings"])
-        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", proposal["unresolved_fields"])
+        """Only a state equal to the last entry's before-hash (state write failed) blocks; others warn."""
+        state = base_state()
+        messages = cli._messages()
+        failed_write = make_proposal(state, ledger_last_hash_after="f" * 64,
+                                     ledger_last_hash_before=canonical_hash(state))
+        self.assertEqual(failed_write["status"], "BLOCKED")
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", failed_write["warnings"])
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", failed_write["unresolved_fields"])
+        self.assertEqual(failed_write["proposed_patch"], {})
+        table = "\n".join(cli.render_proposal(failed_write))
+        self.assertIn(messages["blocked_STATE_CHANGED_OUTSIDE_LEDGER"], table)
+        self.assertNotIn(messages["show_confirm"].split("{code}")[0], table)
+        changed = make_proposal(state, ledger_last_hash_after="f" * 64, ledger_last_hash_before="e" * 64)
+        self.assertEqual(validate_instance(changed, PROPOSAL_SCHEMA), [])
+        self.assertEqual(changed["status"], "USER_CONFIRMATION_REQUIRED")
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", changed["warnings"])
+        self.assertNotIn("STATE_CHANGED_OUTSIDE_LEDGER", changed["unresolved_fields"])
+        table = "\n".join(cli.render_proposal(changed))
+        self.assertIn(messages["warning_STATE_CHANGED_OUTSIDE_LEDGER"], table)
+        self.assertIn(changed["confirm_code"], table)
+        in_step = make_proposal(state, ledger_last_hash_after=canonical_hash(state), ledger_last_hash_before="e" * 64)
+        self.assertNotIn("STATE_CHANGED_OUTSIDE_LEDGER", in_step["warnings"])
         broken = make_proposal(base_state(), ledger_integrity_ok=False)
         self.assertIn("LEDGER_INTEGRITY_FAILED", broken["unresolved_fields"])
 
@@ -430,6 +448,13 @@ class LibraryRejectionTests(TempStateCase):
         expires = datetime.fromisoformat(self.proposal["expires_at"].replace("Z", "+00:00"))
         self.assert_rejected("BROKER_PROPOSAL_EXPIRED", now=expires + timedelta(seconds=1))
 
+    def test_caller_clock_cannot_turn_back_expiry(self):
+        past = datetime.now(timezone.utc) - timedelta(seconds=2000)
+        stale = make_proposal(self.state, now=past)  # expired about 1,130 seconds ago on the real clock
+        self.assertEqual(stale["status"], "USER_CONFIRMATION_REQUIRED")
+        self.assert_rejected("BROKER_PROPOSAL_EXPIRED", stale, self.confirmation(stale),
+                             now=past + timedelta(seconds=60))
+
     def test_state_hash_and_revision_mismatch_rejected(self):
         changed = dict(self.state, state_notes=["TEST_ONLY changed after propose"])
         self.original = self.write_state(changed)
@@ -480,21 +505,59 @@ class LibraryRejectionTests(TempStateCase):
 
     def test_ledger_mismatch_or_broken_chain_rejected(self):
         ledger = self.directory / "reconciliation_ledger.jsonl"
-        entry = {"previous_entry_sha256": "0" * 64, "portfolio_hash_after": "f" * 64}
+        # The last entry was written but the state is still its before-state: the state write failed.
+        entry = {"previous_entry_sha256": "0" * 64, "portfolio_hash_before": canonical_hash(self.state),
+                 "portfolio_hash_after": "f" * 64}
         ledger.write_text(json.dumps(entry) + "\n", encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "STATE_CHANGED_OUTSIDE_LEDGER"):
+        ledger_bytes = ledger.read_bytes()
+        failed_write = make_proposal(self.state, ledger_last_hash_after="f" * 64,
+                                     ledger_last_hash_before=canonical_hash(self.state))
+        # A direct caller that drops the blocking code still cannot apply over a failed state write.
+        forced = rehash(dict(copy.deepcopy(failed_write), status="USER_CONFIRMATION_REQUIRED", change_kind="VALUES",
+                             unresolved_fields=[], proposed_patch=copy.deepcopy(self.proposal["proposed_patch"])))
+        for proposal in (self.proposal, forced):
+            with self.subTest(warnings=proposal["warnings"]), \
+                    self.assertRaisesRegex(ValueError, "STATE_CHANGED_OUTSIDE_LEDGER: STATE_EQUALS_LAST_LEDGER_BEFORE"):
+                self.apply(proposal, self.confirmation(proposal))
+        # Any other outside change: the proposal the user confirmed must have shown the warning.
+        ledger.write_text(json.dumps(dict(entry, portfolio_hash_before="e" * 64)) + "\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "OUTSIDE_LEDGER_WARNING_NOT_IN_PROPOSAL"):
             self.apply(self.proposal)
         ledger.write_text(json.dumps(dict(entry, previous_entry_sha256="1" * 64)) + "\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "LEDGER_INTEGRITY_FAILED"):
             self.apply(self.proposal)
         self.assertEqual(self.state_path.read_bytes(), self.original)
         self.assertFalse((self.directory / "backups").exists())
+        self.assertFalse(self.audit_path.exists())
+        ledger.write_bytes(ledger_bytes)
+        self.assertEqual(ledger_status(ledger)["entries"], 1)
+
+    def test_unparsable_state_rejected_as_changed_outside_ledger(self):
+        for content in (b"{not json", b"\xff\xfe", b"[]"):
+            with self.subTest(content=content):
+                self.state_path.write_bytes(content)
+                with self.assertRaisesRegex(ValueError, "STATE_CHANGED_OUTSIDE_LEDGER: STATE_FILE_NOT_JSON"):
+                    self.apply(self.proposal)
+                self.assertEqual(self.state_path.read_bytes(), content)
+                self.assertFalse((self.directory / "backups").exists())
+                self.assertFalse((self.directory / "reconciliation_ledger.jsonl").exists())
+                self.assertFalse(self.audit_path.exists())
+
+    def test_ledger_and_backup_locations_are_not_arguments(self):
+        for keyword in ("ledger_path", "backup_directory"):
+            with self.subTest(keyword=keyword), self.assertRaises(TypeError):
+                self.apply(self.proposal, **{keyword: self.directory / "elsewhere"})
+        self.assert_nothing_written(self.original)
+        self.assertFalse((self.directory / "elsewhere").exists())
 
     def test_path_aliases_and_protected_names_rejected(self):
         with self.assertRaisesRegex(ValueError, "BROKER_APPLY_PATH_ALIAS_REJECTED"):
             apply_confirmed(state_path=self.state_path, proposal=self.proposal,
-                            confirmation=self.confirmation(self.proposal), audit_path=self.audit_path,
-                            ledger_path=self.state_path)
+                            confirmation=self.confirmation(self.proposal), audit_path=self.state_path)
+        # The ledger path comes from the state path, so a state file named like the ledger aliases it.
+        with self.assertRaisesRegex(ValueError, "BROKER_APPLY_PATH_ALIAS_REJECTED"):
+            apply_confirmed(state_path=self.directory / "reconciliation_ledger.jsonl", proposal=self.proposal,
+                            confirmation=self.confirmation(self.proposal), audit_path=self.audit_path)
         protected = self.directory / "alert_runtime_state.json"
         with self.assertRaisesRegex(ValueError, "PORTFOLIO_STATE_PATH_REQUIRED"):
             apply_confirmed(state_path=protected, proposal=self.proposal,
@@ -572,27 +635,100 @@ class LibraryApplyTests(TempStateCase):
         self.assertEqual(status["last_portfolio_hash_after"], canonical_hash(load_json(self.state_path)))
         self.assertEqual(load_json(self.state_path)["available_cash_usd"], 10.0)
 
-    def test_screenshot_path_with_resolved_fields_still_applies(self):
+    def test_screenshot_path_with_resolved_fields_is_rejected_in_v1(self):
+        # v1 applies Kiwoom proposals only; atomic apply is covered by the Kiwoom tests above and CliTests.
         state = {"schema_version": "1.3", "strategy_version": "2026-08-05-v4", "state_revision": 1,
                  "holdings": {"OLD": 1}, "average_cost_usd": {"OLD": 10.0}, "position_cost_basis_usd": {"OLD": 10.0},
                  "available_cash_usd": 0.0, "last_confirmed_broker_snapshot": {"verified": True}}
-        self.write_state(state, newline="\n")
+        original = self.write_state(state, newline="\n")
         sample = load_json(SCREENSHOT_FIXTURE)
         sample.update(capture_date_status="VERIFIED", holdings_complete_status="VERIFIED",
                       position_currency_status="VERIFIED")
         proposal = build_proposal(sample, state)
-        audit = apply_confirmed(state_path=self.state_path, proposal=proposal, audit_path=self.audit_path,
-                                proposal_schema=SCREENSHOT_SCHEMA,
-                                confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"],
-                                              "bundle_id": proposal["bundle_id"], "as_of": "2026-08-13",
-                                              "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT",
-                                              "holdings_complete": True, "cash_verified": False,
-                                              "confirmed_at": "2026-08-13T01:00:00+00:00"})
+        self.assertEqual(proposal["unresolved_fields"], [])
+        with self.assertRaisesRegex(ValueError, "SCREENSHOT_PROPOSAL_APPLY_NOT_SUPPORTED"):
+            apply_confirmed(state_path=self.state_path, proposal=proposal, audit_path=self.audit_path,
+                            proposal_schema=SCREENSHOT_SCHEMA,
+                            confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"],
+                                          "bundle_id": proposal["bundle_id"], "as_of": "2026-08-13",
+                                          "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT",
+                                          "holdings_complete": True, "cash_verified": False,
+                                          "confirmed_at": "2026-08-13T01:00:00+00:00"})
+        self.assert_nothing_written(original)
+
+    def test_caller_clock_cannot_backdate_confirmed_at(self):
+        state = base_state()
+        self.write_state(state)
+        proposal = make_proposal(state)
+        started = datetime.now(timezone.utc)
+        audit = self.apply(proposal, now=started - timedelta(days=30))
+        entry = json.loads((self.directory / "reconciliation_ledger.jsonl").read_text(encoding="utf-8"))
+        confirmed = datetime.fromisoformat(entry["confirmed_at"])
+        self.assertGreaterEqual(confirmed, started)
         updated = load_json(self.state_path)
-        self.assertEqual(updated["state_revision"], 2)
-        self.assertEqual(updated["last_updated_at"], "2026-08-13T01:00:00+00:00")
-        self.assertEqual(audit["state_revision_after"], 2)
-        self.assertEqual(ledger_status(self.directory / "reconciliation_ledger.jsonl")["entries"], 1)
+        self.assertEqual(updated["last_updated_at"], entry["confirmed_at"])
+        self.assertEqual(updated["last_confirmed_broker_snapshot"]["confirmed_at"], entry["confirmed_at"])
+        self.assertEqual(audit["confirmed_at"], entry["confirmed_at"])
+
+    def test_first_apply_with_a_missing_or_empty_ledger(self):
+        ledger = self.directory / "reconciliation_ledger.jsonl"
+        for existing in (None, b""):
+            with self.subTest(ledger="missing" if existing is None else "empty file"):
+                ledger.unlink(missing_ok=True)
+                shutil.rmtree(self.directory / "backups", ignore_errors=True)
+                if existing is not None:
+                    ledger.write_bytes(existing)
+                state = base_state()
+                self.write_state(state)
+                status = ledger_status(ledger)
+                self.assertEqual((status["entries"], status["chain_ok"], status["last_portfolio_hash_after"],
+                                  status["last_portfolio_hash_before"]), (0, True, None, None))
+                proposal = make_proposal(state, ledger_last_hash_after=status["last_portfolio_hash_after"],
+                                         ledger_last_hash_before=status["last_portfolio_hash_before"],
+                                         ledger_integrity_ok=status["chain_ok"])
+                self.assertEqual(proposal["status"], "USER_CONFIRMATION_REQUIRED")
+                self.assertNotIn("STATE_CHANGED_OUTSIDE_LEDGER", proposal["warnings"])
+                self.apply(proposal)
+                lines = [line for line in ledger.read_bytes().splitlines() if line.strip()]
+                self.assertEqual(len(lines), 1)
+                entry = json.loads(lines[0])
+                self.assertEqual(entry["previous_entry_sha256"], "0" * 64)
+                self.assertEqual(entry["portfolio_hash_before"], canonical_hash(state))
+                self.assertFalse(entry["state_changed_outside_ledger"])
+                self.assertIsNone(entry["ledger_expected_portfolio_hash"])
+                self.assertEqual(load_json(self.state_path)["state_revision"], 8)
+                self.assertTrue(ledger_status(ledger)["chain_ok"])
+
+    def test_outside_ledger_change_applies_after_confirmation_and_is_recorded(self):
+        state = base_state()
+        self.write_state(state)
+        ledger = self.directory / "reconciliation_ledger.jsonl"
+        first = {"previous_entry_sha256": "0" * 64, "portfolio_hash_before": "e" * 64, "portfolio_hash_after": "f" * 64}
+        ledger.write_text(json.dumps(first) + "\n", encoding="utf-8")
+        status = ledger_status(ledger)
+        proposal = make_proposal(state, ledger_last_hash_after=status["last_portfolio_hash_after"],
+                                 ledger_last_hash_before=status["last_portfolio_hash_before"])
+        self.assertEqual(proposal["status"], "USER_CONFIRMATION_REQUIRED")
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", proposal["warnings"])
+        self.apply(proposal)
+        after = ledger_status(ledger)
+        self.assertEqual((after["entries"], after["chain_ok"]), (2, True))
+        self.assertEqual(after["last_portfolio_hash_after"], canonical_hash(load_json(self.state_path)))
+        entry = json.loads(ledger.read_bytes().splitlines()[-1])
+        self.assertTrue(entry["state_changed_outside_ledger"])
+        self.assertEqual(entry["ledger_expected_portfolio_hash"], "f" * 64)
+        self.assertEqual(entry["portfolio_hash_before"], canonical_hash(state))
+        self.assertEqual(entry["previous_entry_sha256"], status["last_entry_sha256"])
+        # The next apply follows the ledger again, so no outside change is recorded.
+        updated = load_json(self.state_path)
+        after_status = ledger_status(ledger)
+        second = make_proposal(updated, ledger_last_hash_after=after_status["last_portfolio_hash_after"],
+                               ledger_last_hash_before=after_status["last_portfolio_hash_before"],
+                               results=account_results(utc(datetime.now(timezone.utc)), deposit=[{
+                                   "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "20"}]))
+        self.assertNotIn("STATE_CHANGED_OUTSIDE_LEDGER", second["warnings"])
+        self.apply(second)
+        self.assertFalse(json.loads(ledger.read_bytes().splitlines()[-1])["state_changed_outside_ledger"])
 
     def test_untouched_guard_detects_other_field_changes(self):
         state = base_state()
@@ -730,6 +866,45 @@ class CliTests(TempStateCase):
         self.assertEqual(code, 0, output)
         entry = json.loads((self.directory / "reconciliation_ledger.jsonl").read_text(encoding="utf-8"))
         self.assertEqual(entry["confirmation_method"], "USER_TERMINAL")
+
+    def test_ledger_and_backup_options_are_removed(self):
+        elsewhere = str(self.directory / "elsewhere")
+        for argv in (["propose", "--ledger", elsewhere],
+                     ["apply", "--confirm", "00000000", "--confirmed-via", "USER_TERMINAL", "--ledger", elsewhere],
+                     ["apply", "--confirm", "00000000", "--confirmed-via", "USER_TERMINAL",
+                      "--backup-directory", elsewhere]):
+            with self.subTest(argv=argv), self.assertRaises(SystemExit) as caught, \
+                    redirect_stdout(io.StringIO()), mock.patch("sys.stderr", io.StringIO()):
+                cli.main(argv, reader=lambda *args, **kwargs: self.fail("no read expected"))
+            self.assertEqual(caught.exception.code, 2)
+        self.assert_nothing_written(self.original)
+        self.assertFalse((self.directory / "elsewhere").exists())
+
+    def test_propose_and_apply_use_the_ledger_next_to_the_state(self):
+        ledger = self.directory / "reconciliation_ledger.jsonl"
+        entry = {"previous_entry_sha256": "0" * 64, "portfolio_hash_before": canonical_hash(self.state),
+                 "portfolio_hash_after": "f" * 64}
+        ledger.write_text(json.dumps(entry) + "\n", encoding="utf-8")
+        code, output = self.propose()
+        self.assertEqual(code, 2)
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", self.latest()["unresolved_fields"])
+        code, output = self.run_cli(["show", "--output-root", str(self.output_root)])
+        self.assertIn(cli._messages()["blocked_STATE_CHANGED_OUTSIDE_LEDGER"], output)
+        ledger.write_text(json.dumps(dict(entry, portfolio_hash_before="e" * 64)) + "\n", encoding="utf-8")
+        code, output = self.propose()
+        self.assertEqual(code, 0)
+        proposal = self.latest()
+        self.assertIn("STATE_CHANGED_OUTSIDE_LEDGER", proposal["warnings"])
+        self.assertEqual(proposal["unresolved_fields"], [])
+        code, output = self.run_cli(["show", "--output-root", str(self.output_root)])
+        self.assertIn(cli._messages()["warning_STATE_CHANGED_OUTSIDE_LEDGER"], output)
+        self.assertEqual(self.state_path.read_bytes(), self.original)
+        code, output = self.apply_cli("--confirm", proposal["confirm_code"], "--confirmed-via", "USER_TERMINAL")
+        self.assertEqual(code, 0, output)
+        last = json.loads(ledger.read_bytes().splitlines()[-1])
+        self.assertTrue(last["state_changed_outside_ledger"])
+        self.assertEqual(last["ledger_expected_portfolio_hash"], "f" * 64)
+        self.assertEqual(ledger_status(ledger)["entries"], 2)
 
 
 def _local_imports(path: Path) -> set[str]:

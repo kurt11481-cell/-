@@ -302,6 +302,7 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
                             portfolio_state_path: str = DEFAULT_PORTFOLIO_STATE_PATH,
                             snapshot_path: str | None = None,
                             ledger_last_hash_after: str | None = None,
+                            ledger_last_hash_before: str | None = None,
                             ledger_integrity_ok: bool = True,
                             post_apply_check: Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]] | None = None,
                             ) -> dict[str, Any]:
@@ -348,9 +349,11 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
     unresolved = list(input_errors)
     before_hash = canonical_hash(portfolio)
     if ledger_last_hash_after is not None and ledger_last_hash_after != before_hash:
-        # P4 1-12: a state that no longer matches the ledger is treated as damaged; applying stops.
+        # An outside change is a warning shown in the table. Only a state equal to the last entry's
+        # before-hash (entry written, state write failed) blocks applying (P4 1-12).
         warnings.append("STATE_CHANGED_OUTSIDE_LEDGER")
-        unresolved.append("STATE_CHANGED_OUTSIDE_LEDGER")
+        if ledger_last_hash_before == before_hash:
+            unresolved.append("STATE_CHANGED_OUTSIDE_LEDGER")
     if not ledger_integrity_ok:
         warnings.append("LEDGER_INTEGRITY_FAILED")
         unresolved.append("LEDGER_INTEGRITY_FAILED")

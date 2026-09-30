@@ -49,7 +49,8 @@ def ledger_status(ledger_path: Path) -> dict[str, Any]:
     """Read the append-only ledger and verify its hash chain; never raises for a bad ledger."""
     path = Path(ledger_path)
     status: dict[str, Any] = {"exists": path.is_file(), "entries": 0, "chain_ok": True,
-                              "last_entry_sha256": GENESIS_LEDGER_HASH, "last_portfolio_hash_after": None}
+                              "last_entry_sha256": GENESIS_LEDGER_HASH, "last_portfolio_hash_after": None,
+                              "last_portfolio_hash_before": None}
     if not status["exists"]:
         return status
     previous = GENESIS_LEDGER_HASH
@@ -63,6 +64,7 @@ def ledger_status(ledger_path: Path) -> dict[str, Any]:
             previous = hashlib.sha256(raw).hexdigest()
             status["entries"] += 1
             status["last_portfolio_hash_after"] = entry.get("portfolio_hash_after") if isinstance(entry, dict) else None
+            status["last_portfolio_hash_before"] = entry.get("portfolio_hash_before") if isinstance(entry, dict) else None
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         status["chain_ok"] = False
     status["last_entry_sha256"] = previous
@@ -198,12 +200,12 @@ def _assert_untouched(state: dict[str, Any], updated: dict[str, Any]) -> None:
 
 def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation: dict[str, Any],
                     proposal_schema: Path | None = None, audit_path: Path,
-                    backup_directory: Path | None = None, ledger_path: Path | None = None,
                     now: datetime | None = None) -> dict[str, Any]:
     state_path = Path(state_path)
     audit_path = Path(audit_path)
-    backup_directory = Path(backup_directory) if backup_directory is not None else default_backup_directory(state_path)
-    ledger_path = Path(ledger_path) if ledger_path is not None else default_ledger_path(state_path)
+    # The ledger and backups always sit next to the state file; callers cannot point them elsewhere.
+    backup_directory = default_backup_directory(state_path)
+    ledger_path = default_ledger_path(state_path)
     resolved_state = state_path.resolve()
     if state_path.name in PROTECTED_NON_PORTFOLIO_NAMES:
         raise ValueError("PORTFOLIO_STATE_PATH_REQUIRED")
@@ -223,7 +225,12 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         raise ValueError("BROKER_PROPOSAL_SCHEMA_INVALID: " + "; ".join(schema_errors))
     kiwoom = proposal["schema_version"] == PROPOSAL_SCHEMA_VERSION
     original_bytes = state_path.read_bytes()
-    state = json.loads(original_bytes.decode("utf-8"))
+    try:
+        state = json.loads(original_bytes.decode("utf-8"))
+    except ValueError as exc:
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER: STATE_FILE_NOT_JSON") from exc
+    if not isinstance(state, dict):
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER: STATE_FILE_NOT_JSON_OBJECT")
     before_hash = canonical_hash(state)
     if confirmation.get("confirmed") is not True or confirmation.get("proposal_id") != proposal.get("proposal_id"):
         raise ValueError("EXPLICIT_USER_CONFIRMATION_REQUIRED")
@@ -242,7 +249,12 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
     # Every path, including direct library calls: nothing unresolved may be applied.
     if proposal.get("unresolved_fields"):
         raise ValueError("BROKER_PROPOSAL_UNRESOLVED_FIELDS: " + ", ".join(map(str, proposal["unresolved_fields"])))
-    current_time = now or datetime.now(timezone.utc)
+    # v1 applies Kiwoom proposals only. Screenshot (2.5) proposals carry no expiry or confirm code.
+    if not kiwoom:
+        raise ValueError("SCREENSHOT_PROPOSAL_APPLY_NOT_SUPPORTED")
+    # Expiry and confirmed_at use the real clock; a caller's now can only move time forward.
+    real_now = datetime.now(timezone.utc)
+    current_time = real_now if now is None else max(now, real_now)
     if kiwoom:
         if proposal_content_hash(proposal) != proposal["proposal_id"] or (
                 proposal["confirm_code"] != proposal["proposal_id"][:8].upper()):
@@ -266,10 +278,15 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
     ledger = ledger_status(ledger_path)
     if not ledger["chain_ok"]:
         raise ValueError("LEDGER_INTEGRITY_FAILED")
-    if ledger["last_portfolio_hash_after"] is not None and ledger["last_portfolio_hash_after"] != before_hash:
-        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER")
-    confirmed_at = (current_time.astimezone(timezone.utc).isoformat() if kiwoom
-                    else confirmation.get("confirmed_at") or current_time.astimezone(timezone.utc).isoformat())
+    outside_ledger = (ledger["last_portfolio_hash_after"] is not None
+                      and ledger["last_portfolio_hash_after"] != before_hash)
+    if outside_ledger and ledger["last_portfolio_hash_before"] == before_hash:
+        # The last ledger entry was written but its state replacement never happened (P4 1-12).
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER: STATE_EQUALS_LAST_LEDGER_BEFORE_HASH")
+    # Any other outside change is applied only when the confirmed proposal showed it; the entry records it.
+    if outside_ledger and "STATE_CHANGED_OUTSIDE_LEDGER" not in (proposal.get("warnings") or []):
+        raise ValueError("OUTSIDE_LEDGER_WARNING_NOT_IN_PROPOSAL")
+    confirmed_at = current_time.astimezone(timezone.utc).isoformat()
     updated = _updated_state(state, proposal, confirmation, confirmed_at)
     _assert_untouched(state, updated)
     after_hash = canonical_hash(updated)
@@ -292,6 +309,8 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         "open_orders_verified": (proposal.get("confirmed_snapshot_record") or {}).get("open_orders_verified")
         if kiwoom else None,
         "inferred_fills": False, "order_authority": False,
+        "state_changed_outside_ledger": outside_ledger,
+        "ledger_expected_portfolio_hash": ledger["last_portfolio_hash_after"] if outside_ledger else None,
         "previous_entry_sha256": ledger["last_entry_sha256"],
     }
     _append_ledger(ledger_path, entry)

@@ -58,7 +58,9 @@ delivery.
 portfolio-state write path. `propose` reads the Kiwoom account (read-only) and
 never writes state; `apply` writes one proposal only after the user's explicit
 confirmation code. Screenshot proposals (schema 2.5) have no apply command in
-v1.
+v1, and the apply library refuses them (`SCREENSHOT_PROPOSAL_APPLY_NOT_SUPPORTED`).
+The ledger and backups always sit next to the state file; there are no options
+to move them.
 
 ### 1. Windows terminal: analysis, then proposal
 
@@ -101,10 +103,17 @@ recorded or inferred.
 2. Stop instead of asking for a code when the table says the proposal cannot be
    applied or has expired. On expiry (15 minutes after the oldest required read,
    policy `maximum_age_seconds=900`) ask the user to rerun only `propose`.
-3. If the table shows `STATE_CHANGED_OUTSIDE_LEDGER` or
-   `LEDGER_INTEGRITY_FAILED`, stop all applies: the state no longer matches the
-   ledger (P4 1-12 damage). Preserve backups and the ledger, and report; a
-   restore procedure is designed separately (K3).
+3. If the table stops with `LEDGER_INTEGRITY_FAILED`, or with the
+   `STATE_CHANGED_OUTSIDE_LEDGER` stop message (the ledger recorded the last
+   apply but the state file is still the state before it, i.e. the state write
+   failed), stop all applies (P4 1-12 damage). Preserve backups and the ledger,
+   and report; a restore procedure is designed separately (K3). Apply also
+   refuses a state file that is not valid JSON.
+   If `STATE_CHANGED_OUTSIDE_LEDGER` is only a warning (the state changed
+   outside the ledger after the last apply), tell the user before any
+   confirmation: the "current" column shows the file as it is now. If the user
+   still confirms, apply proceeds and records the outside change in its ledger
+   line.
 4. If the table shows `TIMING_PLAN_TICKER_CHANGED`, `POLICY_POSITIONS_MISMATCH`,
    or a failed post-apply alert-engine check, tell the user before any
    confirmation and let them choose: apply (the alert engine may stop with

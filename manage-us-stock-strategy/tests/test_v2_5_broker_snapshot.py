@@ -63,7 +63,8 @@ class V25BrokerSnapshotTests(unittest.TestCase):
         self.assertEqual(before, canonical_hash(state))
 
     def test_v25_bs_05_confirmed_proposal_atomic_apply(self):
-        # apply_confirmed refuses unresolved proposals, so the three user-confirmation items are resolved first.
+        # v1: the library refuses every screenshot proposal, even a resolved and confirmed one. Atomic apply is
+        # covered by the Kiwoom path (test_reconcile_broker_state LibraryApplyTests and CliTests).
         resolved = copy.deepcopy(self.sample)
         resolved.update(capture_date_status="VERIFIED", holdings_complete_status="VERIFIED",
                         position_currency_status="VERIFIED")
@@ -71,22 +72,18 @@ class V25BrokerSnapshotTests(unittest.TestCase):
         self.assertEqual(proposal["unresolved_fields"], [])
         directory = ROOT / "workspace/outputs/v2_5_shadow"
         state_path = directory / "test-broker-apply-state.json"; audit = directory / "test-broker-apply-audit.json"
-        scratch = tempfile.TemporaryDirectory(); self.addCleanup(scratch.cleanup)
         try:
             state_path.write_text(json.dumps(state), encoding="utf-8")
-            result = apply_confirmed(state_path=state_path, proposal=proposal,
-                confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"],
-                              "account_id_masked": "****5546", "evidence_sha256": "a" * 64, "as_of": "2026-08-13",
-                              "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT",
-                              "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T01:00:00+00:00"},
-                proposal_schema=self.schema, audit_path=audit,
-                backup_directory=Path(scratch.name) / "backups", ledger_path=Path(scratch.name) / "ledger.jsonl")
-            updated = load_json(state_path)
-            self.assertEqual(updated["state_revision"], 2)
-            self.assertEqual(updated["holdings"], {"SOXL": 75, "MVLL": 396, "NBIS": 15})
-            self.assertEqual(updated["last_confirmed_broker_snapshot"]["source"],
-                             "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT")
-            self.assertNotEqual(result["portfolio_hash_before"], result["portfolio_hash_after"])
+            original = state_path.read_bytes(); files_before = sorted(path.name for path in directory.iterdir())
+            with self.assertRaisesRegex(ValueError, "SCREENSHOT_PROPOSAL_APPLY_NOT_SUPPORTED"):
+                apply_confirmed(state_path=state_path, proposal=proposal,
+                    confirmation={"confirmed": True, "proposal_id": proposal["proposal_id"], "bundle_id": proposal["bundle_id"],
+                                  "account_id_masked": "****5546", "evidence_sha256": "a" * 64, "as_of": "2026-08-13",
+                                  "source": "TEST_ONLY_VERIFIED_BROKER_SNAPSHOT",
+                                  "holdings_complete": True, "cash_verified": False, "confirmed_at": "2026-08-13T01:00:00+00:00"},
+                    proposal_schema=self.schema, audit_path=audit)
+            self.assertEqual(state_path.read_bytes(), original)
+            self.assertEqual(sorted(path.name for path in directory.iterdir()), files_before)  # no backup, ledger, audit
         finally:
             state_path.unlink(missing_ok=True); audit.unlink(missing_ok=True)
 
