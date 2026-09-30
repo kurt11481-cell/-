@@ -47,6 +47,7 @@ stock-strategy-system/backups/
 stock-strategy-system/reconciliation_ledger.jsonl
 workspace/outputs/reconciliation/
 workspace/outputs/status/
+workspace/outputs/holding-cards/
 
 # Deployed/staging copies are not canonical source trees
 stock-strategy-system/skill-staging/
