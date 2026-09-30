@@ -18,7 +18,7 @@ from kiwoom_broker_shadow import normalize_snapshot, reconciliation_proposal
 import kiwoom_account_readonly_bridge as bridge
 from kiwoom_account_readonly_bridge import validate_request
 from kiwoom_runtime_bridge import blocked_api_target
-from validation_common import file_hash, load_json, validate_instance
+from validation_common import canonical_hash, file_hash, load_json, validate_instance
 
 
 class KiwoomBrokerShadowTests(unittest.TestCase):
@@ -57,17 +57,20 @@ class KiwoomBrokerShadowTests(unittest.TestCase):
         portfolio = load_json(ROOT / "stock-strategy-system/portfolio_state.json")
         snap = normalize_snapshot(self.results(), snapshot_role="POST_CLOSE_BROKER_SNAPSHOT",
                                   generated_at="2026-08-14T13:05:00Z", maximum_age_seconds=900)
-        proposal = reconciliation_proposal(snap, portfolio, expected_before_hash=before)
+        proposal = reconciliation_proposal(snap, portfolio, results=self.results(), maximum_age_seconds=900)
         self.assertFalse(proposal["auto_apply"])
         self.assertFalse(proposal["fill_inference_performed"])
+        # Unified apply format: the canonical state hash, not raw file bytes (P4 1-4).
+        self.assertEqual(proposal["expected_portfolio_hash_before"], canonical_hash(portfolio))
         self.assertEqual(before, file_hash(ROOT / "stock-strategy-system/portfolio_state.json"))
 
     def test_state_revision_is_bound(self):
         portfolio = load_json(ROOT / "stock-strategy-system/portfolio_state.json")
         snap = normalize_snapshot(self.results(), snapshot_role="POST_CLOSE_BROKER_SNAPSHOT",
                                   generated_at="2026-08-14T13:05:00Z", maximum_age_seconds=900)
-        proposal = reconciliation_proposal(snap, portfolio, expected_before_hash="a" * 64)
-        self.assertEqual(proposal["current_state_revision"], portfolio["state_revision"])
+        proposal = reconciliation_proposal(snap, portfolio, results=self.results(), maximum_age_seconds=900,
+                                           post_apply_check=lambda state, draft: {"status": "PASS", "errors": []})
+        self.assertEqual(proposal["expected_state_revision"], portfolio["state_revision"])
         self.assertEqual(proposal["status"], "USER_CONFIRMATION_REQUIRED")
 
     def test_read_operations_allowlisted_and_writes_denied(self):

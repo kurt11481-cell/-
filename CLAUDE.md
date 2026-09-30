@@ -5,7 +5,12 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 ## Hard safety
 - Never place, modify, cancel, or schedule a brokerage order. Never call Kiwoom order tools.
 - Never infer fills from price moves. Change holdings, cash, stage, cost basis, or fills only
-  from explicit user confirmation or a verified read-only broker snapshot.
+  from a verified read-only broker snapshot AND the user's explicit confirmation of that proposal.
+- Broker reconciliation writes state only through `reconcile_broker_state.py apply`, run in Cowork
+  after the user sends "확인 <code>" for that proposal in the current conversation, or by the user
+  in their own terminal. Never type or guess the code and never reuse an earlier confirmation.
+  Claude Code, Codex, scheduled tasks and Judge sessions never run apply. Before applying, read
+  manage-us-stock-strategy/references/broker-snapshot-reconciliation.md.
 - Never edit approved policy (stock-strategy-system/alert_policy.json, workspace/policies/*)
   or portfolio state without explicit user approval in this session.
 - Never read or print secrets (.env*, tokens, account numbers).

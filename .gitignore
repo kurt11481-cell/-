@@ -42,6 +42,11 @@ stock-strategy-system/monitor_report_*.md
 stock-strategy-system/technical_validation*.json
 stock-strategy-system/transient_snapshot_*.json
 
+# I0 broker reconciliation: backups, append-only ledger and proposals hold holdings/cash values
+stock-strategy-system/backups/
+stock-strategy-system/reconciliation_ledger.jsonl
+workspace/outputs/reconciliation/
+
 # Deployed/staging copies are not canonical source trees
 stock-strategy-system/skill-staging/
 

@@ -51,3 +51,111 @@ holdings reconciliation, cash verification, or full-portfolio reconciliation.
 Do not request a broker snapshot to repair market-data, event, policy-authority,
 or provider failures. Deduplicate request delivery separately from trade-review
 delivery.
+
+## Kiwoom read-only reconciliation (I0)
+
+`manage-us-stock-strategy/scripts/reconcile_broker_state.py` is the only
+portfolio-state write path. `propose` reads the Kiwoom account (read-only) and
+never writes state; `apply` writes one proposal only after the user's explicit
+confirmation code. Screenshot proposals (schema 2.5) have no apply command in
+v1, and the apply library refuses them (`SCREENSHOT_PROPOSAL_APPLY_NOT_SUPPORTED`).
+The ledger and backups always sit next to the state file; there are no options
+to move them.
+
+### 1. Windows terminal: analysis, then proposal
+
+The Kiwoom runtime lives on Windows, so the user runs both lines there (one
+paste). The manual analysis command is unchanged:
+
+```powershell
+cd "E:\사업\##금동한\코덱스저장소"
+python manage-us-stock-strategy/scripts/run_manual_portfolio_analysis.py
+python manage-us-stock-strategy/scripts/reconcile_broker_state.py propose
+```
+
+`propose` prints one of three results and the proposal path under the
+Git-ignored `workspace/outputs/reconciliation/<UTC time>/`:
+
+- `브로커와 상태 일치. 조정 필요 없음.`: done.
+- `... Cowork에서 "조정 확인해줘"라고 보내 주세요. 유효: HH:MM KST까지.`:
+  continue in Cowork. The metadata-only variant means holdings, costs and cash
+  already match and only the broker confirmation record (`as_of`, scope) is old.
+- `조정 제안을 만들 수 없습니다: <codes>`: nothing to apply. Required reads
+  (holdings `ust21070`, deposit `ust21110`, fills `ust21510`) must all pass;
+  retry `propose` at most three times, then stop and diagnose.
+
+The proposal holds holdings (held quantity, integer), average cost, derived
+cost basis (quantity x average cost, rounded half-up to cents), and
+`available_cash_usd` = min(withdrawable, order-available) USD. That cash is
+"available now", not settled cash (`cash_verified_scope=available_cash_only`).
+Open orders are display-only: when that read fails the proposal carries
+`OPEN_ORDERS_UNVERIFIED` and state records `open_orders_verified=false`.
+`never_touched` fields (stage, timing_plan, confirmed trades, candidates,
+broker display snapshot, strategy fields) are never written, and no fill is
+recorded or inferred.
+
+### 2. Cowork: "조정 확인해줘"
+
+1. Read this file first. Then run
+   `python manage-us-stock-strategy/scripts/reconcile_broker_state.py show`
+   and show its output to the user verbatim. Do not recompute or reformat the
+   values.
+2. Stop instead of asking for a code when the table says the proposal cannot be
+   applied or has expired. On expiry (15 minutes after the oldest required read,
+   policy `maximum_age_seconds=900`) ask the user to rerun only `propose`.
+3. If the table stops with `LEDGER_INTEGRITY_FAILED`, or with the
+   `STATE_CHANGED_OUTSIDE_LEDGER` stop message (the ledger recorded the last
+   apply but the state file is still the state before it, i.e. the state write
+   failed), stop all applies (P4 1-12 damage). Preserve backups and the ledger,
+   and report; a restore procedure is designed separately (K3). Apply also
+   refuses a state file that is not valid JSON.
+   If `STATE_CHANGED_OUTSIDE_LEDGER` is only a warning (the state changed
+   outside the ledger after the last apply), tell the user before any
+   confirmation: the "current" column shows the file as it is now. If the user
+   still confirms, apply proceeds and records the outside change in its ledger
+   line.
+4. If the table shows `TIMING_PLAN_TICKER_CHANGED`, `POLICY_POSITIONS_MISMATCH`,
+   or a failed post-apply alert-engine check, tell the user before any
+   confirmation and let them choose: apply (the alert engine may stop with
+   `STATE_MISMATCH` until fills are confirmed through I0-b) or hold (do I0-b
+   first).
+5. Apply only when the user, in this conversation and after seeing this table,
+   sends `확인 <code>` with exactly this proposal's code. Never type, complete,
+   or guess the code yourself; never reuse a confirmation from an earlier
+   proposal or conversation; never apply from a scheduled task. `취소` or any
+   other reply means do not apply.
+6. Run, with the user's message copied verbatim:
+
+   ```
+   python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via COWORK_CHAT_USER_MESSAGE --user-message "<user message>"
+   ```
+
+7. Report the one-line result (`revision a → b 적용. 백업: ...`). If apply is
+   rejected, report the reason code; do not retry with other arguments.
+8. Ask the user to rerun the manual analysis and confirm
+   `broker_diff_status=MATCH`.
+
+The confirmation code is a mistake guard, not proof of a human: any agent that
+can read the proposal can read the code. The real controls are this rule, the
+recorded user message, and the library checks (unresolved fields, expiry, state
+hash and revision, proposal integrity, code match, ledger continuity). Claude
+Code denies `reconcile_broker_state.py apply` and direct edits of the state,
+ledger and backups.
+
+Undo: v1 has no restore command. A wrong value is corrected by a new proposal
+(the broker is the reference). Each apply first writes
+`stock-strategy-system/backups/portfolio_state.r<rev>.<time>.json` and one line
+in `stock-strategy-system/reconciliation_ledger.jsonl` (hash chain, canonical
+state hash before and after), then replaces the state atomically, keeping the
+file's existing line endings. Backups, ledger and proposals contain holdings
+and cash; they are Git-ignored and must never be committed or pasted elsewhere.
+
+### 3. Fallback: the user's own Windows terminal
+
+If the Cowork VM cannot run apply, the user may apply from their own terminal
+after reading the table:
+
+```powershell
+python manage-us-stock-strategy/scripts/reconcile_broker_state.py show
+python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via USER_TERMINAL
+```
