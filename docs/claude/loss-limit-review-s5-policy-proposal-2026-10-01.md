@@ -5,7 +5,7 @@
 - 입력: 인계 문서 10절, `s4-3-leverage-up-candidates-2026-10-01.md` 7절·S4-3 Builder 보고, `loss-limit-review-s5-prep-decisions-2026-10-01.md`(A-1b·A-2·3·4·5·6·6b), S1 결정 1·2, `mvll-holding-card-2026-10-01.md`(HWM 갱신·종가 기준).
 - 근거 등급: 모두 C/D(합성·연구)다. A/B 등급(검증된 실운영) 근거는 없다.
 - 권장 설정: 이 문서 검토 Opus · xhigh. S6 Judge는 별도 Claude Code 세션 Opus · xhigh(파일 수정 없음).
-- 상태: **확정 제안 r2(사용자 결정 D1~D7 + S6 필수 수정 14건 + S6 재확인 수정 4건과 C1, 10-01).** 기준은 "S5 확정안 r2" 절과 5절 diff r2다. 0~4·6절과 부록 B·C의 규칙 초안(C.5, C.8~C.13 포함)은 이력이며, 확정안 r2와 다르면 확정안 r2가 우선한다. S6 재확인 PASS 전에는 S7 승인 질문을 하지 않는다.
+- 상태: **S7 사용자 승인 완료(2026-10-01, 항목 1~7), 적용 안 함.** 기준은 "S5 확정안 r2" 절, 5절 diff r2, "S7 사용자 승인" 절이다. 0~4·6절과 부록 B·C의 규칙 초안(C.5, C.8~C.13 포함)은 이력이며, 확정안 r2와 다르면 확정안 r2가 우선한다. 정책 파일 반영은 S7 Builder(worktree, K3) → 별도 Judge → 사용자 커밋·병합으로만 한다.
 
 ## S5 확정안 r2 (2026-10-01, 사용자 결정 D1~D7 + S6 필수 수정 14건 + 재확인 수정 4건과 C1, 재확인 2차 입력)
 
@@ -26,16 +26,16 @@
   - 비중을 늘리는 모든 권고(채우기, 대역 안 1.25 < E < 1.85의 신규 매수, 교체의 매수 쪽)는 권고 목표 비중으로 계산한 예상 E ≤ 1.55이고 종목 상한 이내여야 한다. 넘으면 그 권고를 내지 않는다(S6 재확인, 필수 수정 9).
   - 절대 상한: E ≥ 1.9이면 모든 신규 매수 권고 차단 + 줄이기 "긴급". 바꾸려면 별도 사용자 승인과 Judge.
   - 줄이기 순서(S6 J11): ① 종목 상한(0.4배) 초과분(매도 전용 MVLL 포함) ② 카드 TRIM·EXIT 종목 ③ SOXL. SOXL이 없으면 다른 종목으로 대체하지 않고 "초과 미해소" 경고만 낸다.
-  - 분류(S6 J1): 줄이기·1.85 밴드·1.9 상한·검토선·멈춤·종목 상한·R5·R6은 위험 축소 통제다. 채우기 권고는 수익 추구 성격이라 따로 기록한다: 근거 사용자 승인 위험 예산, 수익 게이트 미통과, OOS·SHADOW 생략, 표시 전용, 알림 등급 B 이하. 상품 승인 게이트(`new_buy_instrument_approved`)만 R3의 8개 상품에 열리고, 나머지 매수 게이트(검증 현금 `cash_policy`, watchlist watch_only, 진입 규칙 등)는 그대로다(S6 재확인 새 문제 2).
+  - 분류(S6 J1): 줄이기·1.85 밴드·1.9 상한·검토선·멈춤·종목 상한·R5·R6은 위험 축소 통제다. 채우기 권고는 수익 추구 성격이라 따로 기록한다: 근거 사용자 승인 위험 예산, 수익 게이트 미통과, OOS·SHADOW 생략, 표시 전용, 알림 등급 B 이하. R3의 8개 상품에 상품 승인 게이트(`new_buy_instrument_approved`)가 열리고, #13 등록으로 승인 규칙 게이트도 채워진다. 그래도 S5 규칙의 `quantity_authority`가 "none"이라 매수 제안은 hard gate로 계속 watch_only·B 이하이고 후보를 만들지 않는다(`validate_research_packet.py`). 검증 현금 `cash_policy`, watchlist watch_only, 진입 규칙 등 나머지 매수 게이트는 그대로다(S6 재확인 새 문제 2, 2차 새 문제 1).
 - R3 구성
   - 카드 종목 코어 BE·MU·NBIS·DELL·AMD. 편입·비중은 보유 카드(ADD/HOLD/TRIM/EXIT)와 Champion vs Challenger vs Cash.
   - 종목 상한(S6 J4·필수 수정 12): 명목 ≤ 0.4배. 대상은 개별 주식, 단일 종목 레버리지 상품(MVLL), 분류가 없는 상품. 지수 레버리지 ETF(SOXL·TQQQ)는 대상이 아니고 E로 관리한다.
-  - DRAM(1배 액티브 메모리 ETF)은 S7에서 사용자가 고른다(S6 재확인 확인 항목 6): ① 종목 상한 0.4배 적용(Cowork 추천, MU 우회 방지) ② 지수·테마 ETF로 보고 미적용. 어느 쪽이든 MU 금지 구간의 DRAM 대체 금지는 남는다. 선택 전 diff 값은 ①이다.
+  - DRAM(1배 액티브 메모리 ETF)에도 종목 상한 0.4배를 적용한다(S7 사용자 선택 ①, 10-01). MU 금지 구간의 DRAM 대체 금지도 그대로다.
   - 실적 금지 구간(2세션 전 ~ 발표 뒤 첫 세션) 신규 매수 금지. 실적일 미확인은 금지 구간으로 본다. MU 금지 구간에 DRAM으로 대체하지 않는다.
   - 개별 종목 합계·루트 테제 상한·현금 하한 없음.
   - 보충은 SOXL. TQQQ·DRAM은 허용 목록(카드 판단). SOXX·SMH·USD는 쓰지 않는다. MVLL은 매도 전용.
   - 상품 등록(필수 수정 4, S6 재확인 새 문제 1·2): 권한 원본은 `workspace/policies/instrument_registry.json`이다. `decision_harness.instrument_registry`는 비권한 운영 캐시이고, 원본 해시는 `decision_harness.instrument_registry_authority.required_canonical_sha256`로 고정돼 있다(`validate_registry_consistency.py`). 원본에 MU·DELL·AMD·TQQQ를 더하고 BE·MU·NBIS·DELL·AMD·SOXL·TQQQ·DRAM의 `new_buy_instrument_approved`를 true로 한 뒤, `required_canonical_sha256`을 갱신하고 캐시를 동기화한다. MVLL·NBIL은 false 유지. 현재 원본·캐시 모두 이 값이 false다.
-  - 효과: 이 8개 상품에 기존 상품 승인 게이트가 열린다(`validate_research_packet.py`, `validate_decision_record.py`, `run_tactical_opportunity_radar.py`, `build_new_buy_strategy_draft.py`). 검증 현금·watchlist watch_only·진입 규칙 등 나머지 매수 게이트는 그대로다.
+  - 효과: 이 8개 상품에 기존 상품 승인 게이트가 열린다(`validate_research_packet.py`, `validate_decision_record.py`, `run_tactical_opportunity_radar.py`, `build_new_buy_strategy_draft.py`). #13 S5 승인 규칙 등록으로 승인 규칙 게이트도 채워지지만, `quantity_authority` "none" hard gate 때문에 매수 제안은 계속 watch_only·B 이하다. 검증 현금·watchlist watch_only·진입 규칙 등 나머지 매수 게이트는 그대로다.
   - 종목 간 되돌리기(±10%p)는 S4-4 사전 등록 검증 전까지 카드 참고 표시만.
 - R4 HWM 검토선
   - 자산 = 대조로 확인된 보유 × 정규장 종가 + 확인된 예수금. HWM 시작 $28,473.94(2026-09-30 종가). S7 적용일에 9/30~적용일 종가 자산 고점으로 다시 확인한다.
@@ -56,7 +56,7 @@
   - 원가 기준 종목 한도는 판정 규칙에서 내린다. `holding_risk_rules.positions`는 보유 종목 등록부로도 쓰여(`evaluate_alerts.py`, `validate_research_packet.py`, `reconcile_broker_state.py`) 고정 평가기 수정이 전제다(K3).
   - `freeze_new_buy_candidates_on_any_breach`는 지우지 않고 false로 둔다. 키가 없으면 코드 기본값이 true다(`validate_research_packet.py`). L2·R0 멈춤이 대신한다.
   - NBIL de minimis 항목 삭제.
-  - `decision_harness.approved_rule_registry`: 은퇴 규칙에 묶인 7개(soxl·mvll·nbis_max_loss_review, mvll_staged_reduction, soxl_staged_timing, nbil_de_minimis_manual_exit, post_reduction_weakness_rearm)를 은퇴 표시하고, S5 권고(줄이기·채우기·검토선·R5)를 승인 규칙으로 등록한다. `validate_research_packet.py`는 hold·watch가 아닌 제안에 승인 규칙 참조를 요구한다(Cowork 발견 C1, 5절 #13).
+  - `decision_harness.approved_rule_registry`: 은퇴 규칙에 묶인 7개(soxl·mvll·nbis_max_loss_review, mvll_staged_reduction, soxl_staged_timing, nbil_de_minimis_manual_exit, post_reduction_weakness_rearm)를 은퇴 표시하고, S5 줄이기·채우기 권고를 종목 단위 승인 규칙(status "approved", `quantity_authority` "none")으로 등록한다. 검토선·R5는 hold·watch 성격이라 등록하지 않는다. `validate_research_packet.py`는 hold·watch가 아닌 제안에 승인 규칙 참조를 요구한다(Cowork 발견 C1, 5절 #13).
   - SOXL·MVLL 타이밍 축소 슬롯 은퇴(D5). gap·halt 감시만 남기고 SOXL weakness_10ema watch-only도 은퇴한다. 슬롯이 없으면 엔진이 gap·halt 감시도 내지 않아 `timing_engine.py` 수정이 전제다(K3).
   - `dynamic_gross_leverage_cap` → superseded 표시(불변식 `soxl_only_result_can_validate_live_portfolio_cap = false` 유지). 수익 게이트 차단 목록의 "dynamic leverage cap"(신호 티어)과 "peak drawdown exits"는 차단 유지.
   - 유지: `cash_policy`, 실적 금지 구간, 주문 권한 없음.
@@ -95,14 +95,31 @@
 - Cowork 확인(읽기 전용, 10-01): `decision_harness.instrument_registry`는 SOXL·MVLL·NBIL·DRAM·NBIS·BE 6개이고 `new_buy_instrument_approved`가 모두 false다. `shadow_acceptance.py`는 `holding_risk_rules`·`holding_timing_rules`로 의미 해시를 만들고, `run_deployment_provenance.py`는 `alert_policy.json`을 provenance에 넣는다.
 - S6 재확인 1차(10-01, 대상 `4df8331`): **FAIL(경미)**. 필수 수정 14건 중 13건 OK, 9번 부족(비중을 늘리는 권고 중 채우기에만 예상 E ≤ 1.55가 걸림, 대역 안 신규 매수·교체는 fail-open). 새 문제 3건: ① 상품 등록 대상이 비권한 캐시였음(권한 원본은 `workspace/policies/instrument_registry.json`) ② "기존 매수 게이트 그대로"와 상품 승인 게이트 개방이 모순 ③ 부록 C 규칙 초안의 우선 규칙 누락. 확인 항목: 5 범위 안, 6 새 결정 필요(두 선택지로 묻기), 7 범위 안.
 - r2 반영: 9번 → R2 "비중을 늘리는 모든 권고", 5절 `exposure_increasing_*`. 새 문제 1 → R3, 5절 #12, 4절 #12, 9절 요구 10. 새 문제 2 → R2 분류, R3 효과, 5절 분류 필드. 새 문제 3 → 머리 상태 줄. 확인 항목 6 → R3 DRAM 줄. Cowork 발견 C1(`approved_rule_registry`에 은퇴 규칙 7개가 남고 S5 권고용 승인 규칙이 없음) → R7, 5절 #13, 4절 #13, 9절 요구 11.
+- S6 재확인 2차(10-01, 대상 `e5790b3`): **PASS**(fail-open 없음, 재판정 불필요). 조건이던 문구 2건을 반영했다: ① 상품 승인 게이트와 함께 #13 승인 규칙 게이트도 채워지지만 `quantity_authority` "none"이라 매수는 watch_only·B 이하(R2 분류, R3 효과, 항목 5) ② #13·#14가 감소 뒤 EMA 재무장 규칙도 은퇴시킴을 항목 7에 적음. C1 확인: 승인 규칙은 정확히 7개, 등록은 종목 단위·status "approved". S7 Builder 요구 2·11과 계산·테스트 사례에 반영했다.
 - S7 승인 때 묻는 항목(1~5와 7은 적용 확인, 6은 선택)
   1. 채우기 권고를 "미검증 사용자 위험 예산의 수익 추구 권고(표시 전용, B 이하)"로 기록한다.
   2. R5 기준을 전향(S7 적용일 이후 고점)으로 한다.
   3. 줄이기 순서: ① 종목 상한 초과 ② 카드 TRIM·EXIT ③ SOXL.
   4. C.6 감수 위험과 OOS·SHADOW 생략을 다시 확인한다.
-  5. 상품 신규 매수 승인을 하나씩 확인한다: BE, MU, NBIS, DELL, AMD, SOXL, TQQQ(등록부에 없던 3배 상품), DRAM. MVLL·NBIL은 미승인. 효과: 이 상품들에 상품 승인 게이트가 열리고 나머지 매수 게이트는 그대로다. 권한 원본 파일 변경이다.
+  5. 상품 신규 매수 승인을 하나씩 확인한다: BE, MU, NBIS, DELL, AMD, SOXL, TQQQ(등록부에 없던 3배 상품), DRAM. MVLL·NBIL은 미승인. 효과: 이 상품들에 상품 승인 게이트가 열리고, S5 승인 규칙 등록(#13)으로 승인 규칙 게이트도 채워진다. 수량 권한이 없어 매수 제안은 계속 watch_only·B 이하이고, 나머지 매수 게이트는 그대로다. 권한 원본 파일 변경이다.
   6. DRAM 종목 상한: ① 0.4배 적용(추천) ② 미적용. 어느 쪽이든 MU 금지 구간 DRAM 대체 금지는 남는다.
-  7. SOXL weakness_10ema watch-only 은퇴(D5 "gap·halt만 유지"의 적용). 수익 게이트의 안전 면제 목록에서 항목 1개를 빼는 변경이다.
+  7. SOXL weakness_10ema watch-only와, 사용자 요청으로 만든 감소 뒤 EMA 재무장 규칙(`post_reduction_weakness_rearm`, `holding_timing_rules.weakness_rearm`, 면제 목록 "confirmed-fill EMA rearm")을 은퇴한다. D5 "gap·halt만 유지"의 적용이고, 슬롯 은퇴 뒤에는 대상이 없다. 수익 게이트의 안전 면제 목록에서 항목 2개를 빼는 변경이다(S6 2차 새 문제 2).
+
+## S7 사용자 승인 (2026-10-01, Cowork 대화, 한 번에 하나씩)
+
+- 성격: "S6 Judge 판정" 절의 항목 1~7에 대한 사용자 명시 승인. 정책·상태 파일은 아직 바꾸지 않았다. 주문·수량 권한은 계속 없다.
+
+| # | 질문 요지 | 사용자 답(원문) |
+|---|---|---|
+| 1 | 채우기 권고를 "미검증 사용자 위험 예산의 수익 추구 권고(표시 전용, B 이하, 수량 권한 없음)"로 기록·적용 | "그대로 적용 (추천)" |
+| 2 | R5 고점을 S7 적용일 이후 정규장 종가 최고치로(전향) | "적용일부터 (추천)" |
+| 3 | 줄이기 순서 ① 종목 상한 초과(MVLL 포함) ② 카드 TRIM·EXIT ③ SOXL | "이 순서로 적용 (추천)" |
+| 4 | 1.55의 감수 위험(SOX 32년 −98%·최악 1년 −84%, 1994~2010 연 0.2%, 2010~ −64%·−58%, 하루 −21.6%, 최근 5년 1.32보다 수익 낮고 낙폭 8%p 깊음)과 OOS·shadow 생략을 알고 유지 | "1.55 유지" |
+| 5 | 신규 매수 상품 승인 BE·MU·NBIS·DELL·AMD·SOXL·TQQQ·DRAM(MVLL·NBIL 미승인), 효과 고지(매수 제안은 watch_only·B 이하) | "8개 모두 승인 (추천)" |
+| 6 | DRAM 종목 상한 0.4배 | "① 적용 (추천)" |
+| 7 | SOXL weakness_10ema 감시와 감소 뒤 EMA 재무장 규칙 은퇴 | "둘 다 은퇴 (추천)" |
+
+- 이 승인으로 S7 Builder가 5절 diff r2(새 섹션 2개, 기존 키 #1~#8·#12~#14)와 `workspace/policies/instrument_registry.json` 변경을 worktree에서 구현할 수 있다. 병합 전 별도 Judge가 필요하다.
 
 ## 0. 결론 (초안 시점, 확정안이 우선)
 
@@ -269,7 +286,8 @@
 | 10 | `new_buy_activation.earnings_blackout_single_stocks` | 실적 금지 구간 | 그대로 재사용 | 결정 5 |
 | 11 | `cash_policy` | 검증 현금만 | 그대로 | — |
 | 12 | `workspace/policies/instrument_registry.json`(권한 원본) + 캐시 `decision_harness.instrument_registry` | MU·DELL·AMD·TQQQ 없음, 신규 매수 승인 모두 false | 원본에 4개 추가, 8개 승인, 원본 해시 갱신, 캐시 동기화(5절 #12) | S6 필수 수정 4, 재확인 새 문제 1 |
-| 13 | `decision_harness.approved_rule_registry` | 원가 한도·타이밍 슬롯 승인 규칙 7개 | 7개 은퇴, S5 권고 승인 규칙 등록(5절 #13) | Cowork 발견 C1 |
+| 13 | `decision_harness.approved_rule_registry` | 원가 한도·타이밍 슬롯 승인 규칙 7개 | 7개 은퇴, S5 줄이기·채우기 승인 규칙을 종목 단위로 등록(5절 #13) | Cowork 발견 C1, S6 2차 |
+| 14 | `holding_timing_rules.weakness_rearm` | 감소 체결 뒤 EMA 재무장 | 은퇴(5절 #14) | 슬롯 은퇴로 대상 없음(S6 2차) |
 
 - 표의 `risk_overlay_rules.*`·`new_buy_activation.*`는 실제로 `holding_timing_rules.` 아래 경로다(S6 P1). 표와 5절 r2가 다르면 5절 r2가 우선한다.
 
@@ -359,7 +377,7 @@
   "cross_stock_rebalance": {"band_abs": 0.10, "status": "display_only_until_s4_4_validation"},
   "single_stock_nominal_cap": 0.4,
   "single_stock_cap_applies_to": ["stock", "single_stock_leveraged_etf", "unclassified", "DRAM"],
-  "dram_cap": "pending_user_choice_at_s7_default_apply",
+  "dram_cap": "apply_user_choice_2026-10-01",
   "single_stock_cap_exempt": ["SOXL", "TQQQ"],
   "single_stock_cap_breach": "block_new_buy_and_first_in_reduce_order",
   "single_stock_peak_review": {
@@ -444,6 +462,7 @@
 #8 holding_timing_rules.risk_overlay_rules.walk_forward_activation_gate
      .safety_only_controls_exempt_from_return_gate
           - "SOXL weakness_10ema watch-only"
+          - "confirmed-fill EMA rearm" (#14와 함께 은퇴)
           + "S5 exposure measurement, reduce recommendations, 1.85 band and 1.9 hard ceiling"
           + "S5 portfolio review lines and recommendation pauses"
           + "S5 single-stock nominal cap and peak review (R5)"
@@ -462,8 +481,11 @@
 #13 alert_policy.json decision_harness.approved_rule_registry (K3)
      은퇴 표시: soxl_max_loss_review, mvll_max_loss_review, nbis_max_loss_review, mvll_staged_reduction,
                soxl_staged_timing, nbil_de_minimis_manual_exit, post_reduction_weakness_rearm
-     등록: S5 줄이기 권고, S5 채우기 권고(미검증 수익 추구 표시), S5 검토선, S5 종목 고점 검토(R5)
-           quantity_authority "none". allowed_actions 이름은 validate_research_packet.py 어휘에 맞춘다(S7 Builder)
+     등록: S5 줄이기 권고, S5 채우기 권고(미검증 수익 추구 표시)
+           종목 단위(rule.symbol 일치), status "approved", quantity_authority "none"
+           검토선·R5는 hold·watch라 등록하지 않음. allowed_actions 이름은 validate_research_packet.py 어휘에 맞춘다(S7 Builder)
+#14 holding_timing_rules.weakness_rearm                                           status -> "retired_with_reduction_slots"
+     (슬롯 은퇴로 대상 없음. timing_engine.py 고정 해시 범위라 #4·#5와 함께 K3)
 ```
 
 ## 6. 금액표와 감수 위험 (6.1 검토선은 유효, 6.2·6.3은 1.0/1.32 기준 이력 — 1.55는 부록 C.6)
@@ -537,14 +559,14 @@
 ## 9. S7 구현 범위 (승인 뒤, S6 Judge 요구 반영)
 
 - K3. 새 worktree에서 Builder, 끝나면 별도 Judge. Builder 지시문은 S6 재확인 PASS와 S7 승인 뒤 따로 쓴다.
-- 정책: 5절 r2의 새 섹션 2개와 기존 키 #1~#8·#12·#13.
-- 계산: N·V·E, R0 fail-closed, 줄이기 순서, 채우기 예상 E, HWM·선 판정, R5 전향 고점, 멈춤 상태, 권고 표시(비중).
+- 정책: 5절 r2의 새 섹션 2개와 기존 키 #1~#8·#12~#14.
+- 계산: N·V·E, R0 fail-closed, 줄이기 순서, 비중을 늘리는 권고(채우기·신규 매수·교체 매수 쪽)의 예상 E, HWM·선 판정, R5 전향 고점, 멈춤 상태, 권고 표시(비중).
 - 원장: `decision_journal.json` 최소 형식(line_id, hwm, breach_date, review_status, conclusion, user_confirmed_at).
 - 가상 운용: K132-G 보고 전용 원장(실제 계좌와 다른 파일, Cold Path, K2).
 - 표시: 카드·현황판에 E, 다음 선까지 거리, 멈춤 상태 한 줄.
 - S6 Judge 요구 사항
   1. 고정 파일 범위부터 확정한다. `evaluate_alerts.py`·`timing_engine.py`·`SKILL.md`·`ko-KR.json`을 고치면 `deployment_gate` 해시와 설치 스킬을 동기화한다. `run_manual_portfolio_analysis.py`와 그 테스트는 건드리지 않는다(acceptance 고정 16개, 건드리면 별도 K3).
-  2. `alert_policy.json` 변경이 배포 provenance(`run_deployment_provenance.py`), `shadow_acceptance.py` 의미 해시, `workspace/policies/shadow_acceptance_policy.json`의 `required_baseline_tickers`(NBIS·MVLL·SOXL)에 주는 영향을 확인한다(S6 미확인).
+  2. `alert_policy.json` 변경이 배포 provenance(`run_deployment_provenance.py`), `shadow_acceptance.py` 의미 해시, `workspace/policies/shadow_acceptance_policy.json`의 `required_baseline_tickers`(NBIS·MVLL·SOXL)에 주는 영향을 확인한다(S6 미확인). 상품 등록부 원본 변경도 `shadow_acceptance.py`의 의미 해시(등록부 경로를 읽음)에 영향을 준다(S6 2차).
   3. `timing_engine.py`는 열린 슬롯이 없으면 gap·halt watch도 내지 않는다. 슬롯 은퇴 뒤 watch를 유지하려면 엔진을 고쳐야 한다. anchor 등식과 timing_plan 상태 이관은 승인된 쓰기 경로로만 한다.
   4. HWM·멈춤·선 발동 상태의 저장 위치와 쓰기 경로를 정한다. 현재 대화의 사용자 확인에 묶고, 예약 작업·Judge·Claude Code는 쓰지 않는다.
   5. R6 신고는 대조안 해시에 넣는다(신고 뒤 새 코드). apply 경로라 K3. 미결제 매도 대금은 현금이 아니되 자산 계산에서 거짓 선 발동이 나지 않게 한다.
@@ -553,8 +575,8 @@
   8. 테스트: 영향 파일 11개(test_timing_engine, test_reconcile_broker_state, test_portfolio_decision_dashboard, test_build_holding_fact_pack, test_holding_card, test_v2_4_dual_phase, test_v2_5_leveraged_confirmation, test_v2_6_12_holding_valuation_shadow, test_v2_6_3_free_web_new_buy, test_v2_6_7_session_aware_kiwoom_priority, test_v2_6_integration)과 test_evaluate_timing_integration. 필수 수정 5~11마다 새 fail-closed 테스트.
   9. (Cowork 추가) V 과거 이력의 정규장 종가 확보 방법(키움 30분봉 이력 길이 등)을 먼저 확인한다.
   10. (재확인 반영) 상품 등록은 권한 원본 `workspace/policies/instrument_registry.json`을 고치고 `required_canonical_sha256` 갱신과 캐시 동기화를 한 번에 한다. `validate_registry_consistency.py`가 통과해야 한다.
-  11. (C1) `approved_rule_registry`의 은퇴·등록과, S5 권고가 `validate_research_packet.py`의 승인 규칙 검사를 지나는지 확인한다.
-- 테스트 사례: 선 경계(정확히 닿음, 같은 구간 1회, 새 HWM 재무장, "계속" 뒤 다음 선), R0 트리거 각각, V 이력 부족, 0.4배 초과와 줄이기 순서, SOXL 없음·R5 멈춤 때 권고 생략, 실적 금지 구간·실적일 미확인, 교체 두 단계, R5 기준 고점 없음, 입출금 신고 한도·배당 구분.
+  11. (C1, S6 2차) `approved_rule_registry`: 7개 은퇴, S5 줄이기·채우기 규칙은 종목 단위·status "approved"·`quantity_authority` "none"으로 등록한다. `validate_research_packet.py`를 고치면 K2 이상이다.
+- 테스트 사례: 선 경계(정확히 닿음, 같은 구간 1회, 새 HWM 재무장, "계속" 뒤 다음 선), R0 트리거 각각, V 이력 부족, 0.4배 초과와 줄이기 순서, 신규 매수·교체 매수 쪽 예상 E 초과 시 권고 생략, SOXL 없음·R5 멈춤 때 권고 생략, 실적 금지 구간·실적일 미확인, 교체 두 단계, R5 기준 고점 없음, 입출금 신고 한도·배당 구분.
 
 ## 10. 사용자 결정 (한 번에 하나씩)
 
@@ -576,7 +598,7 @@
 
 1. 사용자: Windows 터미널에서 이 수정본(r2) 커밋(Cowork가 명령 안내).
 2. S6 재확인 2차: 같은 Judge 세션에 `s6-judge-prompt-2026-10-01.md` 7절 지시. 재확인 1차의 수정 4건과 C1만 본다.
-3. 재확인 PASS 뒤 S7: 사용자 승인("S6 Judge 판정" 절의 항목 1~7을 한 번에 하나씩, 6은 선택) → Builder worktree(K3) → Judge → 사용자 커밋·병합.
+3. (완료 10-01) S7 사용자 승인 1~7. 다음은 S7 Builder 지시문(새 Cowork 작업, Opus · xhigh) → Builder worktree(K3) → 별도 Judge → 사용자 커밋·병합.
 4. 병행 가능(Cold Path): S4-4 사전 등록 "종목 코어 + 종목 간 되돌리기"(Builder, 2000~2010 바구니 + forward shadow). S7을 막지 않는다.
 5. S7 전까지 실제 매매(MVLL 축소 등)는 사용자 수동 판단이다. 1.55 기준 참고는 부록 C.6 "S2 영향".
 
@@ -596,6 +618,8 @@
 - 2026-10-01 S6 Judge 지시문 작성: `s6-judge-prompt-2026-10-01.md`. 8절 질문 4·5는 대상이 없어져 J4(카드 종목 코어)·J5(K132-G)로 바꿨다. Cowork 사전 점검 P1~P8(경로, 수익 게이트 분류, R5 기준점, 낡은 초안 부분, S7 전환, 미등록 상품 배수, V 가격 출처, 고정 해시)을 Judge가 직접 확인한다. 문서 정리는 Judge 판정 뒤 한 번에 한다.
 - 2026-10-01 S6 Judge 판정 PASS_WITH_FIXES(HEAD `6ff8f25`, 문서 수정 14건, 새 사용자 결정 없음). Cowork가 근거 일부를 읽기 전용으로 다시 확인하고(상품 등록부, 등록부 역할, freeze 기본값, 슬롯 없는 엔진 동작, 의미 해시) r1로 반영했다: "S5 확정안 r1" 절, "S6 Judge 판정" 절, 4·5·8·9·11절, 부록 C.6·C.9. 정책·상태 파일 원본 해시 변경 없음. 다음은 S6 재확인.
 - 2026-10-01 S6 재확인 1차 FAIL(경미, 대상 `4df8331`): 수정 4건(필수 수정 9, 새 문제 1~3)과 확인 항목 6을 선택 질문으로. Cowork가 근거를 읽기 전용으로 확인하고(권한 원본 등록부와 해시 고정, 상품 승인 게이트 사용처) r2로 반영했다. 추가로 `approved_rule_registry` 정리(C1)를 넣었다. 정책·상태 파일 무변경.
+- 2026-10-01 S6 재확인 2차 PASS(대상 `e5790b3`, 재판정 불필요). 조건 문구 2건(승인 규칙 게이트 효과, 재무장 규칙 은퇴)과 Builder 요구 3건을 반영했다. 다음은 S7 승인 질문(1~7, 한 번에 하나).
+- 2026-10-01 S7 사용자 승인 1~7 완료("S7 사용자 승인" 절, 답 원문 기록). DRAM 상한은 ① 적용. 정책·상태 파일 무변경. 다음은 S7 Builder 지시문.
 
 ## 부록 B. D1 재검토 — 사용자 대안 2개 (2026-10-01, 탐색 D등급)
 

@@ -121,3 +121,6 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
   - 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md의 S6 Judge 판정 절을 읽고 S6 재확인 결과 처리부터" + 재확인 블록
 - 10-01 S6 재확인 1차 FAIL(경미): 수정 4건(비중을 늘리는 모든 권고에 예상 E ≤ 1.55, 상품 등록은 권한 원본 `workspace/policies/instrument_registry.json`, 상품 승인 게이트 문구, 부록 C 우선 규칙) + DRAM 상한은 S7 선택 질문. Cowork가 r2로 반영하고 `approved_rule_registry` 정리(C1)를 더함.
   - 다음: ① 사용자 r2 커밋 ② `s6-judge-prompt-2026-10-01.md` 7절 재확인 2차 ③ PASS면 S7 승인 질문.
+- 10-01 S6 재확인 2차 PASS(`e5790b3`, 재판정 불필요). 조건 문구 2건 반영. 다음: S7 승인 질문 1~7(제안서 "S6 Judge 판정" 절, 한 번에 하나, 6은 선택) → 결과 기록 → S7 Builder 지시문.
+- 10-01 S7 사용자 승인 1~7 완료(제안서 "S7 사용자 승인" 절): 채우기 권고 미검증 표시로 적용, R5 전향, 줄이기 순서 상한 초과→TRIM·EXIT→SOXL, 1.55 유지(위험 고지 뒤), 8개 상품 승인, DRAM 상한 적용, weakness_10ema·재무장 규칙 은퇴. 정책 미반영.
+  - 다음: S7 Builder 지시문(새 Cowork 작업, Opus · xhigh). 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md의 S7 사용자 승인 절과 9절을 읽고 S7 Builder 지시문부터"
