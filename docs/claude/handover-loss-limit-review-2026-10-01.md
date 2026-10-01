@@ -113,3 +113,6 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
   - 문서: `loss-limit-review-s5-policy-proposal-2026-10-01.md`의 "S5 확정안" 절과 5절 diff, 부록 B·C(탐색 D등급).
   - 다음: ① 사용자 문서 커밋 ② S6 Judge 지시문(Cowork) → 별도 Claude Code 세션 Judge(Opus · xhigh) ③ 병행 S4-4 사전 등록(종목 간 되돌리기).
   - 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md의 S5 확정안을 읽고 S6 Judge 지시문부터"
+- 10-01 S6 Judge 지시문 작성(Cowork): `s6-judge-prompt-2026-10-01.md`(사용자 조작, 사전 점검 P1~P8, 붙여넣기용 지시문 J1~J12).
+  - 다음: 사용자가 Windows 터미널에서 `claude --worktree judge-s6`(Opus · xhigh)로 Judge 실행 → "S6 판정" 블록을 Cowork에 붙여 넣기.
+  - 시작 문구: "docs/claude/s6-judge-prompt-2026-10-01.md를 읽고 S6 판정 처리부터" + 판정 블록
