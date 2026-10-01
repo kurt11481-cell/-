@@ -5,41 +5,98 @@
 - 입력: 인계 문서 10절, `s4-3-leverage-up-candidates-2026-10-01.md` 7절·S4-3 Builder 보고, `loss-limit-review-s5-prep-decisions-2026-10-01.md`(A-1b·A-2·3·4·5·6·6b), S1 결정 1·2, `mvll-holding-card-2026-10-01.md`(HWM 갱신·종가 기준).
 - 근거 등급: 모두 C/D(합성·연구)다. A/B 등급(검증된 실운영) 근거는 없다.
 - 권장 설정: 이 문서 검토 Opus · xhigh. S6 Judge는 별도 Claude Code 세션 Opus · xhigh(파일 수정 없음).
-- 상태: **확정 제안(사용자 결정 D1~D7 완료, 10-01).** S6 Judge는 "S5 확정안" 절과 5절 diff를 기준으로 본다. 0~3·6절은 결정 전 초안 이력이며, 확정안과 다르면 확정안이 우선한다.
+- 상태: **확정 제안 r1(사용자 결정 D1~D7 + S6 Judge PASS_WITH_FIXES 필수 수정 14건 반영, 10-01).** 기준은 "S5 확정안 r1" 절과 5절 diff r1이다. 0~4·6절은 이력이며, 확정안 r1과 다르면 확정안 r1이 우선한다. S6 재확인 PASS 전에는 S7 승인 질문을 하지 않는다.
 
-## S5 확정안 (2026-10-01, 사용자 결정 D1~D7, Judge 입력)
+## S5 확정안 r1 (2026-10-01, 사용자 결정 D1~D7 + S6 Judge 필수 수정 14건, 재확인 입력)
 
-- 권한: 주문·수량 권한 없음. 모든 권고는 다음 정규장 전 1회, 비중으로만 표시한다.
+- 권한: 주문·수량 권한 없음. 모든 권고는 종가 확정 뒤 다음 정규장 전 1회, 목표 비중으로만 표시한다.
+- 근거 범위(S6 J4): 카드 종목 코어 + SOXL 보충 구성은 S4-3 I1(SOX 단일 지수, ETF 코어) 근거 밖이다. 감수 위험 표(부록 C.6)는 지수 1배 + 3배 모형이다.
+- R0 공통 fail-closed(S6 J6)
+  - 다음 중 하나면 채우기·신규 매수 권고를 멈추고 "미확인"으로 표시한다: E·자산·V 계산 불가, 미등록 상품 보유, HWM·선·멈춤 상태 또는 `decision_journal.json` 없음·손상, 브로커 대조가 `broker_snapshot_max_age_calendar_days`(4일)보다 오래됨, 필요한 가격 누락, 입출금 미신고(R6).
+  - 줄이기 권고와 경고는 "미확인" 표시를 달고 계속 낸다.
 - R1 노출 측정
-  - 명목 N = Σ(배수 × 평가액 비중). SOXL·TQQQ 3, MVLL 2, 1배 주식·DRAM 1, 현금 0.
-  - SOX 환산 V = 포트폴리오 252세션 일간 수익률 표준편차 ÷ SOXX 표준편차(SOXX는 측정용, 보유 안 함). 현재 비중 고정. 이력 252 미만이면 가용 세션(최소 60), 60 미만이면 신규 편입 불가.
+  - 명목 N = Σ(배수 × 평가액 비중). 등록된 상품만 센다: SOXL·TQQQ 3, MVLL 2, BE·MU·NBIS·DELL·AMD·DRAM 1, 현금 0. 미등록 상품은 신규 매수 권고를 막고, 보유 중이면 E 계산 불가(R0).
+  - SOX 환산 V = 포트폴리오 252세션 일간 수익률 표준편차 ÷ SOXX 표준편차(SOXX는 측정용, 보유 안 함). 현재 비중 고정, 모든 상품과 SOXX에 같은 세션 창. 이력 252 미만이면 가용 세션(최소 60), 60 미만이면 그 상품 신규 편입 불가.
+  - 가격 출처: 키움 정규장 종가. 최신 세션은 정규장 마지막 30분봉 종가(평일 16:00 표기 봉, 조기 폐장일은 폐장 직전 봉). Yahoo는 참고용이고 평균하지 않는다. 과거 이력에서 시간외가 섞이지 않은 정규장 종가를 얻는 방법은 S7 Builder가 먼저 확인한다(확인 필요). 얻지 못하면 V 계산 불가(R0).
   - E = max(N, V).
-- R2 위험 예산(D1·D1b·D3)
-  - 목표 1.55, S7 적용 때 바로. 검증 범위(1.32) 밖의 사용자 승인 위험 예산이다.
-  - E ≥ 1.85: 줄이기 권고(기본 SOXL, 카드 TRIM 종목 대체 가능) + 신규 매수 권고 멈춤.
-  - E ≤ 1.25: 채우기 권고(카드 ADD 종목, 없으면 SOXL).
-  - 절대 상한 1.9: 모든 신규 매수 권고 차단 + 줄이기 "긴급". 바꾸려면 별도 사용자 승인과 Judge.
-- R3 구성(D1c)
+- R2 위험 예산
+  - 목표 1.55, S7 적용 때 바로. 검증 범위(1.32) 밖이고 OOS·forward shadow를 생략한 사용자 승인 위험 예산이다.
+  - E ≥ 1.85: 줄이기 권고 + 신규 매수 권고 멈춤.
+  - E ≤ 1.25: 채우기 권고(카드 ADD 종목, 없으면 SOXL). 권고 목표 비중으로 계산한 예상 E ≤ 1.55여야 한다. 기본 대상 SOXL이 R5로 멈춰 있으면 대체하지 않고 권고를 생략한다.
+  - 절대 상한: E ≥ 1.9이면 모든 신규 매수 권고 차단 + 줄이기 "긴급". 바꾸려면 별도 사용자 승인과 Judge.
+  - 줄이기 순서(S6 J11): ① 종목 상한(0.4배) 초과분(매도 전용 MVLL 포함) ② 카드 TRIM·EXIT 종목 ③ SOXL. SOXL이 없으면 다른 종목으로 대체하지 않고 "초과 미해소" 경고만 낸다.
+  - 분류(S6 J1): 줄이기·1.85 밴드·1.9 상한·검토선·멈춤·종목 상한·R5·R6은 위험 축소 통제다. 채우기 권고는 수익 추구 성격이라 따로 기록한다: 근거 사용자 승인 위험 예산, 수익 게이트 미통과, OOS·SHADOW 생략, 표시 전용, 알림 등급 B 이하. 기존 A등급 매수 게이트(`cash_policy` 등)는 그대로다.
+- R3 구성
   - 카드 종목 코어 BE·MU·NBIS·DELL·AMD. 편입·비중은 보유 카드(ADD/HOLD/TRIM/EXIT)와 Champion vs Challenger vs Cash.
-  - 종목당 명목 ≤ 0.4배. 실적 금지 구간(2세션 전 ~ 발표 뒤 첫 세션) 신규 매수 금지. 개별 종목 합계·루트 테제 상한·현금 하한 없음.
+  - 종목 상한(S6 J4·필수 수정 12): 명목 ≤ 0.4배. 대상은 개별 주식, 단일 종목 레버리지 상품(MVLL), DRAM(1배 테마 ETF, MU 우회 방지로 보수적 분류), 분류가 없는 상품. 지수 레버리지 ETF(SOXL·TQQQ)는 대상이 아니고 E로 관리한다.
+  - 실적 금지 구간(2세션 전 ~ 발표 뒤 첫 세션) 신규 매수 금지. 실적일 미확인은 금지 구간으로 본다. MU 금지 구간에 DRAM으로 대체하지 않는다.
+  - 개별 종목 합계·루트 테제 상한·현금 하한 없음.
   - 보충은 SOXL. TQQQ·DRAM은 허용 목록(카드 판단). SOXX·SMH·USD는 쓰지 않는다. MVLL은 매도 전용.
+  - 상품 등록(필수 수정 4): `decision_harness.instrument_registry`에 MU·DELL·AMD·TQQQ를 더하고 BE·MU·NBIS·DELL·AMD·SOXL·TQQQ·DRAM의 `new_buy_instrument_approved`를 true로 한다. MVLL·NBIL은 false 유지. 현재는 6개 모두 false다.
   - 종목 간 되돌리기(±10%p)는 S4-4 사전 등록 검증 전까지 카드 참고 표시만.
-- R4 HWM 검토선(결정 3·4)
-  - 자산 = 대조로 확인된 보유 × 정규장 종가(16:00 표기 30분봉 종가) + 확인된 예수금. HWM 시작 $28,473.94(2026-09-30 종가).
+- R4 HWM 검토선
+  - 자산 = 대조로 확인된 보유 × 정규장 종가 + 확인된 예수금. HWM 시작 $28,473.94(2026-09-30 종가). S7 적용일에 9/30~적용일 종가 자산 고점으로 다시 확인한다.
+  - 판정: 종가 자산 ≤ HWM × 선 배수(반올림 전 값으로 비교).
   - L1 HWM × 0.90($25,626.55): 가벼운 점검 카드, 채우기 권고 계속.
   - L2 HWM × 0.80($22,779.15): 전면 재검토, 끝날 때까지 채우기·신규 매수 권고 멈춤. 이후 × 0.70, × 0.60 …도 같음.
-  - 같은 하락 구간 1회, 새 HWM이면 다시 건다. 검토 결론 "계속"이면 HWM 유지. 자동 매도 없음.
+  - 같은 하락 구간 선마다 1회, 새 HWM이면 다시 건다. 검토 결론 "계속"이면 HWM 유지. 자동 매도 없음.
   - 멈춤 해제는 `decision_journal.json`의 "검토 완료 + 사용자 확인"으로만.
-- R5 종목 고점 −30%(D4): 보유 종목·ETF가 보유 뒤 종가 고점 × 0.70 이하이면 다음 정규장 전 그 종목 카드 재작성. 끝날 때까지 그 종목 채우기 권고 멈춤. 자동 매도 없음.
-- R6 입출금(D7): 대조 때 사용자 신고로 HWM에 반영. 매매로 설명되지 않는 예수금 변화를 신고하지 않으면 HWM 갱신·선 판정 보류, 신규 매수 권고 멈춤.
-- R7 현행 정책 정리(D4·D5·4절)
-  - 폐지: 원가 기준 종목 한도와 `freeze_new_buy_candidates_on_any_breach`, NBIL de minimis 항목, SOXL·MVLL 타이밍 축소 슬롯(gap·halt 감시는 유지).
-  - 대체 표시: `dynamic_gross_leverage_cap` → superseded(불변식 `soxl_only_result_can_validate_live_portfolio_cap = false` 유지). `peak_drawdown` → R5로 재사용.
+- R5 종목 고점 −30%(전향, S6 J10)
+  - 고점 = S7 적용일(신규 편입은 첫 대조 확인일) 이후 확인된 정규장 종가 최고치. 소급 고점(보유 시작 뒤)은 검증된 출처가 없어 카드에 참고로만 표시한다.
+  - 종가 ≤ 고점 × 0.70이면 다음 정규장 전 그 종목 카드 재작성. 끝날 때까지 그 종목 채우기 권고 멈춤. 같은 하락 구간 1회, 새 고점이면 다시 건다. 자동 매도 없음.
+  - S7 적용일에 보유 종목 전체의 기준 카드를 1회 쓴다. 기준 고점이 아직 없는 종목은 채우기 권고를 멈춘다.
+  - 현행 `peak_drawdown` 초안(비활성)은 바꾸지 않는다. R5는 새 섹션의 `single_stock_peak_review`에만 둔다.
+- R6 입출금
+  - 대조 때 사용자 신고로 HWM에 반영한다(입금 +, 출금 −). 신고 금액은 대조에서 확인된 "매매로 설명되지 않는 예수금 변화" 이내여야 한다. 배당·수수료·세금은 입출금이 아니다(HWM 조정 없음).
+  - 미신고면 HWM 갱신·선 판정을 보류하고 채우기·신규 매수 권고를 멈춘다(R0).
+- R7 현행 정책 정리(전체 경로는 5절)
+  - 원가 기준 종목 한도는 판정 규칙에서 내린다. `holding_risk_rules.positions`는 보유 종목 등록부로도 쓰여(`evaluate_alerts.py`, `validate_research_packet.py`, `reconcile_broker_state.py`) 고정 평가기 수정이 전제다(K3).
+  - `freeze_new_buy_candidates_on_any_breach`는 지우지 않고 false로 둔다. 키가 없으면 코드 기본값이 true다(`validate_research_packet.py`). L2·R0 멈춤이 대신한다.
+  - NBIL de minimis 항목 삭제.
+  - SOXL·MVLL 타이밍 축소 슬롯 은퇴(D5). gap·halt 감시만 남기고 SOXL weakness_10ema watch-only도 은퇴한다. 슬롯이 없으면 엔진이 gap·halt 감시도 내지 않아 `timing_engine.py` 수정이 전제다(K3).
+  - `dynamic_gross_leverage_cap` → superseded 표시(불변식 `soxl_only_result_can_validate_live_portfolio_cap = false` 유지). 수익 게이트 차단 목록의 "dynamic leverage cap"(신호 티어)과 "peak drawdown exits"는 차단 유지.
   - 유지: `cash_policy`, 실적 금지 구간, 주문 권한 없음.
-- R8 가상 운용(D6): K132-G 보고 전용(월 1회 한 줄, 정책 효과 없음). 나머지 기각 후보는 추적하지 않는다.
-- R9 교체 매매: 매도 → 체결·주문 가능 현금 확인 → 매수(미체결 매도 대금은 현금 아님).
-- 감수 위험(부록 C.6, 합성 D): 1.55는 SOX 1994~2010 연 0.2%, 2010~ 최대 낙폭 −64%·최악 1년 −58%. 하루 만에 −20%(L2) 가능. L1 연 약 3회, L2 연 약 1회.
-- 검증 상태: 전부 C/D. 포트폴리오 수준 미검증, 1.55는 검증 범위 밖이고 forward shadow 없음, L2 멈춤·R5·R6 미검증. Judge 질문은 8절(1~8).
+- R8 가상 운용: K132-G 보고 전용(월 1회 한 줄, 정책 효과 없음, Cold Path라 실패해도 핵심 판단을 막지 않음, 승격 없음). 나머지 기각 후보는 추적하지 않는다.
+- R9 교체 매매: 매도 → 체결·주문 가능 현금 확인 → 매수(미체결 매도 대금은 현금이 아니다).
+- 감수 위험(부록 C.6, 합성 D, 1.55 열은 미저장 탐색): SOX 32년 최대 낙폭 −98%·최악 1년 −84%, 1994~2010 연 0.2%, 2010~ 최대 낙폭 −64%·최악 1년 −58%. 하루 만에 −21.6%(L2 −20% 초과) 가능. L1 연 약 3회, L2 연 약 1회.
+- 검증 상태: 전부 C/D. 포트폴리오 수준 미검증, 1.55는 검증 범위 밖이고 OOS·forward shadow 없음, L2 멈춤·R5·R6 미검증.
+
+## S6 Judge 판정 (2026-10-01)
+
+- 세션: Claude Code worktree `judge-s6`, Opus · xhigh, HEAD `6ff8f25`. 파일 수정 없음. 정책·상태 해시 일치.
+- 최종: **PASS_WITH_FIXES**(문서 수정 14건, 새 사용자 결정 없음). FAIL 항목 없음. J2·J5·J12는 PASS(조건·주석), 나머지는 FIX. 사전 점검 P1~P8 모두 CONFIRMED(P5의 V 2.80은 미저장 D라 NOT VERIFIED, N 2.285만으로 1.9 초과 확인).
+- J2 요지: 현 상태(N 2.285, E 약 2.8) 대비로는 위험 축소다. 검증 범위 1.32 대비로는 밖이라 미검증 사용자 위험 예산이다. 지금 닫혀 있는 매수 권고 경로를 여는 점은 S7 질문에 적는다.
+- J8 고지 순서: D1 결정 전에 C.6 표를 보였는지는 기록(단일 커밋)으로 확인할 수 없다(NOT VERIFIED). D1b는 C.6 뒤에 정했다. 그래서 S7 승인 질문에서 C.6 위험과 "OOS·SHADOW 생략"을 다시 확인받는다.
+- J12: L1~L4 산술 일치. C.6의 1.0·1.32 열은 S4-3 커밋 결과와 일치. 1.55 열은 결과 JSON의 REF|fixed1.5와 배수가 달라 비교 불가(미저장 D).
+- 필수 수정 14건과 반영 위치(r1)
+
+| # | 내용 | 반영 |
+|---|---|---|
+| 1 | 수익 게이트 #8 분리: 위험 축소 통제만 면제, 채우기 권고는 별도 기록 | R2 분류, 5절 #8 |
+| 2 | "dynamic leverage cap"·"peak drawdown exits" 차단 유지, `peak_drawdown` 재사용 취소 | R5·R7, 4절 #7, 5절 #7 |
+| 3 | 경로 `holding_timing_rules.` 접두, slots 배열 표현, SOXL weakness_10ema 처리 명시 | R7, 5절 #4~#8 |
+| 4 | #1·#2 실제 효과(등록부 역할, false 명시), 상품 등록 변경 추가 | R3·R7, 5절 #1·#2·#12 |
+| 5 | 공통 fail-closed 조항 | R0, 5절 `fail_closed` |
+| 6 | 미등록 상품 배수 기본값 삭제 | R1, 5절 `nominal_multipliers` |
+| 7 | V 가격 출처, 공통 창, 조기 폐장일 봉 | R1, 5절 `sox_equivalent` |
+| 8 | R6 미신고 시 채우기도 멈춤, 신고 한도, 배당·수수료 구분 | R6, 5절 review lines |
+| 9 | L2 신규 매수 멈춤, 채우기 예상 E ≤ 1.55, 연산자, policy_version | R2·R4, 5절 |
+| 10 | R5 전향 기준 | R5, 5절 `single_stock_peak_review` |
+| 11 | 줄이기 순서 | R2, 5절 `reduce_order` |
+| 12 | 종목 상한 대상 정의, "S4-3 I1 근거 밖" 한 줄 | R3, 확정안 머리 |
+| 13 | 차단 목록 정리(F1.32 삭제, 기각 5개 추가), K132-G 필드, 9절·4절 낡은 문구 | 5절 #8·K132-G, 4·9절 |
+| 14 | 감수 위험 −98%·−84%, C.6 1.55 열 출처, C.9 수치 통일, S7 재확인 기록 | 감수 위험, 부록 C.6·C.9, 아래 확인 항목 4 |
+
+- K 등급: 새 섹션 2개 K3 / #1·#2 K3(고정 평가기 포함 스크립트 8개) / #3 K2 / #4·#5 K3(고정 타이밍 엔진 + 상태) / #6 K2(`build_holding_fact_pack.py`가 공식을 읽음) / #7 변경 없음 / #8 K3 / 상품 등록 승인 K3 / R6 대조안 형식 K3 / K132-G 가상 운용 K2(Cold Path) / 문서 정리 K0.
+- Cowork 확인(읽기 전용, 10-01): `decision_harness.instrument_registry`는 SOXL·MVLL·NBIL·DRAM·NBIS·BE 6개이고 `new_buy_instrument_approved`가 모두 false다. `shadow_acceptance.py`는 `holding_risk_rules`·`holding_timing_rules`로 의미 해시를 만들고, `run_deployment_provenance.py`는 `alert_policy.json`을 provenance에 넣는다.
+- S7 승인 때 확인받을 항목(새 결정이 아니라 적용 확인. 1~4는 Judge 지정, 5~7은 Cowork가 필수 수정을 반영하며 정한 것이라 재확인 Judge가 범위를 본다)
+  1. 채우기 권고를 "미검증 사용자 위험 예산의 수익 추구 권고(표시 전용, B 이하)"로 기록한다.
+  2. R5 기준을 전향(S7 적용일 이후 고점)으로 한다.
+  3. 줄이기 순서: ① 종목 상한 초과 ② 카드 TRIM·EXIT ③ SOXL.
+  4. C.6 감수 위험과 OOS·SHADOW 생략을 다시 확인한다.
+  5. 상품 등록·신규 매수 승인: MU·DELL·AMD·TQQQ 추가, 코어 5종목·SOXL·TQQQ·DRAM 승인, MVLL·NBIL 미승인.
+  6. DRAM에 종목 상한 0.4배를 적용한다.
+  7. SOXL weakness_10ema watch-only를 은퇴한다(D5 "gap·halt만 유지"의 적용).
 
 ## 0. 결론 (초안 시점, 확정안이 우선)
 
@@ -195,74 +252,120 @@
 | # | 현행 위치 | 지금 | 제안 | 이유 |
 |---|---|---|---|---|
 | 1 | `holding_risk_rules.positions`(SOXL −20%·MVLL −60%·NBIS −10%, 원가 기준) | 합계 $11,490(41%), `action_on_breach=null` | 판정 규칙에서 내리고 카드에 원가 대비 손익만 참고 표시(D4) | 새 예산의 약 2배, 원가 기준 비대칭, 행동 미승인. HWM 선이 대체 |
-| 2 | `holding_risk_rules.freeze_new_buy_candidates_on_any_breach` | 종목 한도 위반 시 신규 매수 멈춤 | L2 이하 멈춤으로 대체 | 같은 취지를 포트폴리오 선으로 |
+| 2 | `holding_risk_rules.freeze_new_buy_candidates_on_any_breach` | 종목 한도 위반 시 신규 매수 멈춤 | false로 둠(키 삭제 시 코드 기본값 true), L2·R0 멈춤이 대체 | 같은 취지를 포트폴리오 선으로(S6 필수 수정 4) |
 | 3 | `holding_risk_rules.de_minimis_manual_exit_positions.NBIL` | 청산 예외 항목 | 삭제 | 청산 완료(사용자 확인 9/30) |
 | 4 | `holding_timing_rules.positions.SOXL` 축소 슬롯(EMA, anchor 99주) | 실제 보유 75주와 다름 | 슬롯 은퇴, gap/halt 표시는 유지(D5) | 기본 노출을 신호로 파는 구조(S4에서 성과 나쁨). 노출 조정은 2.2절이 맡음 |
 | 5 | `holding_timing_rules.positions.MVLL` 슬롯(anchor 396주) | 축소 슬롯 | 은퇴, MVLL은 카드·S2가 판단(D5) | 매수 불가·매도 전용 종목. 0.4배 상한과 카드로 충분 |
 | 6 | `risk_overlay_rules.dynamic_gross_leverage_cap` | 비활성, NBIL 포함·NBIS 누락 공식, SOXL 티어 0.75~3.0 | `superseded_by_portfolio_exposure_policy`, 연구 기록으로 보존 | 새 노출 규칙이 대체. `soxl_only_result_can_validate_live_portfolio_cap=false`는 유지 |
-| 7 | `risk_overlay_rules.peak_drawdown` | 비활성, 종목별 고점 대비 초안 | `superseded_by_portfolio_review_lines` | 포트폴리오 HWM 선이 대체 |
-| 8 | `risk_overlay_rules.walk_forward_activation_gate` | 로컬 5년 이력 요구로 실패 고정 | A 묶음을 안전 통제 면제 목록에, F1.32 승격을 수익 추구 차단 목록에 추가 | A는 노출을 줄인다. 되사기 권고는 수익 추구 성격이 섞여 Judge 판단 필요 |
-| 9 | S1 결정 2 "1.9배"(정책 파일 밖) | 결정 기록만 | 폐지, 조정 폭 상단이 상한(D3) | 고정 1.0배보다 느슨해 쓰이지 않음 |
+| 7 | `risk_overlay_rules.peak_drawdown` | 비활성, 종목별 고점 대비 초안(전향, 소급 없음, 5년 OOS 게이트) | 변경 없음. R5는 새 섹션 `single_stock_peak_review` | 재사용 취소(S6 필수 수정 2) |
+| 8 | `risk_overlay_rules.walk_forward_activation_gate` | 로컬 5년 이력 요구로 실패 고정 | 위험 축소 통제는 면제 목록에, 채우기 권고는 별도 "미검증 수익 추구" 목록에, 기각 5개는 차단 목록에(5절 #8) | S6 J1·J7, 필수 수정 1·13 |
+| 9 | S1 결정 2 "1.9배"(정책 파일 밖) | 결정 기록만 | 유지: E ≥ 1.9 절대 상한(D3) | 바꾸려면 별도 사용자 승인 + Judge |
 | 10 | `new_buy_activation.earnings_blackout_single_stocks` | 실적 금지 구간 | 그대로 재사용 | 결정 5 |
 | 11 | `cash_policy` | 검증 현금만 | 그대로 | — |
+| 12 | `decision_harness.instrument_registry` | 6개, 신규 매수 승인 모두 false | MU·DELL·AMD·TQQQ 추가, 코어 5종목·SOXL·TQQQ·DRAM 승인(5절 #12) | S6 필수 수정 4 |
+
+- 표의 `risk_overlay_rules.*`·`new_buy_activation.*`는 실제로 `holding_timing_rules.` 아래 경로다(S6 P1). 표와 5절 r1이 다르면 5절 r1이 우선한다.
 
 - 코드 영향(읽기 전용 확인, 10-01): `holding_risk_rules`는 스크립트 8개가 읽는다(`evaluate_alerts.py`, `audit_hard_risk_policy.py`, `portfolio_policy_gates.py`, `portfolio_decision_dashboard.py`, `build_holding_fact_pack.py`, `reconcile_broker_state.py`, `shadow_acceptance.py`, `validate_research_packet.py`).
   - `evaluate_alerts.py`는 `deployment_gate`가 해시로 고정한 평가기다. 1·2번 변경은 고정 스크립트 수정을 부를 수 있어 K3로 다룬다.
-  - `alert_policy.json` 자체의 원본 해시를 고정한 곳은 scripts·tests·references에서 찾지 못했다. 다른 매니페스트는 S7 Builder가 먼저 확인한다.
+  - (S6 정정) `alert_policy.json` 원본 해시를 직접 고정한 곳은 없지만, `run_deployment_provenance.py`가 이 파일을 배포 provenance에 넣고 `shadow_acceptance.py`가 `holding_risk_rules`·`holding_timing_rules`로 의미 해시를 만든다. `timing_engine.py`·`SKILL.md` 등도 `deployment_gate` 고정 대상이다(9절 요구 1·2).
 
-## 5. diff 초안 (`alert_policy.json`, 적용 안 함)
+## 5. diff 초안 r1 (`alert_policy.json`, 적용 안 함)
 
-- 최상위에 새 섹션 두 개를 더한다. 값은 사용자 결정 D1~D7(10-01) 반영본이다.
+- 최상위에 새 섹션 두 개를 더한다. 값은 사용자 결정 D1~D7과 S6 필수 수정 14건 반영본이다.
 
 ```json
 "portfolio_exposure_policy": {
-  "policy_version": "2026-10-01-s5-final-proposal",
+  "policy_version": "2026-10-01-s5-final-proposal-r1",
   "status": "proposed_not_applied",
   "authority_basis": "user_approved_risk_budget_not_validated_portfolio_return",
+  "validation_status": "beyond_validated_1.32_oos_and_forward_shadow_skipped",
   "order_authority": false,
   "quantity_authority": "none",
   "execution_quantity": null,
   "target_exposure": 1.55,
-  "target_basis": "user_approved_risk_budget_2026-10-01_beyond_validated_1.32",
   "target_effective_from": "s7_activation",
-  "rebalance_band": 0.3,
-  "hard_ceiling_exposure": 1.9,
+  "thresholds": {
+    "reduce_when_exposure_gte": 1.85,
+    "add_when_exposure_lte": 1.25,
+    "add_projected_exposure_lte": 1.55,
+    "hard_ceiling_when_exposure_gte": 1.9
+  },
   "hard_ceiling_breach": "block_all_new_buys_and_flag_urgent_reduce",
   "hard_ceiling_change_requires": "separate_user_approval_and_judge",
   "exposure_measure": "max(nominal, sox_equivalent_volatility_ratio)",
-  "nominal_multipliers": {"SOXL": 3, "TQQQ": 3, "MVLL": 2, "default_unlevered": 1, "cash": 0},
+  "nominal_multipliers": {"SOXL": 3, "TQQQ": 3, "MVLL": 2, "BE": 1, "MU": 1, "NBIS": 1, "DELL": 1, "AMD": 1, "DRAM": 1, "cash": 0},
+  "unregistered_instrument": "block_new_buy_recommendation_and_exposure_unavailable_if_held",
   "sox_equivalent": {
     "benchmark": "SOXX",
     "benchmark_role": "measurement_only_not_held",
     "window_sessions": 252,
     "minimum_sessions": 60,
     "below_minimum_sessions": "block_new_entry",
+    "common_session_window": true,
     "weights": "current_weights_held_fixed",
-    "return_basis": "split_adjusted_daily_close"
+    "return_basis": "split_adjusted_regular_session_close",
+    "price_source": "kiwoom_regular_session_close",
+    "latest_close_bar": "final_regular_session_30m_bar",
+    "early_close_bar": "final_30m_bar_before_early_close",
+    "reference_only_sources": ["yahoo"],
+    "average_provider_prices": false,
+    "regular_session_history_unavailable": "exposure_unavailable"
+  },
+  "fail_closed": {
+    "triggers": [
+      "exposure_or_equity_or_v_unavailable",
+      "unregistered_instrument_held",
+      "hwm_line_or_pause_state_missing_or_corrupt",
+      "decision_journal_missing_or_corrupt",
+      "broker_snapshot_older_than_broker_snapshot_max_age_calendar_days",
+      "required_price_missing",
+      "undeclared_cash_flow"
+    ],
+    "pause": ["add_recommendations", "new_buy_recommendations"],
+    "continue_with_unverified_label": ["reduce_recommendations", "warnings"]
   },
   "composition": "card_stock_core_with_soxl_supplement",
+  "composition_evidence": "outside_s4_3_i1_scope_c6_is_index_1x_plus_3x_model",
   "card_stock_core": ["BE", "MU", "NBIS", "DELL", "AMD"],
   "allowed_index_etfs": ["SOXL", "TQQQ", "DRAM"],
   "excluded_instruments": ["SOXX", "SMH", "USD"],
   "sell_only_holdings": ["MVLL"],
-  "supplement_default": "SOXL",
-  "reduce_order_default": ["SOXL"],
-  "card_substitution_allowed": true,
+  "add_default": "card_add_stock_else_SOXL",
+  "add_when_default_paused": "omit_recommendation_no_substitute",
+  "reduce_order": ["single_stock_cap_excess_including_sell_only", "card_trim_or_exit", "SOXL"],
+  "reduce_when_soxl_absent": "warn_excess_unresolved_no_substitute",
   "above_band_action": "reduce_recommendation_and_pause_new_buy_recommendations",
-  "below_band_action": "add_recommendation_card_add_stock_else_soxl",
+  "add_recommendation_classification": {
+    "nature": "return_seeking",
+    "authority_basis": "user_approved_risk_budget",
+    "return_gate": "not_passed",
+    "oos_and_shadow": "skipped",
+    "output": "display_only",
+    "max_alert_grade": "B",
+    "existing_grade_a_buy_gates": "unchanged"
+  },
   "cross_stock_rebalance": {"band_abs": 0.10, "status": "display_only_until_s4_4_validation"},
   "single_stock_nominal_cap": 0.4,
-  "single_stock_cap_breach": "block_new_buy_and_flag_trim_review",
+  "single_stock_cap_applies_to": ["stock", "single_stock_leveraged_etf", "DRAM", "unclassified"],
+  "single_stock_cap_exempt": ["SOXL", "TQQQ"],
+  "single_stock_cap_breach": "block_new_buy_and_first_in_reduce_order",
   "single_stock_peak_review": {
     "applies_to": "every_held_instrument",
     "drawdown_from_peak": 0.30,
-    "peak_basis": "regular_session_close_high_since_holding_start_rearm_on_new_high",
+    "trigger": "regular_session_close_lte_peak_times_0.70",
+    "peak_basis": "verified_regular_session_close_high_since_s7_activation_or_first_reconciled_date_rearm_on_new_high",
+    "retroactive_peak": "display_only",
+    "activation_baseline_cards": "one_card_per_held_instrument_on_s7_activation",
+    "no_baseline_peak": "pause_add_recommendations_for_instrument",
     "action": "rewrite_holding_card_before_next_regular_session",
     "pause_add_recommendations_until_card_done": true,
     "automatic_sell": false,
     "one_trigger_per_drawdown": true
   },
   "earnings_blackout_ref": "holding_timing_rules.new_buy_activation.earnings_blackout_single_stocks",
+  "earnings_date_unverified": "treat_as_blackout",
+  "blackout_substitution_prohibited": {"MU": ["DRAM"]},
   "swap_execution": "sell_then_verify_fill_and_orderable_cash_then_buy",
   "recommendation_output": "target_weights_only",
   "shadow_candidates": {
@@ -274,23 +377,28 @@
       "comparators": ["SOXX 100%", "F1.32 fixed"],
       "ledger_separate_from_actual": true,
       "policy_effect": "none",
+      "report_cadence": "monthly_one_line",
+      "failure_blocks_core_decision": false,
       "promotion": "none_without_new_preregistration"
     }
   }
 },
 "portfolio_review_lines": {
-  "policy_version": "2026-10-01-s5-draft",
+  "policy_version": "2026-10-01-s5-final-proposal-r1",
   "status": "proposed_not_applied",
   "equity_basis": "verified_holdings_times_regular_session_close_plus_verified_cash",
-  "close_basis": "regular_session_close_from_1600_et_30m_bar",
+  "close_basis": "kiwoom_final_regular_session_30m_bar_close",
   "hwm_initial_usd": 28473.94,
   "hwm_initial_as_of": "2026-09-30",
+  "hwm_recheck_at_activation": "closing_equity_high_2026-09-30_through_activation",
   "hwm_update": "new_closing_equity_high_only",
-  "cash_flow_adjustment": "user_declared_at_reconciliation_else_hold_hwm_and_line_evaluation",
-  "undeclared_cash_flow_action": "pause_new_buy_recommendations",
+  "line_breach": "closing_equity_lte_hwm_times_fraction_unrounded",
+  "cash_flow_adjustment": "user_declared_at_reconciliation_within_unexplained_cash_change",
+  "cash_flow_excludes": ["dividends", "fees", "taxes"],
+  "undeclared_cash_flow_action": "hold_hwm_and_line_evaluation_and_pause_add_and_new_buy_recommendations",
   "lines": [
-    {"id": "L1", "fraction_of_hwm": 0.90, "action": "light_check_card", "pause_add_recommendations": false},
-    {"id": "L2", "fraction_of_hwm": 0.80, "action": "full_review_cards_vs_cash_and_spy", "pause_add_recommendations": true}
+    {"id": "L1", "fraction_of_hwm": 0.90, "action": "light_check_card", "pause_add_recommendations": false, "pause_new_buy_recommendations": false},
+    {"id": "L2", "fraction_of_hwm": 0.80, "action": "full_review_cards_vs_cash_and_spy", "pause_add_recommendations": true, "pause_new_buy_recommendations": true}
   ],
   "further_lines_step": 0.10,
   "further_lines_action": "same_as_L2",
@@ -304,19 +412,39 @@
 }
 ```
 
-- 기존 키 변경(4절 번호)
+- 기존 키 변경 r1(4절 번호, 경로는 `alert_policy.json` 안의 전체 경로)
 
 ```text
-#1 holding_risk_rules.positions.{SOXL,MVLL,NBIS}.status            (new) "retired_superseded_by_portfolio_review_lines"
-#2 holding_risk_rules.freeze_new_buy_candidates_on_any_breach      true -> removed (L2 pause replaces)
-#3 holding_risk_rules.de_minimis_manual_exit_positions.NBIL        removed
-#4 holding_timing_rules.positions.SOXL.slots                       status "retired" (gap/halt watch-only kept)
-#5 holding_timing_rules.positions.MVLL.slots                       status "retired" (gap/halt watch-only kept)
-#6 risk_overlay_rules.dynamic_gross_leverage_cap.status            -> "superseded_by_portfolio_exposure_policy"
-#7 risk_overlay_rules.peak_drawdown                               -> reused as review-only trigger (see single_stock_peak_review), status "active_review_only"
-#8 risk_overlay_rules.walk_forward_activation_gate
-     .safety_only_controls_exempt_from_return_gate                 + "S5-A portfolio exposure cap and review lines"
-     .return_seeking_rules_blocked                                 + "F1.32 promotion (forward shadow first)"
+#1 holding_risk_rules.positions.{SOXL,MVLL,NBIS}
+     원가 손실 한도를 판정에서 내린다. 보유 종목 등록부 역할(evaluate_alerts.py, validate_research_packet.py,
+     reconcile_broker_state.py)은 유지하거나 새 등록부로 옮긴다. 고정 평가기 evaluate_alerts.py 수정 전제(K3)
+#2 holding_risk_rules.freeze_new_buy_candidates_on_any_breach
+     true -> false (키 삭제 금지: validate_research_packet.py 기본값 true). L2·R0 멈춤이 대신함
+#3 holding_risk_rules.de_minimis_manual_exit_positions.NBIL                         removed
+#4 holding_timing_rules.positions.SOXL
+     slots 배열의 축소 슬롯 전부 은퇴. watch_only_triggers ["weakness_10ema","gap_risk","halt_risk"] -> ["gap_risk","halt_risk"]
+     슬롯 없이 gap·halt 감시를 내도록 timing_engine.py 수정 전제(K3), timing_plan 상태 이관은 승인된 쓰기 경로로만
+#5 holding_timing_rules.positions.MVLL
+     slots 배열의 축소 슬롯 전부 은퇴, gap·halt 감시만(#4와 같은 전제)
+#6 holding_timing_rules.risk_overlay_rules.dynamic_gross_leverage_cap.status       -> "superseded_by_portfolio_exposure_policy"
+     (gross_effective_leverage_formula는 build_holding_fact_pack.py가 읽음, K2)
+#7 holding_timing_rules.risk_overlay_rules.peak_drawdown                             변경 없음(비활성 초안 유지)
+#8 holding_timing_rules.risk_overlay_rules.walk_forward_activation_gate
+     .safety_only_controls_exempt_from_return_gate
+          - "SOXL weakness_10ema watch-only"
+          + "S5 exposure measurement, reduce recommendations, 1.85 band and 1.9 hard ceiling"
+          + "S5 portfolio review lines and recommendation pauses"
+          + "S5 single-stock nominal cap and peak review (R5)"
+          + "S5 cash-flow declaration fail-closed (R6)"
+     .return_seeking_rules_blocked
+          유지 "post-reduction reentry", "peak drawdown exits", "time stops", "dynamic leverage cap", "additional indicator votes"
+          + "T1", "T2", "K132-G", "T2-132b", "X1" (S4-3 rejected; K132-G report-only shadow, no promotion)
+     (new) .user_approved_unvalidated_return_seeking
+          ["S5 add recommendations up to 1.55 risk budget (display only, alert grade <= B)"]
+#12 decision_harness.instrument_registry
+     + MU, DELL, AMD, TQQQ
+     new_buy_instrument_approved true: BE, MU, NBIS, DELL, AMD, SOXL, TQQQ, DRAM / false 유지: MVLL, NBIL (K3, S7 승인)
+     workspace/policies/instrument_registry.json과의 관계는 S7 Builder가 확인
 ```
 
 ## 6. 금액표와 감수 위험 (6.1 검토선은 유효, 6.2·6.3은 1.0/1.32 기준 이력 — 1.55는 부록 C.6)
@@ -376,6 +504,8 @@
 
 ## 8. S6 Judge 질문
 
+> S6 Judge는 `s6-judge-prompt-2026-10-01.md`의 J1~J12로 판정했다(아래 질문 4·5는 대상이 없어 J4·J5로 교체). 결과는 "S6 Judge 판정" 절.
+
 1. A 묶음을 "위험을 줄이는 통제"로 분류해 수익 게이트(walk-forward)에서 면제하는 것이 타당한가? 되사기 권고(수익 추구 성격)를 같은 묶음에 둬도 되는가?
 2. `soxl_only_result_can_validate_live_portfolio_cap = false`를 유지한 채 "사용자 승인 위험 예산"을 권한 근거로 쓰는 것이 Authority Chain에 맞는가?
 3. 원가 기준 종목 한도·타이밍 슬롯 은퇴가 hard-risk 경로와 고정 해시(`deployment_gate`, acceptance manifest)에 주는 영향과 필요한 변경 등급은?
@@ -385,15 +515,25 @@
 7. 기각 후보를 사후 완화하지 않은 처리와 1.9배 상한 유지는 타당한가?
 8. 검증 범위(1.32) 밖의 위험 예산 1.55를 forward shadow 없이 S7에서 바로 적용하는 것을 "사용자 승인 위험 예산"으로 기록하는 처리가 Authority Chain과 맞는가? 감수 위험(부록 C.6) 고지가 충분한가?
 
-## 9. S7 구현 범위 (승인 뒤, 참고)
+## 9. S7 구현 범위 (승인 뒤, S6 Judge 요구 반영)
 
-- K3. 새 worktree에서 Builder, 끝나면 별도 Judge. Builder 지시문은 S6 통과 뒤 따로 쓴다.
-- 정책: 5절 새 섹션과 기존 키 상태 변경.
-- 계산: N·V·E, 목표 구성(ETF 코어 채움 순서), HWM·선 판정, 멈춤 상태, 권고 표시(비중).
+- K3. 새 worktree에서 Builder, 끝나면 별도 Judge. Builder 지시문은 S6 재확인 PASS와 S7 승인 뒤 따로 쓴다.
+- 정책: 5절 r1의 새 섹션 2개와 기존 키 #1~#8·#12.
+- 계산: N·V·E, R0 fail-closed, 줄이기 순서, 채우기 예상 E, HWM·선 판정, R5 전향 고점, 멈춤 상태, 권고 표시(비중).
 - 원장: `decision_journal.json` 최소 형식(line_id, hwm, breach_date, review_status, conclusion, user_confirmed_at).
-- shadow: F1.32 shadow 원장(실제 계좌와 다른 파일).
-- 테스트: 선 경계(정확히 닿음, 같은 구간 1회, 새 HWM 재무장, "계속" 뒤 다음 선), 입출금 미신고 fail-closed, V 이력 부족, 0.4배 초과, 실적 금지 구간, 교체 두 단계.
+- 가상 운용: K132-G 보고 전용 원장(실제 계좌와 다른 파일, Cold Path, K2).
 - 표시: 카드·현황판에 E, 다음 선까지 거리, 멈춤 상태 한 줄.
+- S6 Judge 요구 사항
+  1. 고정 파일 범위부터 확정한다. `evaluate_alerts.py`·`timing_engine.py`·`SKILL.md`·`ko-KR.json`을 고치면 `deployment_gate` 해시와 설치 스킬을 동기화한다. `run_manual_portfolio_analysis.py`와 그 테스트는 건드리지 않는다(acceptance 고정 16개, 건드리면 별도 K3).
+  2. `alert_policy.json` 변경이 배포 provenance(`run_deployment_provenance.py`), `shadow_acceptance.py` 의미 해시, `workspace/policies/shadow_acceptance_policy.json`의 `required_baseline_tickers`(NBIS·MVLL·SOXL)에 주는 영향을 확인한다(S6 미확인).
+  3. `timing_engine.py`는 열린 슬롯이 없으면 gap·halt watch도 내지 않는다. 슬롯 은퇴 뒤 watch를 유지하려면 엔진을 고쳐야 한다. anchor 등식과 timing_plan 상태 이관은 승인된 쓰기 경로로만 한다.
+  4. HWM·멈춤·선 발동 상태의 저장 위치와 쓰기 경로를 정한다. 현재 대화의 사용자 확인에 묶고, 예약 작업·Judge·Claude Code는 쓰지 않는다.
+  5. R6 신고는 대조안 해시에 넣는다(신고 뒤 새 코드). apply 경로라 K3. 미결제 매도 대금은 현금이 아니되 자산 계산에서 거짓 선 발동이 나지 않게 한다.
+  6. 시작 HWM 재확인(9/30~적용일 종가 자산 고점), 선 비교는 반올림 전 값, 30분봉 종가와 공식 종가 대조 허용 오차, L1·L2·1.9·R5의 알림 등급 매핑.
+  7. 카드 ADD·TRIM 대체는 검증을 통과한 유효 기간 안의 카드만 쓴다. 실적일 미확인은 금지 구간으로 본다. MU 금지 구간에 DRAM으로 대체하지 않는다.
+  8. 테스트: 영향 파일 11개(test_timing_engine, test_reconcile_broker_state, test_portfolio_decision_dashboard, test_build_holding_fact_pack, test_holding_card, test_v2_4_dual_phase, test_v2_5_leveraged_confirmation, test_v2_6_12_holding_valuation_shadow, test_v2_6_3_free_web_new_buy, test_v2_6_7_session_aware_kiwoom_priority, test_v2_6_integration)과 test_evaluate_timing_integration. 필수 수정 5~11마다 새 fail-closed 테스트.
+  9. (Cowork 추가) V 과거 이력의 정규장 종가 확보 방법(키움 30분봉 이력 길이 등)을 먼저 확인한다. `decision_harness.instrument_registry`와 `workspace/policies/instrument_registry.json`의 관계를 확인한다.
+- 테스트 사례: 선 경계(정확히 닿음, 같은 구간 1회, 새 HWM 재무장, "계속" 뒤 다음 선), R0 트리거 각각, V 이력 부족, 0.4배 초과와 줄이기 순서, SOXL 없음·R5 멈춤 때 권고 생략, 실적 금지 구간·실적일 미확인, 교체 두 단계, R5 기준 고점 없음, 입출금 신고 한도·배당 구분.
 
 ## 10. 사용자 결정 (한 번에 하나씩)
 
@@ -413,9 +553,9 @@
 
 ## 11. 다음 단계
 
-1. 사용자: Windows 터미널에서 문서 커밋(Cowork가 명령 안내).
-2. S6 Independent Judge: 별도 Claude Code 세션, Opus · xhigh, 파일 수정 없음. Cowork가 지시문을 먼저 쓴다.
-3. Judge PASS 뒤 S7: 사용자 승인 → Builder worktree(K3) → Judge → 사용자 커밋·병합.
+1. 사용자: Windows 터미널에서 이 수정본(r1) 커밋(Cowork가 명령 안내).
+2. S6 재확인: 같은 Judge 세션(또는 새 worktree `judge-s6-r2`)에 `s6-judge-prompt-2026-10-01.md` 6절 재확인 지시. 필수 수정 14건 반영과 "S6 Judge 판정" 절의 확인 항목 5~7 범위만 본다.
+3. 재확인 PASS 뒤 S7: 사용자 승인(확인 항목 1~7을 한 번에 하나씩) → Builder worktree(K3) → Judge → 사용자 커밋·병합.
 4. 병행 가능(Cold Path): S4-4 사전 등록 "종목 코어 + 종목 간 되돌리기"(Builder, 2000~2010 바구니 + forward shadow). S7을 막지 않는다.
 5. S7 전까지 실제 매매(MVLL 축소 등)는 사용자 수동 판단이다. 1.55 기준 참고는 부록 C.6 "S2 영향".
 
@@ -433,6 +573,7 @@
 - 2026-10-01 사용자 결정 D6: 기각 유지, K132-G만 보고 전용 가상 운용(부록 C.12).
 - 2026-10-01 사용자 결정 D7: 대조 때 사용자 신고(부록 C.13). D1~D7 완료, "S5 확정안" 절 작성, 5절 diff를 결정 반영본으로 교체.
 - 2026-10-01 S6 Judge 지시문 작성: `s6-judge-prompt-2026-10-01.md`. 8절 질문 4·5는 대상이 없어져 J4(카드 종목 코어)·J5(K132-G)로 바꿨다. Cowork 사전 점검 P1~P8(경로, 수익 게이트 분류, R5 기준점, 낡은 초안 부분, S7 전환, 미등록 상품 배수, V 가격 출처, 고정 해시)을 Judge가 직접 확인한다. 문서 정리는 Judge 판정 뒤 한 번에 한다.
+- 2026-10-01 S6 Judge 판정 PASS_WITH_FIXES(HEAD `6ff8f25`, 문서 수정 14건, 새 사용자 결정 없음). Cowork가 근거 일부를 읽기 전용으로 다시 확인하고(상품 등록부, 등록부 역할, freeze 기본값, 슬롯 없는 엔진 동작, 의미 해시) r1로 반영했다: "S5 확정안 r1" 절, "S6 Judge 판정" 절, 4·5·8·9·11절, 부록 C.6·C.9. 정책·상태 파일 원본 해시 변경 없음. 다음은 S6 재확인.
 
 ## 부록 B. D1 재검토 — 사용자 대안 2개 (2026-10-01, 탐색 D등급)
 
@@ -589,6 +730,7 @@
 | NDX 최근 5년 | 15.3% / −36% / −35% | 16.4% / −47% / −46% | 18.4% / −53% / −53% |
 | SPX 최근 5년 | 12.0% / −25% / −21% | 13.2% / −34% / −29% | 15.3% / −37% / −33% |
 
+- 1.55 열 출처: Cowork 탐색(스크립트 미저장, D). S4-3 커밋 결과의 REF|fixed1.5(SOX 32년 연 15.7%, 최대 낙폭 −98.0%)와는 배수·정의가 달라 직접 비교하지 않는다(S6 J12).
 - 최근 5년 반도체지수에서도 1.55는 1.32보다 수익이 높지 않았고(38.3% 대 39.2%) 낙폭은 8%p 깊었다. 이득은 2010~ 전체(+3.9%p)와 NDX·SPX에서 보였다.
 - 하루 스트레스: 2020-03-16형(SOXX −15.2%, SOXL −38.6%)이면 1.55(SOXX 72.5% + SOXL 27.5% 환산)는 −21.6%. 4종목 균등 바구니의 최근 2년 최악 하루는 −20.7%(2025-01-27). 하루 만에 L2(−20%)를 넘을 수 있다.
 - 검토선 빈도(최근 5년, BE·MU·DELL 100%): −10% 14회, −20% 5회, −30% 4회. L1 점검은 연 약 3회, L2 전면 재검토는 연 약 1회로 본다.
@@ -618,7 +760,7 @@
 - 사용자 원문: "유지"
 - 규칙: E = max(N, V) ≥ 1.9이면 모든 신규 매수 권고를 막고(fail-closed) 줄이기 권고를 "긴급"으로 표시한다. 목표(1.55)와 별개로, 따로 사용자 승인과 Judge를 거쳐야 바뀐다.
 - 관계: 권고 범위 상단 1.85에서 줄이기 권고와 신규 매수 멈춤이 먼저 걸린다. 1.9는 목표가 나중에 바뀌어도 남는 상위 안전판이다.
-- 하루 스트레스(2020-03-16형, SOXX 0.55 + SOXL 0.45 환산, D): 약 −25.7%. 1.55에서는 약 −20%(S1의 하루 경계와 같음).
+- 하루 스트레스(2020-03-16형, SOXX 0.55 + SOXL 0.45 환산, D): 약 −25.7%. 1.55에서는 약 −21.6%(C.6과 같은 환산, S1 하루 경계 −20%보다 깊음).
 
 ### C.10 사용자 결정 — 원가 기준 폐지, 종목 고점 −30% 카드 재작성 (2026-10-01)
 

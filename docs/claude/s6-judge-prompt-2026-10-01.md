@@ -109,3 +109,32 @@ S6 판정
 ## 5. 진행 기록
 
 - 2026-10-01 지시문 작성(Cowork, Opus). 사전 점검 P1~P8은 읽기 전용(정책 키 탐색, `deployment_gate` 해시 대조, grep). 정책·상태 파일 원본 해시 변경 없음.
+- 2026-10-01 S6 판정 PASS_WITH_FIXES(HEAD `6ff8f25`, 문서 수정 14건, 새 사용자 결정 없음, P1~P8 CONFIRMED). 판정 요약과 필수 수정 반영 위치는 제안서 "S6 Judge 판정" 절. Cowork가 제안서를 r1로 고쳤다. 다음은 6절 재확인.
+
+## 6. S6 재확인 지시문 (r1)
+
+- 사용자 조작
+  1. r1 문서를 커밋한다(Cowork가 명령 안내).
+  2. Judge 세션이 열려 있으면 그 세션에 아래 상자를 붙여 넣는다.
+  3. 닫혔으면 새 Windows 터미널에서 `cd "E:\사업\##금동한\코덱스저장소"` → `claude --worktree judge-s6-r2` → `/model` Opus, `/effort` xhigh → 아래 상자를 붙여 넣는다.
+  4. 마지막 "S6 재확인" 블록을 Cowork에 붙여 넣는다.
+
+```text
+S6 재확인(K3 Judge). 저장소 파일 수정·생성·커밋·브랜치 변경 금지. 키움·주문 도구, .env*·토큰·계좌번호, 네트워크 금지.
+허용: 파일 읽기, git 읽기 명령, 시스템 임시 폴더의 읽기 전용 python.
+대상: codex/master-recovery-expansion 브랜치 끝 커밋(git log --oneline -1 codex/master-recovery-expansion).
+브랜치는 바꾸지 않고 git show <커밋>:<경로>, git diff 6ff8f25 <커밋> 으로 읽는다.
+1. 기준: 6ff8f25 → 대상 커밋 차이가 docs/claude 문서뿐인가. git rev-parse <커밋>:stock-strategy-system/alert_policy.json = 3d9df21a...인가.
+   portfolio_state.json(E:\사업\##금동한\코덱스저장소\stock-strategy-system\) 원본 sha256이 28fd77c5...70b5인가.
+2. 제안서(docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md) "S6 Judge 판정" 절의 필수 수정 1~14가
+   "S5 확정안 r1" 절, 4·5·8·9·11절, 부록 C.6·C.9에 빠짐없이 반영됐는가. 항목마다 OK/부족(파일:행).
+3. 같은 절의 S7 확인 항목 5~7(상품 등록·신규 매수 승인, DRAM 종목 상한, SOXL weakness_10ema 은퇴)이
+   사용자 결정 D1~D7(제안서 10절, 부록 C.8~C.13) 범위 안인가, 새 사용자 결정이 필요한가.
+4. r1에서 새로 생긴 모순이나 fail-open이 있는가(확정안 r1 ↔ 5절 diff r1 ↔ 현행 alert_policy.json 경로).
+출력: 마지막에 "S6 재확인" 블록 하나(25줄 이내). 앞에 긴 설명을 붙이지 않는다.
+- 대상 커밋, 기준 일치 여부
+- 최종: PASS / FAIL
+- 필수 수정 1~14: OK/부족
+- 확인 항목 5~7: 범위 안/새 결정 필요 + 이유
+- 새 문제: 없으면 "없음"
+```

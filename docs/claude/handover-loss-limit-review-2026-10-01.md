@@ -116,3 +116,6 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
 - 10-01 S6 Judge 지시문 작성(Cowork): `s6-judge-prompt-2026-10-01.md`(사용자 조작, 사전 점검 P1~P8, 붙여넣기용 지시문 J1~J12).
   - 다음: 사용자가 Windows 터미널에서 `claude --worktree judge-s6`(Opus · xhigh)로 Judge 실행 → "S6 판정" 블록을 Cowork에 붙여 넣기.
   - 시작 문구: "docs/claude/s6-judge-prompt-2026-10-01.md를 읽고 S6 판정 처리부터" + 판정 블록
+- 10-01 S6 Judge 판정 PASS_WITH_FIXES(문서 수정 14건, 새 사용자 결정 없음). Cowork가 제안서를 r1로 고침("S5 확정안 r1"·"S6 Judge 판정" 절, 5절 diff r1). 정책·상태 무변경.
+  - 다음: ① 사용자 r1 커밋 ② `s6-judge-prompt-2026-10-01.md` 6절 재확인(같은 Judge 세션 또는 `judge-s6-r2`) ③ PASS면 S7 승인 질문(확인 항목 1~7, 한 번에 하나).
+  - 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md의 S6 Judge 판정 절을 읽고 S6 재확인 결과 처리부터" + 재확인 블록
