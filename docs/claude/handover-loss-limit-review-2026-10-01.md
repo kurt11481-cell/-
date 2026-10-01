@@ -101,3 +101,15 @@ S5 준비 결정(A-1 ~ S2-2)은 모두 끝났다. 전체 결정·근거는 `loss
   - F1.32(고정 1.32배)만 "S5 제안 후보(forward shadow 필요)"였다. 조건부 4개와 X1은 기각. ETF 코어 권장.
   - 다음 순서: ① Builder에 커밋 승인 → 사용자가 Windows 터미널에서 병합 ② S5 정책 제안 초안(새 작업, Opus · xhigh).
   - S5 초안 시작 문구: "docs/claude/handover-loss-limit-review-2026-10-01.md 10절과 s4-3-leverage-up-candidates-2026-10-01.md 7절을 읽고 S5 초안부터"
+- 10-01 병합 완료: `33a9d00`(문서 `4fcd58b` + Builder `6307c26`)
+  - Cowork 확인: 정책·상태 파일 원본 해시가 변경 없음(alert_policy.json `184008bd…`, portfolio_state.json `28fd77c5…`).
+  - 프로토콜·러너는 LF 정규화 해시가 기록값과 같다. 메인 체크아웃은 CRLF라 원본 해시만 다르다.
+  - 이 줄은 다음 문서 커밋 때 함께 커밋한다.
+- 10-01 S5 정책 제안 초안 작성(Cowork, Opus): `loss-limit-review-s5-policy-proposal-2026-10-01.md`. 적용 안 함, 정책·상태 무변경.
+  - 구성: A 안전 묶음(1.0배·0.4배·HWM 선·자동 매도 없음·현행 키 정리) + B(ETF 코어 동시 적용 제안, F1.32는 60세션 forward shadow 뒤 승격 심사). 조건부 4개·X1 기각 유지.
+  - 다음: 사용자 결정 D1~D7(한 번에 하나, D1 = ETF 코어 채택부터) → 확정본 → S6 Judge.
+  - 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md를 읽고 10절 D1부터"
+- 10-01 S5 사용자 결정 D1~D7 완료(Cowork, 같은 작업): 위험 예산 E = max(명목, SOX 환산) ≤ 1.55를 S7 적용 때 바로, 절대 상한 1.9, 카드 종목 코어 BE·MU·NBIS·DELL·AMD + SOXL 보충(SOXX 미사용), 원가 기준 한도 폐지 → 종목 고점 −30% 카드 재작성, 타이밍 슬롯 은퇴, 기각 유지 + K132-G 보고 전용 가상 운용, 입출금은 대조 때 신고.
+  - 문서: `loss-limit-review-s5-policy-proposal-2026-10-01.md`의 "S5 확정안" 절과 5절 diff, 부록 B·C(탐색 D등급).
+  - 다음: ① 사용자 문서 커밋 ② S6 Judge 지시문(Cowork) → 별도 Claude Code 세션 Judge(Opus · xhigh) ③ 병행 S4-4 사전 등록(종목 간 되돌리기).
+  - 시작 문구: "docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md의 S5 확정안을 읽고 S6 Judge 지시문부터"
