@@ -21,6 +21,7 @@ from apply_user_confirmed_broker_snapshot import (
     CONFIRMATION_METHODS, apply_confirmed, default_backup_directory, default_ledger_path, ledger_status,
     preview_updated_state,
 )
+from cash_flow_evidence import CashFlowError, build_declaration, read_ledger_blocks
 from kiwoom_broker_shadow import DEFAULT_PORTFOLIO_STATE_PATH, PROPOSAL_SCHEMA_VERSION, reconciliation_proposal
 from run_kiwoom_broker_shadow import collect_broker_snapshot, repo_relative
 from validation_common import file_hash, load_json, validate_instance, write_json
@@ -110,6 +111,25 @@ def _format(value: Any, messages: dict[str, str]) -> str:
     return str(value)
 
 
+def _cash_flow_lines(block: Any, messages: dict[str, str]) -> list[str]:
+    """S5 R6 declaration shown inside the same table the user confirms (nothing when there is no block)."""
+    if not isinstance(block, dict):
+        return []
+    evidence = block.get("evidence") or {}
+    excluded = block.get("excluded_from_cash_flow") or {}
+    values = {
+        "period_from": evidence.get("period_from"), "period_to": evidence.get("period_to"),
+        "net": block.get("new_external_net_usd"), "declared": block.get("declared_cash_flow_usd"),
+        "remainder": block.get("undeclared_remainder_usd"), "dividend": excluded.get("dividend_settlement_usd"),
+        "fees": excluded.get("fees_usd"), "taxes": excluded.get("taxes_usd"),
+        "codes": ", ".join(evidence.get("unresolved") or []),
+    }
+    key = {"NO_EXTERNAL_FLOW": "show_cash_flow_none", "DECLARED_IN_FULL": "show_cash_flow_declared",
+           "PARTIALLY_DECLARED": "show_cash_flow_partial", "UNDECLARED": "show_cash_flow_undeclared",
+           }.get(block.get("declaration_status"), "show_cash_flow_unresolved")
+    return [messages[key].format(**values), messages["show_cash_flow_excluded"].format(**values)]
+
+
 def render_proposal(proposal: dict[str, Any], *, now: datetime | None = None) -> list[str]:
     """Deterministic Korean difference table (P3 4-1) shown to the user before any confirmation."""
     messages = _messages()
@@ -171,6 +191,7 @@ def render_proposal(proposal: dict[str, Any], *, now: datetime | None = None) ->
     fills = proposal.get("recent_fills") or []
     lines.append(messages["show_fills_none"] if not fills else messages["show_fills_some"].format(
         items=", ".join(f"{item.get('ticker')} {item.get('time')}" for item in fills)))
+    lines += _cash_flow_lines(proposal.get("cash_flow_declaration"), messages)
     expires = _parse(proposal.get("expires_at"))
     if expires is None or now > expires:
         lines.append(messages["show_expired"].format(expires_hm=_kst(proposal.get("expires_at"), "%H:%M")))
@@ -188,6 +209,19 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
         raise SystemExit("KIWOOM_RUNTIME_PATH_MISMATCH")
     broker_policy = load_json(args.broker_policy)
     state_path = Path(args.portfolio_state)
+    # S5 R6: the declaration is validated before any broker read. Evidence is a saved, sanitized
+    # transaction-history file; this command reads no extra broker API for it.
+    declaration = None
+    try:
+        if args.cash_flow_evidence is not None:
+            declaration = build_declaration(
+                load_json(args.cash_flow_evidence), declared_usd=args.declare_cash_flow_usd,
+                prior_blocks=read_ledger_blocks(default_ledger_path(state_path)))
+        elif args.declare_cash_flow_usd is not None:
+            raise CashFlowError("CASH_FLOW_EVIDENCE_REQUIRED")
+    except (CashFlowError, OSError, ValueError) as exc:
+        print(messages["propose_cash_flow_rejected"].format(reason=str(exc) or type(exc).__name__))
+        return 2
     extra = {"reader": reader} if reader is not None else {}
     results, snapshot, before = collect_broker_snapshot(
         runtime=runtime, rate_policy=load_json(args.rate_policy), broker_policy=broker_policy,
@@ -204,6 +238,7 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
         ledger_last_hash_after=ledger["last_portfolio_hash_after"],
         ledger_last_hash_before=ledger["last_portfolio_hash_before"], ledger_integrity_ok=ledger["chain_ok"],
         post_apply_check=alert_engine_check(load_json(args.alert_policy)),
+        cash_flow_declaration=declaration,
     )
     if file_hash(state_path) != before:
         raise SystemExit("PORTFOLIO_STATE_MUTATION_DETECTED")
@@ -283,6 +318,10 @@ def build_parser() -> argparse.ArgumentParser:
     propose.add_argument("--snapshot-role", default="POST_CLOSE_BROKER_SNAPSHOT",
                          choices=("PRE_OPEN_BROKER_SNAPSHOT", "POST_CLOSE_BROKER_SNAPSHOT"))
     propose.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    propose.add_argument("--cash-flow-evidence", type=Path,
+                         help="S5 R6: sanitized transaction-history evidence from cash_flow_evidence.py normalize")
+    propose.add_argument("--declare-cash-flow-usd",
+                         help="S5 R6: user-declared net deposit (+) or withdrawal (-) in USD, e.g. 500.00")
     show = commands.add_parser("show", help="render the proposal difference table")
     show.add_argument("--proposal", default="latest")
     show.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)

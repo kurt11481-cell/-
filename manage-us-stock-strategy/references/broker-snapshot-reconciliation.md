@@ -159,3 +159,25 @@ after reading the table:
 python manage-us-stock-strategy/scripts/reconcile_broker_state.py show
 python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via USER_TERMINAL
 ```
+
+### 4. S5 cash-flow declaration (R6, optional inputs of propose)
+
+After the S5 activation record exists, every reconciliation should carry the
+cash-flow block so that review lines can be judged
+(see [portfolio-exposure-review.md](portfolio-exposure-review.md)):
+
+```powershell
+python manage-us-stock-strategy/scripts/reconcile_broker_state.py propose --cash-flow-evidence <evidence.json>
+python manage-us-stock-strategy/scripts/reconcile_broker_state.py propose --cash-flow-evidence <evidence.json> --declare-cash-flow-usd 500.00
+```
+
+- The evidence file is a saved, sanitized Kiwoom transaction history
+  (`cash_flow_evidence.py normalize`). `propose` reads no extra broker API for it.
+- The block is inside the proposal hash. A declaration therefore always gives a
+  new proposal and a new confirmation code; an earlier code never covers it.
+- A declared amount beyond the deposits, withdrawals and currency exchanges in
+  the evidence is rejected before any broker read. Dividends, fees and taxes
+  are never cash flows.
+- `show` prints the block in the same table. Apply records it in the ledger
+  entry only; no state field is written for it and `timing_plan` stays untouched.
+- Without the two options, propose, show and apply behave exactly as before.

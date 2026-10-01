@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S5 decision journal proposal",
+  "description": "Non-mutating proposal produced by portfolio_review_journal.py propose-*. Only apply may append it to the journal, after the user's explicit confirmation code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "proposal_type", "proposal_id", "confirm_code", "entry_type", "payload", "review_id",
+    "evaluation_session", "generated_at", "expires_at", "journal_path", "expected_journal_head_sha256",
+    "expected_entry_count", "auto_apply", "order_authority", "quantity_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "decision-journal-proposal-1.0"},
+    "proposal_type": {"const": "DECISION_JOURNAL_ENTRY"},
+    "proposal_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "confirm_code": {"type": "string", "pattern": "^[0-9A-F]{8}$"},
+    "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed"]},
+    "payload": {"$ref": "portfolio-review-journal-payload.schema.json"},
+    "review_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evaluation_session": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "journal_path": {"type": "string", "minLength": 1},
+    "expected_journal_head_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expected_entry_count": {"type": "integer", "minimum": 0},
+    "auto_apply": {"const": false},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"}
+  }
+}

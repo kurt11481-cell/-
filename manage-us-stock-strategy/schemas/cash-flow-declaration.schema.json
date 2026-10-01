@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S5 R6 cash-flow declaration block embedded in a Kiwoom reconciliation proposal",
+  "description": "The block is part of the proposal hash, so a declaration always gets a new confirmation code. A declared amount beyond the unexplained cash change is rejected. It grants no order or quantity authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "evidence", "external_rows", "previously_counted_keys", "new_external_net_usd",
+    "declared_cash_flow_usd", "undeclared_remainder_usd", "declaration_status", "hwm_adjustment_usd",
+    "excluded_from_cash_flow", "limit_rule", "order_authority", "quantity_authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "cash-flow-declaration-1.0"},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_hash", "raw_sha256", "api_id", "period_from", "period_to", "row_count", "unresolved"],
+      "properties": {
+        "evidence_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "api_id": {"const": "ust21100"},
+        "period_from": {"type": "string", "format": "date"},
+        "period_to": {"type": "string", "format": "date"},
+        "row_count": {"type": "integer", "minimum": 0},
+        "unresolved": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "external_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "deal_date", "classification", "signed_amount_usd"],
+        "properties": {
+          "key": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$"},
+          "deal_date": {"type": "string", "format": "date"},
+          "classification": {"enum": ["DEPOSIT", "WITHDRAWAL", "FX"]},
+          "signed_amount_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"}
+        }
+      }
+    },
+    "previously_counted_keys": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "new_external_net_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+    "declared_cash_flow_usd": {"type": ["string", "null"], "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+    "undeclared_remainder_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+    "declaration_status": {
+      "enum": ["NO_EXTERNAL_FLOW", "DECLARED_IN_FULL", "PARTIALLY_DECLARED", "UNDECLARED", "EVIDENCE_UNRESOLVED"]
+    },
+    "hwm_adjustment_usd": {"type": ["string", "null"], "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+    "excluded_from_cash_flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dividend_settlement_usd", "fees_usd", "taxes_usd"],
+      "properties": {
+        "dividend_settlement_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "fees_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "taxes_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"}
+      }
+    },
+    "limit_rule": {"const": "DECLARED_WITHIN_UNEXPLAINED_CASH_CHANGE"},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"}
+  }
+}

@@ -33,8 +33,14 @@ DEFAULT_PATHS = {
     "baseline_index": "workspace/research/holding-baselines/active-index.json",
     "cards_dir": "workspace/outputs/holding-cards",
     "journal": "stock-strategy-system/decision_journal.json",
+    "exposure_dir": "workspace/outputs/exposure-review",
     "output": "workspace/outputs/status/latest.json",
 }
+# S5 human-confirmation entries share the journal file; they are records, not decisions awaiting a score.
+S5_JOURNAL_ENTRY_TYPES = ("s5_activation", "line_review_completed", "peak_review_card_completed")
+EXPOSURE_REVIEW_PREFIX = "portfolio-exposure-review."
+EXPOSURE_LOCALE_PATH = SKILL_ROOT / "assets/locales/portfolio-exposure-ko-KR.json"
+EXPOSURE_SCHEMA_PATH = SKILL_ROOT / "schemas/portfolio-exposure-review.schema.json"
 
 
 def parse_datetime(value: Any) -> datetime | None:
@@ -201,14 +207,36 @@ def latest_card(directory: Path, now: datetime) -> dict[str, Any]:
 def journal_pending(path: Path) -> dict[str, Any]:
     # Assumed schema (decision ledger is not built yet): a list of entries, or
     # {"entries": [...]}. An entry without a truthy "outcome" is pending scoring.
+    # S5 confirmation entries (portfolio_review_journal.py) are never pending scoring.
     data, status = read_json(path)
     if status != "OK":
         return {**missing_item(status), "assumed_schema": True}
     entries = data.get("entries") if isinstance(data, dict) else data
     if not isinstance(entries, list):
         return {**missing_item("INVALID"), "assumed_schema": True}
-    pending = sum(1 for entry in entries if isinstance(entry, dict) and not entry.get("outcome"))
+    pending = sum(1 for entry in entries if isinstance(entry, dict) and not entry.get("outcome")
+                  and entry.get("entry_type") not in S5_JOURNAL_ENTRY_TYPES)
     return {"status": "OK", "entry_count": len(entries), "pending_count": pending, "assumed_schema": True}
+
+
+def latest_exposure_review(directory: Path) -> dict[str, Any]:
+    """Latest S5 exposure review (display block only). A review that fails its schema or hash is INVALID."""
+    if not directory.is_dir():
+        return missing_item("MISSING")
+    sessions = sorted(path for path in directory.iterdir() if path.is_dir() and DATE_DIR.match(path.name))
+    files = sorted(sessions[-1].glob(EXPOSURE_REVIEW_PREFIX + "*.json")) if sessions else []
+    if not files:
+        return missing_item("MISSING")
+    data, status = read_json(files[-1])
+    if status != "OK" or not isinstance(data, dict):
+        return {"status": "INVALID", "file": files[-1].name}
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from portfolio_exposure import exposure_display_block, review_content_hash
+    from validation_common import validate_instance
+
+    if validate_instance(data, EXPOSURE_SCHEMA_PATH) or review_content_hash(data) != data.get("review_id"):
+        return {"status": "INVALID", "file": files[-1].name}
+    return {"status": "OK", "file": files[-1].name, **exposure_display_block(data)}
 
 
 def collect_warnings(report: dict[str, Any]) -> list[str]:
@@ -273,6 +301,15 @@ def build_summary(report: dict[str, Any], messages: dict[str, Any]) -> str:
     journal = report["scoring_pending"]
     parts.append(messages["journal_ok"].format(count=journal["pending_count"]) if journal["status"] == "OK"
                  else messages["journal_missing"])
+    exposure = report["exposure_review"]
+    if exposure["status"] != "MISSING":
+        # Shown only once an S5 exposure review exists; the text is the same line the cards show.
+        exposure_messages = json.loads(EXPOSURE_LOCALE_PATH.read_text(encoding="utf-8"))["messages"]
+        if exposure["status"] == "OK":
+            from portfolio_exposure import render_exposure_line
+            parts.append(exposure_messages["status_ok"].format(line=render_exposure_line(exposure, exposure_messages)))
+        else:
+            parts.append(exposure_messages["status_invalid"])
     line = SEPARATOR.join(parts)
     if report["warnings"]:
         labels = ", ".join(messages["warnings"][code] for code in report["warnings"])
@@ -298,6 +335,7 @@ def build_report(paths: dict[str, Path], now: datetime, stale_days: float) -> di
         "baselines": baseline_items(paths["baseline_index"], now),
         "latest_card": latest_card(paths["cards_dir"], now),
         "scoring_pending": journal_pending(paths["journal"]),
+        "exposure_review": latest_exposure_review(paths["exposure_dir"]),
     }
     report["warnings"] = collect_warnings(report)
     return report

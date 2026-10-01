@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from cash_flow_evidence import declaration_block_errors
 from kiwoom_broker_shadow import PATCH_FIELDS, PROPOSAL_SCHEMA_VERSION, proposal_content_hash
 from validation_common import canonical_hash, load_json, validate_instance
 
@@ -275,6 +276,11 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         missing = [key for key in PATCH_FIELDS if key not in (proposal.get("proposed_patch") or {})]
         if missing:
             raise ValueError("BROKER_PROPOSAL_PATCH_INCOMPLETE: " + ", ".join(missing))
+        # S5 R6: a declaration block must be self-consistent (e.g. never beyond its own limit).
+        declaration_errors = (declaration_block_errors(proposal["cash_flow_declaration"])
+                              if "cash_flow_declaration" in proposal else [])
+        if declaration_errors:
+            raise ValueError("CASH_FLOW_DECLARATION_INVALID: " + ", ".join(declaration_errors))
     ledger = ledger_status(ledger_path)
     if not ledger["chain_ok"]:
         raise ValueError("LEDGER_INTEGRITY_FAILED")
@@ -313,6 +319,9 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         "ledger_expected_portfolio_hash": ledger["last_portfolio_hash_after"] if outside_ledger else None,
         "previous_entry_sha256": ledger["last_entry_sha256"],
     }
+    if kiwoom and "cash_flow_declaration" in proposal:
+        # Recorded in the ledger only; no state field is written for it (NEVER_TOUCHED is unchanged).
+        entry["cash_flow_declaration"] = proposal["cash_flow_declaration"]
     _append_ledger(ledger_path, entry)
     _atomic_write_json(state_path, updated, newline=newline)
     if canonical_hash(load_json(state_path)) != after_hash:

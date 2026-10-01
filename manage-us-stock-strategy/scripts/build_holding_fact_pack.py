@@ -320,9 +320,28 @@ def _confidence_cap(analysis: dict[str, Any], broker_status: str, state_changed:
     }
 
 
+def _s5_exposure_block(review: Any, expected_session: Any) -> dict[str, Any]:
+    """Copy the S5 display block (E, distance to the next line, pause state) from one exposure review.
+
+    Nothing is recomputed here and no target weights are copied. A review that fails its schema or
+    its own hash is rejected rather than shown.
+    """
+    from portfolio_exposure import exposure_display_block, review_content_hash
+    from validation_common import validate_instance
+
+    schema = SKILL_ROOT / "schemas/portfolio-exposure-review.schema.json"
+    if not isinstance(review, dict) or validate_instance(review, schema) or (
+            review_content_hash(review) != review.get("review_id")):
+        raise FactPackError("EXPOSURE_REVIEW_INVALID")
+    block = exposure_display_block(review)
+    block["matches_expected_completed_session"] = review["evaluation_session"] == expected_session
+    return block
+
+
 def build_fact_pack(
     analysis: dict[str, Any], state: dict[str, Any] | None, baselines: dict[str, Any],
     policy: dict[str, Any], alert_result: dict[str, Any] | None = None,
+    exposure_review: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     run_id = analysis.get("manual_run_id")
     decision_as_of = _parse_time(analysis.get("decision_as_of"))
@@ -415,6 +434,10 @@ def build_fact_pack(
             "missing": missing,
         }
 
+    # Optional S5 display block; without the input the fact pack is byte-identical to before.
+    s5_exposure = ({"s5_exposure": _s5_exposure_block(exposure_review, expected_session)}
+                   if exposure_review is not None else {})
+
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": ARTIFACT_TYPE,
@@ -455,6 +478,7 @@ def build_fact_pack(
             },
             "open_orders_status": operations.get("account_open_items"),
             "realized_pnl_status": operations.get("account_realized_pnl_read"),
+            **s5_exposure,
         },
         "tickers": tickers,
     }
@@ -507,6 +531,8 @@ def main(argv: list[str] | None = None) -> int:
         "--baseline-index", type=Path, default=REPO_ROOT / "workspace/research/holding-baselines/active-index.json"
     )
     parser.add_argument("--alert-result", type=Path, default=None)
+    parser.add_argument("--exposure-review", type=Path, default=None,
+                        help="optional S5 portfolio exposure review; adds a display-only block")
     args = parser.parse_args(argv)
     try:
         pack = build_fact_pack(
@@ -515,6 +541,7 @@ def main(argv: list[str] | None = None) -> int:
             load_baselines(args.baseline_index) if args.baseline_index.is_file() else {},
             read_json(args.policy),
             read_json(args.alert_result) if args.alert_result else None,
+            read_json(args.exposure_review) if args.exposure_review else None,
         )
         path = write_fact_pack(pack, args.output_dir)
     except FactPackError as exc:
