@@ -1,0 +1,126 @@
+{
+  "generated_at_utc": "2026-10-01T03:58:16.941926+00:00",
+  "end_date": "2026-09-29",
+  "protocol_lf_sha256": "858827e716d2ba2b86ca2c016a3e4c70f5f0484a869681b1db167eeb39d1ea3f",
+  "single_source": "Yahoo chart API for indices; FRED for DTB3; Shiller ie_data.xls (no second source)",
+  "series": {
+    "NDX": {
+      "ticker": "^NDX",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENDX?period1=496972800&period2=1790726400&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "single_source": true,
+      "csv": {
+        "path": "NDX_yahoo_raw.csv",
+        "rows": 10328,
+        "sha256": "d6ea7409215429bbd220fb80218bc72ec5632ee260eaf583b3af0b4fb0367f39"
+      },
+      "first_date": "1985-10-01",
+      "last_date": "2026-09-29",
+      "rows": 10328,
+      "requested_first_date": "1985-10-01",
+      "null_or_nonpositive_close_dates": [],
+      "weekend_dates": [],
+      "gaps_over_5_calendar_days": [
+        {
+          "to": "2001-09-17",
+          "days": 7
+        }
+      ],
+      "abs_return_ge_15pct": [
+        {
+          "date": "1987-10-19",
+          "ret": -0.15077616397122617,
+          "close": 155.64999389648438
+        },
+        {
+          "date": "2001-01-03",
+          "ret": 0.18771307886029476,
+          "close": 2528.3798828125
+        }
+      ],
+      "late_extra_vs_sox_calendar": [],
+      "late_missing_vs_sox_calendar": [],
+      "late_extra_count": 0,
+      "late_missing_count": 0,
+      "old_file_close_check": {
+        "overlap_rows": 8156,
+        "max_abs_diff": 2.2737367544323206e-13,
+        "rows_with_diff_gt_1e-6": 0
+      }
+    },
+    "SPX": {
+      "ticker": "^GSPC",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=-504662400&period2=1790726400&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+      "single_source": true,
+      "csv": {
+        "path": "SPX_yahoo_raw.csv",
+        "rows": 18308,
+        "sha256": "4460849fbc94a7b8aed4aea5c8c89a622ce04522cdf7259a1553712d689f7c03"
+      },
+      "first_date": "1954-01-04",
+      "last_date": "2026-09-29",
+      "rows": 18308,
+      "requested_first_date": "1954-01-04",
+      "null_or_nonpositive_close_dates": [],
+      "weekend_dates": [],
+      "gaps_over_5_calendar_days": [
+        {
+          "to": "2001-09-17",
+          "days": 7
+        }
+      ],
+      "abs_return_ge_15pct": [
+        {
+          "date": "1987-10-19",
+          "ret": -0.20466930799694372,
+          "close": 224.83999633789062
+        }
+      ],
+      "late_extra_vs_sox_calendar": [],
+      "late_missing_vs_sox_calendar": [],
+      "late_extra_count": 0,
+      "late_missing_count": 0
+    }
+  },
+  "ndx_vs_spx_sessions_1985_1994": {
+    "ndx_only": [],
+    "spx_only": [],
+    "ndx_only_count": 0,
+    "spx_only_count": 0
+  },
+  "dtb3": {
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3&cosd=1954-01-01&coed=2026-09-29",
+    "rows": 18177,
+    "first": "1954-01-04",
+    "last": "2026-09-29",
+    "csv": {
+      "path": "DTB3_full.csv",
+      "rows": 18177,
+      "sha256": "4a20f83a1ab50c53b06c62018cb4828a375e0177e09d26ad689fdb923d1e54fc"
+    },
+    "overlap_with_dgs3mo": {
+      "rows": 11268,
+      "mean_diff_pct_points": -0.11986332978345757,
+      "min": -1.4200000000000017,
+      "max": 0.020000000000000018,
+      "note": "report only; splice at 1981-09-01 per protocol"
+    }
+  },
+  "shiller": {
+    "url": "http://www.econ.yale.edu/~shiller/data/ie_data.xls",
+    "xls": {
+      "path": "shiller_ie_data.xls",
+      "sha256": "0df9392b7dacf91f756e92c8db508ad903c4588b43f3253680eec3dd8b40db68",
+      "bytes": 1628672
+    },
+    "csv": {
+      "path": "SHILLER_dividend_yield.csv",
+      "rows": 1830,
+      "sha256": "5008acb49b35e691f14784987bb71a430253c6dfd056ef6942038198a237eecf"
+    },
+    "first_month": "1871-01-01",
+    "last_month": "2023-06-01",
+    "status": "ok"
+  },
+  "status": "passed",
+  "stop_reasons": []
+}
