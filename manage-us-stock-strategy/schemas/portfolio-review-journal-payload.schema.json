@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S5 decision journal entry payload (activation, line review completed, peak review card completed)",
+  "description": "One object shape for the three entry types; the fields present depend on entry_type. Values are copied from one portfolio exposure review, never typed by hand.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "activation_date": {"type": "string", "format": "date"},
+    "hwm_usd": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "hwm_as_of": {"type": "string", "format": "date"},
+    "hwm_policy_initial_usd": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "hwm_difference_usd": {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$"},
+    "state_revision": {"type": "integer", "minimum": 0},
+    "window_start": {"type": "string", "format": "date"},
+    "window_end": {"type": "string", "format": "date"},
+    "close_basis": {"const": "FINAL_REGULAR_SESSION_30M_BAR_CLOSE"},
+    "line_id": {"type": "string", "pattern": "^L[0-9]+$"},
+    "hwm": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "breach_date": {"type": "string", "format": "date"},
+    "review_status": {"const": "completed"},
+    "conclusion": {"enum": ["continue", "other"]},
+    "conclusion_note": {"type": "string"},
+    "symbol": {"type": "string", "pattern": "^[A-Z][A-Z0-9.]{0,11}$"},
+    "peak": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "peak_date": {"type": "string", "format": "date"}
+  }
+}

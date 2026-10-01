@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S5 portfolio exposure review (display only)",
+  "description": "Deterministic result of portfolio_exposure.build_exposure_review. Recommendations are target weights only. It never carries an order, a quantity or an amount to trade, and grants no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "artifact_type", "display_only", "order_authority", "quantity_authority",
+    "execution_quantity", "recommendation_output", "policy", "evaluation_session", "next_session", "close_basis",
+    "snapshot", "equity", "positions", "exposure", "band", "single_stock_cap", "fail_closed", "pauses",
+    "review_lines", "peak_reviews", "recommendations", "alerts", "activation", "activation_candidate", "inputs",
+    "review_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "portfolio-exposure-review-1.0"},
+    "artifact_type": {"const": "PORTFOLIO_EXPOSURE_REVIEW"},
+    "display_only": {"const": true},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"},
+    "recommendation_output": {"const": "target_weights_only"},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_version", "status", "target_exposure", "reduce_when_exposure_gte", "add_when_exposure_lte",
+        "hard_ceiling_when_exposure_gte", "single_stock_nominal_cap"
+      ],
+      "properties": {
+        "policy_version": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "target_exposure": {"type": "number"},
+        "reduce_when_exposure_gte": {"type": "number"},
+        "add_when_exposure_lte": {"type": "number"},
+        "hard_ceiling_when_exposure_gte": {"type": "number"},
+        "single_stock_nominal_cap": {"type": "number"}
+      }
+    },
+    "evaluation_session": {"type": "string", "format": "date"},
+    "next_session": {"type": ["string", "null"], "format": "date"},
+    "close_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition", "label", "official_close"],
+      "properties": {
+        "definition": {"const": "FINAL_REGULAR_SESSION_30M_BAR_CLOSE"},
+        "label": {"const": "APPROXIMATE_CLOSE"},
+        "official_close": {"const": false}
+      }
+    },
+    "snapshot": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["as_of", "state_revision", "age_calendar_days", "later_reconciliations_not_used"],
+      "properties": {
+        "as_of": {"type": "string", "format": "date"},
+        "state_revision": {"type": ["integer", "null"]},
+        "age_calendar_days": {"type": "integer"},
+        "later_reconciliations_not_used": {"type": "integer", "minimum": 0}
+      }
+    },
+    "equity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "closing_equity_usd", "cash_usd", "cash_weight"],
+      "properties": {
+        "status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+        "closing_equity_usd": {"type": ["string", "null"]},
+        "cash_usd": {"type": ["string", "null"]},
+        "cash_weight": {"type": ["number", "null"]}
+      }
+    },
+    "positions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symbol", "registered", "nominal_multiplier", "close", "weight", "nominal_contribution",
+          "single_stock_cap_applies"
+        ],
+        "properties": {
+          "symbol": {"type": "string", "minLength": 1},
+          "registered": {"type": "boolean"},
+          "nominal_multiplier": {"type": ["number", "null"]},
+          "close": {"type": ["string", "null"]},
+          "weight": {"type": ["number", "null"]},
+          "nominal_contribution": {"type": ["number", "null"]},
+          "single_stock_cap_applies": {"type": "boolean"}
+        }
+      }
+    },
+    "exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "nominal", "sox_equivalent", "effective", "effective_lower_bound", "measure", "benchmark",
+        "return_sessions_used", "window_sessions", "minimum_sessions", "window_start", "window_end",
+        "short_history", "unavailable_reasons"
+      ],
+      "properties": {
+        "status": {"enum": ["VERIFIED", "UNVERIFIED", "UNAVAILABLE"]},
+        "nominal": {"type": ["number", "null"]},
+        "sox_equivalent": {"type": ["number", "null"]},
+        "effective": {"type": ["number", "null"]},
+        "effective_lower_bound": {"type": ["number", "null"]},
+        "measure": {"const": "max(nominal, sox_equivalent_volatility_ratio)"},
+        "benchmark": {"type": "string", "minLength": 1},
+        "return_sessions_used": {"type": "integer", "minimum": 0},
+        "window_sessions": {"type": "integer", "minimum": 1},
+        "minimum_sessions": {"type": "integer", "minimum": 1},
+        "window_start": {"type": ["string", "null"], "format": "date"},
+        "window_end": {"type": ["string", "null"], "format": "date"},
+        "short_history": {"type": "boolean"},
+        "unavailable_reasons": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "band": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "urgent_reduce", "block_all_new_buys"],
+      "properties": {
+        "state": {"enum": ["HARD_CEILING", "ABOVE_BAND", "WITHIN_BAND", "ADD_ZONE", "UNAVAILABLE"]},
+        "urgent_reduce": {"type": "boolean"},
+        "block_all_new_buys": {"type": "boolean"}
+      }
+    },
+    "single_stock_cap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["breaches"],
+      "properties": {"breaches": {"type": "array", "items": {"type": "object"}}}
+    },
+    "fail_closed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "triggers", "pause", "continue_with_unverified_label"],
+      "properties": {
+        "active": {"type": "boolean"},
+        "triggers": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "active", "reasons"],
+            "properties": {
+              "id": {
+                "enum": [
+                  "exposure_or_equity_or_v_unavailable", "unregistered_instrument_held",
+                  "hwm_line_or_pause_state_missing_or_corrupt", "decision_journal_missing_or_corrupt",
+                  "broker_snapshot_older_than_broker_snapshot_max_age_calendar_days", "required_price_missing",
+                  "undeclared_cash_flow"
+                ]
+              },
+              "active": {"type": "boolean"},
+              "reasons": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "pause": {"type": "array", "items": {"enum": ["add_recommendations", "new_buy_recommendations"]}},
+        "continue_with_unverified_label": {
+          "type": "array",
+          "items": {"enum": ["reduce_recommendations", "warnings"]}
+        }
+      }
+    },
+    "pauses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["add_recommendations", "new_buy_recommendations"],
+      "properties": {
+        "add_recommendations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paused", "reasons"],
+          "properties": {"paused": {"type": "boolean"}, "reasons": {"type": "array", "items": {"type": "string"}}}
+        },
+        "new_buy_recommendations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paused", "reasons"],
+          "properties": {"paused": {"type": "boolean"}, "reasons": {"type": "array", "items": {"type": "string"}}}
+        }
+      }
+    },
+    "review_lines": {
+      "type": "object",
+      "required": [
+        "status", "reasons", "hwm_usd", "hwm_date", "closing_equity_usd", "evaluated_through", "lines", "events",
+        "open_events", "next_line", "skipped_sessions", "cash_flow", "sale_pending_hold",
+        "unmatched_journal_reviews", "ledger_unconfirmed_revisions", "automatic_sell"
+      ],
+      "properties": {
+        "status": {"enum": ["NOT_ACTIVATED", "EVALUATED", "HELD", "UNVERIFIED"]},
+        "reasons": {"type": "array", "items": {"type": "string"}},
+        "hwm_usd": {"type": ["string", "null"]},
+        "hwm_date": {"type": ["string", "null"]},
+        "closing_equity_usd": {"type": ["string", "null"]},
+        "evaluated_through": {"type": ["string", "null"]},
+        "lines": {"type": "array", "items": {"type": "object"}},
+        "events": {"type": "array", "items": {"type": "object"}},
+        "open_events": {"type": "array", "items": {"type": "object"}},
+        "next_line": {"type": ["object", "null"]},
+        "skipped_sessions": {"type": "array", "items": {"type": "string", "format": "date"}},
+        "cash_flow": {"type": ["object", "null"]},
+        "sale_pending_hold": {"type": "boolean"},
+        "unmatched_journal_reviews": {"type": "array", "items": {"type": "object"}},
+        "ledger_unconfirmed_revisions": {"type": "array", "items": {"type": "integer"}},
+        "automatic_sell": {"const": false}
+      }
+    },
+    "peak_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "status", "reasons", "pause_add_recommendations", "automatic_sell"],
+        "properties": {
+          "symbol": {"type": "string", "minLength": 1},
+          "status": {"enum": ["OK", "REVIEW_OPEN", "NO_BASELINE_PEAK", "UNVERIFIED"]},
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "pause_add_recommendations": {"type": "boolean"},
+          "automatic_sell": {"const": false}
+        }
+      }
+    },
+    "recommendations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reduce", "add", "omitted", "proposals", "warnings"],
+      "properties": {
+        "reduce": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["action", "order", "basis", "symbol", "current_weight", "target_weight", "alert_grade"],
+            "properties": {
+              "action": {"const": "reduce"},
+              "order": {"enum": [1, 2, 3]},
+              "symbol": {"type": "string", "minLength": 1},
+              "current_weight": {"type": "number"},
+              "target_weight": {"type": ["number", "null"]},
+              "alert_grade": {"enum": ["B", "D"]}
+            }
+          }
+        },
+        "add": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "action", "symbol", "current_weight", "target_weight", "nature", "return_gate", "oos_and_shadow",
+              "output", "alert_grade"
+            ],
+            "properties": {
+              "action": {"const": "add"},
+              "symbol": {"type": "string", "minLength": 1},
+              "current_weight": {"type": "number"},
+              "target_weight": {"type": "number"},
+              "nature": {"const": "return_seeking"},
+              "return_gate": {"const": "not_passed"},
+              "oos_and_shadow": {"const": "skipped"},
+              "output": {"const": "display_only"},
+              "alert_grade": {"const": "B"}
+            }
+          }
+        },
+        "omitted": {"type": "array", "items": {"type": "object"}},
+        "proposals": {"type": "array", "items": {"type": "object"}},
+        "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "alerts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "grade"],
+        "properties": {"code": {"type": "string", "minLength": 1}, "grade": {"enum": ["B", "C", "D"]}}
+      }
+    },
+    "activation": {"type": ["object", "null"]},
+    "activation_candidate": {"type": ["object", "null"]},
+    "inputs": {"type": "object"},
+    "review_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

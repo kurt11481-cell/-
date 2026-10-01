@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sanitized Kiwoom transaction-history evidence for the S5 R6 cash-flow declaration",
+  "description": "Built by cash_flow_evidence.py normalize from one saved ust21100 response. It never stores an account identifier. Dividends, fees and taxes are not external cash flows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "artifact_type", "source", "period_from", "period_to", "account_identifier_stored",
+    "row_count", "rows", "totals", "unresolved", "classification_table_sha256", "order_authority",
+    "quantity_authority", "evidence_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "kiwoom-cash-flow-evidence-1.0"},
+    "artifact_type": {"const": "KIWOOM_CASH_FLOW_EVIDENCE"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "api_id", "collection", "raw_sha256", "pagination_complete"],
+      "properties": {
+        "provider": {"const": "KIWOOM"},
+        "api_id": {"const": "ust21100"},
+        "collection": {"const": "COWORK_READ_ONLY_CLI_EVIDENCE_FILE"},
+        "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "pagination_complete": {"const": "ASSERTED_BY_COLLECTOR"}
+      }
+    },
+    "period_from": {"type": "string", "format": "date"},
+    "period_to": {"type": "string", "format": "date"},
+    "account_identifier_stored": {"const": false},
+    "row_count": {"type": "integer", "minimum": 0},
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key", "deal_date", "kind_name", "memo", "currency", "classification", "signed_amount_usd",
+          "settlement_amount", "fee_usd", "tax_usd", "unresolved"
+        ],
+        "properties": {
+          "key": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$"},
+          "deal_date": {"type": "string", "format": "date"},
+          "kind_name": {"type": "string"},
+          "memo": {"type": "string"},
+          "currency": {"type": ["string", "null"]},
+          "classification": {
+            "enum": [
+              "DEPOSIT", "WITHDRAWAL", "FX", "DIVIDEND", "FEE_TAX_INTEREST", "TRADE", "NON_USD_IGNORED",
+              "TRANSFER_SIGN_UNKNOWN",
+              "UNCLASSIFIED"
+            ]
+          },
+          "signed_amount_usd": {"type": ["string", "null"], "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+          "settlement_amount": {"type": ["string", "null"], "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+          "fee_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+          "tax_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+          "unresolved": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["external_net_usd", "dividend_settlement_usd", "fees_usd", "taxes_usd"],
+      "properties": {
+        "external_net_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "dividend_settlement_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "fees_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "taxes_usd": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{2}$"}
+      }
+    },
+    "unresolved": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "classification_table_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "evidence_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

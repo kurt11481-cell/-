@@ -156,6 +156,7 @@
                          "POST_APPLY_ALERT_ENGINE_CHECK_FAILED"]}
     },
     "unresolved_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "cash_flow_declaration": {"$ref": "cash-flow-declaration.schema.json"},
     "open_orders_verified": {"type": "boolean"},
     "auto_apply": {"const": false},
     "fill_inference_performed": {"const": false},

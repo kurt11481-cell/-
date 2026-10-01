@@ -305,8 +305,14 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
                             ledger_last_hash_before: str | None = None,
                             ledger_integrity_ok: bool = True,
                             post_apply_check: Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]] | None = None,
+                            cash_flow_declaration: dict[str, Any] | None = None,
                             ) -> dict[str, Any]:
-    """Build one non-mutating Kiwoom reconciliation proposal in the unified apply format."""
+    """Build one non-mutating Kiwoom reconciliation proposal in the unified apply format.
+
+    cash_flow_declaration (S5 R6) is an optional block built by cash_flow_evidence.build_declaration.
+    It is part of the hashed content, so a declaration always gets a new proposal_id and confirm code.
+    It changes no state field; apply only records it in the ledger entry.
+    """
     input_errors = validate_reconciliation_inputs(results, snapshot, maximum_age_seconds=maximum_age_seconds)
     times = _required_retrieval_times(results)
     generated_at = _parse_timestamp(snapshot.get("generated_at")) or datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -402,6 +408,8 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
         "auto_apply": False, "fill_inference_performed": False, "inferred_fills": False,
         "quantity_authority": "none", "order_authority": False,
     }
+    if cash_flow_declaration is not None:
+        proposal["cash_flow_declaration"] = cash_flow_declaration
     if status == "USER_CONFIRMATION_REQUIRED":
         if post_apply_check is None:
             proposal["post_apply_checks"]["status"] = "NOT_RUN"

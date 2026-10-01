@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S5 decision journal: human confirmations only (stock-strategy-system/decision_journal.json)",
+  "description": "Hash-chained entries appended by portfolio_review_journal.py apply after the user's confirmation code. HWM, line breaches and pauses are recomputed and never stored here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "journal_type", "order_authority", "quantity_authority", "entries"],
+  "properties": {
+    "schema_version": {"const": "decision-journal-1.0"},
+    "journal_type": {"const": "DECISION_JOURNAL"},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry_type", "entry_id", "sequence", "previous_entry_sha256", "confirm_code", "confirmation_method",
+          "user_message", "user_confirmed_at", "review_id", "evaluation_session", "payload", "order_authority",
+          "quantity_authority"
+        ],
+        "properties": {
+          "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed"]},
+          "entry_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "sequence": {"type": "integer", "minimum": 1},
+          "previous_entry_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "confirm_code": {"type": "string", "pattern": "^[0-9A-F]{8}$"},
+          "confirmation_method": {"enum": ["COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL"]},
+          "user_message": {"type": "string", "minLength": 1},
+          "user_confirmed_at": {"type": "string", "format": "date-time"},
+          "review_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "evaluation_session": {"type": "string", "format": "date"},
+          "payload": {"$ref": "portfolio-review-journal-payload.schema.json"},
+          "order_authority": {"const": false},
+          "quantity_authority": {"const": "none"}
+        }
+      }
+    }
+  }
+}

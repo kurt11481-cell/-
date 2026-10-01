@@ -15,7 +15,10 @@
       "PowerShell(*reconcile_broker_state.py apply*)",
       "Edit(/stock-strategy-system/portfolio_state.json)",
       "Edit(/stock-strategy-system/reconciliation_ledger.jsonl)",
-      "Edit(/stock-strategy-system/backups/**)"
+      "Edit(/stock-strategy-system/backups/**)",
+      "Bash(*portfolio_review_journal.py apply*)",
+      "PowerShell(*portfolio_review_journal.py apply*)",
+      "Edit(/stock-strategy-system/decision_journal.json)"
     ]
   },
   "worktree": { "baseRef": "head" }

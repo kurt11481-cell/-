@@ -49,6 +49,12 @@ workspace/outputs/reconciliation/
 workspace/outputs/status/
 workspace/outputs/holding-cards/
 
+# S5 exposure review: confirmation journal, results and saved close/cash-flow evidence hold holdings, equity or account activity
+stock-strategy-system/decision_journal.json
+workspace/outputs/exposure-review/
+workspace/outputs/regular-session-closes/
+workspace/private_inputs/cash_flow_evidence/
+
 # Deployed/staging copies are not canonical source trees
 stock-strategy-system/skill-staging/
 

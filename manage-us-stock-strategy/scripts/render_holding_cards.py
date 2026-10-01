@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_holding_card import validate_card  # noqa: E402
 
 LOCALE_PATH = SKILL_ROOT / "assets/locales/holding-card-ko-KR.json"
+S5_LOCALE_PATH = SKILL_ROOT / "assets/locales/portfolio-exposure-ko-KR.json"
 OUTPUT_NAME = "cards.md"
 SEP = " " + chr(0xB7) + " "
 ROW_ORDER = (
@@ -82,6 +83,23 @@ def _banner(fact_pack: dict[str, Any], messages: dict[str, Any]) -> str:
     return messages["banner_capped"].format(grade=grade, reasons=reasons)
 
 
+def _s5_exposure_lines(fact_pack: dict[str, Any]) -> list[str]:
+    """One S5 line (E, distance to the next review line, pause state) when the fact pack carries the block.
+
+    The text is deterministic and comes from the fact pack, not from the card author. It shows no
+    target weight, quantity or amount.
+    """
+    block = _dict(fact_pack.get("portfolio")).get("s5_exposure")
+    if block is None:
+        return []
+    from portfolio_exposure import display_block_errors, render_exposure_line
+
+    if display_block_errors(block):
+        raise RenderError("S5_EXPOSURE_BLOCK_INVALID")
+    exposure_messages = load_messages(S5_LOCALE_PATH)
+    return [f"- **{exposure_messages['label']}:** {render_exposure_line(block, exposure_messages)}"]
+
+
 def render_header(card: dict[str, Any], fact_pack: dict[str, Any], messages: dict[str, Any]) -> list[str]:
     source = _dict(fact_pack.get("source"))
     header = _dict(card.get("header"))
@@ -95,6 +113,7 @@ def render_header(card: dict[str, Any], fact_pack: dict[str, Any], messages: dic
     ]
     for key in ("conclusion_primary", "conclusion_secondary", "status", "exposure", "upcoming_events"):
         lines.append(f"- **{messages['header_labels'][key]}:** {header[key]}")
+    lines += _s5_exposure_lines(fact_pack)
     market = _dict(header.get("market_environment"))
     if market.get("status") == "SAVE_PROVIDED":
         for text in market.get("lines") or []:
