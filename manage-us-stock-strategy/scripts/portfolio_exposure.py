@@ -25,6 +25,11 @@ from decimal import ROUND_FLOOR, Decimal, InvalidOperation
 from typing import Any
 
 from cash_flow_evidence import cash_flow_chain
+from corporate_actions import (
+    INVALID_REASON as CORPORATE_ACTIONS_INVALID_REASON, STATUS_INVALID as CORPORATE_ACTIONS_INVALID,
+    STATUS_MISSING as CORPORATE_ACTIONS_MISSING, STATUS_OK as CORPORATE_ACTIONS_OK, adjust_closes,
+    applicable_actions, applied_summary, split_reconciliation_symbols,
+)
 from validation_common import canonical_hash
 
 
@@ -37,8 +42,9 @@ ONE = Decimal("1")
 CENT = Decimal("0.01")
 # Display resolution of target weights (0.1 percentage point). Targets are searched on this grid.
 WEIGHT_STEP = Decimal("0.001")
-# Data-integrity guard, not a strategy threshold: raw (unadjusted) closes are used, so a
-# session-to-session close ratio at or beyond these bounds may be an unadjusted split.
+# Data-integrity guard, not a strategy threshold. Raw closes are split-adjusted from the official
+# corporate-action record (corporate_actions.py) before V and the peak review; a session-to-session close
+# ratio at or beyond these bounds after that adjustment may be an unrecorded or mis-recorded split.
 SPLIT_GUARD_LOW = 0.5
 SPLIT_GUARD_HIGH = 2.0
 FAIL_CLOSED_TRIGGERS = (
@@ -241,7 +247,9 @@ class ExposureModel:
     """Exposure for arbitrary weights over one fixed return window (used for current and projected E)."""
 
     def __init__(self, config: dict[str, Any], closes: dict[str, dict[str, str]], sessions: list[str],
-                 evaluation_session: str, symbols: list[str]) -> None:
+                 evaluation_session: str, symbols: list[str], *, corporate_actions_invalid: bool = False) -> None:
+        # `closes` are split-adjusted by the caller (build_exposure_review); an invalid corporate-action
+        # record makes V unavailable instead (nothing is computed from possibly unadjusted closes).
         self.config = config
         self.symbols = sorted(set(symbols))
         self.reasons: list[str] = []
@@ -255,8 +263,12 @@ class ExposureModel:
         self.history_gap = bool(gaps)
         if len(registered) != len(self.symbols):
             self.reasons.append("UNREGISTERED_INSTRUMENT")
+        if corporate_actions_invalid:
+            self.reasons.append(CORPORATE_ACTIONS_INVALID_REASON)
         if gaps:
             self.reasons.extend(gaps)
+        elif corporate_actions_invalid:
+            pass
         elif self.return_count < config["minimum"]:
             self.reasons.append(f"V_HISTORY_BELOW_MINIMUM:{self.return_count}")
         else:
@@ -342,13 +354,23 @@ def held(snapshot: dict[str, Any]) -> dict[str, int]:
             if isinstance(quantity, int) and not isinstance(quantity, bool) and quantity > 0}
 
 
-def closing_equity(snapshot: dict[str, Any], closes: dict[str, dict[str, str]],
-                   session: str) -> tuple[Decimal | None, dict[str, Decimal], list[str]]:
-    """Equity = confirmed holdings x regular-session close + confirmed cash (unrounded)."""
+def closing_equity(snapshot: dict[str, Any], closes: dict[str, dict[str, str]], session: str,
+                   split_actions: list[dict[str, Any]] | None = None
+                   ) -> tuple[Decimal | None, dict[str, Decimal], list[str]]:
+    """Equity = confirmed holdings x regular-session close + confirmed cash (unrounded).
+
+    `closes` are always the raw closes: the snapshot quantity is a raw share count. A holding whose
+    snapshot predates a recorded split that is in effect by `session` has no verified quantity for
+    that session, so it counts as missing (SPLIT_RECONCILIATION_REQUIRED); quantities are never rescaled.
+    """
     cash = _dec(snapshot.get("cash_usd"))
     values: dict[str, Decimal] = {}
-    missing: list[str] = []
-    for symbol, quantity in held(snapshot).items():
+    held_now = held(snapshot)
+    missing: list[str] = split_reconciliation_symbols(snapshot, list(held_now), session, split_actions or [])
+    unreconciled = {reason.split(":")[1] for reason in missing}
+    for symbol, quantity in held_now.items():
+        if symbol in unreconciled:
+            continue
         close = _dec((closes.get(symbol) or {}).get(session))
         if close is None or close <= 0:
             missing.append(symbol)
@@ -415,7 +437,8 @@ def journal_view(journal: dict[str, Any]) -> dict[str, Any]:
 
 def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] | None,
                           line_reviews: list[dict[str, Any]], sessions: list[str], evaluation_session: str,
-                          snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]]) -> dict[str, Any]:
+                          snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]],
+                          split_actions: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Recompute HWM, line breaches and pauses from the activation record forward (decision P1)."""
     result: dict[str, Any] = {
         "status": "NOT_ACTIVATED", "reasons": [], "hwm_usd": None, "hwm_date": None, "closing_equity_usd": None,
@@ -490,7 +513,7 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
             status = "UNVERIFIED"
             result["reasons"].append(f"NO_CONFIRMED_SNAPSHOT:{session}")
             break
-        equity, _, missing = closing_equity(snapshot, closes, session)
+        equity, _, missing = closing_equity(snapshot, closes, session, split_actions)
         if equity is None:
             # D5: a missing close is never skipped; skipping would understate the HWM.
             status = "UNVERIFIED"
@@ -587,7 +610,8 @@ def review_activation_blockers(review: dict[str, Any]) -> list[str]:
 
 def activation_candidate(*, config: dict[str, Any], sessions: list[str], evaluation_session: str,
                          snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]],
-                         close_unverified: dict[str, dict[str, list[str]]], blockers: list[str]) -> dict[str, Any]:
+                         close_unverified: dict[str, dict[str, list[str]]], blockers: list[str],
+                         split_actions: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """HWM recheck for the activation record: closing-equity high from the policy start date.
 
     READY needs a complete window of verified closes for every instrument held in it and no blocker.
@@ -605,7 +629,8 @@ def activation_candidate(*, config: dict[str, Any], sessions: list[str], evaluat
     best: tuple[Decimal, str] | None = None
     for session in window:
         snapshot = snapshot_for(snapshots, session)
-        equity, _, missing = closing_equity(snapshot, closes, session) if snapshot else (None, {}, ["SNAPSHOT"])
+        equity, _, missing = (closing_equity(snapshot, closes, session, split_actions) if snapshot
+                              else (None, {}, ["SNAPSHOT"]))
         if equity is None:
             candidate["reasons"].append(f"EQUITY_GAP:{session}:{','.join(missing)}")
             continue
@@ -636,8 +661,14 @@ def activation_candidate(*, config: dict[str, Any], sessions: list[str], evaluat
 
 def evaluate_peak_reviews(*, config: dict[str, Any], activation: dict[str, Any] | None,
                           peak_reviews: list[dict[str, Any]], sessions: list[str], evaluation_session: str,
-                          snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]]) -> dict[str, Any]:
-    """Forward peak since activation (or the first reconciled date of a later entry); -30% rewrite trigger."""
+                          snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]],
+                          corporate_actions_invalid: bool = False) -> dict[str, Any]:
+    """Forward peak since activation (or the first reconciled date of a later entry); -30% rewrite trigger.
+
+    `closes` are split-adjusted by the caller, anchored to the latest raw close, so peak, close and
+    threshold are on the latest raw-price basis. An invalid corporate-action record leaves every
+    held symbol UNVERIFIED.
+    """
     current = snapshot_for(snapshots, evaluation_session)
     symbols = sorted(held(current)) if current else []
     factor = ONE - config["peak_drawdown"]
@@ -650,6 +681,10 @@ def evaluate_peak_reviews(*, config: dict[str, Any], activation: dict[str, Any] 
                                 "events": [], "open_events": [], "pause_add_recommendations": True,
                                 "automatic_sell": False}
         items.append(item)
+        if corporate_actions_invalid:
+            item["status"] = "UNVERIFIED"
+            item["reasons"].append(CORPORATE_ACTIONS_INVALID_REASON)
+            continue
         if activation is None:
             item["reasons"].append("S5_NOT_ACTIVATED")
             continue
@@ -919,7 +954,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
                           earnings: dict[str, Any] | None = None,
                           proposals: list[dict[str, Any]] | None = None,
                           inputs: dict[str, Any] | None = None,
-                          evaluation_reasons: list[str] | None = None) -> dict[str, Any]:
+                          evaluation_reasons: list[str] | None = None,
+                          corporate_actions: dict[str, Any] | None = None) -> dict[str, Any]:
     """One deterministic review for the completed session `evaluation_session`.
 
     calendar_sessions  ascending session dates (may extend past the evaluation session)
@@ -930,11 +966,22 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
     close_unverified   {symbol: {session: [reason]}} for closes that exist but are not verified
     journal            {"status": OK|MISSING|CORRUPT, "entries": [...], "errors": [...]}
     evaluation_reasons why the evaluation session is not known to be the latest completed session
+    corporate_actions  {"status": MISSING|OK|INVALID, "actions": [...], "errors": [...], "sha256": str|None}
+                       from corporate_actions.validate_corporate_actions. Split-adjusted closes feed V and
+                       the single-stock peak review only; equity, review lines, displayed closes and the
+                       benchmark-close check keep the raw closes.
     """
     config = exposure_config(policy)
     cards, proposals = cards or {}, proposals or []
     if _date(evaluation_session) is None or evaluation_session not in calendar_sessions:
         raise ExposureError("EVALUATION_SESSION_NOT_IN_CALENDAR")
+    record = corporate_actions or {"status": CORPORATE_ACTIONS_MISSING, "actions": [], "errors": [], "sha256": None}
+    if record.get("status") not in (CORPORATE_ACTIONS_MISSING, CORPORATE_ACTIONS_OK, CORPORATE_ACTIONS_INVALID):
+        raise ExposureError("CORPORATE_ACTIONS_STATUS_INVALID")
+    actions_invalid = record["status"] == CORPORATE_ACTIONS_INVALID
+    in_effect = (applicable_actions(list(record.get("actions") or []), evaluation_session)
+                 if record["status"] == CORPORATE_ACTIONS_OK else [])
+    adjusted_closes = adjust_closes(closes, in_effect)
     sessions = [session for session in calendar_sessions if session <= evaluation_session]
     later = [session for session in calendar_sessions if session > evaluation_session]
     buy_session = later[0] if later else None
@@ -958,9 +1005,12 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
             triggers["broker_snapshot_older_than_broker_snapshot_max_age_calendar_days"].append(
                 f"BROKER_SNAPSHOT_AGE_DAYS:{age}")
 
-    equity, values, missing = closing_equity(current, closes, evaluation_session) if current else (None, {}, [])
+    equity, values, missing = (closing_equity(current, closes, evaluation_session, in_effect) if current
+                               else (None, {}, []))
     for symbol in missing:
-        triggers["required_price_missing"].append(f"CLOSE_MISSING:{symbol}:{evaluation_session}")
+        triggers["required_price_missing"].append(
+            symbol if symbol.startswith("SPLIT_RECONCILIATION_REQUIRED:")
+            else f"CLOSE_MISSING:{symbol}:{evaluation_session}")
     if _dec((closes.get(config["benchmark"]) or {}).get(evaluation_session)) is None:
         triggers["required_price_missing"].append(f"CLOSE_MISSING:{config['benchmark']}:{evaluation_session}")
     unregistered = sorted(symbol for symbol in holdings if symbol not in config["multipliers"])
@@ -975,7 +1025,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
     elif current is not None:
         triggers["exposure_or_equity_or_v_unavailable"].append("EQUITY_UNAVAILABLE")
 
-    model = ExposureModel(config, closes, sessions, evaluation_session, list(holdings))
+    model = ExposureModel(config, adjusted_closes, sessions, evaluation_session, list(holdings),
+                          corporate_actions_invalid=actions_invalid)
     usable = equity is not None and equity > 0
     # Current N is computed from values over equity in one division, so a boundary such as exactly
     # 1.85 is compared before any rounding of the individual weights.
@@ -1004,10 +1055,11 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
             [f"JOURNAL_{view['status']}"] + [str(item) for item in view["errors"]])
     lines = evaluate_review_lines(
         config=config, activation=view["activation"], line_reviews=view["line_reviews"], sessions=sessions,
-        evaluation_session=evaluation_session, snapshots=snapshots, closes=closes)
+        evaluation_session=evaluation_session, snapshots=snapshots, closes=closes, split_actions=in_effect)
     peaks = evaluate_peak_reviews(
         config=config, activation=view["activation"], peak_reviews=view["peak_reviews"], sessions=sessions,
-        evaluation_session=evaluation_session, snapshots=snapshots, closes=closes)
+        evaluation_session=evaluation_session, snapshots=snapshots, closes=adjusted_closes,
+        corporate_actions_invalid=actions_invalid)
     # HELD is fail-closed too: while line evaluation is on hold nothing may be added or bought.
     if lines["status"] in ("NOT_ACTIVATED", "UNVERIFIED", "HELD"):
         triggers["hwm_line_or_pause_state_missing_or_corrupt"].extend(lines["reasons"] or [lines["status"]])
@@ -1030,7 +1082,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
         candidate = activation_candidate(
             config=config, sessions=sessions, evaluation_session=evaluation_session, snapshots=snapshots,
             closes=closes, close_unverified=close_unverified,
-            blockers=activation_blockers(triggers, list((inputs or {}).get("non_default_inputs") or [])))
+            blockers=activation_blockers(triggers, list((inputs or {}).get("non_default_inputs") or [])),
+            split_actions=in_effect)
     open_pause_lines = [event["line_id"] for event in lines["open_events"]
                         if event["pause_add_recommendations"] or event["pause_new_buy_recommendations"]]
 
@@ -1069,8 +1122,9 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
 
     def projection_model(symbols: list[str]) -> ExposureModel:
         extra = [symbol for symbol in symbols if symbol not in holdings]
-        return model if not extra else ExposureModel(config, closes, sessions, evaluation_session,
-                                                     list(holdings) + extra)
+        return model if not extra else ExposureModel(config, adjusted_closes, sessions, evaluation_session,
+                                                     list(holdings) + extra,
+                                                     corporate_actions_invalid=actions_invalid)
 
     if band == "ADD_ZONE" and equity is not None:
         if pauses["add_recommendations"]["paused"]:
@@ -1191,6 +1245,9 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
         for item in recommendations["reduce"]:
             item["label"] = "UNVERIFIED"
     review["inputs"] = dict(inputs or {})
+    review["inputs"]["corporate_actions"] = {
+        "status": record["status"], "sha256": record.get("sha256"), "errors": list(record.get("errors") or []),
+        "applied": applied_summary(in_effect)}
     review["review_id"] = review_content_hash(review)
     return review
 

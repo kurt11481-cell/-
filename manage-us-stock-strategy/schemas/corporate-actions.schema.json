@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Official corporate-action (split) record",
+  "description": "Cowork-recorded official split facts read by the exposure review to rescale pre-split closes for V and the single-stock peak review. Written only in a Cowork conversation, never by a scheduled task. The review never writes it. Cross-field rules (calendar session, ratio vs upd_rt, uniqueness) are enforced by corporate_actions.validate_corporate_actions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "artifact_type", "actions"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "corporate-actions-1.0"},
+    "artifact_type": {"type": "string", "const": "CORPORATE_ACTIONS"},
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "action_type", "effective_session", "new_shares", "old_shares", "official_source",
+                     "kiwoom_crosscheck", "recorded_by", "recorded_at"],
+        "properties": {
+          "symbol": {"type": "string", "pattern": "[A-Z][A-Z0-9.]{0,11}"},
+          "action_type": {"type": "string", "enum": ["SPLIT"]},
+          "effective_session": {"type": "string", "format": "date"},
+          "new_shares": {"type": "integer", "minimum": 1},
+          "old_shares": {"type": "integer", "minimum": 1},
+          "official_source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["issuer", "url", "published_date"],
+            "properties": {
+              "issuer": {"type": "string", "minLength": 1},
+              "url": {"type": "string", "pattern": "https://.+"},
+              "published_date": {"type": "string", "format": "date"}
+            }
+          },
+          "kiwoom_crosscheck": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["api_id", "adjusted", "dt", "upd_stkpc_tp", "upd_rt"],
+            "properties": {
+              "api_id": {"type": "string", "minLength": 1},
+              "adjusted": {"type": "string", "minLength": 1},
+              "dt": {"type": "string", "pattern": "[0-9]{8}"},
+              "upd_stkpc_tp": {"type": "string", "minLength": 1},
+              "upd_rt": {"type": "string", "minLength": 1}
+            }
+          },
+          "recorded_by": {"type": "string", "minLength": 1},
+          "recorded_at": {"type": "string", "format": "date"}
+        }
+      }
+    }
+  }
+}

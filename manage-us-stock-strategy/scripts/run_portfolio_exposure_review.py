@@ -2,7 +2,8 @@
 """Run one S5 portfolio exposure review (read-only inputs, display-only output).
 
 Reads the alert policy, portfolio state, reconciliation ledger, decision journal, saved close
-histories and the session calendar, calls portfolio_exposure.build_exposure_review and writes one
+histories, the official corporate-action record (corporate-actions.json next to the close histories,
+read-only) and the session calendar, calls portfolio_exposure.build_exposure_review and writes one
 result file under workspace/outputs/exposure-review/<session>/. It never writes state, policy, the
 ledger or the journal, never calls a broker, and its output grants no order or quantity authority.
 
@@ -23,6 +24,9 @@ from pathlib import Path
 from typing import Any
 
 from apply_user_confirmed_broker_snapshot import default_ledger_path, ledger_status
+from corporate_actions import (
+    FILE_NAME as CORPORATE_ACTIONS_FILE, STATUS_INVALID, STATUS_MISSING, STATUS_OK, validate_corporate_actions,
+)
 from kiwoom_broker_shadow import PROPOSAL_SCHEMA_VERSION
 from portfolio_exposure import (
     LATEST_SESSION_STATUS, ExposureError, build_exposure_review, exposure_config, exposure_display_block,
@@ -40,6 +44,7 @@ from validation_common import canonical_hash, load_json, validate_instance
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = SKILL_ROOT.parent
 REVIEW_SCHEMA = SKILL_ROOT / "schemas/portfolio-exposure-review.schema.json"
+CORPORATE_ACTIONS_SCHEMA = SKILL_ROOT / "schemas/corporate-actions.schema.json"
 LOCALE_PATH = SKILL_ROOT / "assets/locales/portfolio-exposure-ko-KR.json"
 DEFAULT_STATE = REPO_ROOT / "stock-strategy-system/portfolio_state.json"
 DEFAULT_POLICY = REPO_ROOT / "stock-strategy-system/alert_policy.json"
@@ -232,6 +237,34 @@ def load_close_histories(symbols: list[str], closes_root: Path, calendar: dict[s
     return closes, unverified, report
 
 
+def load_corporate_actions(closes_root: Path, calendar_sessions: list[str]) -> dict[str, Any]:
+    """Read <closes_root>/corporate-actions.json (read-only). Any defect makes the whole file INVALID.
+
+    Returns {"status": MISSING|OK|INVALID, "sha256": raw-byte hash or None, "errors": [...], "actions": [...]}.
+    A missing file is not an error: nothing is adjusted and SPLIT_GUARD stays the only protection.
+    """
+    path = Path(closes_root) / CORPORATE_ACTIONS_FILE
+    if not path.is_file():
+        return {"status": STATUS_MISSING, "sha256": None, "errors": [], "actions": []}
+    raw = path.read_bytes()
+    result: dict[str, Any] = {"status": STATUS_INVALID, "sha256": hashlib.sha256(raw).hexdigest(), "errors": [],
+                              "actions": []}
+    try:
+        document = json.loads(raw.decode("utf-8-sig"))
+    except ValueError:
+        result["errors"] = ["CORPORATE_ACTIONS_NOT_JSON"]
+        return result
+    schema_errors = validate_instance(document, CORPORATE_ACTIONS_SCHEMA)
+    if schema_errors:
+        result["errors"] = ["CORPORATE_ACTIONS_SCHEMA:" + error for error in schema_errors[:5]]
+        return result
+    actions, errors = validate_corporate_actions(document, calendar_sessions)
+    result["errors"] = errors
+    if not errors:
+        result.update({"status": STATUS_OK, "actions": actions})
+    return result
+
+
 def load_cards(cards_path: Path | None, fact_pack_path: Path | None) -> tuple[dict[str, Any], dict[str, Any]]:
     """Only a card that passes validate_holding_card against its fact pack is used (default D4)."""
     if cards_path is None or fact_pack_path is None:
@@ -340,7 +373,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         blocked = (REPO_ROOT / protected).resolve()
         if output_root == blocked or blocked in output_root.parents:
             raise ReviewRunError("OUTPUT_ROOT_PROTECTED")
-    watched = [state_path, policy_path, ledger_path, journal_path]
+    corporate_actions_path = Path(args.closes_root) / CORPORATE_ACTIONS_FILE
+    watched = [state_path, policy_path, ledger_path, journal_path, corporate_actions_path]
     before = [_hash_or_none(path) for path in watched]
 
     policy = load_json(policy_path)
@@ -369,6 +403,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     symbols.update(symbol for symbol, card in cards.items() if card.get("action") == "ADD")
     symbols.update(str(item.get("symbol")) for item in proposals or [] if isinstance(item, dict) and item.get("symbol"))
     closes, unverified, history_report = load_close_histories(sorted(symbols), Path(args.closes_root), calendar)
+    corporate_actions = load_corporate_actions(Path(args.closes_root), calendar_sessions)
     journal = load_journal(journal_path)
     defaults = (("policy", policy_path, DEFAULT_POLICY), ("state", state_path, DEFAULT_STATE),
                 ("ledger", ledger_path, default_ledger_path(DEFAULT_STATE)),
@@ -397,7 +432,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     review = build_exposure_review(
         policy=policy, evaluation_session=session, calendar_sessions=calendar_sessions, snapshots=snapshots,
         snapshot_reasons=snapshot_reasons, closes=closes, close_unverified=unverified, journal=journal,
-        cards=cards, earnings=earnings, proposals=proposals, inputs=inputs, evaluation_reasons=session_reasons)
+        cards=cards, earnings=earnings, proposals=proposals, inputs=inputs, evaluation_reasons=session_reasons,
+        corporate_actions=corporate_actions)
     errors = validate_instance(review, REVIEW_SCHEMA)
     if errors:
         raise ReviewRunError("EXPOSURE_REVIEW_SCHEMA_FAILED:" + ";".join(errors[:5]))
