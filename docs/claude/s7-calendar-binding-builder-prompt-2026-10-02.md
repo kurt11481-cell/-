@@ -122,3 +122,7 @@ R7 줄바꿈: 각 파일의 기존 줄바꿈·BOM을 유지한다. 일괄 변환
 ## 6. 진행 기록
 
 - 2026-10-02 Cowork 진단, 사용자가 선택 A를 고름, 이 지시문 작성.
+- 2026-10-02 Builder 1단계 조사 완료(worktree `s7-cal-bind`, HEAD `9af9dfc`, 기준선 2228건 중 실패 22·오류 292). Cowork 검토: 제안 1~5 수용. 추가 조건 2개 — (가) `--calendar`를 줬는데 결과가 ACTIVE가 아니면 `non_default_inputs`에 `calendar`를 넣어 `[비표준 입력]` 표시, (나) 허용 파일에 `references/portfolio-exposure-review.md`를 더해 `:74` 달력 권한 문장과 비표준 입력 목록만 고친다(K0).
+- 2026-10-02 Builder 완료(새 실패 0). Cowork 확인: 변경 8개(허용 범위), 대상 테스트 4개 VM 통과, 실제 Production 권한으로 ACTIVE·평가 세션 10-01 확인. Judge 지시문 `s7-calendar-binding-judge-prompt-2026-10-02.md` 작성.
+- 2026-10-02 Judge 판정 PASS(J1~J9 PASS, 필수 수정 없음, 사용자 결정 없음, 전체 2238건 새 미통과 0). 선택 항목 b~d(테스트 보강, 예상 밖 예외 코드 통일, 테스트 정리)는 하지 않고 기록만 남김. e(실패·오류 구분 22·292 vs 23·291, ID 집합 동일)는 Builder 보고에 주석. 다음: Builder 커밋 → 사용자 병합 → Cowork 원본 폴더 확인.
+- 2026-10-02 사용자 병합 `cd39212`. Cowork 원본 폴더 기본 실행 확인: 달력 2421eeb7 ACTIVE, calendar_authority LOADED(manifest c5ee680d), 평가 세션 2026-10-01(LATEST_COMPLETED_SESSION), non_default_inputs 비어 있음, 적용 시작 후보 NOT_READY(종가 이력 없음·CLOSE_MISSING — 예상대로), 상태·정책 파일 해시 실행 전후 같음. S7 보고 F1·U1·5.4-2와 S5 제안서 선행 문구에 해소 표시. 다음: S7 병합 뒤 작업 3단계(30분봉 수집 → close history build).
