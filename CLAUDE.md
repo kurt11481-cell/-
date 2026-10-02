@@ -51,6 +51,7 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Builder work runs in a worktree (claude --worktree <name>); a Judge runs in a separate session
   and never edits files.
 - Talk to the user in Korean, one step at a time, giving the exact command to type.
+- Cowork 세션에서 작업 상태가 바뀌었으면(완료·시작·새 재개 조건), 세션 끝에 한 번 docs/claude/dev-dashboard-protocol.md대로 관제판의 바뀐 작업만 갱신한다. 변화가 없으면 갱신하지 않는다. Claude Code·Judge·예약 작업은 갱신하지 않는다.
 
 ## Compact instructions
 Keep: current goal, changed files, failing tests, approvals given, open K3 items.
