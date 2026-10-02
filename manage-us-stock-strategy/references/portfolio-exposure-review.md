@@ -43,6 +43,8 @@ E >= 1.85 = B, peak review = B, fail-closed = B with the UNVERIFIED label, add =
 | `scripts/portfolio_review_journal.py` | Human confirmations only | `apply`: Cowork after "확인 <code>", or the user's terminal |
 | `workspace/outputs/regular-session-closes/pages/<SYMBOL>/*.json` | Saved Kiwoom CLI pages (evidence) | Cowork |
 | `workspace/outputs/regular-session-closes/history/<SYMBOL>.close-history.json` | Normalized closes | `regular_session_close_history.py build` |
+| `scripts/corporate_actions.py` | Pure validation and split adjustment of the corporate-action record | - |
+| `workspace/outputs/regular-session-closes/corporate-actions.json` | Official split record (read-only input of the runner) | Cowork conversation only |
 | `workspace/outputs/exposure-review/<session>/portfolio-exposure-review.<time>.json` | Review result | runner |
 | `workspace/private_inputs/cash_flow_evidence/` | Sanitized transaction histories | Cowork |
 | `stock-strategy-system/decision_journal.json` | Confirmation journal (hash chain) | journal `apply` only |
@@ -82,7 +84,10 @@ not the active calendar is labelled `[비표준 입력]` on every display line.
 
 Raw (unadjusted) prices are collected. A session-to-session close ratio of 0.5
 or lower, or 2.0 or higher, is treated as a possible unadjusted split and makes
-V unavailable until the history is reviewed.
+V unavailable until the history is reviewed. The guard (bounds and operator
+unchanged) is applied after the split adjustment from the corporate-action
+record below, so a recorded split no longer trips it and a mis-dated or
+mis-sized record still does.
 
 V uses the last 252 returns, or fewer only when the available history itself
 starts later (listing date or the provider's retention start); that case is
@@ -97,6 +102,66 @@ labelled `[최신 세션 아님]` and fails closed.
 A reconciliation dated after the evaluation session is not used for that
 session and cannot lift a hold that covers it. While line evaluation is on hold
 (`HELD`), R0 applies.
+
+## Corporate-action record (split adjustment)
+
+The policy basis is `sox_equivalent.return_basis =
+split_adjusted_regular_session_close` (`technical_price_basis_required =
+split_adjusted_ohlc_rescaled_to_latest_raw_close`). The saved closes stay raw;
+the runner reads `<closes-root>/corporate-actions.json` (follows `--closes-root`,
+no option of its own) and rescales on every run. The file is never written by
+the runner or any script.
+
+```json
+{"schema_version": "corporate-actions-1.0", "artifact_type": "CORPORATE_ACTIONS",
+ "actions": [{"symbol": "MVLL", "action_type": "SPLIT", "effective_session": "2026-06-26",
+   "new_shares": 3, "old_shares": 1,
+   "official_source": {"issuer": "GraniteShares", "url": "https://...", "published_date": "2026-06-12"},
+   "kiwoom_crosscheck": {"api_id": "usa06012", "adjusted": "1", "dt": "20260626",
+                         "upd_stkpc_tp": "3231", "upd_rt": "-66.66700"},
+   "recorded_by": "cowork", "recorded_at": "2026-10-02"}]}
+```
+
+`effective_session` is the first session traded at the post-split price. One
+old share becomes `new_shares / old_shares` shares (3:1 is 3/1, a 1:10 reverse
+split is 1/10). Schema: `schemas/corporate-actions.schema.json`; keys are exact
+and extra keys are rejected.
+
+A file with any defect is `INVALID` as a whole: not JSON or not schema-valid;
+`action_type` other than `SPLIT`; shares not integers of at least 1 or equal;
+duplicate (symbol, effective session); an effective session outside this run's
+calendar; `kiwoom_crosscheck.dt` not the effective session as `YYYYMMDD`;
+`upd_stkpc_tp` empty or the page-end marker `1f` (its value is not
+interpreted); `upd_rt` differing from `(old/new - 1) x 100` by more than
+0.005; `official_source.url` not `https://`; `published_date` after the
+effective session. A missing file is `MISSING` and behaves as before (the
+guard catches a large split).
+
+Effect:
+
+- Every close before an effective session is multiplied by `old/new`
+  (records for one symbol multiply). A record applies only from its effective
+  session on, so an older `--session` run does not see a later split.
+- The adjusted closes feed only V (return window) and the single-stock peak
+  review. Equity, review lines, the activation candidate, the displayed
+  position close and the benchmark close check keep the raw closes: a
+  snapshot quantity is a raw share count of that session.
+- `INVALID`: V is unavailable (`V_UNAVAILABLE:CORPORATE_ACTIONS_INVALID`) and
+  every held instrument's peak review is `UNVERIFIED`. Equity and the lines
+  are not affected.
+- A snapshot dated before the effective session of a recorded split cannot
+  value that session or later ones for a holding it lists: the session's
+  equity is unverified with `SPLIT_RECONCILIATION_REQUIRED:<SYMBOL>:<session>`
+  (same handling as a missing close). Quantities are never rescaled by the
+  ratio; a reconciliation dated on or after the effective session clears it.
+- The review echoes `inputs.corporate_actions` (`status`, raw-byte `sha256`,
+  `errors`, `applied` with `price_factor`). The file is a watched input: a change
+  during a run is `READ_ONLY_INPUT_MUTATION_DETECTED`.
+
+Records are added only in a Cowork conversation, and only with both
+evidence kinds: the issuer's official announcement and the Kiwoom adjusted
+daily-price flag. Scheduled tasks, Claude Code, Codex and Judge sessions never
+add or edit one. Dividend adjustment is not part of this basis.
 
 ## Routine (Cowork, after the U.S. close, read-only Kiwoom CLI)
 
@@ -114,15 +179,21 @@ session and cannot lift a hold that covers it. While line evaluation is on hold
    100-row files would lose the first bar of each older file. The folder name is
    the only binding between a file and its symbol; never put another symbol's
    file in it.
-2. Build or extend the history. `--update` never changes an earlier close:
+2. After the 30-minute bars, query the Kiwoom adjusted daily prices
+   (`usa06012`, `adjusted=1`, read-only) of each symbol for the same period.
+   If any row outside the page end carries an `upd_stkpc_tp` other than `"1f"`
+   or a non-empty `upd_rt`, find the issuer's official announcement and add a
+   record (previous section). The 0.5 / 2.0 guard cannot catch a small split
+   such as 3:2, so this check is what covers it.
+3. Build or extend the history. `--update` never changes an earlier close:
 
    ```powershell
    python manage-us-stock-strategy/scripts/regular_session_close_history.py build --symbol SOXX --exchange NASDAQ --pages-dir workspace/outputs/regular-session-closes/pages/SOXX --calendar <calendar artifact> --output workspace/outputs/regular-session-closes/history/SOXX.close-history.json --update
    ```
 
-3. Reconcile the broker state with the cash-flow evidence (see
+4. Reconcile the broker state with the cash-flow evidence (see
    [broker-snapshot-reconciliation.md](broker-snapshot-reconciliation.md) section 4).
-4. Run the review and read the one-line summary:
+5. Run the review and read the one-line summary:
 
    ```powershell
    python manage-us-stock-strategy/scripts/run_portfolio_exposure_review.py
@@ -131,7 +202,7 @@ session and cannot lift a hold that covers it. While line evaluation is on hold
    Optional inputs: `--cards` with `--fact-pack` (only a card that passes
    `validate_holding_card.py` for the same session is used), `--earnings`,
    `--proposals`.
-5. To show the line on cards, pass the result to
+6. To show the line on cards, pass the result to
    `build_holding_fact_pack.py --exposure-review <file>`.
 
 ## Activation and journal entries

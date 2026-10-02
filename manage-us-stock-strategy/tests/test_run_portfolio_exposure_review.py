@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -502,6 +503,120 @@ class DisplayTests(RunnerCase):
         block = exposure_display_block(review)
         self.assertNotIn("target", json.dumps(block))
         self.assertNotIn("recommendations", block)
+
+
+class CorporateActionsRunnerTests(RunnerCase):
+    """corporate-actions.json next to the close histories: read-only input that unlocks the split adjustment."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.split = self.sessions[-30]
+        self.record_path = self.closes_root / "corporate-actions.json"
+
+    def write_split_histories(self) -> None:
+        bench = fx.benchmark_returns(len(self.sessions))
+        self.write_history("SOXX", fx.series(self.sessions, bench, last="500"))
+        self.write_history("SOXL", fx.series(self.sessions, bench, last="100", multiple=2.9))
+        clean = fx.series(self.sessions, bench, last="50", multiple=1.9)
+        self.write_history("MVLL", {session: format(Decimal(value) * 3, "f") if session < self.split else value
+                                    for session, value in clean.items()})
+
+    def split_action(self, **over: Any) -> dict[str, Any]:
+        value = {"symbol": "MVLL", "action_type": "SPLIT", "effective_session": self.split, "new_shares": 3,
+                 "old_shares": 1,
+                 "official_source": {"issuer": "TestIssuer", "url": "https://issuer.example/split",
+                                     "published_date": "2020-01-01"},
+                 "kiwoom_crosscheck": {"api_id": "usa06012", "adjusted": "1", "dt": self.split.replace("-", ""),
+                                       "upd_stkpc_tp": "3231", "upd_rt": "-66.66700"},
+                 "recorded_by": "cowork", "recorded_at": "2026-10-02"}
+        value.update(over)
+        return value
+
+    def write_record(self, *actions: dict[str, Any]) -> bytes:
+        document = {"schema_version": "corporate-actions-1.0", "artifact_type": "CORPORATE_ACTIONS",
+                    "actions": list(actions)}
+        self.record_path.parent.mkdir(parents=True, exist_ok=True)
+        self.record_path.write_bytes(json.dumps(document).encode("utf-8"))
+        return self.record_path.read_bytes()
+
+    def prepare(self) -> None:
+        self.write_state({"MVLL": 50}, 3000.0)
+        self.write_split_histories()
+
+    def test_missing_file_changes_nothing(self) -> None:
+        self.prepare()
+        code, _, review = self.run_review()
+        self.assertEqual(code, 0)
+        self.assertEqual(review["exposure"]["unavailable_reasons"], [f"SPLIT_GUARD:MVLL:{self.split}"])
+        self.assertEqual(review["inputs"]["corporate_actions"], {
+            "status": "MISSING", "sha256": None, "errors": [], "applied": []})
+
+    def test_valid_record_unlocks_v_and_is_echoed_in_inputs(self) -> None:
+        self.prepare()
+        raw = self.write_record(self.split_action())
+        code, _, review = self.run_review()
+        self.assertEqual(code, 0)
+        self.assertEqual(validate_instance(review, runner.REVIEW_SCHEMA), [])
+        self.assertEqual(review["exposure"]["unavailable_reasons"], [])
+        self.assertIsNotNone(review["exposure"]["sox_equivalent"])
+        self.assertEqual(review["inputs"]["corporate_actions"], {
+            "status": "OK", "sha256": hashlib.sha256(raw).hexdigest(), "errors": [],
+            "applied": [{"symbol": "MVLL", "effective_session": self.split, "new_shares": 3, "old_shares": 1,
+                         "price_factor": "0.3333333333333333333333333333"}]})
+        self.assertEqual(self.record_path.read_bytes(), raw)  # never rewritten
+        self.assertEqual(review["positions"][0]["close"], "50")  # the last raw close, as saved
+
+    def test_invalid_files_are_labelled_and_block_v(self) -> None:
+        self.prepare()
+        cases = {
+            "not json": (lambda: self.record_path.write_bytes(b"{broken"), "CORPORATE_ACTIONS_NOT_JSON"),
+            "extra key": (lambda: self.write_record(self.split_action(note="x")), "CORPORATE_ACTIONS_SCHEMA:"),
+            "session outside the calendar": (lambda: self.write_record(self.split_action(
+                effective_session="2099-01-01")), "CORPORATE_ACTION_INVALID:0:EFFECTIVE_SESSION_NOT_IN_CALENDAR"),
+            "ratio disagrees": (lambda: self.write_record(self.split_action(kiwoom_crosscheck=dict(
+                self.split_action()["kiwoom_crosscheck"], upd_rt="-50.00000"))),
+                "CORPORATE_ACTION_INVALID:0:KIWOOM_CROSSCHECK_UPD_RT"),
+        }
+        for name, (write, expected) in cases.items():
+            with self.subTest(name):
+                write()
+                code, _, review = self.run_review()
+                self.assertEqual(code, 0)
+                recorded = review["inputs"]["corporate_actions"]
+                self.assertEqual((recorded["status"], recorded["applied"]), ("INVALID", []))
+                self.assertTrue(any(error.startswith(expected) for error in recorded["errors"]), recorded["errors"])
+                self.assertEqual(recorded["sha256"], hashlib.sha256(self.record_path.read_bytes()).hexdigest())
+                self.assertEqual(review["exposure"]["unavailable_reasons"], ["CORPORATE_ACTIONS_INVALID"])
+
+    def test_t11_change_during_the_run_is_detected(self) -> None:
+        self.prepare()
+        self.write_record(self.split_action())
+        real = runner.build_exposure_review
+
+        def build_then_edit(**kwargs: Any) -> dict[str, Any]:
+            result = real(**kwargs)
+            self.write_record()  # an outside writer empties the record while the run is in progress
+            return result
+
+        with mock.patch.object(runner, "build_exposure_review", side_effect=build_then_edit):
+            code, output, review = self.run_review()
+        self.assertEqual(code, 2)
+        self.assertIn("READ_ONLY_INPUT_MUTATION_DETECTED", output)
+        self.assertIsNone(review)  # nothing is written when an input changed
+
+    def test_t11_creating_the_record_during_the_run_is_detected(self) -> None:
+        self.prepare()
+        real = runner.build_exposure_review
+
+        def build_then_create(**kwargs: Any) -> dict[str, Any]:
+            result = real(**kwargs)
+            self.write_record(self.split_action())
+            return result
+
+        with mock.patch.object(runner, "build_exposure_review", side_effect=build_then_create):
+            code, output, review = self.run_review()
+        self.assertEqual(code, 2)
+        self.assertIn("READ_ONLY_INPUT_MUTATION_DETECTED", output)
 
 
 if __name__ == "__main__":
