@@ -157,7 +157,13 @@ def parse_page(path: Path) -> dict[str, Any]:
         document = json.loads(raw.decode("utf-8-sig"))
     except ValueError as exc:
         raise CloseHistoryError(f"PAGE_NOT_JSON:{name}") from exc
-    body = document.get("result") if isinstance(document, dict) else None
+    # Two saved forms: the Kiwoom MCP tool wraps the body in {"result": ...}; kiwoomcli saves the body itself.
+    if isinstance(document, dict) and "result" in document:
+        body = document["result"] if "result_list" not in document else None
+    elif isinstance(document, dict) and "result_list" in document:
+        body = document
+    else:
+        body = None
     rows = body.get("result_list") if isinstance(body, dict) else None
     if not isinstance(rows, list) or not rows:
         raise CloseHistoryError(f"PAGE_SHAPE_INVALID:{name}")

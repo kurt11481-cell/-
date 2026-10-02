@@ -249,5 +249,73 @@ class CloseHistoryTests(unittest.TestCase):
             rsch.load_calendar(bad, None)
 
 
+    def cli_dir(self, symbol: str, documents: dict[str, Any], root: str = "cli") -> Path:
+        """kiwoomcli's own saved form: the body at top level, compact JSON, one CRLF at the end."""
+        folder = self.tmp / root / symbol
+        folder.mkdir(parents=True)
+        for name, document in documents.items():
+            body = document["result"] if isinstance(document, dict) and "result" in document else document
+            (folder / name).write_bytes(json.dumps(body, separators=(",", ":")).encode("utf-8") + b"\r\n")
+        return folder
+
+    def sample_documents(self) -> dict[str, Any]:
+        return {path.name: json.loads(path.read_text(encoding="utf-8")) for path in sorted(FIXTURE_PAGES.glob("*.json"))}
+
+    def test_cli_saved_pages_give_the_same_sessions_as_mcp_pages(self) -> None:
+        mcp = self.build(self.sample_dir())
+        folder = self.cli_dir("SOXX", self.sample_documents())
+        self.assertNotIn(b'"result":{', (folder / "soxx_30m_20260930_p1.json").read_bytes())
+        cli = self.build(folder)
+        self.assertEqual(rsch.history_errors(cli), [])
+        self.assertEqual([(item["session_date"], item["close"], item["bar_cntr_tm"]) for item in cli["sessions"]],
+                         [(item["session_date"], item["close"], item["bar_cntr_tm"]) for item in mcp["sessions"]])
+        self.assertEqual([item["sha256"] for item in cli["pages"]],
+                         [hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(folder.glob("*.json"))])
+
+    def test_cli_saved_page_body_checks_match_the_mcp_form(self) -> None:
+        good = [("20260930160000", "3"), ("20260930153000", "3"), ("20260929153000", "2")]
+        failing = page(good)
+        failing["result"]["return_code"] = 5
+        empty = {"result": {"result_list": [], "return_code": 0}}
+        for index, (code, document) in enumerate({"PAGE_RETURN_CODE_NOT_ZERO": failing,
+                                                  "PAGE_SHAPE_INVALID": empty}.items()):
+            folder = self.cli_dir(f"C{index}", {"p1.json": document})
+            with self.assertRaisesRegex(rsch.CloseHistoryError, code):
+                self.build(folder, f"C{index}")
+
+    def test_page_with_both_wrapper_and_list_or_a_non_object_is_rejected(self) -> None:
+        both = page([("20260930153000", "3"), ("20260929153000", "2")])
+        both["result_list"] = both["result"]["result_list"]
+        for index, document in enumerate((both, [row("20260930153000", "3")], "text")):
+            folder = self.pages_dir(f"B{index}", {"p1.json": document})
+            with self.assertRaisesRegex(rsch.CloseHistoryError, "PAGE_SHAPE_INVALID"):
+                self.build(folder, f"B{index}")
+
+    def test_cli_saved_pages_reject_the_same_rows(self) -> None:
+        good = [("20260930160000", "3"), ("20260930153000", "3"), ("20260929153000", "2")]
+        misplaced = page(good)
+        misplaced["result"]["result_list"][0]["upd_stkpc_tp"] = "1f"  # not the page-end position
+        reordered = page(good)
+        reordered["result"]["result_list"][1] = dict(reversed(list(reordered["result"]["result_list"][1].items())))
+        for index, (code, document) in enumerate({"PAGE_ADJUSTMENT_FIELD_UNEXPECTED": misplaced,
+                                                  "PAGE_ROW_KEYS_INVALID": reordered}.items()):
+            folder = self.cli_dir(f"R{index}", {"p1.json": document})
+            with self.assertRaisesRegex(rsch.CloseHistoryError, code):
+                self.build(folder, f"R{index}")
+
+    def test_mixed_mcp_and_cli_pages_agree_or_conflict_on_overlapping_bars(self) -> None:
+        rows = [("20260930160000", "3"), ("20260930153000", "3"), ("20260929153000", "2"), ("20260929150000", "2")]
+        changed = [("20260930160000", "3"), ("20260930153000", "3.01"), ("20260929153000", "2"),
+                   ("20260929150000", "2")]
+        folder = self.pages_dir("MIX", {"p1.json": page(rows)})
+        same = page(rows[:3] + [("20260929143000", "1")])["result"]
+        (folder / "p2.json").write_bytes(json.dumps(same, separators=(",", ":")).encode("utf-8") + b"\r\n")
+        self.assertEqual(rsch.closes_by_session(self.build(folder, "MIX")), {"2026-09-29": "2", "2026-09-30": "3"})
+        (folder / "p2.json").write_bytes(
+            json.dumps(page(changed)["result"], separators=(",", ":")).encode("utf-8") + b"\r\n")
+        with self.assertRaisesRegex(rsch.CloseHistoryError, "PAGE_ROWS_CONFLICT:20260930153000"):
+            self.build(folder, "MIX")
+
+
 if __name__ == "__main__":
     unittest.main()
