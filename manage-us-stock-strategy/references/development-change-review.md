@@ -53,6 +53,27 @@ A documented test, a model score, or a Builder statement is not executed
 evidence. If a required check cannot run, show the specific coverage gap.
 A pre-existing failure must not be attributed to this patch without evidence.
 
+### Fail-open patterns
+
+Check every changed decision path for these shapes. Each one turns missing
+or doubtful evidence into a normal-looking result:
+
+- Partial treated as complete: a gap shortens a window, list or history and
+  the result is still marked verified; a warning label is not a block.
+- Stale treated as current: an old session, snapshot, calendar or ledger is
+  used without proving it covers the evaluated date.
+- Missing evidence treated as permission: an absent record, ledger line or
+  journal entry yields READY/OK instead of a blocking reason.
+- Unknown mapped to known: unrecognized text, category or status falls into an
+  existing class instead of UNCLASSIFIED and a stop.
+- Deny-list gates: READY/PASS excludes a few named failures instead of
+  requiring every precondition, so a new or intermediate state passes.
+- Swallowed errors: a broad except returning None/{}/[]/0, `.get(key, 0)` on
+  price, quantity or cash, or a lost traceback.
+
+Idea adapted from affaan-m/ECC agents/silent-failure-hunter.md (MIT, commit
+ef648e0); patterns from the S7-1 Judge fixes (2026-10-02).
+
 ## Report and return to the Builder
 
 Return actionable findings first, then the scope, checks actually performed,
