@@ -103,6 +103,11 @@ session and cannot lift a hold that covers it. While line evaluation is on hold
 1. Save the 30-minute bars of each symbol (SOXX and every held instrument) into
    `workspace/outputs/regular-session-closes/pages/<SYMBOL>/`:
    `kiwoomcli overseas candles stock-minute` with `interval=30`, `adjusted=0`.
+   Save the kiwoomcli standard output as it is (UTF-8; on Windows set
+   `PYTHONIOENCODING=utf-8` and redirect in cmd); a saved Kiwoom MCP response is
+   read as well. `--pages 0` can fail with HTTP 429, so fetch at most 3 pages at
+   a time and pause between requests. The ranges of the split files must overlap
+   (the newest bar of each file is discarded).
    The first collection needs all pages back to 2026-04-01. Save each fetch as
    one cumulative file (a multi-page fetch stays one file): the newest bar of
    every file is ignored as possibly unfinished, so a fetch split into separate
