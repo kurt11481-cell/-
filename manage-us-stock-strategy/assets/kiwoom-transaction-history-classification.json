@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "api_id": "ust21100",
-  "purpose": "S5 R6: classify saved Kiwoom transaction-history rows. Dividends, fees, taxes and interest (deposit usage fee) are not external cash flows, even when the memo also says deposit or withdrawal. A row that matches no rule, or whose direction is unknown or ambiguous, is unresolved and fails closed.",
-  "status": "keywords_from_kiwoom_spec_and_one_cowork_read_fx_and_transfer_memo_strings_need_confirmation",
+  "purpose": "S5 R6: classify saved Kiwoom transaction-history rows. Dividends, fees, taxes and interest (deposit usage fee) are not external cash flows, even when the memo also says deposit or withdrawal. Also, corporate-action rows (par-value split/merge transfers and fractional-share cash) are not external cash flows. A row that matches no rule, or whose direction is unknown or ambiguous, is unresolved and fails closed.",
+  "status": "dividend_trade_split_and_fractional_cash_strings_verified_2026_10_02_transfer_and_fx_strings_unobserved",
   "rule_order": "first_match_wins",
   "rules": [
     {
@@ -14,6 +14,11 @@
       "classification": "FEE_TAX_INTEREST",
       "fields": ["deal_kind_nm", "rmrk_nm"],
       "match_any": ["수수료", "세금", "제세", "세액", "원천징수", "이용료", "이자"]
+    },
+    {
+      "classification": "CORPORATE_ACTION",
+      "fields": ["deal_kind_nm", "rmrk_nm"],
+      "match_any": ["액면", "단주대금"]
     },
     {
       "classification": "FX",

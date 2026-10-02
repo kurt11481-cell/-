@@ -260,6 +260,10 @@ or not replayable) is not evaluated and R0 applies.
    fees, taxes and interest (deposit usage fee) are not, even when the memo also
    says deposit or withdrawal. A row that matches no keyword rule, or whose
    direction is unknown, makes the evidence unresolved (fail closed).
+   - A Kiwoom "no data" response (message code 501724) is normalized as evidence with zero rows; any other non-zero
+     return code still fails.
+   - Par-value split/merge transfer rows and fractional-share cash rows (CORPORATE_ACTION) are not external flows.
+     Quantity changes from splits are handled by the split record (corporate-actions.json) and the broker reconciliation.
 3. The declaration is embedded in the reconciliation proposal. Coverage must be
    contiguous: the evidence starts no later than the day after the last covered
    day (activation date at first) and reaches the reconciliation date. Rows that

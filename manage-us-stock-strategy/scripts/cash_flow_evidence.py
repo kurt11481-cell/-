@@ -4,7 +4,9 @@
 The raw file is the read-only Kiwoom CLI output for ust21100 (transaction history) that Cowork saved.
 This module never calls Kiwoom. It reads one file, drops the account label, classifies rows with the
 reviewed keyword table (assets/kiwoom-transaction-history-classification.json) and fails closed on
-anything it cannot classify. Dividends, fees, taxes and interest are never external cash flows.
+anything it cannot classify. Dividends, fees, taxes and interest are never external cash flows, and neither are
+corporate-action rows (par-value split/merge transfers and fractional-share cash).
+A Kiwoom "no data" response (message code 501724) is evidence with zero rows; any other non-zero return code fails.
 
 normalize  raw CLI JSON -> sanitized evidence file (no account identifier)
 The declaration block built here is embedded in a reconciliation proposal, so the user confirms it
@@ -35,7 +37,9 @@ CENT = Decimal("0.01")
 ZERO = Decimal("0")
 DATE_COMPACT = re.compile(r"\d{8}")
 EXTERNAL_CLASSES = ("DEPOSIT", "WITHDRAWAL", "FX")
-NON_EXTERNAL_CLASSES = ("DIVIDEND", "FEE_TAX_INTEREST", "TRADE")
+NON_EXTERNAL_CLASSES = ("DIVIDEND", "FEE_TAX_INTEREST", "TRADE", "CORPORATE_ACTION")
+NO_DATA_RETURN_CODE = 20
+NO_DATA_MESSAGE_MARKER = "501724:"
 LIMIT_RULE = "DECLARED_WITHIN_UNEXPLAINED_CASH_CHANGE"
 SETTLED_STATUSES = ("NO_EXTERNAL_FLOW", "DECLARED_IN_FULL")
 
@@ -112,6 +116,15 @@ def classify_row(kind_name: str, memo: str, table: dict[str, Any]) -> tuple[str,
     return "UNCLASSIFIED", None
 
 
+def _is_no_data_response(body: Any) -> bool:
+    """Kiwoom answers a period without transactions with return_code 20 and message code 501724."""
+    if not isinstance(body, dict):
+        return False
+    code, message = body.get("return_code"), body.get("return_msg")
+    return (isinstance(code, int) and not isinstance(code, bool) and code == NO_DATA_RETURN_CODE
+            and isinstance(message, str) and NO_DATA_MESSAGE_MARKER in message)
+
+
 def normalize_transaction_history(raw: Any, *, period_from: str, period_to: str, raw_sha256: str,
                                   table: dict[str, Any] | None = None) -> dict[str, Any]:
     """Sanitize one saved ust21100 response. The account label is never copied into the result."""
@@ -120,14 +133,22 @@ def normalize_transaction_history(raw: Any, *, period_from: str, period_to: str,
     if start is None or end is None or start > end:
         raise CashFlowError("CASH_FLOW_EVIDENCE_PERIOD_INVALID")
     body = raw.get("result") if isinstance(raw, dict) and isinstance(raw.get("result"), dict) else raw
-    if not isinstance(body, dict) or not isinstance(body.get("result_list"), list):
-        raise CashFlowError("CASH_FLOW_EVIDENCE_RAW_SHAPE_INVALID")
-    if body.get("return_code") != 0:
-        raise CashFlowError("CASH_FLOW_EVIDENCE_RETURN_CODE_NOT_ZERO")
+    if _is_no_data_response(body):
+        items = body.get("result_list", [])
+        if not isinstance(items, list):
+            raise CashFlowError("CASH_FLOW_EVIDENCE_RAW_SHAPE_INVALID")
+        if items:
+            raise CashFlowError("CASH_FLOW_EVIDENCE_EMPTY_RESPONSE_HAS_ROWS")
+    else:
+        if not isinstance(body, dict) or not isinstance(body.get("result_list"), list):
+            raise CashFlowError("CASH_FLOW_EVIDENCE_RAW_SHAPE_INVALID")
+        if body.get("return_code") != 0:
+            raise CashFlowError("CASH_FLOW_EVIDENCE_RETURN_CODE_NOT_ZERO")
+        items = body["result_list"]
     rows: list[dict[str, Any]] = []
     unresolved: list[str] = []
     seen: set[str] = set()
-    for index, item in enumerate(body["result_list"]):
+    for index, item in enumerate(items):
         if not isinstance(item, dict):
             raise CashFlowError("CASH_FLOW_EVIDENCE_ROW_NOT_OBJECT")
         deal_date = _compact_date(item.get("deal_dt"))

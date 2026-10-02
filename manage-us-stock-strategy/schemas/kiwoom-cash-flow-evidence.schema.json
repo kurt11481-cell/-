@@ -45,7 +45,7 @@
           "currency": {"type": ["string", "null"]},
           "classification": {
             "enum": [
-              "DEPOSIT", "WITHDRAWAL", "FX", "DIVIDEND", "FEE_TAX_INTEREST", "TRADE", "NON_USD_IGNORED",
+              "DEPOSIT", "WITHDRAWAL", "FX", "DIVIDEND", "FEE_TAX_INTEREST", "TRADE", "CORPORATE_ACTION", "NON_USD_IGNORED",
               "TRANSFER_SIGN_UNKNOWN",
               "UNCLASSIFIED"
             ]
