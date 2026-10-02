@@ -28,6 +28,7 @@ import regular_session_close_history as rsch  # noqa: E402
 import run_portfolio_exposure_review as runner  # noqa: E402
 import s5_exposure_fixtures as fx  # noqa: E402
 from portfolio_exposure import exposure_display_block  # noqa: E402
+from test_s7_calendar_binding import SESSION_0829, SESSION_2026, build_authority_root  # noqa: E402
 from validation_common import canonical_hash, validate_instance  # noqa: E402
 
 CALENDAR = (ROOT / "workspace/calendar-authority/artifacts"
@@ -55,14 +56,18 @@ class RunnerCase(unittest.TestCase):
         self.journal_path = self.root / "state/decision_journal.json"
         self.closes_root = self.root / "closes"
         self.output_root = self.root / "out"
-        self.activation = self.root / "calendar_activation.json"
-        self.activation.write_text(json.dumps({
-            "activation_status": "ACTIVE",
-            "active_calendar_hash": hashlib.sha256(CALENDAR.read_bytes()).hexdigest()}), encoding="utf-8")
-        # Calendar authority has no command-line override; tests point the module constants at fixtures.
+        # Calendar authority has no command-line override; tests point the trusted-root constant at a temp
+        # integrated authority that activates the 2026 calendar (self.calendar is its LF copy; self.calendar_0829
+        # is another valid artifact that is not active).
+        self.trusted = self.root / "trusted"
+        self.calendar = build_authority_root(self.trusted, extra_calendars=(SESSION_0829,))
+        self.calendar_0829 = self.calendar.parents[1] / SESSION_0829 / self.calendar.name
+        trusted_root = mock.patch.object(rsch, "TRUSTED_ROOT", self.trusted)
+        trusted_root.start()
+        self.addCleanup(trusted_root.stop)
         # The production default paths and the clock are patched the same way, so these runs count as
         # "default inputs" (an activation proposal is refused for anything else).
-        for name, value in (("DEFAULT_ACTIVATION", self.activation), ("DEFAULT_STATE", self.state_path),
+        for name, value in (("DEFAULT_STATE", self.state_path),
                             ("DEFAULT_JOURNAL", self.journal_path), ("DEFAULT_CLOSES_ROOT", self.closes_root)):
             patcher = mock.patch.object(runner, name, value)
             patcher.start()
@@ -108,13 +113,20 @@ class RunnerCase(unittest.TestCase):
         folder = self.closes_root / "pages" / symbol
         folder.mkdir(parents=True, exist_ok=True)
         (folder / "p1.json").write_text(json.dumps({"result": {"result_list": rows, "return_code": 0}}), encoding="utf-8")
+        snapshot, _ = rsch.load_production_snapshot(datetime(2026, 10, 1, tzinfo=timezone.utc))
         history = rsch.build_history(symbol=symbol, exchange="NASDAQ", page_paths=[folder / "p1.json"],
-                                     calendar=rsch.load_calendar(CALENDAR, self.activation))
+                                     calendar=rsch.load_calendar(self.calendar, snapshot))
         target = self.closes_root / "history" / f"{symbol}.close-history.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(history), encoding="utf-8")
         if not keep_pages:
             shutil.rmtree(folder)
+
+    def set_active_calendar(self, session_hash: str) -> None:
+        """Point the integrated authority at another calendar (both artifacts stay installed)."""
+        other = SESSION_0829 if session_hash == SESSION_2026 else SESSION_2026
+        shutil.rmtree(self.trusted)
+        build_authority_root(self.trusted, session_hash=session_hash, extra_calendars=(other,))
 
     def write_default_histories(self) -> None:
         bench = fx.benchmark_returns(len(self.sessions))
@@ -126,7 +138,7 @@ class RunnerCase(unittest.TestCase):
         with contextlib.redirect_stdout(buffer):
             code = runner.main([
                 "--policy", str(POLICY), "--state", str(self.state_path), "--journal", str(self.journal_path),
-                "--closes-root", str(self.closes_root), "--calendar", str(CALENDAR), "--session", EVAL,
+                "--closes-root", str(self.closes_root), "--calendar", str(self.calendar), "--session", EVAL,
                 "--output-root", str(self.output_root), *extra])
         files = sorted(self.output_root.glob(f"{EVAL}/portfolio-exposure-review.*.json"))
         return code, buffer.getvalue(), json.loads(files[-1].read_text(encoding="utf-8")) if files else None
@@ -253,8 +265,7 @@ class EndToEndTests(RunnerCase):
 
     def test_calendar_that_is_not_active_leaves_every_close_unverified(self) -> None:
         self.write_state({"SOXL": 30}, 7000.0)
-        self.activation.write_text(json.dumps({"activation_status": "ACTIVE", "active_calendar_hash": "0" * 64}),
-                                   encoding="utf-8")
+        self.set_active_calendar(SESSION_0829)  # the integrated authority activates another calendar
         self.write_default_histories()
         _, output, review = self.run_review()
         reasons = next(item for item in review["fail_closed"]["triggers"] if item["id"] == "required_price_missing")
@@ -262,20 +273,21 @@ class EndToEndTests(RunnerCase):
                                               "CLOSE_UNVERIFIED:SOXX:SESSION_CALENDAR_NOT_ACTIVE"])
         self.assertEqual(review["inputs"]["calendar"]["authority_status"], "EXPLICIT_ARTIFACT_NOT_ACTIVE")
         self.assertIn("(미확인)", output)
-        # Judge fix b: no activation proposal while closes are unverified, even with default inputs.
-        self.assertEqual(review["inputs"]["non_default_inputs"], [])
+        # Judge fix b: no activation proposal while closes are unverified. A non-active explicit calendar is
+        # also a labelled non-default input (S7 calendar binding).
+        self.assertEqual(review["inputs"]["non_default_inputs"], ["calendar"])
+        self.assertTrue(output.splitlines()[0].endswith(" [비표준 입력]"))
         self.assertEqual(review["activation_candidate"]["status"], "NOT_READY")
         with self.assertRaisesRegex(journal_module.JournalError, "ACTIVATION_CANDIDATE_NOT_READY"):
             journal_module.activation_payload(review)
 
     def test_history_file_cannot_claim_an_active_calendar_or_verified_closes_by_itself(self) -> None:
         self.write_state({"SOXL": 30}, 7000.0)
-        self.write_default_histories()  # built while the fixture activation said ACTIVE
+        self.write_default_histories()  # built while the integrated authority activated this calendar
         for symbol in ("SOXX", "SOXL"):
             history = json.loads((self.closes_root / f"history/{symbol}.close-history.json").read_text(encoding="utf-8"))
             self.assertEqual(history["calendar"]["authority_status"], "ACTIVE")
-        self.activation.write_text(json.dumps({"activation_status": "ACTIVE", "active_calendar_hash": "0" * 64}),
-                                   encoding="utf-8")
+        self.set_active_calendar(SESSION_0829)
         _, _, review = self.run_review()  # this run's calendar is not the active one
         reasons = next(item for item in review["fail_closed"]["triggers"] if item["id"] == "required_price_missing")
         self.assertEqual(reasons["reasons"], ["CLOSE_UNVERIFIED:SOXL:SESSION_CALENDAR_NOT_ACTIVE",
@@ -337,7 +349,7 @@ class EndToEndTests(RunnerCase):
                 with contextlib.redirect_stdout(buffer):
                     code = runner.main([
                         "--policy", str(POLICY), "--state", str(self.state_path), "--journal", str(self.journal_path),
-                        "--closes-root", str(self.closes_root), "--calendar", str(CALENDAR), "--session", EVAL,
+                        "--closes-root", str(self.closes_root), "--calendar", str(self.calendar), "--session", EVAL,
                         "--output-root", str(self.output_root), *extra])
                 self.assertEqual(code, 2)
                 self.assertEqual(json.loads(buffer.getvalue())["status"], "FAIL")

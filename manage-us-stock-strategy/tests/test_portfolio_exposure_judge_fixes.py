@@ -26,11 +26,8 @@ import run_portfolio_exposure_review as runner  # noqa: E402
 import s5_exposure_fixtures as fx  # noqa: E402
 from test_portfolio_exposure import EVAL, Scenario, trigger  # noqa: E402
 from test_portfolio_exposure_fail_closed import declaration  # noqa: E402
-from test_run_portfolio_exposure_review import CALENDAR, POLICY, RunnerCase  # noqa: E402
+from test_run_portfolio_exposure_review import POLICY, RunnerCase  # noqa: E402
 
-ACTIVE_CALENDAR_2026_08_29 = (
-    ROOT / "workspace/calendar-authority/artifacts"
-    / "d6d1ecd2258554faf9b9d76f740bab9e7abcfe6ea5f84fd198e961fae74794fe/us-equities-core-session-v2.calendar.json")
 LATER = "2026-10-01"  # a reconciliation dated after the evaluation session (Korean-afternoon reconcile)
 DEPOSIT_ROW = {"deal_kind_nm": "입출금", "rmrk_nm": "이체입금", "fc_exct_amt": "1000.00"}
 
@@ -259,7 +256,7 @@ class FixDEvaluationSessionTests(RunnerCase):
 
     def test_default_session_fails_when_the_calendar_does_not_cover_today(self) -> None:
         self.write_state({"SOXL": 30}, 7000.0, ledger=False)
-        code, output, files = self.run_with("--calendar", str(ACTIVE_CALENDAR_2026_08_29), "--now",
+        code, output, files = self.run_with("--calendar", str(self.calendar_0829), "--now",
                                             "2026-10-01T12:00:00+00:00")
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(output)["error"], "SESSION_CALENDAR_DOES_NOT_COVER_TODAY:2026-08-29")
@@ -267,7 +264,7 @@ class FixDEvaluationSessionTests(RunnerCase):
 
     def test_explicit_old_session_is_labelled_and_fails_closed(self) -> None:
         self.write_state({"SOXL": 30}, 7000.0, as_of="2026-08-27")
-        code, output, files = self.run_with("--calendar", str(ACTIVE_CALENDAR_2026_08_29), "--session", "2026-08-28",
+        code, output, files = self.run_with("--calendar", str(self.calendar_0829), "--session", "2026-08-28",
                                             "--now", "2026-10-01T12:00:00+00:00")
         self.assertEqual(code, 0)
         review = json.loads(files[-1].read_text(encoding="utf-8"))
@@ -281,14 +278,14 @@ class FixDEvaluationSessionTests(RunnerCase):
     def test_explicit_session_older_than_the_latest_completed_session_fails_closed(self) -> None:
         self.write_state({"SOXL": 30}, 7000.0)
         self.write_default_histories()
-        code, output, files = self.run_with("--calendar", str(CALENDAR), "--session", "2026-09-29", "--now",
+        code, output, files = self.run_with("--calendar", str(self.calendar), "--session", "2026-09-29", "--now",
                                             "2026-10-01T12:00:00+00:00")
         self.assertEqual(code, 0)
         review = json.loads(files[-1].read_text(encoding="utf-8"))
         self.assertIn("EVALUATION_SESSION_NOT_LATEST:2026-09-30",
                       trigger(review, "exposure_or_equity_or_v_unavailable")["reasons"])
         self.assertEqual(review["activation_candidate"]["status"], "NOT_READY")
-        code, output, files = self.run_with("--calendar", str(CALENDAR), "--session", "2026-09-30", "--now",
+        code, output, files = self.run_with("--calendar", str(self.calendar), "--session", "2026-09-30", "--now",
                                             "2026-10-01T12:00:01+00:00")
         review = json.loads(files[-1].read_text(encoding="utf-8"))
         self.assertEqual(review["inputs"]["evaluation_session_status"], "LATEST_COMPLETED_SESSION")

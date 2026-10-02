@@ -30,7 +30,8 @@ from portfolio_exposure import (
 )
 from portfolio_review_journal import DEFAULT_JOURNAL_PATH, load_journal
 from regular_session_close_history import (
-    CloseHistoryError, build_history, closes_by_session, history_errors, load_calendar,
+    CloseHistoryError, build_history, calendar_from_snapshot, closes_by_session, history_errors, load_calendar,
+    load_production_snapshot,
 )
 from validate_holding_card import validate_card
 from validation_common import canonical_hash, load_json, validate_instance
@@ -46,9 +47,6 @@ DEFAULT_JOURNAL = REPO_ROOT / DEFAULT_JOURNAL_PATH
 EXCHANGE_TIMEZONE = "America/New_York"
 DEFAULT_CLOSES_ROOT = REPO_ROOT / "workspace/outputs/regular-session-closes"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "workspace/outputs/exposure-review"
-DEFAULT_ACTIVATION = REPO_ROOT / "workspace/policies/session_calendar_activation.json"
-CALENDAR_ARTIFACT_ROOT = REPO_ROOT / "workspace/calendar-authority/artifacts"
-CALENDAR_ARTIFACT_NAME = "us-equities-core-session-v2.calendar.json"
 REVIEW_FILE_PREFIX = "portfolio-exposure-review"
 HISTORY_SUFFIX = ".close-history.json"
 PROTECTED_OUTPUT_PARENTS = ("stock-strategy-system", "workspace/policies", "workspace/state")
@@ -265,9 +263,9 @@ def resolve_session(calendar: dict[str, Any], now: datetime, requested: str | No
     """(evaluation session, status, fail-closed reasons).
 
     The default is the latest completed session, which is only known when the calendar covers today.
-    A calendar that ends earlier would present its last session as "the latest" (the ACTIVE calendar
-    ends 2026-08-29), so the default then fails. An explicitly requested older session is allowed
-    for inspection but is labelled and fails closed.
+    A calendar that ends earlier (an explicit older artifact, or the active one once its coverage has
+    run out) would present its last session as "the latest", so the default then fails. An explicitly
+    requested older session is allowed for inspection but is labelled and fails closed.
     """
     identity = calendar["identity"]
     today = now.astimezone(ZoneInfo(EXCHANGE_TIMEZONE)).date().isoformat()
@@ -288,14 +286,29 @@ def resolve_session(calendar: dict[str, Any], now: datetime, requested: str | No
     return requested, "NOT_LATEST_COMPLETED_SESSION", [f"EVALUATION_SESSION_NOT_LATEST:{latest}"]
 
 
-def resolve_calendar_path(calendar: Path | None, activation: Path) -> Path:
-    if calendar is not None:
-        return calendar
+def load_session_calendar(calendar: Path | None, now: datetime) -> tuple[dict[str, Any], dict[str, Any]]:
+    """(calendar, calendar_authority record) from the Production integrated authority; there is no override.
+
+    Without --calendar the loader must succeed and its verified calendar is used. An explicit artifact is
+    ACTIVE only when its raw sha256 is the calendar hash the integrated authority activates; otherwise (or
+    when the authority does not load) it stays an explicit, non-active calendar whose closes are unverified.
+    """
+    snapshot, failure = load_production_snapshot(now)
     try:
-        active_hash = str(json.loads(activation.read_text(encoding="utf-8-sig")).get("active_calendar_hash") or "")
-    except (OSError, ValueError) as exc:
-        raise ReviewRunError("SESSION_CALENDAR_ACTIVATION_UNREADABLE") from exc
-    return CALENDAR_ARTIFACT_ROOT / active_hash / CALENDAR_ARTIFACT_NAME
+        if calendar is not None:
+            loaded = load_calendar(calendar, snapshot, failure)
+        elif snapshot is None:
+            raise ReviewRunError(f"SESSION_CALENDAR_UNAVAILABLE:{failure}")
+        else:
+            loaded = calendar_from_snapshot(snapshot)
+    except (CloseHistoryError, OSError) as exc:
+        raise ReviewRunError(f"SESSION_CALENDAR_UNAVAILABLE:{exc}") from exc
+    if snapshot is None:
+        return loaded, {"status": "UNAVAILABLE", "reason": failure}
+    provenance = snapshot.provenance(authority_source="K3_COMBINED_PRODUCTION")
+    return loaded, {"status": "LOADED", **{key: provenance[key] for key in (
+        "combined_activation_manifest_sha256", "activation_cohort_id", "session_calendar_artifact_sha256",
+        "session_calendar_version")}}
 
 
 def summary_lines(review: dict[str, Any], messages: dict[str, str]) -> list[str]:
@@ -335,12 +348,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     state = load_json(state_path)
     if not isinstance(state, dict):
         raise ReviewRunError("PORTFOLIO_STATE_NOT_OBJECT")
-    # Calendar authority always comes from the production activation file; there is no override.
-    calendar_path = resolve_calendar_path(Path(args.calendar) if args.calendar else None, DEFAULT_ACTIVATION)
-    try:
-        calendar = load_calendar(calendar_path, DEFAULT_ACTIVATION)
-    except (CloseHistoryError, OSError) as exc:
-        raise ReviewRunError(f"SESSION_CALENDAR_UNAVAILABLE:{exc}") from exc
+    # Calendar authority always comes from the Production integrated authority; there is no override.
+    calendar, calendar_authority = load_session_calendar(Path(args.calendar) if args.calendar else None, now)
     calendar_sessions = sorted(calendar["sessions"])
     session, session_status, session_reasons = resolve_session(calendar, now, args.session)
 
@@ -366,6 +375,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                 ("journal", journal_path, DEFAULT_JOURNAL),
                 ("closes_root", Path(args.closes_root), DEFAULT_CLOSES_ROOT))
     non_default = [name for name, used, default in defaults if Path(used).resolve() != Path(default).resolve()]
+    if calendar["identity"]["authority_status"] != "ACTIVE":
+        non_default.append("calendar")  # only reachable with --calendar: the default calendar is the active one
     if args.now:
         non_default.append("now")
     inputs = {
@@ -375,6 +386,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         "ledger_last_entry_sha256": status["last_entry_sha256"], "ledger_replay_notes": ledger_notes,
         "journal_status": journal["status"],
         "journal_head_sha256": journal["head_sha256"], "calendar": calendar["identity"],
+        "calendar_authority": calendar_authority,
         "evaluation_session_status": session_status,
         "latest_completed_session": expected_completed_session(calendar, now),
         "close_histories": history_report, "cards": card_report,
@@ -407,7 +419,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ledger", type=Path, help="default: reconciliation_ledger.jsonl next to the state file")
     parser.add_argument("--journal", type=Path, help=f"default: {DEFAULT_JOURNAL_PATH}")
     parser.add_argument("--closes-root", type=Path, default=DEFAULT_CLOSES_ROOT)
-    parser.add_argument("--calendar", type=Path, help="session-calendar artifact; default: the ACTIVE artifact")
+    parser.add_argument("--calendar", type=Path, help="session-calendar artifact; default: the active calendar. "
+                                                      "Any other artifact is labelled and its closes stay unverified")
     parser.add_argument("--session", help="completed U.S. session YYYY-MM-DD; default: latest completed session. "
                                           "An older session is labelled and fails closed")
     parser.add_argument("--cards", type=Path, help="holding card JSON (used only with --fact-pack and when valid)")
