@@ -22,11 +22,15 @@ import argparse
 import hashlib
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
+from integrated_authority_snapshot import (
+    IntegratedAuthorityLoadError, IntegratedAuthoritySnapshot, load_production_integrated_authority_snapshot,
+)
 from session_calendar_artifact import SessionCalendarLoadError, _semantic_validate_artifact
 from validation_common import canonical_hash, validate_instance
 
@@ -35,7 +39,11 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = SKILL_ROOT.parent
 HISTORY_SCHEMA = SKILL_ROOT / "schemas/regular-session-close-history.schema.json"
 CALENDAR_SCHEMA = SKILL_ROOT / "schemas/session-calendar-artifact.schema.json"
-DEFAULT_ACTIVATION = REPO_ROOT / "workspace/policies/session_calendar_activation.json"
+# Calendar authority comes from the Production integrated authority under this root. There is no
+# command-line or environment override; tests patch this module constant.
+TRUSTED_ROOT = REPO_ROOT
+NOT_ACTIVE_STATUS = "EXPLICIT_ARTIFACT_NOT_ACTIVE"
+HASH_NOT_ACTIVE_REASON = "CALENDAR_HASH_NOT_ACTIVE_AUTHORITY"
 DEFAULT_ROOT = REPO_ROOT / "workspace/outputs/regular-session-closes"
 SCHEMA_VERSION = "regular-session-close-history-1.0"
 ARTIFACT_TYPE = "REGULAR_SESSION_CLOSE_HISTORY"
@@ -68,31 +76,69 @@ def _positive(value: Any) -> Decimal | None:
     return number if number.is_finite() and number > 0 else None
 
 
-def load_calendar(calendar_path: Path, activation_path: Path | None) -> dict[str, Any]:
-    """Read one session-calendar artifact and say whether it is the ACTIVE production calendar."""
-    raw = Path(calendar_path).read_bytes()
+def current_time() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def load_production_snapshot(now: datetime) -> tuple[IntegratedAuthoritySnapshot | None, str | None]:
+    """(snapshot, None) when the Production integrated authority loads at `now`, else (None, loader reason)."""
+    stamp = now.astimezone(timezone.utc).isoformat()
     try:
-        artifact = json.loads(raw.decode("utf-8-sig"))
+        return load_production_integrated_authority_snapshot(
+            trusted_root=TRUSTED_ROOT, decision_as_of=stamp, resolved_at=stamp), None
+    except IntegratedAuthorityLoadError as exc:
+        return None, exc.reason
+
+
+def _thaw(value: Any) -> Any:
+    if isinstance(value, (dict, MappingProxyType)):
+        return {key: _thaw(child) for key, child in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_thaw(child) for child in value]
+    return value
+
+
+def _calendar_from_artifact(artifact: Any, digest: str, status: str, failure: str | None) -> dict[str, Any]:
+    try:
         if validate_instance(artifact, CALENDAR_SCHEMA):
             raise ValueError("SCHEMA")
         _semantic_validate_artifact(artifact)
+        return {
+            "sessions": {row["session_date"]: row for row in artifact["sessions"]},
+            "identity": {"calendar_version": artifact["calendar_version"], "calendar_sha256": digest,
+                         "coverage_start": artifact["coverage_start"], "coverage_end": artifact["coverage_end"],
+                         "authority_status": status},
+            # Why the calendar is not ACTIVE (None when it is, or when no authority was consulted).
+            "authority_failure": failure,
+        }
     except (ValueError, KeyError, TypeError, SessionCalendarLoadError) as exc:
         raise CloseHistoryError(f"CALENDAR_ARTIFACT_INVALID:{exc}") from exc
+
+
+def load_calendar(calendar_path: Path, snapshot: IntegratedAuthoritySnapshot | None,
+                  authority_failure: str | None = None) -> dict[str, Any]:
+    """Read one session-calendar artifact and say whether it is the ACTIVE production calendar.
+
+    ACTIVE means the Production integrated authority loaded (`snapshot`) and this file's raw sha256
+    equals the session calendar hash it activates. Without a snapshot (`authority_failure` is the
+    loader's reason) or with another hash the artifact is only an explicit, non-active calendar.
+    """
+    raw = Path(calendar_path).read_bytes()
+    try:
+        artifact = json.loads(raw.decode("utf-8-sig"))
+    except ValueError as exc:
+        raise CloseHistoryError(f"CALENDAR_ARTIFACT_INVALID:{exc}") from exc
     digest = hashlib.sha256(raw).hexdigest()
-    status = "EXPLICIT_ARTIFACT_NOT_ACTIVE"
-    if activation_path is not None and Path(activation_path).is_file():
-        try:
-            activation = json.loads(Path(activation_path).read_text(encoding="utf-8-sig"))
-        except ValueError:
-            activation = {}
-        if activation.get("activation_status") == "ACTIVE" and activation.get("active_calendar_hash") == digest:
-            status = "ACTIVE"
-    return {
-        "sessions": {row["session_date"]: row for row in artifact["sessions"]},
-        "identity": {"calendar_version": artifact["calendar_version"], "calendar_sha256": digest,
-                     "coverage_start": artifact["coverage_start"], "coverage_end": artifact["coverage_end"],
-                     "authority_status": status},
-    }
+    if snapshot is None:
+        return _calendar_from_artifact(artifact, digest, NOT_ACTIVE_STATUS, authority_failure)
+    if digest == snapshot.session.calendar_hash:
+        return _calendar_from_artifact(artifact, digest, "ACTIVE", None)
+    return _calendar_from_artifact(artifact, digest, NOT_ACTIVE_STATUS, HASH_NOT_ACTIVE_REASON)
+
+
+def calendar_from_snapshot(snapshot: IntegratedAuthoritySnapshot) -> dict[str, Any]:
+    """The ACTIVE calendar the loader already verified (hash, schema and semantics), without a second file read."""
+    return _calendar_from_artifact(_thaw(snapshot.session.artifact), snapshot.session.calendar_hash, "ACTIVE", None)
 
 
 def final_bar_label(session_row: dict[str, str]) -> tuple[str, str]:
@@ -313,9 +359,11 @@ def main(argv: list[str] | None = None) -> int:
         reference = None
         if args.reference_closes:
             reference = json.loads(args.reference_closes.read_text(encoding="utf-8-sig")).get("closes")
+        snapshot, authority_failure = load_production_snapshot(current_time())
+        calendar = load_calendar(args.calendar, snapshot, authority_failure)
         history = build_history(
             symbol=args.symbol, exchange=args.exchange, page_paths=sorted(args.pages_dir.glob("*.json")),
-            calendar=load_calendar(args.calendar, DEFAULT_ACTIVATION), reference_closes=reference)
+            calendar=calendar, reference_closes=reference)
         errors = history_errors(history)
         if errors:
             raise CloseHistoryError(errors[0])
@@ -326,11 +374,15 @@ def main(argv: list[str] | None = None) -> int:
     except (CloseHistoryError, OSError, ValueError) as exc:
         print(json.dumps({"status": "FAIL", "error": str(exc)}))
         return 2
-    print(json.dumps({
+    summary = {
         "status": "OK", "symbol": history["symbol"], "session_count": history["session_count"],
         "first_session": history["first_session"], "last_session": history["last_session"],
         "continuity": history["continuity"]["status"], "calendar_authority": history["calendar"]["authority_status"],
-        "history_hash": history["history_hash"]}))
+        "history_hash": history["history_hash"]}
+    if calendar["authority_failure"]:
+        # The history file keeps its schema keys; the reason is shown here only.
+        summary["calendar_authority_reason"] = calendar["authority_failure"]
+    print(json.dumps(summary))
     return 0
 
 

@@ -13,16 +13,19 @@ import unittest
 from pathlib import Path
 from typing import Any
 from unittest import mock
+from datetime import datetime, timezone
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 ROOT = SKILL_ROOT.parent
 sys.path.insert(0, str(SKILL_ROOT / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import regular_session_close_history as rsch  # noqa: E402
+from test_s7_calendar_binding import SESSION_0829, build_authority_root  # noqa: E402
 
 # Market data only (SOXX 30-minute bars saved by Cowork on 2026-10-01); no account data.
 FIXTURE_PAGES = SKILL_ROOT / "tests/fixtures/regular-session-closes/SOXX"
-# Full-year 2026 calendar artifact (not the ACTIVE one, which ends 2026-08-29).
+# Full-year 2026 calendar artifact (the one the Production integrated authority activates).
 CALENDAR = (ROOT / "workspace/calendar-authority/artifacts"
             / "2421eeb7e115ad640b6b0ec76d0d88cfe2a49499c12c39dc35ea5f71c1fed22b/us-equities-core-session-v2.calendar.json")
 
@@ -99,16 +102,18 @@ class CloseHistoryTests(unittest.TestCase):
         self.assertTrue(all(item["verified"] is False and item["unverified_reasons"] == ["SESSION_CALENDAR_NOT_ACTIVE"]
                             for item in history["sessions"]))
         self.assertEqual(rsch.unverified_reasons(history, ["2026-09-30"]), ["SESSION_CALENDAR_NOT_ACTIVE"])
-        activation = self.tmp / "activation.json"
-        activation.write_text(json.dumps({"activation_status": "ACTIVE", "active_calendar_hash":
-                                          hashlib.sha256(CALENDAR.read_bytes()).hexdigest()}), encoding="utf-8")
-        active = rsch.load_calendar(CALENDAR, activation)
+        # The calendar is ACTIVE only when it is the one the integrated authority activates (hash equality).
+        trusted = self.tmp / "trusted"
+        calendar_copy = build_authority_root(trusted, extra_calendars=(SESSION_0829,))
+        with mock.patch.object(rsch, "TRUSTED_ROOT", trusted):
+            snapshot, failure = rsch.load_production_snapshot(datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertIsNone(failure)
+        active = rsch.load_calendar(calendar_copy, snapshot)
         self.assertEqual(active["identity"]["authority_status"], "ACTIVE")
         history = self.build(self.tmp / "pages" / "SOXX", calendar=active)
         self.assertTrue(all(item["verified"] and not item["unverified_reasons"] for item in history["sessions"]))
-        activation.write_text(json.dumps({"activation_status": "ACTIVE", "active_calendar_hash": "0" * 64}),
-                              encoding="utf-8")
-        self.assertEqual(rsch.load_calendar(CALENDAR, activation)["identity"]["authority_status"],
+        other = trusted / "workspace/calendar-authority/artifacts" / SESSION_0829 / calendar_copy.name
+        self.assertEqual(rsch.load_calendar(other, snapshot)["identity"]["authority_status"],
                          "EXPLICIT_ARTIFACT_NOT_ACTIVE")
 
     def test_newest_bar_of_a_file_is_not_trusted_as_complete(self) -> None:

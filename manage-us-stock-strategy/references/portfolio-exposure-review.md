@@ -71,10 +71,14 @@ A close is unverified (values stay visible, R0 applies) when:
 The runner decides this itself. It rebuilds every history from the saved pages
 with its own calendar and uses a close only when the stored history matches the
 rebuild exactly; an edited or stale history is treated as absent. Calendar
-authority always comes from `workspace/policies/session_calendar_activation.json`
-(there is no command-line override). A review built from files other than the
-production defaults (`--state`, `--journal`, `--closes-root`, `--policy`,
-`--ledger`, `--now`) is labelled `[비표준 입력]` on every display line.
+authority always comes from the Production integrated authority
+(`workspace/policies/integrated_identity_session_activation.json`, loaded by
+`load_production_integrated_authority_snapshot`; there is no command-line or
+environment override). A `--calendar` artifact counts as ACTIVE only when its
+raw sha256 equals the calendar hash that authority activates. A review built
+from files other than the production defaults (`--state`, `--journal`,
+`--closes-root`, `--policy`, `--ledger`, `--now`) or from a `--calendar` that is
+not the active calendar is labelled `[비표준 입력]` on every display line.
 
 Raw (unadjusted) prices are collected. A session-to-session close ratio of 0.5
 or lower, or 2.0 or higher, is treated as a possible unadjusted split and makes
