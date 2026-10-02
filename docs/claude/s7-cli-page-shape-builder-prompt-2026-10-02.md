@@ -96,3 +96,8 @@ R6 문서(K0): Routine 1번에 다음만 더한다 — kiwoomcli 표준 출력�
 
 - 2026-10-02 Cowork: SOXX `--pages 0` 수집이 429로 실패 → 나눠 받기(3쪽·7일 간격) 27개 성공 → build `PAGE_SHAPE_INVALID` 발견 → 사용자 선택 "스크립트 수정 K2" → 이 지시문 작성.
 - 2026-10-02 Cowork: SOXL(NYSE)·MVLL·NBIS(NASDAQ)도 같은 방식으로 27개씩 수집. 4종목 모두 4/1~10/1 127세션, 모든 세션에 15:30 봉 있음, 겹치는 봉 충돌 0, 빈 파일 0. 겉껍데기 사본 시험 build 4종목 OK(CONTIGUOUS, 달력 ACTIVE, 미확인 0). 교차 확인: MVLL 9/30 15:30 봉 종가 35.83 = MVLL 카드 기록 값. 실제 이력 파일은 아직 만들지 않았다(병합 뒤 원본 파일로 build).
+- 2026-10-02 Builder 완료(worktree `s7-cli-page`, 새 실패 0). Cowork 확인: 변경은 허용 3개 + 보고 1개, `parse_page` 6줄(두 형식, 둘 다 있으면 거부), CRLF 유지, 대상 테스트 4개 VM 통과, worktree 코드로 실제 원본 쪽 파일 4종목 build 성공(종가가 겉껍데기 사본 시험값과 전부 같음). 사용자 커밋 `855d6cb`, 병합 `09a6298`.
+- 2026-10-02 병합 뒤 Cowork(원본 폴더): `history/{SOXX,SOXL,MVLL,NBIS}.close-history.json` 생성(각 127세션, 2026-04-01~10-01, CONTIGUOUS, 달력 ACTIVE, `verify` OK). 노출 점검 기본 실행(결과는 VM 임시 폴더): 종가 이력 4개 OK·`reproduced_from_pages`, `calendar_authority` LOADED, `non_default_inputs` 비어 있음, `CLOSE_MISSING` 없음. 상태·정책·통합 권한 해시 실행 전후 같음.
+- 새 막힘: 적용 시작 후보 `NOT_READY`, 사유 `V_UNAVAILABLE:SPLIT_GUARD:MVLL:2026-06-26`. MVLL 원시 종가 6/25 155.95 → 6/26 46.33(비율 0.297). 키움 수정주가 주봉(`usa06012` 계열 `stock-weekly`, adjusted=1, 조회 전용)에서 6/22 주에 `upd_stkpc_tp=3231`, `upd_rt=-66.667` → 3:1 분할로 보인다(공식 발행사 공지는 확인 필요). 현재 코드에는 분할을 "검토 완료"로 처리하는 경로가 없어서, 6/26이 V 창(최대 252세션)에 남는 동안 V는 계속 계산 불가다. 다음: 분할 처리 방식 결정(별도 작업).
+- 그 밖의 다른 사유: `S5_NOT_ACTIVATED`, `JOURNAL_MISSING`(적용 시작 기록 전이라 예상된 것).
+- 2026-10-02 Cowork: MVLL 분할은 공식 3:1 정분할로 확인했다(GraniteShares 6/12 보도자료·설명서 보충, 키움 수정 표시 `upd_rt -66.667`, MRVL 대조). 사용자 A안 선택 → `s7-split-adjustment-builder-prompt-2026-10-02.md`.
