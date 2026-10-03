@@ -283,6 +283,21 @@ class K2BridgeEvidenceIntegrityTests(unittest.TestCase):
         self.assertEqual(result["bridge_status"], "KIWOOM_API_RESPONSE_ERROR")
         self.assert_both_blocked(result)
 
+    def test_no_data_declaration_reaches_verified_none_on_both_sell_paths(self):
+        # S1b plan B (K3): only the exact first-page declaration observed live becomes an empty PASS.
+        response = SimpleNamespace(
+            body={"return_code": 20, "return_msg": "[2000](571758:해당 계좌의미체결내역이 없습니다.)"},
+            continuation={"cont_yn": "N", "next_key": None, "has_next": False})
+        raw, _ = self.worker_result([response])
+        result = self.invoke_sanitizer(raw)
+        self.assertEqual(result["bridge_status"], "PASS")
+        self.assertEqual(result["pagination"]["terminated_by"], "PROVIDER_NO_DATA_DECLARATION")
+        for sell_path in ("manual_best_bid", "fixed_limit"):
+            with self.subTest(sell_path=sell_path):
+                classification, intent = self.final_sell(result, sell_path=sell_path)
+                self.assertEqual(classification["open_order_conflict_status"], "VERIFIED_NONE")
+                self.assertNotIn("OPEN_ORDER_EVIDENCE_NOT_VERIFIED", intent["blockers"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -83,6 +83,8 @@
 
 ### 5-2. 안 B — "없음 선언"을 빈 PASS로 인정 (K3)
 
+> **개정(2026-10-03):** 이 절은 `s1b-plan-b-design-2026-10-03.md`로 대체됐다(B′: 연산별 메시지 코드 허용 목록 추가). 아래는 당시 기록이다.
+
 - 내용: 안 A의 좁은 조건에 맞는 응답을 `PASS`, `data=[]`, `pagination={api_id, pages:1, complete:true, exhausted:true}`로 낸다.
 - 효과: `scope_complete`가 true가 될 수 있고, 미체결이 `VERIFIED_NONE`이 될 수 있다. `OPEN_ORDERS_UNVERIFIED` 경고가 사라진다.
 - **K3인 이유:** 미체결 `VERIFIED_NONE`은 주문 의도 단계의 차단 해제 근거로 쓰이고(§4), `scope_complete`는 제안의 `verified_scope=FULL`을 결정한다. 이는 생산 의미론과 권한에 닿는다. 또 근거가 서버의 문서화되지 않은 응답이라 "결정론 규칙이 LLM 출력보다 앞선다"는 원칙 아래에서도 독립 Judge가 봐야 한다.
