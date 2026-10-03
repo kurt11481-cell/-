@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -68,9 +69,26 @@ SAFE_FAILURE_TYPES = (
     "AUTHENTICATION_FAILURE", "TIMEOUT", "LOCAL_PROTOCOL_FAILURE",
     "LOCAL_TRANSPORT_FAILURE", "LOCAL_RUNTIME_UNAVAILABLE",
 )
-# The provider's undocumented "no records" declaration (observation only; it never changes a status).
+# The provider's undocumented "no records" declaration. Plan A marks on errors are observation only;
+# only the narrow plan B match below changes a status.
 NO_DATA_RETURN_CODE = 20
 NO_DATA_MESSAGE_PREFIX = "[2000]"
+# S1b plan B (K3): only these exact first-page declarations become an empty PASS. Code and full
+# message were observed live on 2026-10-03; one table per operation so a change cannot spread.
+NO_DATA_PASS_MESSAGE_CODES = {
+    "account_open_items": frozenset({"571758"}),
+    "account_realized_pnl_read": frozenset({"571758"}),
+}
+NO_DATA_PASS_MESSAGES = {
+    "account_open_items": frozenset({
+        "[2000](571758:\ud574\ub2f9 \uacc4\uc88c\uc758\ubbf8\uccb4\uacb0\ub0b4\uc5ed\uc774 "
+        "\uc5c6\uc2b5\ub2c8\ub2e4.)"}),
+    "account_realized_pnl_read": frozenset({
+        "[2000](571758:\uc870\ud68c\ub0b4\uc5ed\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.)"}),
+}
+NO_DATA_MESSAGE_CODE = re.compile(r"\[2000\]\(([0-9]{6}):")
+NO_DATA_BODY_KEYS = frozenset({"return_code", "return_msg"})
+NO_DATA_TERMINATION = "PROVIDER_NO_DATA_DECLARATION"
 
 
 def _safe_failure_type(value: Any) -> str:
@@ -101,6 +119,46 @@ def _exception_provider_marks(exc: Exception) -> tuple[int | None, bool]:
     return code, code == NO_DATA_RETURN_CODE and getattr(exc, "no_data_declared", None) is True
 
 
+def _continuation_field(continuation: Any, name: str) -> tuple[bool, Any]:
+    if continuation is None:
+        return False, None
+    if isinstance(continuation, dict):
+        return name in continuation, continuation.get(name)
+    return hasattr(continuation, name), getattr(continuation, name, None)
+
+
+def _terminal_continuation(continuation: Any) -> bool:
+    """Every continuation field must be absent or explicitly final; anything else is not terminal."""
+    present, value = _continuation_field(continuation, "cont_yn")
+    if present and not (value is None or (type(value) is str and value in ("", "N"))):
+        return False
+    present, value = _continuation_field(continuation, "next_key")
+    if present and not (value is None or (type(value) is str and value == "")):
+        return False
+    present, value = _continuation_field(continuation, "has_next")
+    return not present or value is False
+
+
+def _no_data_terminal(operation: str, payload: dict[str, Any], response: Any) -> bool:
+    """Plan B conditions except the first-page check; it never raises, so the original error stays intact."""
+    try:
+        codes = NO_DATA_PASS_MESSAGE_CODES.get(operation, frozenset())
+        messages = NO_DATA_PASS_MESSAGES.get(operation, frozenset())
+        code, message = payload.get("return_code"), payload.get("return_msg")
+        if type(code) is not int or code != NO_DATA_RETURN_CODE:
+            return False
+        if not isinstance(message, str) or not message.startswith(NO_DATA_MESSAGE_PREFIX):
+            return False
+        match = NO_DATA_MESSAGE_CODE.match(message)
+        if match is None or match.group(1) not in codes or message not in messages:
+            return False
+        if not set(payload) <= NO_DATA_BODY_KEYS:
+            return False
+        return _terminal_continuation(getattr(response, "continuation", None))
+    except Exception:
+        return False
+
+
 def validate_request(value: Any) -> dict[str, str]:
     if not isinstance(value, dict) or value.get("operation") not in ACCOUNT_APIS:
         raise BridgeError("OPERATION_NOT_ALLOWLISTED")
@@ -126,6 +184,7 @@ def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str,
                 error = BridgeError("KIWOOM_API_RESPONSE_ERROR", "API_RESPONSE_ERROR")
                 error.provider_return_code, error.no_data_declared = _provider_marks(
                     payload.get("return_code"), payload.get("return_msg"))
+                error.no_data_terminal = _no_data_terminal(operation, payload, response)
                 raise error
             return response
         except Exception as exc:
@@ -147,9 +206,18 @@ def _read_pages(session: dict[str, Any], operation: str) -> tuple[list[dict[str,
     exhausted = False
     pages = 0
     for page_index in range(1, int(session["maximum_history_pages"]) + 1):
-        response = _fetch_account_page(
-            session, operation, ACCOUNT_BODIES[operation], cont_yn=cont_yn, next_key=next_key,
-        )
+        try:
+            response = _fetch_account_page(
+                session, operation, ACCOUNT_BODIES[operation], cont_yn=cont_yn, next_key=next_key,
+            )
+        except BridgeError as exc:
+            # A first-page no-data declaration ends here, before the row and continuation checks.
+            # The locals are still pages=0 and exhausted=False, so this result is built explicitly.
+            if (page_index == 1 and exc.status == "KIWOOM_API_RESPONSE_ERROR"
+                    and getattr(exc, "no_data_terminal", None) is True):
+                return [], {"api_id": api_id, "pages": 1, "exhausted": True, "complete": True,
+                            "secret_fields_retained": False, "terminated_by": NO_DATA_TERMINATION}
+            raise
         raw = response.body.get("result_list")
         if raw is None and operation == "account_deposit_detail_read":
             raw = [response.body]
@@ -276,6 +344,17 @@ def _sanitize(value: dict[str, Any], operation: str) -> dict[str, Any]:
                     no_data_declared=code == NO_DATA_RETURN_CODE and value.get("no_data_declared") is True)
         if "pagination" in safe:
             safe["pagination"] = {"complete": False, "exhausted": False}
+    if safe["bridge_status"] == "PASS" and "pagination" in safe:
+        # Display-only basis of a promoted empty PASS; no gate reads it. Judged on the Worker's raw
+        # data because sanitizing would turn a malformed [None] into [].
+        raw_pagination = value["pagination"]
+        pages, basis = raw_pagination.get("pages"), raw_pagination.get("terminated_by")
+        if (type(basis) is str and basis == NO_DATA_TERMINATION
+                and operation in NO_DATA_PASS_MESSAGE_CODES
+                and isinstance(data, list) and not data
+                and type(pages) is int and pages == 1
+                and raw_pagination.get("complete") is True and raw_pagination.get("exhausted") is True):
+            safe["pagination"]["terminated_by"] = NO_DATA_TERMINATION
     return safe
 
 
