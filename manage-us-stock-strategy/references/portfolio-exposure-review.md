@@ -165,6 +165,15 @@ add or edit one. Dividend adjustment is not part of this basis.
 
 ## Routine (Cowork, after the U.S. close, read-only Kiwoom CLI)
 
+Token order (K0 procedure, 2026-10-03). Every bridge run (broker-shadow proposal, manual
+analysis) requests a new Kiwoom token, which can invalidate the token kiwoomcli saved
+(return_code 8005). So do all kiwoomcli work first (steps 1, 2 and the transaction-history raw
+save), and only then run the reconciliation proposal and the manual analysis. Right before the
+first kiwoomcli command run `kiwoomcli auth refresh` (first use: confirm the command exists and
+ends without a prompt; otherwise `kiwoomcli auth login`). A kiwoomcli exit code 0 is not proof of
+success: open each saved file and check that `return_code` is 0 (an auth failure can be saved
+with exit code 0). Never run kiwoomcli while a bridge run is in progress.
+
 1. Save the 30-minute bars of each symbol (SOXX and every held instrument) into
    `workspace/outputs/regular-session-closes/pages/<SYMBOL>/`:
    `kiwoomcli overseas candles stock-minute` with `interval=30`, `adjusted=0`.
