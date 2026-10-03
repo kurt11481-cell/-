@@ -414,8 +414,10 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         non_default.append("calendar")  # only reachable with --calendar: the default calendar is the active one
     if args.now:
         non_default.append("now")
+    # The same string is recorded and passed to the review (a NOT_ANNOUNCED earnings check is judged against it).
+    generated_at = now.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     inputs = {
-        "generated_at": now.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at": generated_at,
         "policy_canonical_sha256": canonical_hash(policy), "state_canonical_sha256": canonical_hash(state),
         "state_revision": state.get("state_revision"), "ledger_entries": status["entries"],
         "ledger_last_entry_sha256": status["last_entry_sha256"], "ledger_replay_notes": ledger_notes,
@@ -433,7 +435,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         policy=policy, evaluation_session=session, calendar_sessions=calendar_sessions, snapshots=snapshots,
         snapshot_reasons=snapshot_reasons, closes=closes, close_unverified=unverified, journal=journal,
         cards=cards, earnings=earnings, proposals=proposals, inputs=inputs, evaluation_reasons=session_reasons,
-        corporate_actions=corporate_actions)
+        corporate_actions=corporate_actions, generated_at=generated_at)
     errors = validate_instance(review, REVIEW_SCHEMA)
     if errors:
         raise ReviewRunError("EXPOSURE_REVIEW_SCHEMA_FAILED:" + ";".join(errors[:5]))
@@ -461,7 +463,12 @@ def build_parser() -> argparse.ArgumentParser:
                                           "An older session is labelled and fails closed")
     parser.add_argument("--cards", type=Path, help="holding card JSON (used only with --fact-pack and when valid)")
     parser.add_argument("--fact-pack", type=Path)
-    parser.add_argument("--earnings", type=Path, help='{"earnings": {"SYM": {"status": "VERIFIED", ...}}}')
+    parser.add_argument("--earnings", type=Path, help=(
+        '{"earnings": {"SYM": {"status": "VERIFIED", "announcement_session": "YYYY-MM-DD", "timing": '
+        '"BEFORE_OPEN|AFTER_CLOSE"}}}. A confirmed not-yet-announced date: {"status": "NOT_ANNOUNCED", '
+        '"source_kind": "COMPANY_IR|COMPANY_PRESS_RELEASE|SEC_FILING", "source_url": "https://...", '
+        '"checked_at": "<ISO time with offset, at or after 16:00 New York time on the evaluation session>"}. '
+        'No record or any other status stays an earnings blackout'))
     parser.add_argument("--proposals", type=Path, help='{"proposals": [{"kind": "new_buy_within_band", ...}]}')
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--now", help="ISO timestamp with offset used as now (tests; the result is labelled)")

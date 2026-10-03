@@ -619,5 +619,51 @@ class CorporateActionsRunnerTests(RunnerCase):
         self.assertIn("READ_ONLY_INPUT_MUTATION_DETECTED", output)
 
 
+class EarningsInputTests(RunnerCase):
+    """p-earn r1: the runner passes its own generated_at to the review; --earnings accepts NOT_ANNOUNCED."""
+
+    def write_json(self, name: str, document: dict) -> Path:
+        path = self.root / name
+        path.write_text(json.dumps(document), encoding="utf-8")
+        return path
+
+    def test_generated_at_reaches_the_review_and_decides_a_not_announced_check(self) -> None:
+        self.write_state({"SOXL": 30}, 7000.0)
+        self.write_default_histories()
+        self.write_history("MU", fx.series(self.sessions, fx.benchmark_returns(len(self.sessions)), last="120",
+                                           multiple=0.5))
+        _, _, review = self.run_review()
+        self.activate(review)
+        proposals = self.write_json("proposals.json", {"proposals": [
+            {"kind": "new_buy_within_band", "symbol": "MU", "target_weight": "0.05"}]})
+        record = {"status": "NOT_ANNOUNCED", "source_kind": "SEC_FILING", "source_url": "https://www.example.com/filing"}
+        real = runner.build_exposure_review
+        passed: list[Any] = []
+
+        def spy(**kwargs: Any) -> dict:
+            passed.append(kwargs.get("generated_at"))
+            return real(**kwargs)
+
+        # Every run's clock is 2026-10-01T12:00:0N+00:00; the EVAL close is 16:00 EDT = 20:00Z.
+        for index, (checked_at, status, reasons) in enumerate((
+                ("2026-09-30T20:00:00Z", "DISPLAY", []),
+                ("2026-09-30T19:59:00Z", "OMITTED", ["EARNINGS_CHECK_STALE"]),
+                ("2026-10-01T12:30:00Z", "OMITTED", ["EARNINGS_CHECK_FUTURE_TIMESTAMP"]))):
+            earnings = self.write_json(f"earnings-{index}.json", {"earnings": {"MU": dict(record, checked_at=checked_at)}})
+            with mock.patch.object(runner, "build_exposure_review", side_effect=spy):
+                code, _, review = self.run_review("--earnings", str(earnings), "--proposals", str(proposals))
+            self.assertEqual(code, 0)
+            self.assertEqual(passed[-1], review["inputs"]["generated_at"])
+            self.assertEqual(review["inputs"]["generated_at"], f"2026-10-01T12:00:{index + 2:02d}Z")
+            self.assertFalse(review["fail_closed"]["active"], review["fail_closed"])
+            result = review["recommendations"]["proposals"][0]
+            self.assertEqual((result["status"], result["reasons"]), (status, reasons), checked_at)
+
+    def test_earnings_help_shows_both_record_formats(self) -> None:
+        text = runner.build_parser().format_help()
+        for word in ("VERIFIED", "announcement_session", "NOT_ANNOUNCED", "source_kind", "source_url", "checked_at"):
+            self.assertIn(word, text)
+
+
 if __name__ == "__main__":
     unittest.main()
