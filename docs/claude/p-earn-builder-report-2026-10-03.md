@@ -2,7 +2,7 @@
 
 - 지시: `docs/claude/p-earn-builder-prompt-2026-10-03.md` 3절 상자. 범위: `docs/claude/p-earn-earnings-blackout-amendment-2026-10-03.md`(r1) 2~5절.
 - 승인 근거: 사용자 승인(2026-10-03) "p-earn r1 승인: 확인된 미공지는 금지 구간 아님, 확인 못 함은 금지 유지, D2는 S7 2단계로 이관, J4 남은 위험(표시 전용) 수용".
-- 실행: Claude Code, worktree `p-earn-impl`(브랜치 `codex/master-recovery-expansion`, HEAD `906f765`), Opus 5.5 · xhigh.
+- 실행: Claude Code, worktree `p-earn-impl`(브랜치 `worktree-p-earn-impl`, HEAD `906f765`; 브랜치 표기는 Judge 2 지적으로 Cowork가 K0 정정), Opus 5.5 · xhigh.
 - 권한: `order_authority=false`, `quantity_authority=none`, `execution_quantity=null` 그대로. 키움 도구·네트워크·`.env`·비밀 접근 없음. **커밋하지 않음.**
 - 상태: 구현 완료, Judge 2 대기.
 

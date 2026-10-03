@@ -182,8 +182,8 @@ official sources; nothing generates it automatically.
 - `VERIFIED`: window reading (`earnings_blackout_window_reading`) — from the second regular session
   before the announcement session through the first regular session after results; `BEFORE_OPEN`
   ends at the announcement session; any other timing, missing included, is read as after-close.
-  Codes: `EARNINGS_BLACKOUT`, `OUTSIDE_EARNINGS_BLACKOUT`, `EARNINGS_DATE_STALE` (the date is behind
-  the next session), `EARNINGS_WINDOW_NOT_CHECKABLE` (outside the approved calendar).
+  Codes: `EARNINGS_BLACKOUT`, `OUTSIDE_EARNINGS_BLACKOUT`, `EARNINGS_DATE_STALE` (the window ended
+  before the next session), `EARNINGS_WINDOW_NOT_CHECKABLE` (outside the approved calendar).
 - `NOT_ANNOUNCED` (exactly this string) passes only when every step holds, in this order; the
   first failure is the code:
   1. next session and evaluation session in the calendar, else `EARNINGS_WINDOW_NOT_CHECKABLE`;
@@ -199,7 +199,7 @@ official sources; nothing generates it automatically.
   7. then `EARNINGS_NOT_ANNOUNCED_CHECKED`: not a blackout.
 - No `--earnings`, no record, or any other status (lower case included): `EARNINGS_DATE_UNVERIFIED`.
   Every blocking code omits the increase recommendation, an MU blackout of any kind omits DRAM
-  (`BLACKOUT_SUBSTITUTION_PROHIBITED:MU`), and each reads as "실적일 확인 필요".
+  (`BLACKOUT_SUBSTITUTION_PROHIBITED:MU`), and Cowork reports each as "실적일 확인 필요" (the review shows the raw code).
 - Accepted remaining risk: a date announced after the check, with the announcement within two
   sessions of the next session, can leave a recommendation inside the window. Read the integrated
   check's earnings-announcement alert before any buy.

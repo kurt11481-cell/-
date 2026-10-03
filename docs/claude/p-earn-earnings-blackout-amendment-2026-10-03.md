@@ -1,6 +1,6 @@
 # p-earn 실적 금지 구간 개정안 (K3) — 2026-10-03, r1
 
-- 관제판 작업: `p-earn`. 성격: K3(Production 의미). 상태: **r1 — Judge 1 CONDITIONAL_PASS(대상 커밋 `9f0912e`) 필수 수정 6건 반영 · 사용자 승인 완료(2026-10-03) · Builder 대기 · 정책·코드 미변경**.
+- 관제판 작업: `p-earn`. 성격: K3(Production 의미). 상태: **완료(2026-10-03) — r1 사용자 승인, Builder, Judge 2 PASS, 병합 `7c68ec9`. 남은 후속은 7절 F1~F9**.
 - 근거 결정: 2026-10-02 사용자 결정 1(`docs/claude/integrated-stock-cards-v1-2026-10-02.md` 8절 1번, "사용자 결정 (2026-10-02)" 절 — 미커밋, 읽은 시점 sha256 앞 16자 `11a3220a68501f5e`).
 - 2026-10-03 사용자 선택: **D1** 확인하지 못한 경우는 막기 유지(fail-closed). **D2** 처음에는 금지 구간 영문 문구 명확화를 포함했으나, Judge 필수 수정 1 뒤 **이번 묶음에서 제외하고 S7 2단계로 이관**(안 (a)). `holding_timing_rules`는 건드리지 않는다.
 - 기준값(2026-10-03 Cowork 확인, r0 대상 HEAD `25ec82bf1c72`, Judge 1 대상 `9f0912e` = r0 문서 2개 추가뿐):
@@ -130,9 +130,9 @@
 | 1 | 사용자: r0 문서 커밋 | `9f0912e` | 완료 |
 | 2 | Judge 1(수정안 심사), worktree `judge-p-earn` | CONDITIONAL_PASS | 완료, 필수 수정 6건 r1 반영 |
 | 3 | 사용자 승인: Cowork 대화에 승인 문구 | 9절 기록 | 완료 |
-| 4 | 사용자 커밋(r1, 근거 문서 2개, references K0 9줄, Builder 지시문) → Builder: Claude Code worktree `p-earn-impl`(`p-earn-builder-prompt-2026-10-03.md`) | 대상 테스트 통과, 새 실패 0, 지문 불변 | **대기** |
-| 5 | Judge 2(구현 심사): 별도 세션 | PASS | |
-| 6 | 사용자 병합(Windows 터미널), Cowork 읽기 전용 확인 | 병합 커밋 | |
+| 4 | 사용자 커밋(r1, 근거 문서 2개, references K0 9줄, Builder 지시문) → Builder: Claude Code worktree `p-earn-impl`(`p-earn-builder-prompt-2026-10-03.md`) | 대상 테스트 통과, 새 실패 0, 지문 불변 | 완료(새 실패 0) |
+| 5 | Judge 2(구현 심사): 별도 세션(`p-earn-judge2-prompt-2026-10-03.md`) | PASS | 완료 PASS, 필수 수정 없음 |
+| 6 | 사용자 커밋·병합(Windows 터미널), Cowork 읽기 전용 확인 | 병합 커밋 | 완료: 커밋 `40949cf`, 병합 `7c68ec9` |
 
 - 배포 영향: `alert_policy.json` 원시 바이트가 바뀌므로 예약 런타임 배포 때 provenance manifest를 다시 만든다(관제판 `p-deploy`와 같은 일, 급하지 않음). 이 저장소 병합만으로는 예약 런타임에 영향이 없다(`s7-builder-report-2026-10-01.md:189`).
 - 그림자 검증: `holding_timing_rules`·`holding_risk_rules`·`strategy_version`·권한 필드를 건드리지 않으므로 의미 지문과 integrated shadow 코호트(`628c6081…`)는 그대로다. 코호트 이전은 하지 않는다.
@@ -147,6 +147,8 @@
 - **F5** D2(539줄 영문 문구 명확화)는 S7 2단계(`p-s7-p2`)로 이관. 그 단계가 `holding_timing_rules`·`holding_risk_rules`를 바꾸며 integrated shadow 코호트 이전(`migrate_integrated_shadow_cohort.py`, `workspace/state/integrated_shadow/*`)을 어차피 해야 하므로 그때 함께 한다.
 - **F6** 통합 점검 v3.8 ① 칸(64줄)은 확인 시각 조건이 없다. 결정론 결과가 `EARNINGS_CHECK_*`·`EARNINGS_RECORD_CONTRADICTORY`면 "확인 필요"로 맞추는 문구 변경(K1)은 다음 지시문 개정 때.
 - **F7** J4 근거 보강: MU·NBIS 공지 리드타임을 공식 출처로 기록(다음 카드 갱신 때).
+- **F8** (Judge 2 K3) NOT_ANNOUNCED 기록의 모르는 키(예: 오타 `announcement_date`, `Timing`)는 무시되고 통과할 수 있다. 허용 키 목록(`status`·`source_kind`·`source_url`·`checked_at`) 도입은 r1 2-2 문언 변경(K3)이라 S7 2단계에 묶는다(사용자 결정 10/3). 그때까지 Cowork는 `--earnings` 기록에 이 4개 키만 쓴다.
+- **F9** (Judge 2 권고) references 새 절 K0 문구 2곳(`EARNINGS_DATE_STALE` 설명, "실적일 확인 필요" 화면 매핑 없음)과 Builder 보고 머리의 브랜치 표기는 병합 뒤 Cowork가 K0로 고친다. 정기 실행에서 `--now`를 쓰지 않는다.
 
 ## 8. Judge 질문과 Judge 1 결과
 
@@ -161,3 +163,6 @@
 - 2026-10-03 Judge 1: CONDITIONAL_PASS(필수 수정 6건).
 - 2026-10-03 Cowork: 필수 수정 1에 사용자 선택 (a) — D2 제외, S7 2단계 이관. 필수 수정 6건·권고 반영해 r1 작성.
 - 2026-10-03 사용자 승인(Cowork 대화, 원문): "p-earn r1 승인: 확인된 미공지는 금지 구간 아님, 확인 못 함은 금지 유지, D2는 S7 2단계로 이관, J4 남은 위험(표시 전용) 수용". 이 승인은 r1(이 문서) 3·4절 범위의 정책·코드·테스트·문서 변경에만 해당한다. Cowork: Builder 지시문 `p-earn-builder-prompt-2026-10-03.md` 작성.
+- 2026-10-03 Builder(worktree `p-earn-impl`, HEAD `906f765`): 커밋 전 변경 7개 + 보고, 새 실패 0. Cowork 읽기 전용 확인 통과.
+- 2026-10-03 Judge 2: PASS(필수 수정 없음). K3(모르는 키 무시)는 사용자 결정 "지금 병합, S7 2단계에 묶기"(F8). 커밋·병합 대기.
+- 2026-10-03 사용자 커밋 `40949cf`, 병합 `7c68ec9`. Cowork 확인(읽기 전용, VM Python 3.10): 병합된 8개 파일의 LF 정규화 해시가 Judge 2 기준과 같음, CRLF·bare LF 0, 노출 관련 대상 테스트 7개 파일 OK, `test_v2_6_7` 실패 목록이 병합 전과 같음, 의미 지문 `628c6081…` 불변. F9 K0 정정 3곳(references 2곳, Builder 보고 브랜치 표기) 반영 — 커밋 대기.
