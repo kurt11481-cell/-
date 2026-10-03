@@ -23,7 +23,7 @@ default a missing value.
 | R0 | Fail closed: any of seven triggers pauses add and new-buy recommendations; reduce recommendations and warnings continue with an UNVERIFIED label |
 | R1 | E = max(N, V). N = sum(multiplier x weight). V = stdev(portfolio daily return) / stdev(SOXX), current weights fixed, common window of up to 252 returns, minimum 60 |
 | R2 | Target 1.55. E >= 1.85: reduce + pause new buys. E >= 1.9: block all new buys + urgent reduce. E <= 1.25: add. Every exposure-increasing recommendation needs projected E <= 1.55 and the single-stock cap |
-| R3 | Single-stock nominal cap 0.4 (stocks, MVLL, DRAM; SOXL and TQQQ exempt). Earnings blackout; an unverified earnings date is a blackout; DRAM never substitutes MU during MU's blackout |
+| R3 | Single-stock nominal cap 0.4 (stocks, MVLL, DRAM; SOXL and TQQQ exempt). Earnings blackout (p-earn r1): an announced date blocks its window; a confirmed "not announced yet" from an official source, checked after the evaluation session close, is not a blackout; a missing, stale, unknown or failed check stays a blackout. DRAM never substitutes MU during MU's blackout |
 | R4 | Review lines at HWM x 0.90, 0.80, 0.70 ...; compared before rounding with `<=`; once per line per drawdown; re-armed by a new HWM; L2 and below pause recommendations until a journal review |
 | R5 | Instrument peak since activation (or first reconciled date); close <= peak x 0.70 asks for a card rewrite and pauses adds for that instrument |
 | R6 | Deposits and withdrawals are declared at reconciliation; undeclared flows hold HWM and line evaluation |
@@ -162,6 +162,47 @@ Records are added only in a Cowork conversation, and only with both
 evidence kinds: the issuer's official announcement and the Kiwoom adjusted
 daily-price flag. Scheduled tasks, Claude Code, Codex and Judge sessions never
 add or edit one. Dividend adjustment is not part of this basis.
+
+## Earnings blackout input (R3, p-earn r1)
+
+Source: `docs/claude/p-earn-earnings-blackout-amendment-2026-10-03.md` (r1, user approval
+2026-10-03). It applies to the card stock core (BE, MU, NBIS, DELL, AMD) and, through the MU -> DRAM
+ban, to DRAM. Being outside the blackout is never a reason to buy (display only).
+
+`--earnings` holds one record per symbol (values are format examples only). Cowork writes it from
+official sources; nothing generates it automatically.
+
+```json
+{"earnings": {
+  "MU":   {"status": "NOT_ANNOUNCED", "source_kind": "COMPANY_IR", "source_url": "https://<issuer IR page>", "checked_at": "<ISO time with offset>"},
+  "DELL": {"status": "VERIFIED", "announcement_session": "<YYYY-MM-DD>", "timing": "AFTER_CLOSE"}
+}}
+```
+
+- `VERIFIED`: window reading (`earnings_blackout_window_reading`) — from the second regular session
+  before the announcement session through the first regular session after results; `BEFORE_OPEN`
+  ends at the announcement session; any other timing, missing included, is read as after-close.
+  Codes: `EARNINGS_BLACKOUT`, `OUTSIDE_EARNINGS_BLACKOUT`, `EARNINGS_DATE_STALE` (the date is behind
+  the next session), `EARNINGS_WINDOW_NOT_CHECKABLE` (outside the approved calendar).
+- `NOT_ANNOUNCED` (exactly this string) passes only when every step holds, in this order; the
+  first failure is the code:
+  1. next session and evaluation session in the calendar, else `EARNINGS_WINDOW_NOT_CHECKABLE`;
+  2. no `announcement_session` or `timing` key, else `EARNINGS_RECORD_CONTRADICTORY`;
+  3. `source_kind` is `COMPANY_IR`, `COMPANY_PRESS_RELEASE` or `SEC_FILING`, `source_url` starts
+     with `https://` and has a host, `checked_at` is ISO with a UTC offset, else
+     `EARNINGS_CHECK_SOURCE_INVALID`;
+  4. the review's `generated_at` (passed by the runner) is ISO with an offset, else
+     `EARNINGS_CHECK_GENERATED_AT_INVALID`;
+  5. `checked_at` is not after `generated_at`, else `EARNINGS_CHECK_FUTURE_TIMESTAMP`;
+  6. `checked_at` is at or after 16:00 New York time (EDT or EST for that date; 16:00 on an
+     early-close day too) on the evaluation session date, else `EARNINGS_CHECK_STALE`;
+  7. then `EARNINGS_NOT_ANNOUNCED_CHECKED`: not a blackout.
+- No `--earnings`, no record, or any other status (lower case included): `EARNINGS_DATE_UNVERIFIED`.
+  Every blocking code omits the increase recommendation, an MU blackout of any kind omits DRAM
+  (`BLACKOUT_SUBSTITUTION_PROHIBITED:MU`), and each reads as "실적일 확인 필요".
+- Accepted remaining risk: a date announced after the check, with the announcement within two
+  sessions of the next session, can leave a recommendation inside the window. Read the integrated
+  check's earnings-announcement alert before any buy.
 
 ## Routine (Cowork, after the U.S. close, read-only Kiwoom CLI)
 

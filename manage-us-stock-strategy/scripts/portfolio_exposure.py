@@ -2,6 +2,7 @@
 """Pure S5 (r2) portfolio exposure, review-line and recommendation calculations.
 
 No file, clock or network access: every input is passed in and the same input gives the same output.
+The only lookup is the America/New_York time-zone rule (zoneinfo) for the earnings check time.
 The result is display only. It carries target weights, never order quantities or amounts, and keeps
 order_authority=false, quantity_authority="none", execution_quantity=null.
 
@@ -10,6 +11,7 @@ Rules (docs/claude/loss-limit-review-s5-policy-proposal-2026-10-01.md, "S5 final
   R1 exposure E = max(N, V)  nominal_exposure, sox_equivalent_ratio
   R2 risk budget and band    band_state, reduce and add recommendations, projected exposure <= target
   R3 composition             single-stock nominal cap, earnings blackout, MU -> DRAM substitution ban
+                             (earnings blackout as amended by p-earn r1, 2026-10-03)
   R4 HWM review lines        evaluate_review_lines
   R5 single-stock peak       evaluate_peak_reviews
   R6 cash-flow declaration   cash_flow_evidence.cash_flow_chain (hold when undeclared)
@@ -20,9 +22,11 @@ Threshold values come from alert_policy.json; this module never hard-codes or ch
 from __future__ import annotations
 
 import math
-from datetime import date
+from datetime import date, datetime, time
 from decimal import ROUND_FLOOR, Decimal, InvalidOperation
 from typing import Any
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 from cash_flow_evidence import cash_flow_chain
 from corporate_actions import (
@@ -68,6 +72,12 @@ JOURNAL_ACTIVATION = "s5_activation"
 JOURNAL_LINE_REVIEW = "line_review_completed"
 JOURNAL_PEAK_REVIEW = "peak_review_card_completed"
 CARD_REDUCE_ACTIONS = ("TRIM", "EXIT")
+# p-earn r1 (docs/claude/p-earn-earnings-blackout-amendment-2026-10-03.md): a confirmed "next earnings date
+# not announced" record counts only from these official sources, checked at or after 16:00 exchange time
+# on the evaluation session date (16:00 on an early-close day too, the stricter reading).
+EARNINGS_CHECK_SOURCE_KINDS = ("COMPANY_IR", "COMPANY_PRESS_RELEASE", "SEC_FILING")
+EARNINGS_CHECK_NOT_BEFORE = time(16, 0)
+EXCHANGE_TIMEZONE = "America/New_York"
 
 
 class ExposureError(ValueError):
@@ -756,15 +766,74 @@ def evaluate_peak_reviews(*, config: dict[str, Any], activation: dict[str, Any] 
 # R3 earnings blackout
 # ---------------------------------------------------------------------------------------------
 
-def earnings_blackout(symbol: str, earnings: dict[str, Any] | None, calendar_sessions: list[str],
-                      buy_session: str | None) -> tuple[bool, str]:
-    """Two sessions before the announcement through the first session after results.
+def _aware_timestamp(value: Any) -> datetime | None:
+    """An ISO 8601 time with a UTC offset, else None. A trailing "Z" is read as +00:00 (Python 3.10)."""
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
+    except (ValueError, TypeError):
+        return None
+    return parsed if parsed.utcoffset() is not None else None
 
-    An unverified, stale or uncheckable earnings date is a blackout. AFTER_CLOSE and unknown timing
-    end at the next session; BEFORE_OPEN ends at the announcement session itself.
+
+def _https_url_with_host(value: Any) -> bool:
+    if not isinstance(value, str) or not value.startswith("https://"):
+        return False
+    try:
+        host = urlsplit(value).hostname
+    except (ValueError, TypeError):
+        return False
+    return bool(host) and not any(char.isspace() for char in host)
+
+
+def _not_announced_check(record: dict[str, Any], calendar_sessions: list[str], buy_session: Any,
+                         evaluation_session: Any, generated_at: Any) -> tuple[bool, str]:
+    """p-earn r1 section 2.2: every step must hold, checked in this order; the first failure blocks."""
+    if (buy_session is None or evaluation_session is None or buy_session not in calendar_sessions
+            or evaluation_session not in calendar_sessions):
+        return True, "EARNINGS_WINDOW_NOT_CHECKABLE"
+    evaluation_day = _date(evaluation_session)
+    if evaluation_day is None:
+        return True, "EARNINGS_WINDOW_NOT_CHECKABLE"
+    if "announcement_session" in record or "timing" in record:
+        return True, "EARNINGS_RECORD_CONTRADICTORY"
+    checked_at = _aware_timestamp(record.get("checked_at"))
+    if (record.get("source_kind") not in EARNINGS_CHECK_SOURCE_KINDS
+            or not _https_url_with_host(record.get("source_url")) or checked_at is None):
+        return True, "EARNINGS_CHECK_SOURCE_INVALID"
+    generated = _aware_timestamp(generated_at)
+    if generated is None:
+        return True, "EARNINGS_CHECK_GENERATED_AT_INVALID"
+    if checked_at > generated:
+        return True, "EARNINGS_CHECK_FUTURE_TIMESTAMP"
+    # ZoneInfo gives EDT or EST for that date; a fixed offset would be wrong for half the year.
+    not_before = datetime.combine(evaluation_day, EARNINGS_CHECK_NOT_BEFORE, tzinfo=ZoneInfo(EXCHANGE_TIMEZONE))
+    if checked_at < not_before:
+        return True, "EARNINGS_CHECK_STALE"
+    return False, "EARNINGS_NOT_ANNOUNCED_CHECKED"
+
+
+def earnings_blackout(symbol: str, earnings: dict[str, Any] | None, calendar_sessions: list[str],
+                      buy_session: str | None, *, evaluation_session: str | None = None,
+                      generated_at: str | None = None) -> tuple[bool, str]:
+    """R3 earnings blackout (p-earn r1). Returns (blackout, code).
+
+    VERIFIED (an announced date): two sessions before the announcement through the first session after
+    results. AFTER_CLOSE and unknown timing end at the next session; BEFORE_OPEN ends at the announcement
+    session itself. A stale or uncheckable verified date is a blackout.
+    NOT_ANNOUNCED (exactly this string): a confirmed "not announced yet" is not a blackout only when every
+    step of _not_announced_check holds. evaluation_session and generated_at (the review generation time,
+    ISO with offset) are explicit inputs because this module never reads a clock; without them the record
+    stays a blackout.
+    No record, any other status (including lower case) or a failed step stays a blackout (fail closed).
     """
     record = (earnings or {}).get(symbol)
-    if not isinstance(record, dict) or record.get("status") != "VERIFIED":
+    if not isinstance(record, dict):
+        return True, "EARNINGS_DATE_UNVERIFIED"
+    if record.get("status") == "NOT_ANNOUNCED":
+        return _not_announced_check(record, calendar_sessions, buy_session, evaluation_session, generated_at)
+    if record.get("status") != "VERIFIED":
         return True, "EARNINGS_DATE_UNVERIFIED"
     announced = record.get("announcement_session")
     if buy_session is None or buy_session not in calendar_sessions or announced not in calendar_sessions:
@@ -870,8 +939,12 @@ def reduce_recommendations(*, model: ExposureModel, weights: dict[str, Decimal],
 
 def increase_blockers(symbol: str, *, config: dict[str, Any], weights: dict[str, Decimal],
                       peaks: dict[str, dict[str, Any]], earnings: dict[str, Any] | None,
-                      calendar_sessions: list[str], buy_session: str | None) -> list[str]:
-    """Instrument-level reasons an exposure-increasing recommendation must be omitted."""
+                      calendar_sessions: list[str], buy_session: str | None,
+                      evaluation_session: str | None = None, generated_at: str | None = None) -> list[str]:
+    """Instrument-level reasons an exposure-increasing recommendation must be omitted.
+
+    evaluation_session and generated_at go to earnings_blackout unchanged (the MU -> DRAM check too).
+    """
     reasons: list[str] = []
     if symbol not in config["multipliers"]:
         return ["UNREGISTERED_INSTRUMENT"]
@@ -883,11 +956,14 @@ def increase_blockers(symbol: str, *, config: dict[str, Any], weights: dict[str,
     if symbol in weights and weights[symbol] > 0 and (peak is None or peak.get("pause_add_recommendations")):
         reasons.append("PEAK_REVIEW_PAUSE:" + str((peak or {}).get("status", "NO_BASELINE_PEAK")))
     if symbol in config["card_stock_core"]:
-        blackout, code = earnings_blackout(symbol, earnings, calendar_sessions, buy_session)
+        blackout, code = earnings_blackout(symbol, earnings, calendar_sessions, buy_session,
+                                           evaluation_session=evaluation_session, generated_at=generated_at)
         if blackout:
             reasons.append(code)
     for source, substitutes in config["blackout_substitution_prohibited"].items():
-        if symbol in substitutes and earnings_blackout(source, earnings, calendar_sessions, buy_session)[0]:
+        if symbol in substitutes and earnings_blackout(source, earnings, calendar_sessions, buy_session,
+                                                       evaluation_session=evaluation_session,
+                                                       generated_at=generated_at)[0]:
             reasons.append(f"BLACKOUT_SUBSTITUTION_PROHIBITED:{source}")
     return reasons
 
@@ -955,7 +1031,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
                           proposals: list[dict[str, Any]] | None = None,
                           inputs: dict[str, Any] | None = None,
                           evaluation_reasons: list[str] | None = None,
-                          corporate_actions: dict[str, Any] | None = None) -> dict[str, Any]:
+                          corporate_actions: dict[str, Any] | None = None,
+                          generated_at: str | None = None) -> dict[str, Any]:
     """One deterministic review for the completed session `evaluation_session`.
 
     calendar_sessions  ascending session dates (may extend past the evaluation session)
@@ -970,6 +1047,9 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
                        from corporate_actions.validate_corporate_actions. Split-adjusted closes feed V and
                        the single-stock peak review only; equity, review lines, displayed closes and the
                        benchmark-close check keep the raw closes.
+    generated_at       review generation time (ISO with offset; the runner's inputs.generated_at). Only a
+                       confirmed NOT_ANNOUNCED earnings record uses it, with this review's evaluation
+                       session; without it that record stays a blackout.
     """
     config = exposure_config(policy)
     cards, proposals = cards or {}, proposals or []
@@ -1112,7 +1192,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
 
     def blockers(symbol: str) -> list[str]:
         reasons = increase_blockers(symbol, config=config, weights=weights, peaks=peak_by_symbol, earnings=earnings,
-                                    calendar_sessions=calendar_sessions, buy_session=buy_session)
+                                    calendar_sessions=calendar_sessions, buy_session=buy_session,
+                                    evaluation_session=evaluation_session, generated_at=generated_at)
         if symbol not in holdings:
             # A new instrument's own closes must be verified too (held ones already fail closed above).
             per_session = close_unverified.get(symbol) or {}

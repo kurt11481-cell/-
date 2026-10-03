@@ -701,7 +701,7 @@
     "F": "critical data or state error; freeze every trade candidate"
   },
   "portfolio_exposure_policy": {
-    "policy_version": "2026-10-01-s5-r2",
+    "policy_version": "2026-10-03-s5-r2-p-earn",
     "status": "approved_display_only_old_controls_retained",
     "first_stage_scope": "additive_display_only_existing_loss_limits_and_timing_slots_stay_active_until_second_stage",
     "authority_basis": "user_approved_risk_budget_not_validated_portfolio_return",
@@ -810,7 +810,9 @@
       "one_trigger_per_drawdown": true
     },
     "earnings_blackout_ref": "holding_timing_rules.new_buy_activation.earnings_blackout_single_stocks",
-    "earnings_date_unverified": "treat_as_blackout",
+    "earnings_blackout_window_reading": "starts at the second regular session before the announcement session; ends at the first regular session after results (before-open: the announcement session); any other timing is treated as after-close",
+    "earnings_date_not_announced": "not_a_blackout_only_with_official_check_after_evaluation_session_close",
+    "earnings_check_missing_stale_or_unknown": "treat_as_blackout",
     "blackout_substitution_prohibited": {"MU": ["DRAM"]},
     "swap_execution": "sell_then_verify_fill_and_orderable_cash_then_buy",
     "recommendation_output": "target_weights_only",

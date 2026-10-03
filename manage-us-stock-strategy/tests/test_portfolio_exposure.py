@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import copy
+import json
 import sys
 import unittest
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -580,6 +582,295 @@ class OutputAuthorityTests(unittest.TestCase):
             "EXPOSURE_DISPLAY_BLOCK_FIELD:add_paused", "EXPOSURE_DISPLAY_BLOCK_FIELD:new_buy_paused",
             "EXPOSURE_DISPLAY_BLOCK_FIELD:fail_closed_active", "EXPOSURE_DISPLAY_BLOCK_FIELD:short_history",
             "EXPOSURE_DISPLAY_BLOCK_NOT_DISPLAY_ONLY"])
+
+
+# ---------------------------------------------------------------------------------------------
+# p-earn r1 (docs/claude/p-earn-earnings-blackout-amendment-2026-10-03.md, sections 2 and 5)
+# ---------------------------------------------------------------------------------------------
+
+APPROVED_CALENDAR = (fx.ROOT / "workspace/calendar-authority/artifacts"
+                     / "2421eeb7e115ad640b6b0ec76d0d88cfe2a49499c12c39dc35ea5f71c1fed22b"
+                     / "us-equities-core-session-v2.calendar.json")
+NEXT = "2026-10-01"                 # buy session after EVAL in the synthetic weekday calendar
+GENERATED = "2026-10-01T12:00:00Z"  # review generation time
+CHECKED = "2026-09-30T21:30:00Z"    # after the EVAL close (16:00 EDT = 20:00Z), before GENERATED
+PASSED = (False, "EARNINGS_NOT_ANNOUNCED_CHECKED")
+STALE = (True, "EARNINGS_CHECK_STALE")
+DROP = object()
+
+
+def checked_record(**changes: Any) -> dict[str, Any]:
+    """A confirmed "not announced yet" record that passes every step; a DROP value removes the key."""
+    record: dict[str, Any] = {"status": "NOT_ANNOUNCED", "source_kind": "COMPANY_IR",
+                              "source_url": "https://investors.example.com/events", "checked_at": CHECKED}
+    for key, value in changes.items():
+        if value is DROP:
+            record.pop(key, None)
+        else:
+            record[key] = value
+    return record
+
+
+class CheckedScenario(Scenario):
+    """Scenario whose review also gets the review generation time, as the runner passes it."""
+
+    def __init__(self, holdings: dict[str, int], cash: str, *, generated_at: Any = GENERATED) -> None:
+        super().__init__(holdings, cash)
+        self.generated_at = generated_at
+
+    def review(self) -> dict[str, Any]:
+        result = pe.build_exposure_review(
+            policy=self.policy, evaluation_session=self.evaluation, calendar_sessions=self.sessions,
+            snapshots=self.snapshots, snapshot_reasons=self.snapshot_reasons, closes=self.closes,
+            close_unverified=self.close_unverified, journal=self.journal, cards=self.cards,
+            earnings=self.earnings, proposals=self.proposals, generated_at=self.generated_at)
+        errors = validate_instance(result, SCHEMA)
+        assert not errors, errors
+        return result
+
+
+class NotAnnouncedEarningsTests(unittest.TestCase):
+    """Amendment section 5, cases 1-10: a confirmed "not announced" date and every fail-closed step."""
+
+    def setUp(self) -> None:
+        self.sessions = fx.weekday_sessions(260, EVAL, extra_after=10)
+        self.config = pe.exposure_config(fx.real_policy())
+        self.assertEqual(self.sessions[self.sessions.index(EVAL) + 1], NEXT)
+
+    def check(self, record: Any, *, buy: Any = NEXT, evaluation: Any = EVAL, generated: Any = GENERATED,
+              sessions: list[str] | None = None) -> tuple[bool, str]:
+        return pe.earnings_blackout("MU", {"MU": record}, sessions or self.sessions, buy,
+                                    evaluation_session=evaluation, generated_at=generated)
+
+    def blockers(self, symbol: str, earnings: Any) -> list[str]:
+        return pe.increase_blockers(symbol, config=self.config, weights={}, peaks={}, earnings=earnings,
+                                    calendar_sessions=self.sessions, buy_session=NEXT,
+                                    evaluation_session=EVAL, generated_at=GENERATED)
+
+    def test_01_confirmed_not_announced_is_not_a_blackout(self) -> None:
+        self.assertEqual(self.check(checked_record()), PASSED)
+        for kind in ("COMPANY_IR", "COMPANY_PRESS_RELEASE", "SEC_FILING"):
+            self.assertEqual(self.check(checked_record(source_kind=kind)), PASSED, kind)
+        for checked in ("2026-09-30T17:30:00-04:00", "2026-09-30T21:30:00+00:00", "2026-09-30T21:30:00.250Z",
+                        GENERATED):  # a check at the generation time itself is not in the future
+            self.assertEqual(self.check(checked_record(checked_at=checked)), PASSED, checked)
+        self.assertEqual(self.blockers("MU", {"MU": checked_record()}), [])
+        self.assertEqual(self.blockers("DRAM", {"MU": checked_record()}), [])
+
+    def test_02_check_must_be_at_or_after_the_edt_evaluation_session_close(self) -> None:
+        # EVAL 2026-09-30 is in daylight time: 16:00 EDT = 20:00Z, and 16:00 exactly passes.
+        for checked, expected in (("2026-09-29T23:00:00Z", STALE), ("2026-09-30T19:59:00Z", STALE),
+                                  ("2026-09-30T19:59:59.999999Z", STALE), ("2026-09-30T15:59:59-04:00", STALE),
+                                  ("2026-09-30T20:00:00Z", PASSED), ("2026-09-30T16:00:00-04:00", PASSED)):
+            self.assertEqual(self.check(checked_record(checked_at=checked)), expected, checked)
+
+    def test_03_check_must_be_at_or_after_the_est_evaluation_session_close(self) -> None:
+        rows = {row["session_date"]: row
+                for row in json.loads(APPROVED_CALENDAR.read_text(encoding="utf-8"))["sessions"]}
+        sessions = sorted(rows)
+        self.assertEqual(rows[EVAL]["core_close_at"], "2026-09-30T16:00:00-04:00")
+        evaluation = next(day for day in sessions if day >= "2026-11-02" and rows[day]["close_type"] == "REGULAR")
+        self.assertEqual((evaluation, rows[evaluation]["core_close_at"]), ("2026-11-02", "2026-11-02T16:00:00-05:00"))
+        buy = sessions[sessions.index(evaluation) + 1]
+        # 16:00 EST = 21:00Z. A fixed -04:00 offset would wrongly pass 20:00Z-20:59Z.
+        for checked, expected in (("2026-11-02T20:00:00Z", STALE), ("2026-11-02T20:59:00Z", STALE),
+                                  ("2026-11-02T16:30:00-04:00", STALE), ("2026-11-02T21:00:00Z", PASSED),
+                                  ("2026-11-02T16:00:00-05:00", PASSED)):
+            self.assertEqual(self.check(checked_record(checked_at=checked), buy=buy, evaluation=evaluation,
+                                        generated="2026-11-03T12:00:00Z", sessions=sessions), expected, checked)
+        # An early-close day still uses 16:00 local time, later than its 13:00 core close (the stricter reading).
+        early = "2026-11-27"
+        self.assertEqual((rows[early]["close_type"], rows[early]["core_close_at"]),
+                         ("EARLY", "2026-11-27T13:00:00-05:00"))
+        early_buy = sessions[sessions.index(early) + 1]
+        for checked, expected in (("2026-11-27T18:30:00Z", STALE), ("2026-11-27T20:59:59Z", STALE),
+                                  ("2026-11-27T21:00:00Z", PASSED)):
+            self.assertEqual(self.check(checked_record(checked_at=checked), buy=early_buy, evaluation=early,
+                                        generated="2026-11-30T12:00:00Z", sessions=sessions), expected, checked)
+
+    def test_04_check_after_the_generation_time_is_rejected(self) -> None:
+        future = (True, "EARNINGS_CHECK_FUTURE_TIMESTAMP")
+        self.assertEqual(self.check(checked_record(checked_at="2026-10-01T12:00:01Z")), future)
+        # Instants are compared, not strings: 08:00-04:00 is 12:00Z.
+        self.assertEqual(self.check(checked_record(checked_at="2026-10-01T12:00:01Z"),
+                                    generated="2026-10-01T08:00:00-04:00"), future)
+        self.assertEqual(self.check(checked_record(checked_at="2026-10-01T08:00:00-04:00")), PASSED)
+
+    def test_05_generation_time_is_required(self) -> None:
+        invalid = (True, "EARNINGS_CHECK_GENERATED_AT_INVALID")
+        self.assertEqual(pe.earnings_blackout("MU", {"MU": checked_record()}, self.sessions, NEXT,
+                                              evaluation_session=EVAL), invalid)  # not passed at all
+        for generated in (None, "", "not a time", "2026-10-01T12:00:00", "2026-10-01", "2026-10-01T12:00:00z",
+                          1790000000, datetime(2026, 10, 1, 12, tzinfo=timezone.utc)):
+            self.assertEqual(self.check(checked_record(), generated=generated), invalid, repr(generated))
+
+    def test_06_source_and_check_time_must_be_official_and_parseable(self) -> None:
+        invalid = (True, "EARNINGS_CHECK_SOURCE_INVALID")
+        cases = (
+            {"checked_at": "2026-09-30T21:30:00"}, {"checked_at": "yesterday"}, {"checked_at": 1790000000},
+            {"checked_at": None}, {"checked_at": DROP}, {"checked_at": ""}, {"checked_at": "2026-09-30"},
+            {"checked_at": "2026-09-30T21:30:00z"}, {"checked_at": [CHECKED]},
+            {"source_kind": "NEWS"}, {"source_kind": ""}, {"source_kind": None}, {"source_kind": DROP},
+            {"source_kind": "company_ir"}, {"source_kind": ["COMPANY_IR"]},
+            {"source_url": DROP}, {"source_url": None}, {"source_url": ""}, {"source_url": 443},
+            {"source_url": "http://investors.example.com/events"}, {"source_url": "HTTPS://investors.example.com"},
+            {"source_url": "investors.example.com/events"}, {"source_url": "https://"},
+            {"source_url": "https:///events"}, {"source_url": "https://:443/events"},
+            {"source_url": "https://user@/events"}, {"source_url": "https:// /events"},
+            {"source_url": "https://[::1/events"},  # urlsplit raises ValueError: still a blackout code
+        )
+        for changes in cases:
+            with self.subTest(changes=repr(changes)):
+                self.assertEqual(self.check(checked_record(**changes)), invalid)
+
+    def test_07_not_announced_record_with_a_date_or_timing_is_contradictory(self) -> None:
+        contradictory = (True, "EARNINGS_RECORD_CONTRADICTORY")
+        for extra in ({"announcement_session": "2026-10-28"}, {"timing": "AFTER_CLOSE"}, {"timing": None},
+                      {"announcement_session": None}, {"announcement_session": "2026-10-28", "timing": "BEFORE_OPEN"}):
+            self.assertEqual(self.check(checked_record(**extra)), contradictory, extra)
+
+    def test_08_buy_and_evaluation_sessions_must_be_in_the_calendar(self) -> None:
+        not_checkable = (True, "EARNINGS_WINDOW_NOT_CHECKABLE")
+        for buy, evaluation in ((None, EVAL), ("2027-03-01", EVAL), ("2026-10-03", EVAL), (NEXT, None),
+                                (NEXT, "2026-08-30"), (NEXT, "2027-01-04")):
+            self.assertEqual(self.check(checked_record(), buy=buy, evaluation=evaluation), not_checkable,
+                             (buy, evaluation))
+        # Without the new arguments (default None) only a NOT_ANNOUNCED record blocks; DRAM follows MU.
+        earnings = {"MU": checked_record()}
+        for symbol, expected in (("MU", ["EARNINGS_WINDOW_NOT_CHECKABLE"]),
+                                 ("DRAM", ["BLACKOUT_SUBSTITUTION_PROHIBITED:MU"])):
+            self.assertEqual(pe.increase_blockers(symbol, config=self.config, weights={}, peaks={}, earnings=earnings,
+                                                  calendar_sessions=self.sessions, buy_session=NEXT), expected)
+
+    def test_09_steps_run_in_the_amendment_order(self) -> None:
+        stale = "2026-09-30T19:00:00Z"
+        broken = {"timing": "AFTER_CLOSE", "source_kind": "NEWS", "checked_at": stale}
+        self.assertEqual(self.check(checked_record(**broken), buy=None)[1], "EARNINGS_WINDOW_NOT_CHECKABLE")
+        self.assertEqual(self.check(checked_record(**broken))[1], "EARNINGS_RECORD_CONTRADICTORY")
+        self.assertEqual(self.check(checked_record(source_kind="NEWS"), generated=None)[1],
+                         "EARNINGS_CHECK_SOURCE_INVALID")
+        self.assertEqual(self.check(checked_record(checked_at=stale), generated=None)[1],
+                         "EARNINGS_CHECK_GENERATED_AT_INVALID")
+        # Generated before the close and checked after it: the future step comes before the stale step.
+        self.assertEqual(self.check(checked_record(checked_at="2026-09-30T19:30:00Z"),
+                                    generated="2026-09-30T19:00:00Z")[1], "EARNINGS_CHECK_FUTURE_TIMESTAMP")
+
+    def test_10_any_other_status_or_missing_record_stays_unverified(self) -> None:
+        unverified = (True, "EARNINGS_DATE_UNVERIFIED")
+        for status in ("not_announced", "Not_Announced", " NOT_ANNOUNCED", "NOT_ANNOUNCED ", "TBD", "UNVERIFIED", "",
+                       None, DROP):
+            record = checked_record(status=status)
+            self.assertEqual(self.check(record), unverified, repr(status))
+            self.assertEqual(self.blockers("DRAM", {"MU": record}), ["BLACKOUT_SUBSTITUTION_PROHIBITED:MU"])
+        for earnings in (None, {}, {"BE": checked_record()}, {"MU": "NOT_ANNOUNCED"}, {"MU": [checked_record()]},
+                         {"MU": None}):
+            self.assertEqual(pe.earnings_blackout("MU", earnings, self.sessions, NEXT, evaluation_session=EVAL,
+                                                  generated_at=GENERATED), unverified, earnings)
+            self.assertEqual(self.blockers("MU", earnings), ["EARNINGS_DATE_UNVERIFIED"])
+            self.assertEqual(self.blockers("DRAM", earnings), ["BLACKOUT_SUBSTITUTION_PROHIBITED:MU"])
+
+    def test_11_verified_window_is_unchanged_and_ignores_the_new_inputs(self) -> None:
+        sessions, index = self.sessions, self.sessions.index(NEXT)
+
+        def both(record: dict[str, Any]) -> tuple[bool, str]:
+            old = pe.earnings_blackout("MU", {"MU": record}, sessions, NEXT)
+            for generated in (GENERATED, None, "not a time"):
+                self.assertEqual(pe.earnings_blackout("MU", {"MU": record}, sessions, NEXT, evaluation_session=EVAL,
+                                                      generated_at=generated), old, record)
+            return old
+
+        # Offset = sessions from the buy session to the announcement session. A missing or unknown timing
+        # ends at the same session as AFTER_CLOSE (the first session after the announcement session).
+        expected = {3: (False, "OUTSIDE_EARNINGS_BLACKOUT"), 2: (True, "EARNINGS_BLACKOUT"),
+                    1: (True, "EARNINGS_BLACKOUT"), 0: (True, "EARNINGS_BLACKOUT"), -1: (True, "EARNINGS_BLACKOUT"),
+                    -2: (True, "EARNINGS_DATE_STALE")}
+        for offset, result in expected.items():
+            for timing in ("AFTER_CLOSE", DROP, None, "DURING_MARKET", "after_close"):
+                record = {"status": "VERIFIED", "announcement_session": sessions[index + offset]}
+                if timing is not DROP:
+                    record["timing"] = timing
+                self.assertEqual(both(record), result, (offset, repr(timing)))
+        # BEFORE_OPEN ends at the announcement session itself.
+        self.assertEqual(both({"status": "VERIFIED", "announcement_session": sessions[index - 1],
+                               "timing": "BEFORE_OPEN"}), (True, "EARNINGS_DATE_STALE"))
+        self.assertEqual(both({"status": "VERIFIED", "announcement_session": NEXT, "timing": "BEFORE_OPEN"}),
+                         (True, "EARNINGS_BLACKOUT"))
+        self.assertEqual(both({"status": "VERIFIED", "announcement_session": "2027-03-01"}),
+                         (True, "EARNINGS_WINDOW_NOT_CHECKABLE"))
+
+    def test_12_policy_records_the_amended_rule(self) -> None:
+        policy = fx.real_policy()
+        section = policy["portfolio_exposure_policy"]
+        self.assertEqual(section["policy_version"], "2026-10-03-s5-r2-p-earn")
+        self.assertEqual(pe.exposure_config(policy)["policy_version"], "2026-10-03-s5-r2-p-earn")
+        self.assertEqual(policy["portfolio_review_lines"]["policy_version"], "2026-10-01-s5-r2")
+        self.assertNotIn("earnings_date_unverified", section)
+        added = {
+            "earnings_blackout_window_reading": (
+                "starts at the second regular session before the announcement session; ends at the first regular "
+                "session after results (before-open: the announcement session); any other timing is treated as "
+                "after-close"),
+            "earnings_date_not_announced": "not_a_blackout_only_with_official_check_after_evaluation_session_close",
+            "earnings_check_missing_stale_or_unknown": "treat_as_blackout",
+        }
+        keys = list(section)
+        start = keys.index("earnings_blackout_ref")
+        self.assertEqual(keys[start:start + 5], ["earnings_blackout_ref", *added, "blackout_substitution_prohibited"])
+        for key, value in added.items():
+            self.assertEqual(section[key], value, key)
+        self.assertEqual(section["earnings_blackout_ref"],
+                         "holding_timing_rules.new_buy_activation.earnings_blackout_single_stocks")
+        self.assertEqual(section["blackout_substitution_prohibited"], {"MU": ["DRAM"]})
+        # D2 moved to S7 stage 2: the timing rule text itself is unchanged.
+        self.assertEqual(policy["holding_timing_rules"]["new_buy_activation"]["earnings_blackout_single_stocks"],
+                         "2 completed sessions before scheduled earnings through the first completed session after results")
+
+
+class NotAnnouncedEarningsReviewTests(unittest.TestCase):
+    """Amendment section 5, case 11: the review passes its own evaluation session and generated_at."""
+
+    def test_13_add_path_shows_a_stock_with_a_confirmed_not_announced_date(self) -> None:
+        scenario = CheckedScenario({"SOXL": 30}, "7000")
+        scenario.cards = {"MU": {"action": "ADD", "valid": True, "session_date": EVAL}}
+        scenario.earnings = {"MU": checked_record()}
+        review = scenario.review()
+        self.assertEqual(review["next_session"], NEXT)
+        self.assertEqual([item["symbol"] for item in review["recommendations"]["add"]], ["MU"])
+        self.assertEqual([reason for item in review["recommendations"]["omitted"] for reason in item["reasons"]
+                          if reason.startswith("EARNINGS_")], [])
+        for changes, generated, code in (({"checked_at": "2026-09-30T19:59:00Z"}, GENERATED, "EARNINGS_CHECK_STALE"),
+                                         ({}, None, "EARNINGS_CHECK_GENERATED_AT_INVALID"),
+                                         ({}, "2026-09-30T21:00:00Z", "EARNINGS_CHECK_FUTURE_TIMESTAMP")):
+            scenario.earnings, scenario.generated_at = {"MU": checked_record(**changes)}, generated
+            review = scenario.review()
+            self.assertEqual(review["recommendations"]["add"], [], code)
+            self.assertEqual(review["recommendations"]["omitted"], [{"kind": "add", "symbol": "MU", "reasons": [code]}])
+        # A review built without generated_at (the call before p-earn) keeps the record a blackout.
+        plain = Scenario({"SOXL": 30}, "7000")
+        plain.cards, plain.earnings = dict(scenario.cards), {"MU": checked_record()}
+        self.assertEqual(plain.review()["recommendations"]["omitted"],
+                         [{"kind": "add", "symbol": "MU", "reasons": ["EARNINGS_CHECK_GENERATED_AT_INVALID"]}])
+
+    def test_14_proposal_path_uses_the_same_check(self) -> None:
+        for changes, expected in (({}, None), ({"checked_at": "2026-09-30T19:59:00Z"}, "EARNINGS_CHECK_STALE")):
+            scenario = CheckedScenario({"SOXL": 45, "NBIS": 5}, "4500")  # N = 1.45 (within band)
+            scenario.earnings = {"MU": checked_record(**changes)}
+            scenario.proposals = [{"kind": "new_buy_within_band", "symbol": "MU", "target_weight": "0.05"},
+                                  {"kind": "swap_buy_leg", "symbol": "MU", "target_weight": "0.05",
+                                   "sell_symbol": "NBIS", "sell_target_weight": "0.05"}]
+            review = scenario.review()
+            self.assertEqual(review["band"]["state"], "WITHIN_BAND")
+            new_buy, swap = review["recommendations"]["proposals"]
+            if expected is None:
+                self.assertEqual((new_buy["status"], new_buy["reasons"]), ("DISPLAY", []))
+                self.assertEqual([(leg["action"], leg["symbol"]) for leg in new_buy["legs"]], [("buy", "MU")])
+                self.assertEqual(swap["status"], "DISPLAY")
+                self.assertEqual([(leg["action"], leg["symbol"]) for leg in swap["legs"]],
+                                 [("reduce", "NBIS"), ("buy", "MU")])
+            else:
+                self.assertEqual((new_buy["status"], new_buy["reasons"]), ("OMITTED", [expected]))
+                self.assertEqual((swap["status"], swap["reasons"], swap["buy_leg"]),
+                                 ("SELL_LEG_ONLY", [expected], "WITHHELD"))
 
 
 if __name__ == "__main__":
