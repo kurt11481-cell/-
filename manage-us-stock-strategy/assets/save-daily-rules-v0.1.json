@@ -4,7 +4,7 @@
   "company_roundup_label": "개별 기업",
   "schedule_section_labels": ["주요 일정", "주 차 주요 일정", "주 핵심 일정"],
   "original_link_label": "원문",
-  "holdings": ["MRVL", "MVLL", "NBIS", "SOXL"],
+  "holdings": ["MVLL", "NBIS", "SOXL"],
   "challengers": ["PGR", "JPM", "CME", "V"],
   "root_theses": [
     "AI_INFRASTRUCTURE",
