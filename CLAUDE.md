@@ -11,6 +11,7 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
   in their own terminal. Never type or guess the code and never reuse an earlier confirmation.
   Claude Code, Codex, scheduled tasks and Judge sessions never run apply. Before applying, read
   manage-us-stock-strategy/references/broker-snapshot-reconciliation.md.
+- Review-journal entries (stock-strategy-system/decision_journal.json) are written only through `portfolio_review_journal.py apply`, run in Cowork after the user sends "확인 <code>" for that proposal in the current conversation, or by the user in their own terminal. Claude Code, Codex, scheduled tasks and Judge sessions never run apply or edit the journal directly; never type or guess the code or reuse an earlier confirmation.
 - Never edit approved policy (stock-strategy-system/alert_policy.json, workspace/policies/*)
   or portfolio state without explicit user approval in this session.
 - Never read or print secrets (.env*, tokens, account numbers).
