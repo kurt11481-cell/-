@@ -25,6 +25,9 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | external-review | ALL | 2026-10-03 | — | external-batch-review-2026-10-03.md | 외부자료 10건 검토, 판단 변화 없음 |
 | 명단(머리말 없음) | 관심 5 | 2026-10-03 | — | watchlist-registry.json · watchlist-rubric-r2-scores-2026-10-03.json | 관심 명단 단일 출처(R2.1). 파일 자체가 원본 |
 | design | — | 2026-10-03 | draft | analysis-library-design-2026-10-03.md | 이 라이브러리 설계(사용자 승인 전 초안) |
+| design | ALL | 2026-10-04 | 확인 필요 | next-sandisk-discovery-design-2026-10-04.md | Next 샌디스크 발굴: 결과 문서 next-sandisk-scan-*.md(병목 씨앗)·N-렌즈 v1, 예약(매월 첫 토요일, 제안 모드)+수시(17절), 사용자 결정(10/4, 15·16절). 유지 보호(다음 실적까지·최대 13주)·F5는 자동 모드 전, 씨앗 칸 1개(관심 5+1)는 첫 점화 씨앗 전. 사이클 시계 → 10/8 M6 카드 입력 |
+| research | ALL | 2026-10-04 | — | library/research/next-sandisk-2026-10-04/ | Next 샌디스크 조사 3건 정리 기록(D급) + 원 보고서 출처 193개, 리플레이 스크립트·SNDK/SOXX 일봉(참고값), 수시 발굴 1회차 원 보고서 6건(scan-*.md). 설계 부록 E-4 |
+| leadership-n | CIEN·HWM·CRS·SOLS 외 | 2026-10-04 | 2026-11-07 | next-sandisk-scan-2026-10-04.md | Next 샌디스크 수시 1회차(사용자 수락 10/4): 씨앗 0 · 관찰 4(CIEN·HWM·CRS·SOLS) · GFS 제외(X2) · G2 해석 유지. 다음 달 조사 목록 포함 |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
