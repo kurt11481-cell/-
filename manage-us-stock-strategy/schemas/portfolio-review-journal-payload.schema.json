@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "S5 decision journal entry payload (activation, line review completed, peak review card completed)",
-  "description": "One object shape for the three entry types; the fields present depend on entry_type. Values are copied from one portfolio exposure review, never typed by hand.",
+  "title": "Decision journal entry payload (S5 activation, line review, peak review, card decision, card user decision)",
+  "description": "One object shape for all entry types; the fields present depend on entry_type (portfolio_review_journal.py checks the exact field set per type). S5 values are copied from one portfolio exposure review; card values come from a card that passed validate_holding_card. A card_decision proposal payload holds card_id, card_sha256, fact_pack_sha256 and decisions (a list of card_decision entry payloads). No quantity, price target or order field exists here.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -22,6 +22,27 @@
     "conclusion_note": {"type": "string"},
     "symbol": {"type": "string", "pattern": "^[A-Z][A-Z0-9.]{0,11}$"},
     "peak": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
-    "peak_date": {"type": "string", "format": "date"}
+    "peak_date": {"type": "string", "format": "date"},
+    "card_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"},
+    "card_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "fact_pack_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decision_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]{1,24}$"},
+    "decision_as_of": {"type": "string", "format": "date-time"},
+    "decision_session": {"type": "string", "format": "date"},
+    "analysis_action": {"enum": ["ADD", "HOLD", "TRIM", "EXIT"]},
+    "sidecar_action": {"enum": [
+      "HOLD_CORE", "HOLD_TIGHTEN_STOP", "HOLD_REVIEW_REQUIRED", "ADD_REVIEW", "TRIM_PROFIT", "TRIM_VALUATION",
+      "TRIM_TECHNICAL", "TRIM_CONCENTRATION", "TRIM_RISK", "EXIT_THESIS", "EXIT_HARD_STOP", "ROTATE_REVIEW",
+      "KEEP_CASH"
+    ]},
+    "conviction": {"enum": ["HIGH", "MEDIUM", "LOW"]},
+    "reference_close": {"type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "evidence_grade": {"type": ["string", "null"]},
+    "card_state_revision": {"type": ["integer", "null"], "minimum": 0},
+    "decisions": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "user_action": {"enum": ["ADD", "HOLD", "TRIM", "EXIT", "OTHER"]},
+    "effective_session": {"type": "string", "format": "date"},
+    "user_note": {"type": "string"}
   }
 }

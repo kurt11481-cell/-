@@ -65,8 +65,12 @@ def full_root(tmp: Path, *, updated: str = "2026-09-30T03:35:43+00:00",
     }})
     for name in ("2026-08-10", "2026-09-30-r2", "2026-09-30", "notes"):
         (tmp / ps.DEFAULT_PATHS["cards_dir"] / name).mkdir(parents=True)
+    # Real entry types: an S5 record and a user decision are never pending, only card decisions are.
     write_json(tmp / ps.DEFAULT_PATHS["journal"], {"entries": [
-        {"id": 1, "outcome": {"score": 1}}, {"id": 2}, {"id": 3, "outcome": None}]})
+        {"entry_type": "s5_activation", "sequence": 1},
+        {"entry_type": "card_decision", "sequence": 2, "payload": {"decision_id": "a" * 64}},
+        {"entry_type": "card_decision", "sequence": 3, "payload": {"decision_id": "b" * 64}},
+        {"entry_type": "card_user_decision", "sequence": 4, "payload": {"decision_id": "a" * 64}}]})
     return tmp
 
 
@@ -104,13 +108,38 @@ class PortfolioStatusTests(unittest.TestCase):
         self.assertAlmostEqual(tickers["SOXL"]["age_days"], 47.15, places=2)
         self.assertEqual(report["latest_card"], {"status": "OK", "date": "2026-09-30", "age_days": 0.0})
         self.assertEqual(report["scoring_pending"]["pending_count"], 2)
-        self.assertTrue(report["scoring_pending"]["assumed_schema"])
+        self.assertEqual(report["scoring_pending"]["score_report"], "MISSING")
+        self.assertNotIn("assumed_schema", report["scoring_pending"])
         self.assertEqual(report["warnings"], ["OPEN_ORDERS_NOT_PASS"])
         self.assertIn("9/30", line)
         self.assertIn("KIWOOM_API_RESPONSE_ERROR", line)
         self.assertIn("채점 대기 2건", line)
         self.assertTrue(report["read_only"])
         self.assertFalse(report["order_authority"])
+
+    def write_score_report(self, head: object, pending: object) -> None:
+        directory = self.tmp / ps.DEFAULT_PATHS["scores_dir"] / "20260930T120000Z"
+        write_json(directory / ps.SCORE_REPORT_FILE, {"journal": {"head_sha256": head},
+                                                       "summary": {"pending_decisions": pending,
+                                                                   "unscorable_decisions": 0}})
+
+    def test_pending_uses_the_score_report_only_when_it_matches_the_journal_head(self) -> None:
+        full_root(self.tmp)
+        journal = json.loads((self.tmp / ps.DEFAULT_PATHS["journal"]).read_text(encoding="utf-8"))
+        from validation_common import canonical_hash
+        head = canonical_hash(journal["entries"][-1])
+        self.write_score_report(head, 1)
+        pending = run_cli(self.tmp)[2]["scoring_pending"]
+        self.assertEqual((pending["pending_count"], pending["score_report"], pending["decision_count"]), (1, "CURRENT", 2))
+        self.write_score_report("0" * 64, 0)  # a newer report made from a different journal state
+        pending = run_cli(self.tmp)[2]["scoring_pending"]
+        self.assertEqual((pending["pending_count"], pending["score_report"]), (2, "STALE"))
+
+    def test_journal_without_card_decisions_has_nothing_pending(self) -> None:
+        full_root(self.tmp)
+        write_json(self.tmp / ps.DEFAULT_PATHS["journal"], {"entries": [{"entry_type": "s5_activation", "sequence": 1}]})
+        pending = run_cli(self.tmp)[2]["scoring_pending"]
+        self.assertEqual((pending["status"], pending["pending_count"]), ("OK", 0))
 
     def test_missing_files_do_not_fail(self) -> None:
         code, line, report = run_cli(self.tmp)

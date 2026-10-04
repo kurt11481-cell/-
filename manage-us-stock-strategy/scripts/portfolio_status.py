@@ -33,11 +33,13 @@ DEFAULT_PATHS = {
     "baseline_index": "workspace/research/holding-baselines/active-index.json",
     "cards_dir": "workspace/outputs/holding-cards",
     "journal": "stock-strategy-system/decision_journal.json",
+    "scores_dir": "workspace/outputs/journal-scores",
     "exposure_dir": "workspace/outputs/exposure-review",
     "output": "workspace/outputs/status/latest.json",
 }
-# S5 human-confirmation entries share the journal file; they are records, not decisions awaiting a score.
-S5_JOURNAL_ENTRY_TYPES = ("s5_activation", "line_review_completed", "peak_review_card_completed")
+# Only card decisions wait for a score; S5 confirmations and user decisions share the journal as records.
+CARD_DECISION_ENTRY_TYPE = "card_decision"
+SCORE_REPORT_FILE = "journal-scores.json"
 EXPOSURE_REVIEW_PREFIX = "portfolio-exposure-review."
 EXPOSURE_LOCALE_PATH = SKILL_ROOT / "assets/locales/portfolio-exposure-ko-KR.json"
 EXPOSURE_SCHEMA_PATH = SKILL_ROOT / "schemas/portfolio-exposure-review.schema.json"
@@ -204,19 +206,40 @@ def latest_card(directory: Path, now: datetime) -> dict[str, Any]:
     return {"status": "OK", "date": names[-1], "age_days": float((now.astimezone(KST).date() - card_date).days)}
 
 
-def journal_pending(path: Path) -> dict[str, Any]:
-    # Assumed schema (decision ledger is not built yet): a list of entries, or
-    # {"entries": [...]}. An entry without a truthy "outcome" is pending scoring.
-    # S5 confirmation entries (portfolio_review_journal.py) are never pending scoring.
+def journal_pending(path: Path, scores_dir: Path | None = None) -> dict[str, Any]:
+    """Card decisions still waiting for a score. S5 and user-decision entries are records, never pending.
+
+    The journal never stores scores. When the newest score report (score_decision_journal.py) was made from
+    this journal's current last entry, its pending count is used; otherwise every card decision counts as
+    waiting and score_report says why (MISSING or STALE).
+    """
     data, status = read_json(path)
     if status != "OK":
-        return {**missing_item(status), "assumed_schema": True}
-    entries = data.get("entries") if isinstance(data, dict) else data
+        return missing_item(status)
+    entries = data.get("entries") if isinstance(data, dict) else None
     if not isinstance(entries, list):
-        return {**missing_item("INVALID"), "assumed_schema": True}
-    pending = sum(1 for entry in entries if isinstance(entry, dict) and not entry.get("outcome")
-                  and entry.get("entry_type") not in S5_JOURNAL_ENTRY_TYPES)
-    return {"status": "OK", "entry_count": len(entries), "pending_count": pending, "assumed_schema": True}
+        return missing_item("INVALID")
+    decisions = [entry for entry in entries if isinstance(entry, dict)
+                 and entry.get("entry_type") == CARD_DECISION_ENTRY_TYPE]
+    result: dict[str, Any] = {"status": "OK", "entry_count": len(entries), "decision_count": len(decisions),
+                              "pending_count": len(decisions), "score_report": "MISSING"}
+    if not decisions or scores_dir is None or not scores_dir.is_dir():
+        return {**result, "pending_count": len(decisions), "score_report": "MISSING" if decisions else "NOT_NEEDED"}
+    reports = sorted(report for report in scores_dir.glob("*/" + SCORE_REPORT_FILE))
+    if not reports:
+        return result
+    report, report_status = read_json(reports[-1])
+    last = entries[-1]
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from validation_common import canonical_hash
+
+    head = canonical_hash(last) if isinstance(last, dict) else None
+    summary = as_dict(as_dict(report).get("summary"))
+    if report_status != "OK" or as_dict(as_dict(report).get("journal")).get("head_sha256") != head or (
+            not isinstance(summary.get("pending_decisions"), int)):
+        return {**result, "score_report": "STALE"}
+    return {**result, "pending_count": summary["pending_decisions"], "score_report": "CURRENT",
+            "unscorable_count": summary.get("unscorable_decisions")}
 
 
 def latest_exposure_review(directory: Path) -> dict[str, Any]:
@@ -334,7 +357,7 @@ def build_report(paths: dict[str, Path], now: datetime, stale_days: float) -> di
         "latest_reconciliation": latest_reconciliation(paths["ledger"], now),
         "baselines": baseline_items(paths["baseline_index"], now),
         "latest_card": latest_card(paths["cards_dir"], now),
-        "scoring_pending": journal_pending(paths["journal"]),
+        "scoring_pending": journal_pending(paths["journal"], paths["scores_dir"]),
         "exposure_review": latest_exposure_review(paths["exposure_dir"]),
     }
     report["warnings"] = collect_warnings(report)
