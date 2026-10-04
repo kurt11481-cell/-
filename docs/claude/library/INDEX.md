@@ -18,7 +18,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | card(관심) | MU·BE·DELL·AMD | 2026-10-02 | 확인 필요 | 같은 파일 5절(BE·DELL·AMD)·6절(MU) | 관심 카드·트리거 표 |
 | card(관심) | PWR | 2026-10-03 | 확인 필요 | watch-card-PWR-2026-10-03.md | 사용자 수락, kill ①~④ |
 | card(관심) | LITE | 2026-10-03 | 확인 필요 | watch-card-LITE-2026-10-03.md | 사용자 수락, R2.1 10/10, CRDO 대체 |
-| plan | MVLL | 2026-10-04 | 2026-10-08 | mvll-investor-day-plan-2026-10-04.md | Investor Day 대응 B+ 사용자 채택(10/4): ① 행사 전 약 118주(V5 지정) ② 반응 보고 약 119주 ③ 159주는 M6 v2. 9절 발표 예측 |
+| plan | MVLL | 2026-10-04 | 2026-10-08 | mvll-investor-day-plan-2026-10-04.md | Investor Day 대응 B+ 사용자 채택(10/4): ① 행사 전 약 118주(V5 지정) ② 반응 보고 약 119주 ③ 159주는 M6 v2. 9절 발표 예측 · 13절 ② 경계(시가 -10% 이하 큰 갭만 저점 매도 안 함) |
 | m6 | MVLL·SOXL | 2026-10-03 | 확인 필요 | m6-relative-comparison-mvll-soxl-cash-2026-10-03.md | 현금화 근거 없음, 비교상 MVLL 근소하게 약함 |
 | leadership | ALL | 2026-10-03 | 확인 필요 | next-leading-sectors-2026-10-03.md | 차기 후보 1 전력 병목·2 AI 네트워크·3 광부품 상류 |
 | ledger | ALL | 2026-10-03 | — | external-claims-ledger.md | 외부 주장 원장(강도 0, 추가 전용) |
