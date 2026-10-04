@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "S5 decision journal: human confirmations only (stock-strategy-system/decision_journal.json)",
-  "description": "Hash-chained entries appended by portfolio_review_journal.py apply after the user's confirmation code. HWM, line breaches and pauses are recomputed and never stored here.",
+  "title": "Decision journal: human confirmations only (stock-strategy-system/decision_journal.json)",
+  "description": "Hash-chained entries appended by portfolio_review_journal.py apply after the user's confirmation code. HWM, line breaches and pauses are recomputed and never stored here. Card entries (card_decision, card_user_decision) are records to score later, never orders: for them review_id is the card sha256 and evaluation_session is the decision session. Scores are never stored here.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "journal_type", "order_authority", "quantity_authority", "entries"],
@@ -21,7 +21,7 @@
           "quantity_authority"
         ],
         "properties": {
-          "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed"]},
+          "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed", "card_decision", "card_user_decision"]},
           "entry_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "sequence": {"type": "integer", "minimum": 1},
           "previous_entry_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},

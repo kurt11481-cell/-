@@ -14,7 +14,7 @@
     "proposal_type": {"const": "DECISION_JOURNAL_ENTRY"},
     "proposal_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "confirm_code": {"type": "string", "pattern": "^[0-9A-F]{8}$"},
-    "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed"]},
+    "entry_type": {"enum": ["s5_activation", "line_review_completed", "peak_review_card_completed", "card_decision", "card_user_decision"]},
     "payload": {"$ref": "portfolio-review-journal-payload.schema.json"},
     "review_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "evaluation_session": {"type": "string", "format": "date"},

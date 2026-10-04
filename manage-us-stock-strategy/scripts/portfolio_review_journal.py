@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""S5 decision journal: human confirmations only (activation, line review done, peak review done).
+"""Decision journal: human confirmations only (S5 activation, line review done, peak review done,
+card decisions and the user's own decision on a card).
 
 HWM, line breaches, pauses and instrument peaks are recomputed on every run (user decision P1); this
-journal stores only what a person confirmed. Every entry comes from a proposal built from one
-portfolio exposure review, and is written only with that proposal's confirmation code.
+journal stores only what a person confirmed. Every S5 entry comes from a proposal built from one
+portfolio exposure review, every card entry from a card that passed validate_holding_card (or from
+the user's own decision on a recorded card decision). Each is written only with that proposal's
+confirmation code. Scores are never stored here: score_decision_journal.py reads this file only.
 
 propose-activation / propose-line-review / propose-peak-review   build a proposal; never write the journal
+propose-card            card + fact pack -> one proposal that records one entry per recordable position
+propose-user-decision   the user's own decision on a recorded card decision (a correction is a new entry)
 show    render the proposal for the user
 apply   append the entry. Run apply only in Cowork after the user typed "confirm <code>" for that
         proposal in the current conversation, or from the user's own terminal
@@ -22,21 +27,25 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
 from portfolio_exposure import (
     JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW, review_activation_blockers, review_content_hash,
 )
+from validate_holding_card import validate_card
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = SKILL_ROOT.parent
 JOURNAL_SCHEMA = SKILL_ROOT / "schemas/portfolio-review-journal.schema.json"
+PAYLOAD_SCHEMA = SKILL_ROOT / "schemas/portfolio-review-journal-payload.schema.json"
 PROPOSAL_SCHEMA = SKILL_ROOT / "schemas/portfolio-review-journal-proposal.schema.json"
 REVIEW_SCHEMA = SKILL_ROOT / "schemas/portfolio-exposure-review.schema.json"
 LOCALE_PATH = SKILL_ROOT / "assets/locales/portfolio-exposure-ko-KR.json"
@@ -47,17 +56,38 @@ JOURNAL_SCHEMA_VERSION = "decision-journal-1.0"
 PROPOSAL_SCHEMA_VERSION = "decision-journal-proposal-1.0"
 JOURNAL_TYPE = "DECISION_JOURNAL"
 PROPOSAL_TYPE = "DECISION_JOURNAL_ENTRY"
+JOURNAL_CARD_DECISION = "card_decision"
+JOURNAL_CARD_USER_DECISION = "card_user_decision"
 S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
+CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
 GENESIS_HASH = "0" * 64
 PROPOSAL_MAX_AGE_SECONDS = 3600
 CONCLUSIONS = ("continue", "other")
+CARD_DECISION_FIELDS = ("card_id", "card_sha256", "fact_pack_sha256", "decision_id", "ticker", "decision_as_of",
+                        "decision_session", "analysis_action", "sidecar_action", "conviction", "reference_close",
+                        "evidence_grade", "card_state_revision")
+USER_DECISION_FIELDS = ("decision_id", "ticker", "user_action", "effective_session", "user_note")
+# What a card_decision proposal carries: the entry payloads are expanded one entry per position at apply.
+CARD_PROPOSAL_PAYLOAD_FIELDS = ("card_id", "card_sha256", "fact_pack_sha256", "decisions")
 PAYLOAD_FIELDS = {
     JOURNAL_ACTIVATION: ("activation_date", "hwm_usd", "hwm_as_of", "hwm_policy_initial_usd", "hwm_difference_usd",
                          "state_revision", "window_start", "window_end", "close_basis"),
     JOURNAL_LINE_REVIEW: ("line_id", "hwm", "breach_date", "review_status", "conclusion", "conclusion_note"),
     JOURNAL_PEAK_REVIEW: ("symbol", "peak", "peak_date", "breach_date", "review_status"),
+    JOURNAL_CARD_DECISION: CARD_DECISION_FIELDS,
+    JOURNAL_CARD_USER_DECISION: USER_DECISION_FIELDS,
 }
+# Card action -> the sidecar DECISION_ACTIONS name it is scored under (G3 decision 4, 2026-09-30).
+# A card's TRIM/EXIT reason_tag is already a sidecar name; HOLD depends on review_required.
+ALLOWED_SIDECAR_ACTIONS = {
+    "ADD": ("ADD_REVIEW",),
+    "HOLD": ("HOLD_CORE", "HOLD_REVIEW_REQUIRED"),
+    "TRIM": ("TRIM_CONCENTRATION", "TRIM_RISK", "TRIM_TECHNICAL", "TRIM_PROFIT", "TRIM_VALUATION"),
+    "EXIT": ("EXIT_HARD_STOP", "EXIT_THESIS", "ROTATE_REVIEW", "KEEP_CASH"),
+}
+DECIMAL_TEXT = re.compile(r"[0-9]+(\.[0-9]+)?")
+MIN_DECISION_ID_PREFIX = 8
 KST = timezone(timedelta(hours=9))
 
 
@@ -164,10 +194,17 @@ def build_proposal(*, entry_type: str, payload: dict[str, Any], review: dict[str
     if entry_type == JOURNAL_ACTIVATION and any(
             entry.get("entry_type") == JOURNAL_ACTIVATION for entry in journal["entries"]):
         raise JournalError("S5_ALREADY_ACTIVATED")
+    return _proposal_document(entry_type=entry_type, payload=payload, review_id=review["review_id"],
+                              evaluation_session=review["evaluation_session"], journal=journal,
+                              journal_path=journal_path, now=now)
+
+
+def _proposal_document(*, entry_type: str, payload: dict[str, Any], review_id: str, evaluation_session: str,
+                       journal: dict[str, Any], journal_path: str, now: datetime) -> dict[str, Any]:
     proposal: dict[str, Any] = {
         "schema_version": PROPOSAL_SCHEMA_VERSION, "proposal_type": PROPOSAL_TYPE,
         "proposal_id": "", "confirm_code": "", "entry_type": entry_type, "payload": payload,
-        "review_id": review["review_id"], "evaluation_session": review["evaluation_session"],
+        "review_id": review_id, "evaluation_session": evaluation_session,
         "generated_at": _utc_iso(now), "expires_at": _utc_iso(now + timedelta(seconds=PROPOSAL_MAX_AGE_SECONDS)),
         "journal_path": journal_path, "expected_journal_head_sha256": journal["head_sha256"],
         "expected_entry_count": len(journal["entries"]),
@@ -176,6 +213,117 @@ def build_proposal(*, entry_type: str, payload: dict[str, Any], review: dict[str
     proposal["proposal_id"] = proposal_content_hash(proposal)
     proposal["confirm_code"] = proposal["proposal_id"][:8].upper()
     return proposal
+
+
+def _decimal_text(value: Any) -> str | None:
+    """A positive finite number as plain decimal text, or None."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation:
+        return None
+    return format(number, "f") if number.is_finite() and number > 0 else None
+
+
+def card_decision_id(card_sha256: str, ticker: str) -> str:
+    return canonical_hash({"card_sha256": card_sha256, "ticker": ticker})
+
+
+def sidecar_action_for(position: dict[str, Any]) -> str:
+    """Map one card position to the sidecar action name it is scored under (G3 decision 4)."""
+    action = position.get("action")
+    if action == "HOLD":
+        return "HOLD_REVIEW_REQUIRED" if position.get("review_required") is True else "HOLD_CORE"
+    if action == "ADD":
+        return "ADD_REVIEW"
+    if action in ("TRIM", "EXIT") and position.get("reason_tag") in ALLOWED_SIDECAR_ACTIONS[action]:
+        return position["reason_tag"]
+    raise JournalError(f"CARD_ACTION_NOT_MAPPABLE:{position.get('ticker')}")
+
+
+def card_decision_payloads(card: dict[str, Any], fact_pack: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str], str]:
+    """(entry payloads sorted by ticker, withheld tickers, card sha256) for a card the validator accepted."""
+    errors = validate_card(card, fact_pack)
+    if errors:
+        raise JournalError("CARD_INVALID: " + ", ".join(errors[:5]))
+    source, status = fact_pack["source"], fact_pack.get("status") or {}
+    session = source.get("expected_completed_us_session")
+    if not isinstance(session, str) or not session:
+        raise JournalError("CARD_SESSION_MISSING")
+    card_sha256 = canonical_hash(card)
+    payloads: list[dict[str, Any]] = []
+    withheld: list[str] = []
+    for position in sorted(card["positions"], key=lambda item: item["ticker"]):
+        ticker = position["ticker"]
+        if position["action"] == "WITHHELD":
+            withheld.append(ticker)  # a withheld judgment has nothing to score
+            continue
+        close = fact_pack["tickers"][ticker].get("confirmed_close")
+        close_text = _decimal_text(close.get("price_usd")) if isinstance(close, dict) and close.get(
+            "session") == session else None
+        revision = status.get("state_revision")
+        payloads.append({
+            "card_id": card["card_id"], "card_sha256": card_sha256, "fact_pack_sha256": card["fact_pack_sha256"],
+            "decision_id": card_decision_id(card_sha256, ticker), "ticker": ticker,
+            "decision_as_of": source["decision_as_of"], "decision_session": session,
+            "analysis_action": position["action"], "sidecar_action": sidecar_action_for(position),
+            "conviction": position["conviction"], "reference_close": close_text,
+            "evidence_grade": status.get("evidence_grade") if isinstance(status.get("evidence_grade"), str) else None,
+            "card_state_revision": revision if isinstance(revision, int) and not isinstance(revision, bool) else None,
+        })
+    if not payloads:
+        raise JournalError("CARD_HAS_NO_RECORDABLE_POSITION")
+    return payloads, withheld, card_sha256
+
+
+def build_card_proposal(*, card: dict[str, Any], fact_pack: dict[str, Any], journal: dict[str, Any],
+                        journal_path: str = DEFAULT_JOURNAL_PATH, now: datetime) -> dict[str, Any]:
+    """One non-mutating proposal: one entry per recordable position of one validated card."""
+    if journal["status"] == "CORRUPT":
+        raise JournalError("JOURNAL_CORRUPT")
+    payloads, _withheld, card_sha256 = card_decision_payloads(card, fact_pack)
+    if any((entry.get("payload") or {}).get("card_sha256") == card_sha256 for entry in journal["entries"]
+           if entry.get("entry_type") == JOURNAL_CARD_DECISION):
+        raise JournalError("CARD_ALREADY_RECORDED")
+    payload = {"card_id": card["card_id"], "card_sha256": card_sha256,
+               "fact_pack_sha256": card["fact_pack_sha256"], "decisions": payloads}
+    return _proposal_document(entry_type=JOURNAL_CARD_DECISION, payload=payload, review_id=card_sha256,
+                              evaluation_session=payloads[0]["decision_session"], journal=journal,
+                              journal_path=journal_path, now=now)
+
+
+def find_card_decision(journal: dict[str, Any], decision_id: str) -> dict[str, Any]:
+    """The recorded card_decision entry for a full id or a unique prefix of at least 8 characters."""
+    text = decision_id.strip().lower()
+    if len(text) < MIN_DECISION_ID_PREFIX:
+        raise JournalError("DECISION_ID_TOO_SHORT")
+    found = [entry for entry in journal["entries"] if entry.get("entry_type") == JOURNAL_CARD_DECISION
+             and entry["payload"]["decision_id"].startswith(text)]
+    if len(found) != 1:
+        raise JournalError("DECISION_NOT_FOUND" if not found else "DECISION_ID_AMBIGUOUS")
+    return found[0]
+
+
+def build_user_decision_proposal(*, journal: dict[str, Any], decision_id: str, user_action: str,
+                                 effective_session: str | None, note: str, now: datetime,
+                                 journal_path: str = DEFAULT_JOURNAL_PATH) -> dict[str, Any]:
+    """The user's own decision on a recorded card decision. A correction is simply another entry."""
+    if journal["status"] == "CORRUPT":
+        raise JournalError("JOURNAL_CORRUPT")
+    if user_action not in ("ADD", "HOLD", "TRIM", "EXIT", "OTHER"):
+        raise JournalError("USER_ACTION_INVALID")
+    decision = find_card_decision(journal, decision_id)["payload"]
+    session = effective_session or decision["decision_session"]
+    if validate_instance({"effective_session": session}, PAYLOAD_SCHEMA):
+        raise JournalError("EFFECTIVE_SESSION_INVALID")
+    if session < decision["decision_session"]:
+        raise JournalError("EFFECTIVE_SESSION_BEFORE_DECISION")
+    payload = {"decision_id": decision["decision_id"], "ticker": decision["ticker"], "user_action": user_action,
+               "effective_session": session, "user_note": note}
+    return _proposal_document(entry_type=JOURNAL_CARD_USER_DECISION, payload=payload,
+                              review_id=decision["card_sha256"], evaluation_session=session, journal=journal,
+                              journal_path=journal_path, now=now)
 
 
 def _atomic_write(path: Path, document: dict[str, Any]) -> None:
@@ -192,16 +340,62 @@ def _atomic_write(path: Path, document: dict[str, Any]) -> None:
         Path(temporary_name).unlink(missing_ok=True)
 
 
+def _entry_items(proposal: dict[str, Any], journal: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    """(entry_id, payload) for every entry the proposal appends. Card proposals are re-checked field by field."""
+    entry_type, payload = proposal["entry_type"], proposal["payload"]
+    if entry_type == JOURNAL_CARD_DECISION:
+        if any(entry.get("entry_type") == JOURNAL_CARD_DECISION and entry["payload"]["card_sha256"] == payload["card_sha256"]
+               for entry in journal["entries"]):
+            raise JournalError("CARD_ALREADY_RECORDED")
+        if proposal["review_id"] != payload["card_sha256"]:
+            raise JournalError("CARD_PAYLOAD_INCONSISTENT")
+        items: list[tuple[str, dict[str, Any]]] = []
+        tickers: set[str] = set()
+        for decision in payload["decisions"]:
+            if not isinstance(decision, dict) or sorted(decision) != sorted(CARD_DECISION_FIELDS) or (
+                    validate_instance(decision, PAYLOAD_SCHEMA)):
+                raise JournalError("JOURNAL_PAYLOAD_FIELDS_INVALID")
+            if (decision["card_id"], decision["card_sha256"], decision["fact_pack_sha256"]) != (
+                    payload["card_id"], payload["card_sha256"], payload["fact_pack_sha256"]) or (
+                    decision["decision_session"] != proposal["evaluation_session"]) or (
+                    decision["decision_id"] != card_decision_id(decision["card_sha256"], decision["ticker"])) or (
+                    decision["sidecar_action"] not in ALLOWED_SIDECAR_ACTIONS[decision["analysis_action"]]) or (
+                    decision["ticker"] in tickers):
+                raise JournalError("CARD_PAYLOAD_INCONSISTENT")
+            tickers.add(decision["ticker"])
+            items.append((decision["decision_id"], decision))
+        return items
+    if entry_type == JOURNAL_CARD_USER_DECISION:
+        if validate_instance(payload, PAYLOAD_SCHEMA):
+            raise JournalError("JOURNAL_PAYLOAD_FIELDS_INVALID")
+        decision = find_card_decision(journal, payload["decision_id"])["payload"]
+        if payload["decision_id"] != decision["decision_id"] or payload["ticker"] != decision["ticker"] or (
+                payload["effective_session"] < decision["decision_session"]) or (
+                proposal["review_id"] != decision["card_sha256"]) or (
+                proposal["evaluation_session"] != payload["effective_session"]):
+            raise JournalError("USER_DECISION_PAYLOAD_INCONSISTENT")
+    return [(proposal["proposal_id"], payload)]
+
+
 def apply_proposal(*, journal_path: Path, proposal: dict[str, Any], confirmation: dict[str, Any],
                    now: datetime | None = None) -> dict[str, Any]:
-    """Append one confirmed entry. Every check fails closed; nothing else is written."""
+    """Append the confirmed entry (the last one when a card proposal appends several)."""
+    return apply_proposal_entries(journal_path=journal_path, proposal=proposal, confirmation=confirmation,
+                                  now=now)[-1]
+
+
+def apply_proposal_entries(*, journal_path: Path, proposal: dict[str, Any], confirmation: dict[str, Any],
+                           now: datetime | None = None) -> list[dict[str, Any]]:
+    """Append every entry of one confirmed proposal in one atomic write. Every check fails closed."""
     errors = validate_instance(proposal, PROPOSAL_SCHEMA)
     if errors:
         raise JournalError("JOURNAL_PROPOSAL_SCHEMA_INVALID: " + "; ".join(errors[:5]))
     if proposal_content_hash(proposal) != proposal["proposal_id"] or (
             proposal["confirm_code"] != proposal["proposal_id"][:8].upper()):
         raise JournalError("JOURNAL_PROPOSAL_INTEGRITY_MISMATCH")
-    if sorted(proposal["payload"]) != sorted(PAYLOAD_FIELDS[proposal["entry_type"]]):
+    expected_fields = (CARD_PROPOSAL_PAYLOAD_FIELDS if proposal["entry_type"] == JOURNAL_CARD_DECISION
+                       else PAYLOAD_FIELDS[proposal["entry_type"]])
+    if sorted(proposal["payload"]) != sorted(expected_fields):
         raise JournalError("JOURNAL_PAYLOAD_FIELDS_INVALID")
     code = confirmation.get("confirm_code")
     if not isinstance(code, str) or not code.strip():
@@ -228,25 +422,32 @@ def apply_proposal(*, journal_path: Path, proposal: dict[str, Any], confirmation
     if proposal["entry_type"] == JOURNAL_ACTIVATION and any(
             entry.get("entry_type") == JOURNAL_ACTIVATION for entry in journal["entries"]):
         raise JournalError("S5_ALREADY_ACTIVATED")
+    items = _entry_items(proposal, journal)
     confirmed_at = _utc_iso(current_time)
-    entry = {
-        "entry_type": proposal["entry_type"], "entry_id": proposal["proposal_id"],
-        "sequence": len(journal["entries"]) + 1, "previous_entry_sha256": journal["head_sha256"],
-        "confirm_code": proposal["confirm_code"], "confirmation_method": confirmation["confirmation_method"],
-        "user_message": message, "user_confirmed_at": confirmed_at,
-        "review_id": proposal["review_id"], "evaluation_session": proposal["evaluation_session"],
-        "payload": proposal["payload"], "order_authority": False, "quantity_authority": "none",
-    }
+    entries: list[dict[str, Any]] = []
+    previous = journal["head_sha256"]
+    for offset, (entry_id, entry_payload) in enumerate(items):
+        entry = {
+            "entry_type": proposal["entry_type"], "entry_id": entry_id,
+            "sequence": len(journal["entries"]) + 1 + offset, "previous_entry_sha256": previous,
+            "confirm_code": proposal["confirm_code"], "confirmation_method": confirmation["confirmation_method"],
+            "user_message": message, "user_confirmed_at": confirmed_at,
+            "review_id": proposal["review_id"], "evaluation_session": proposal["evaluation_session"],
+            "payload": entry_payload, "order_authority": False, "quantity_authority": "none",
+        }
+        previous = canonical_hash(entry)
+        entries.append(entry)
     document = {"schema_version": JOURNAL_SCHEMA_VERSION, "journal_type": JOURNAL_TYPE,
-                "order_authority": False, "quantity_authority": "none", "entries": journal["entries"] + [entry]}
+                "order_authority": False, "quantity_authority": "none", "entries": journal["entries"] + entries}
     errors = validate_instance(document, JOURNAL_SCHEMA)
     if errors:
         raise JournalError("JOURNAL_ENTRY_SCHEMA_INVALID: " + "; ".join(errors[:5]))
     _atomic_write(Path(journal_path), document)
     written = load_journal(journal_path)
-    if written["status"] != "OK" or written["head_sha256"] != canonical_hash(entry):
+    if written["status"] != "OK" or written["head_sha256"] != previous or (
+            len(written["entries"]) != len(journal["entries"]) + len(entries)):
         raise JournalError("JOURNAL_WRITE_VERIFICATION_FAILED")
-    return entry
+    return entries
 
 
 def _messages() -> dict[str, str]:
@@ -270,6 +471,19 @@ def render_proposal(proposal: dict[str, Any], *, now: datetime | None = None) ->
         lines.append(messages["journal_show_line_review"].format(
             line_id=payload.get("line_id"), hwm=payload.get("hwm"), breach_date=payload.get("breach_date"),
             conclusion=payload.get("conclusion")))
+    elif proposal.get("entry_type") == JOURNAL_CARD_DECISION:
+        decisions = [item for item in payload.get("decisions") or [] if isinstance(item, dict)]
+        lines.append(messages["journal_show_card_decision"].format(
+            card_id=payload.get("card_id"), count=len(decisions), session=proposal.get("evaluation_session")))
+        for item in decisions:
+            lines.append(messages["journal_show_card_decision_row"].format(
+                ticker=item.get("ticker"), action=item.get("analysis_action"), sidecar=item.get("sidecar_action"),
+                conviction=item.get("conviction"), reference_close=item.get("reference_close") or "-",
+                decision_id=str(item.get("decision_id"))[:MIN_DECISION_ID_PREFIX]))
+    elif proposal.get("entry_type") == JOURNAL_CARD_USER_DECISION:
+        lines.append(messages["journal_show_user_decision"].format(
+            ticker=payload.get("ticker"), action=payload.get("user_action"), session=payload.get("effective_session"),
+            decision_id=str(payload.get("decision_id"))[:MIN_DECISION_ID_PREFIX]))
     else:
         lines.append(messages["journal_show_peak_review"].format(
             symbol=payload.get("symbol"), peak=payload.get("peak"), peak_date=payload.get("peak_date"),
@@ -327,6 +541,53 @@ def cmd_propose(args: argparse.Namespace) -> int:
     return 0
 
 
+def _write_proposal(proposal: dict[str, Any], output_root: Path, messages: dict[str, str]) -> None:
+    errors = validate_instance(proposal, PROPOSAL_SCHEMA)
+    if errors:
+        raise JournalError("JOURNAL_PROPOSAL_SCHEMA_INVALID: " + "; ".join(errors[:5]))
+    directory = _unique_directory(Path(output_root) / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
+    write_json(directory / PROPOSAL_FILE, proposal)
+    print("\n".join(render_proposal(proposal)))
+    print(messages["journal_propose_path"].format(path=str(directory / PROPOSAL_FILE)))
+
+
+def cmd_propose_card(args: argparse.Namespace) -> int:
+    messages = _messages()
+    try:
+        card, fact_pack = load_json(args.card), load_json(args.fact_pack)
+        if not isinstance(card, dict) or not isinstance(fact_pack, dict):
+            raise JournalError("CARD_OR_FACT_PACK_NOT_OBJECT")
+        journal_path = _resolve_journal(args)
+        proposal = build_card_proposal(
+            card=card, fact_pack=fact_pack, journal=load_journal(journal_path),
+            journal_path=DEFAULT_JOURNAL_PATH if args.journal is None else str(args.journal),
+            now=datetime.now(timezone.utc))
+        withheld = card_decision_payloads(card, fact_pack)[1]
+        if withheld:
+            print(messages["journal_propose_card_withheld"].format(tickers=", ".join(withheld)))
+        _write_proposal(proposal, args.output_root, messages)
+    except (JournalError, OSError, ValueError, KeyError, TypeError) as exc:
+        print(messages["journal_apply_rejected"].format(reason=str(exc) or type(exc).__name__))
+        return 2
+    return 0
+
+
+def cmd_propose_user_decision(args: argparse.Namespace) -> int:
+    messages = _messages()
+    try:
+        journal_path = _resolve_journal(args)
+        proposal = build_user_decision_proposal(
+            journal=load_journal(journal_path), decision_id=args.decision_id, user_action=args.user_action,
+            effective_session=args.effective_session, note=args.note or "",
+            journal_path=DEFAULT_JOURNAL_PATH if args.journal is None else str(args.journal),
+            now=datetime.now(timezone.utc))
+        _write_proposal(proposal, args.output_root, messages)
+    except (JournalError, OSError, ValueError, KeyError, TypeError) as exc:
+        print(messages["journal_apply_rejected"].format(reason=str(exc) or type(exc).__name__))
+        return 2
+    return 0
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     messages = _messages()
     try:
@@ -336,19 +597,25 @@ def cmd_apply(args: argparse.Namespace) -> int:
         if args.confirmed_via == "COWORK_CHAT_USER_MESSAGE" and not (args.user_message or "").strip():
             raise JournalError("USER_CONFIRMATION_MESSAGE_REQUIRED")
         code = args.confirm.strip().upper()
-        entry = apply_proposal(
+        entries = apply_proposal_entries(
             journal_path=_resolve_journal(args, proposal), proposal=proposal,
             confirmation={"confirm_code": code, "confirmation_method": args.confirmed_via,
                           "user_message": args.user_message if args.user_message else code})
     except (JournalError, OSError, ValueError, KeyError, TypeError) as exc:
         print(messages["journal_apply_rejected"].format(reason=str(exc) or type(exc).__name__))
         return 2
-    print(messages["journal_apply_success"].format(sequence=entry["sequence"], entry_type=entry["entry_type"]))
+    if len(entries) == 1:
+        print(messages["journal_apply_success"].format(sequence=entries[0]["sequence"],
+                                                        entry_type=entries[0]["entry_type"]))
+    else:
+        print(messages["journal_apply_success_many"].format(
+            first=entries[0]["sequence"], last=entries[-1]["sequence"], count=len(entries),
+            entry_type=entries[0]["entry_type"]))
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="S5 decision journal (human confirmations only)")
+    parser = argparse.ArgumentParser(description="Decision journal (human confirmations only)")
     commands = parser.add_subparsers(dest="command", required=True)
     for name in ("propose-activation", "propose-line-review", "propose-peak-review"):
         propose = commands.add_parser(name, help="build a proposal from one exposure review; never writes the journal")
@@ -361,6 +628,19 @@ def build_parser() -> argparse.ArgumentParser:
             propose.add_argument("--note")
         if name == "propose-peak-review":
             propose.add_argument("--symbol", required=True)
+    card = commands.add_parser("propose-card", help="record one validated card (one entry per position); never writes")
+    card.add_argument("--card", type=Path, required=True)
+    card.add_argument("--fact-pack", type=Path, required=True)
+    card.add_argument("--journal", type=Path)
+    card.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    user = commands.add_parser("propose-user-decision",
+                               help="record the user's own decision on a card decision; never writes")
+    user.add_argument("--decision-id", required=True, help="card decision id (a unique prefix of 8+ characters works)")
+    user.add_argument("--user-action", required=True, choices=("ADD", "HOLD", "TRIM", "EXIT", "OTHER"))
+    user.add_argument("--effective-session", help="U.S. session date the decision refers to (default: the card session)")
+    user.add_argument("--note")
+    user.add_argument("--journal", type=Path)
+    user.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     show = commands.add_parser("show", help="render one proposal")
     show.add_argument("--proposal", type=Path, required=True)
     apply = commands.add_parser("apply", help="append one entry after the user's explicit confirmation code")
@@ -378,6 +658,10 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
     args = build_parser().parse_args(argv)
+    if args.command == "propose-card":
+        return cmd_propose_card(args)
+    if args.command == "propose-user-decision":
+        return cmd_propose_user_decision(args)
     if args.command.startswith("propose-"):
         return cmd_propose(args)
     if args.command == "show":
