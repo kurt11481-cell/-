@@ -468,6 +468,8 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 - 2026-09-30 **S6 I7 병합 완료:** Builder 커밋 254a43a(worktree-status-view, 신규 3 + .gitignore 1줄)를 사용자가 Windows 터미널에서 `git merge --no-ff`로 병합했다(병합 커밋 0ac9212, 부모 6e7c781·254a43a, 변경 4파일 +592). 병합 전 `.git/index.lock` 잔존 파일을 삭제하고 재시도했다(git 프로세스 없음 확인). 대상 테스트 13건 통과(병합 뒤 Cowork에서 재실행). 원본 폴더 실행 결과가 Cowork 수동 확인과 같음: 상태 9/30 03:35 UTC(0일), 조정 원장 2건·revision 16, 브로커 MATCH, 마지막 카드 9/30, 미체결 조회 KIWOOM_API_RESPONSE_ERROR(경고). 고정 16개·정책·상태 파일 변경 0. 전체 스위트 기준선 실패(23 failures + 291 errors)는 worktree 데이터 부재로 추정, 원인 확인 필요. 채점 대기 0은 임시 스키마 가정(`assumed_schema: true`), S7b에서 확정. 다음: H1(Cowork, Sonnet·medium), 그다음 S7a.
 - 2026-09-30 **S7a I1 병합 완료:** Builder 커밋 c6fae62(worktree-card-v1, 신규 8 + .gitignore 1줄)를 사용자가 Windows 터미널에서 `git merge --no-ff`로 병합했다(병합 커밋 65117d5, 부모 0ac9212·c6fae62, 변경 9파일 +2699). 병합 뒤 Cowork 확인: fact pack 36·card 65·portfolio_status 13·language_contract 2건 통과, 스키마 감사 PASS, `.gitignore`가 holding-cards 산출물을 무시한다. 고정 16개·dashboard·renderer·정책·상태 파일 변경 0. 전체 스위트는 기준선 대비 새 실패 0(Cowork VM 대조: 에러 295 동일, 기준선 실패 해소 0). 사용자 수용한 Builder 판단: 확신도 상한 해제 등급은 GRADE_A·GRADE_B, ROTATE_REVIEW·KEEP_CASH는 EXIT 사유 태그. 확인 필요(Judge·사용자): ① 정책 레버리지 식의 `NBIL` 표기(NBIS 배수가 결측, 정책 파일이라 미수정) ② timing은 최근 알림 결과가 8/5자라 항상 NOT_EVALUATED ③ 카드 자유 서술 속 숫자는 검증하지 않음 ④ `SKILL.md`에 새 명령 미등록(배포 게이트 해시, P4 §5 대기). 다음: 수동 분석 1회 뒤 Cowork에서 fact pack → 카드 → 검증 → 렌더로 실제 카드 1건을 만들고 사용자가 평가(판단에 씀/참고만/안 씀). '안 씀'이면 S7b로 가지 않고 형식을 먼저 고친다.
 - 2026-09-30 **S7a 실제 카드 1건 평가:** 카드 r3(분석 manual-20260930T134453382928Z-be5dbd8ac6b0, decision_as_of 2026-09-30T13:44:53Z; MVLL TRIM/LOW, SOXL HOLD/LOW, NBIS HOLD/LOW, 검증 PASS·렌더 OK)를 사용자가 평가했다: **판단에 씀.** 따라서 형식 수정 없이 S7b 진행 조건 중 카드 수용은 충족. 한계(확인 필요): 이벤트는 파일럿 r2 재사용(재조회 안 함), 9/30 SAVE 미반영, 확신도는 증거 등급 UNVERIFIED·preflight FAIL로 전부 LOW 상한. S7b는 정책 기본 방향·손실한도 재검토(새 Cowork 진행 중) 결과가 나온 뒤 시작한다.
+- 2026-10-04 **S1b 안 B′ 병합 완료(K3):** Builder 커밋 617b693(worktree-preflight-b, 6파일 +1212/−4, 구현 Judge PASS_WITH_CONDITIONS)을 사용자가 Windows 터미널에서 `git merge --no-ff`로 병합했다(병합 커밋 02d9250, 부모 be36308·617b693, 브랜치 codex/master-recovery-expansion, push 안 함). `git diff --stat be36308 HEAD`가 검증본과 같음(6파일, +1212/−4). 승격 조건 C1~C7(C4a 코드 {571758} + C4b 메시지 정확 일치). 주문·수량 권한 변화 없음(order_authority=false, quantity_authority=none). 병합 후 원본 폴더 전체 스위트(`python -m unittest discover -s manage-us-stock-strategy/tests -p "test_*.py"`): Ran 2367, failures=10, errors=15. 새 테스트 29개와 plan A·K2 테스트는 통과, 실패 목록에 s1b·k2 브리지 테스트 없음. 실패 원인은 환경(pypdf 없음, Join-Path 빈 경로, SEC_ACCESS_BLOCKED), 기존 승인 manifest 해시 불일치(`run_manual_portfolio_analysis.py`는 병합 대상 아님·미수정), 테스트가 읽는 NBIS 보유 상태(13≠15)로 분류했고 이번 변경과 연결된 것은 없음. Builder 기준선(23/291)은 worktree 기준이라 직접 비교하지 못함(확인 필요). **남은 일:** 다음 미국장 거래일(10/5 월 밤~10/6 아침 KST) 실제 수동 분석 1회로 GRADE_B와 `terminated_by` 확인(설계 §9-8; no_data_declared=true인데 terminated_by가 없으면 읽기 전용 진단 재실행). 운영 규칙 유지: SELL READY를 쓰기 전 키움 미체결·예약주문 화면 확인(ord_dt 기준, 예약주문 노출, 주문 유효기간 미해결). 별도 과제: 기존 승인 manifest 해시 불일치 정리.
+- 2026-10-05 **S7b I2 병합 완료(K2):** Builder 커밋 98dd290(worktree-journal-v1, 수정 8 + 신규 3, 11파일 +1585/−42)을 사용자가 Windows 터미널에서 `git merge --no-ff`로 병합했다(병합 커밋 39eb6ce, 부모 9e4fc3c·98dd290). 범위는 새 원장 없이 기존 `decision_journal.json`에 entry_type `card_decision`·`card_user_decision`을 추가하고 읽기 전용 채점기 `score_decision_journal.py`를 새로 둔 것이다(채점 출력은 `workspace/outputs/journal-scores/`, git 제외, 원장에는 쓰지 않음). 원장 쓰기 경로는 `portfolio_review_journal.py` apply 하나. 키움 acceptance 고정 16개·sidecar·run_manual·정책·상태 파일·`.claude/settings.json` 변경 0. 병합 뒤 Cowork 확인: 신규 30건·status 15건·저널 9건 통과, 스키마 감사 PASS, 저널 체인 verify OK(항목 1건 유지), 채점기 첫 실행(빈 원장)은 오류 없이 "카드 결정 0건"이고 실행 전후 원장 해시 동일. 전체 스위트 기준선 대비 새 실패 0은 Builder 보고이며 Cowork에서 재실행하지 않았다. 확인 필요: ① 실제 종가 채점 경로는 합성 데이터 테스트로만 검증됨(원장 카드 0건) ② 다음 카드부터 `propose-card` → 확인 <코드>로 첫 기록, 기록하면 그 전에 만든 S5 제안은 `JOURNAL_CHANGED_SINCE_PROPOSAL`로 만료 ③ A6의 기초자산(SOXX·MRVL) 참고 표시는 승인 범위 밖이라 미포함 ④ 첫 20세션 채점은 첫 원장 기록 뒤 약 4주. 다음: S8(선행 S7b 충족, 착수 전 부록 A7·A8 갱신).
 ---
 
 ## 10. 반론 검토 반영 기록 (2026-09-30)
@@ -680,34 +682,70 @@ git commit -m "docs(claude): system review phase1, P3 design, P4 roadmap; add .w
 6. 테스트: 체인 검증, 미래 정보 차단, 세션 계산, TRIM/EXIT 부호, reference only 라벨, git check-ignore.
 ```
 
-### A7. S8 R6 Builder (초안)
+### A7. S8 R6 Builder (초안, 2026-10-05 갱신)
 
 **[Claude Code 실행 권장] 모델: Opus · 추론 노력: xhigh · 세션: BOUNDARY_RESET_REQUIRED (새 worktree `gov-r6`) · 이유: K3 고정 범위·권한 해시 재설계**
 
+**착수 전 확인 (2026-10-05 Cowork, 읽기 전용).** 지시문 0~2단계에서 Builder가 다시 잰다.
+
+| 항목 | 지금 상태 | 근거 |
+|---|---|---|
+| 선행 | S7b 병합으로 충족(`98dd290`, 병합 `39eb6ce`). S1b 안 B′도 병합(`617b693`, 병합 `02d9250`) | git log |
+| 고정 16개 | 동결 커밋 `4db8c51` 뒤 이 16개를 바꾼 커밋 0. `f0bab…`와 불일치는 09-29와 같은 2개(`run_manual_portfolio_analysis.py` `BAEC16…`, `test_manual_portfolio_analysis.py` `7368D7…`) | 정규화 해시 재계산 |
+| 권한 파일 | `workspace/policies/`는 09-29 진단 뒤 변경 0 | git log |
+| acceptance 관련 실패 | Cowork VM(Python 3.10)에서 두 파일만 다시 돌림: materialize ERROR 15·FAIL 1, v2_6_7 FAIL 3. 이 중 2건은 VM 탓으로 판단(`test_new_schemas_and_policy_validate`: 3.10이 소수 7자리 시각을 못 읽음, materialize `test_03b`: 삭제가 막힌 폴더에서 임시 폴더 정리 실패). 빼면 materialize 15 + v2_6_7 2 = 17로 09-30 Windows 구성과 같다. **Windows 재확인은 확인 필요** | 대상 테스트 2개 |
+| 전체 스위트 | 최신 수치는 10-04 원본 폴더 실행(Ran 2367, failures=10, errors=15)뿐이고 실패 목록 파일은 없다. S7b 뒤 "새 실패 0"은 Builder 보고다. **숫자는 확인 필요** → 1단계에서 새로 잰다 | §9 |
+| 0단계 | 여전히 필요하다. 10-04에 만든 worktree `journal-v1`에서도 manifest 원시 해시가 `0a7de90c…`(원본 `f0bab…`)이고, `.gitattributes`는 없다 | 바이트 비교 |
+| R6 ①~⑧ | 모두 미착수(관련 파일 미변경). S7b는 ①~⑧ 내용을 바꾸지 않는다. 바뀐 것은 아래 지시문 2a~2e(고정 후보 파일 목록, S7 2차와의 순서, ⑨, R7 증거, 범위 밖 종목) | — |
+
+- materialize 테스트는 임시 폴더를 저장소 안(`workspace/research/provider-evidence/kiwoom/`)에 만든다. 삭제가 막힌 곳(Cowork VM)에서 돌리면 `tmp*` 폴더가 남는다.
+- 이름 주의: 여기 R6~R9는 S8 거버넌스 단계다. S5 정책안의 R 번호(R6 = 입출금 신고 등)와 다르다.
+
 ```text
-역할: I4 R6·R7 Builder (K3). 설계: P3 §8 전체, P4 §4 S8.
-규칙: 테스트 기대값을 약화하지 않는다. 권한 파일 4개의 의미를 바꾸지 않는다. 활성화(R9)는 하지 않는다. 커밋은 내 승인 뒤.
-0. 이 worktree에서 원시 해시 테스트를 판정할 수 있는지 먼저 확인한다
-   (docs/claude/kiwoom-acceptance-pin-diagnosis-2026-09-29.md 진행 기록: 이전에는 불가해서 원본 폴더에서 진행했다). 불가하면 멈추고 진행 위치를 묻는다.
-1. 기준선: 전체 테스트를 서브에이전트로 실행하고 실패 목록만 기록한다.
-2. 계획 → 승인.
-3. P3 §8-3 R6 ①~⑧. 보호 기능을 옮길 때마다 "이전 테스트 → 새 테스트" 대응표를 만든다.
-4. R7: manifest 후보 1회 생성, 후보 검증기 PASS, 전체 테스트에서 acceptance 관련 17건 해소.
-5. 보고서 docs/claude/i4-r6-builder-report-<YYYY-MM-DD>.md, 커밋 요청.
-멈춤: 보호 기능 이전 중 기존 테스트 기대값을 바꿔야 함 / 권한 파일 의미를 바꿔야 함.
+역할: I4 R6·R7 Builder (K3). 설계: P3 §8 전체, P4 §4 S8과 부록 A7 "착수 전 확인", docs/claude/kiwoom-acceptance-pin-diagnosis-2026-09-29.md §2~4.
+규칙: 테스트 기대값을 약화하지 않는다. 권한 파일 4개의 의미를 바꾸지 않는다. order_authority=false, quantity_authority=none 그대로.
+활성화(R9)는 하지 않는다. alert_policy.json(S7 2차 대기), SKILL.md, 정책·상태 파일, decision_journal.json은 고치지 않는다. 커밋은 내 승인 뒤.
+0. 이 worktree에서 원시 해시 테스트를 판정할 수 있는지 먼저 확인한다(09-29 진단과 10-04 journal-v1 모두 worktree 바이트가 원본과 달랐다).
+   불가하면 멈추고 판정 위치를 묻는다. 후보: (가) 원본 폴더 바이트 복사본(저장소 밖 임시 폴더)에 이 worktree diff를 적용해 해당 테스트만 실행
+   (나) 원본 폴더에서 실행(09-29 2~4단계 선례).
+1. 기준선: 전체 테스트를 서브에이전트로 실행하고 실패 목록만 기록한다. acceptance 관련(materialize, v2_6_7)은 테스트 이름까지 적고,
+   환경·상태 의존 실패(PowerShell Join-Path, pypdf, SEC_ACCESS_BLOCKED, 상태 파일의 NBIS 수량 등)는 따로 분류한다.
+2. 계획 → 승인. 계획에 다음을 넣는다.
+   a. 새 고정 범위(P3 §8-2)의 파일 목록을 지금 HEAD로 다시 뽑고, 파일마다 마지막 변경 커밋을 적는다. "상태 쓰기" 묶음은 P3 뒤에 바뀌었다
+      (kiwoom_account_readonly_bridge.py: S1b 안 A 98a660b·안 B′ 617b693 / 조정 명령·apply·kiwoom_broker_shadow.py·제안 스키마: S7 1차 770c6fc).
+      조정 경로가 새로 import하는 cash_flow_evidence.py(+스키마)를 넣을지 제안한다.
+      결정 원장 경로(portfolio_review_journal.py, score_decision_journal.py)는 키움 acceptance와 무관하므로 넣지 않는 것이 기본이다.
+   b. S7 2차(docs/claude/s7-builder-report-2026-10-01.md §1a·§2.1: 옛 통제 은퇴, deployment_gate 파일 timing_engine.py·evaluate_alerts.py 등)가
+      바꿀 파일과 새 고정 범위가 겹치는지. 겹치면 멈추고 순서를 묻는다(S7 2차 먼저 / S8 먼저 하고 S7 2차를 K3로 / 그 파일은 고정 제외).
+   c. ⑨ ADD-T(docs/claude/preflight-fail-fix-design-2026-09-30.md 부록 A) 포함 여부. 조건은 "S1b 안 B′ 뒤에도 보조 조회 오류로 preflight FAIL 반복"이다.
+      안 B′ 라이브 확인(GRADE_B, terminated_by) 결과를 나에게 묻고 정한다.
+   d. R7 증거: 08-13/14 증거 재사용(핀 진단 §5-2 권장)인지 새 실시간 조회인지. 결정 기록이 없으므로 묻는다.
+   e. R9 범위는 기존 15종목 그대로다. 범위 밖인데 지금 쓰는 종목(MU, DELL, AMD, TQQQ, DRAM, PWR, LITE, SPY)은 목록으로만 보고하고 추가하지 않는다.
+3. P3 §8-3 R6 ①~⑧(2c에서 정하면 ⑨). 보호 기능을 옮길 때마다 "이전 테스트 → 새 테스트" 대응표를 만든다.
+4. R7: manifest 후보 1회 생성, 후보 검증기 PASS, 전체 테스트(서브에이전트)에서 1단계의 acceptance 관련 실패가 모두 해소되고 새 실패 0.
+5. 대상 테스트가 기준선과 같다: test_reconcile_broker_state, test_cash_flow_evidence, test_cash_flow_evidence_u3, test_s1b_provider_marks,
+   test_s1b_plan_b_no_data_pass, test_k2_bridge_evidence_integrity, test_decision_journal_cards, test_portfolio_review_journal, 옮긴 test_04·test_08.
+6. 보고서 docs/claude/i4-r6-builder-report-<YYYY-MM-DD>.md, 커밋 요청. 보고 직전 한 줄:
+   "fail-open 6종(Partial·Stale·Missing·Unknown·Deny-list·Swallowed)을 새 결정 경로마다 대어 봤다: 예/아니오(이유)".
+멈춤: 보호 기능 이전 중 기존 테스트 기대값을 바꿔야 함 / 권한 파일 의미를 바꿔야 함 / 2b 겹침 / 위에서 금지한 파일을 고쳐야 함.
 ```
 
-### A8. S8 R8 Judge (초안)
+### A8. S8 R8 Judge (초안, 2026-10-05 갱신)
 
 **[Claude Code 실행 권장] 모델: Opus · 추론 노력: xhigh · 세션: 새 worktree `judge-r8` · 이유: K3 Independent Judge**
 
 ```text
-역할: I4 Independent Judge (K3). 저장소 파일을 수정·생성·커밋하지 않는다.
+역할: I4 Independent Judge (K3). 저장소 파일을 수정·생성·커밋하지 않는다(테스트용 임시 폴더는 저장소 밖에만 만든다).
+0. Builder 보고서(docs/claude/i4-r6-builder-report-*.md)에서 0단계 판정 위치와 1단계 기준선을 읽는다.
+   원시 해시 테스트는 승인된 판정 위치 방식으로만 판정한다. worktree에서 나온 원시 해시 결과는 PASS 근거로 쓰지 않는다.
 1. merge-base를 분리 체크아웃해 기준선 전체 테스트(서브에이전트)를 직접 실행한다.
-2. git switch --detach worktree-gov-r6, 커밋 ID를 적고 같은 테스트와 I0 대상 테스트를 실행해 비교한다.
-3. 기준: docs/claude/kiwoom-acceptance-pin-diagnosis-2026-09-29.md §4의 8단계 범위, P3 §8-2·8-3,
-   "고정 범위 축소가 권한·데이터 정확성·상태 쓰기 보호를 약화하지 않았는가".
+2. git switch --detach worktree-gov-r6, 커밋 ID를 적고 같은 테스트와 부록 A7 5번의 대상 테스트를 실행해 비교한다.
+3. 기준: docs/claude/kiwoom-acceptance-pin-diagnosis-2026-09-29.md §4의 8단계 범위(6·7단계, a5e872a fail-closed 변경, R7 증거 선택의 적정성),
+   P3 §8-2·8-3, "고정 범위 축소가 권한·데이터 정확성·상태 쓰기 보호를 약화하지 않았는가".
 4. Builder의 "이전 테스트 → 새 테스트" 대응표를 옮긴 보호 기능마다 확인한다.
+5. 추가 확인: 새 고정 목록 = 승인된 계획(상태 쓰기 묶음은 HEAD 최신본) / 후보 manifest 범위 = 기존 15종목 /
+   order_authority=false·quantity_authority=none·execution_quantity=null 불변 / 정책·상태 파일·decision_journal.json·alert_policy.json·SKILL.md diff 0 /
+   ⑨를 넣었다면 그 근거. acceptance 고정과 원인이 다른 실패(예: test_v2_6_7 안 shadow cohort 테스트, S7 보고 X15)는 따로 분류한다.
 출력(30줄 이내): 판정, 항목별 근거, 약화 발견 여부와 최소 수정 제안.
 ```
 
