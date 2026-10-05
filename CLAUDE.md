@@ -20,8 +20,9 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 ## Change classes
 - K0 wording / K1 output behavior / K2 runtime contract or validator (targeted tests) /
   K3 production semantics or authority (stop, ask the user, independent Judge).
-- Kiwoom acceptance manifests pin implementation hashes. Editing a pinned script
-  (e.g. run_manual_portfolio_analysis.py) invalidates the acceptance: treat it as K3.
+- Kiwoom acceptance pins the files listed in manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json
+  (normalized text hashes). Editing a listed file invalidates the active acceptance: treat it as K3.
+  run_manual_portfolio_analysis.py is not pinned; its guards live in pinned manual_data_guards.py and scheduled_input_gate.py.
 
 ## Repo map
 - Skill source: manage-us-stock-strategy/ (SKILL.md, scripts/, schemas/, tests/, references/)
