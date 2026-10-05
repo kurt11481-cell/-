@@ -42,6 +42,7 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Schema audit: python manage-us-stock-strategy/scripts/validate_schema_contracts.py
 - Identifiers, schemas, commands in English; user-facing reports in Korean.
 - Do not commit or push unless asked. Never force-push.
+- Every analysis/inquiry/discovery output must be linked: write results where other tasks read them and name at least one consumer (docs/claude/analysis-linkage-map-2026-10-05.md, user standing rule 2026-10-05).
 
 ## Session hygiene (투자_V2 setup guide, apply automatically)
 - At task start, state the recommended model/effort in one line: simple = low, routine = medium,

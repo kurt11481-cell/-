@@ -30,10 +30,13 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | leadership-n | CIEN·HWM·CRS·SOLS 외 | 2026-10-04 | 2026-11-07 | next-sandisk-scan-2026-10-04.md | Next 샌디스크 수시 1회차(사용자 수락 10/4): 씨앗 0 · 관찰 4(CIEN·HWM·CRS·SOLS, v1.1 표시로 모두 병목 품질주) · GFS 제외(X2) · G2 해석 유지. 다음 달 조사 목록 포함 |
 | design-review | ALL | 2026-10-04 | 2027-01-02 | next-sandisk-lens-v2-review-2026-10-04.md | 판별 기준 재검토(위원회 Lite): v1.1 적용(10/4, 관찰 표시 분리·질문 3 보강, 판정 불변). ②③⑥은 2027-01 검토 |
 | design-review | ALL | 2026-10-05 | — | strategy-risk-framework-review-2026-10-05.md | 외부 리스크 지침 검토(사용자 승인 10/5): **L1/L2 한 화면 검토 템플릿 5-1**(계좌 점검선 도달 시 사용, fail-closed: N·E>1.9면 위험 감수 불가), 종목 프로토콜 개정 a1(반영 주장 3문·리스크 분류·이벤트 유사 사례·ETF 투시), M6 v2 입력 2줄(판단 영수증 사양 1-1), 원장 EXT-20261005-07~10. 리스크 전체 표는 리플레이 검증 뒤 |
+| design | ALL | 2026-10-05 | — | analysis-linkage-map-2026-10-05.md | **분석 결과 연결 지도·규칙(사용자 상시 지시 10/5)**: 모든 분석 결과는 다른 작업이 읽는 곳에 남기고 소비자 지정. 새 작업 체크리스트 1절 |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
 - 점검 기록: 대시보드 ArtifactData runs (파일 아님)
+- 개장 전 기록: workspace/outputs/pre-open/<날짜>-<이벤트>.md (월요일·이벤트일 예약이 씀, 공식 사실=URL / 프리마켓=참고)
+- 종목 분석(Chat): chatgpt_종목분석결과/종목분석/SNDK_20261005/SNDK_종목분석_요약.md (Phase 1~2·WATCH 판정) · 옵션 분석: chatgpt_종목분석결과/옵션분석/SNDK_20261002/SNDK_옵션분석_리포트.md
 
 ## 보관 (superseded, 파일은 옮기지 않음)
 - mvll-holding-card-2026-10-01.md → 통합 카드 2절로 대체
