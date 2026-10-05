@@ -3,8 +3,8 @@
 
 test_04 and test_08 originally lived in the released
 test_manual_portfolio_analysis.py; they are kept there and repeated here, in a
-pinned file, with the same assertions and a wider sentinel set. Only fixture
-helpers are imported from that module, never its TestCase classes.
+pinned file, with the same assertions and a wider sentinel set. The fixture
+helpers are copied into this file, so it imports nothing from that module.
 """
 
 from __future__ import annotations
@@ -21,23 +21,252 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "manage-us-stock-strategy" / "scripts"
-TESTS = ROOT / "manage-us-stock-strategy" / "tests"
-for entry in (SCRIPTS, TESTS):
-    if str(entry) not in sys.path:
-        sys.path.insert(0, str(entry))
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
 import manual_data_guards as guards  # noqa: E402
 import run_manual_portfolio_analysis as manual  # noqa: E402
-from test_manual_portfolio_analysis import (  # noqa: E402
-    OBSERVED_AT,
-    PREVIOUS_DAY,
-    account_reader_for,
-    market_reader_for,
-    synthetic_authority_view,
-    synthetic_identity_view,
-    system_portfolio,
-)
 from validation_common import validate_instance  # noqa: E402
+
+# Fixture helpers copied verbatim from test_manual_portfolio_analysis.py (I4 R6, commit e42f9db)
+# so this pinned file does not depend on the released test module.
+from instrument_identity_authority import InstrumentIdentityView  # noqa: E402
+from session_authority import SessionAuthorityView, SessionWindow  # noqa: E402
+
+OBSERVED_AT = "2026-08-21T22:00:00+00:00"
+SAME_DAY = "2026-08-21"
+PREVIOUS_DAY = "2026-08-20"
+AUTHORITY_COHORT = "synthetic-shared-authority-cohort"
+
+
+def synthetic_identity_view(
+    *, ticker: str, operating_mic: str | None = "XNAS",
+    status: str = "VERIFIED", reason: str = "OK",
+    cohort: str | None = AUTHORITY_COHORT,
+) -> InstrumentIdentityView:
+    verified = status == "VERIFIED"
+    return InstrumentIdentityView(
+        authority_status=status,
+        authority_reason=reason,
+        authority_id="US_EQUITY_INSTRUMENT_IDENTITY_CURRENT_V1",
+        registry_version="synthetic-registry-v1" if verified else None,
+        registry_hash="b" * 64 if verified else None,
+        activation_cohort_id=cohort if verified else None,
+        ticker_namespace="US_EXCHANGE_LISTED",
+        ticker=ticker,
+        security_name=f"Synthetic {ticker}" if verified else None,
+        instrument_type="EQUITY" if verified else None,
+        security_class="COMMON_STOCK" if verified else None,
+        primary_listing_venue_name="Synthetic Venue" if verified else None,
+        primary_listing_segment_mic=("XNGS" if verified else None),
+        primary_listing_operating_mic=(operating_mic if verified else None),
+        effective_from=None,
+        effective_from_basis="CURRENT_AS_OF_ONLY" if verified else None,
+        effective_to=None,
+        authority_as_of="2026-08-01T00:00:00+00:00" if verified else None,
+        source_packet_id="synthetic-packet" if verified else None,
+        source_packet_hash="a" * 64 if verified else None,
+        source_ref_ids=(f"synthetic-{ticker}",) if verified else (),
+        decision_as_of=OBSERVED_AT,
+    )
+
+
+def synthetic_authority_view(
+    *, mic: str | None, expected_session: str | None = PREVIOUS_DAY,
+    status: str = "VERIFIED", reason: str = "OK",
+    cohort: str | None = AUTHORITY_COHORT,
+) -> SessionAuthorityView:
+    expected = None
+    if expected_session is not None and status == "VERIFIED":
+        expected = SessionWindow(
+            session_date=expected_session,
+            core_open_at=f"{expected_session}T09:30:00-04:00",
+            core_close_at=f"{expected_session}T16:00:00-04:00",
+            close_type="REGULAR",
+        )
+    return SessionAuthorityView(
+        contract_version="2.0",
+        authority_mode="CURRENT",
+        authority_status=status,
+        authority_reason=reason,
+        calendar_policy_identity="US_EQUITIES_CORE_SESSION_V2",
+        primary_listing_operating_mic=mic,
+        operating_mic_scope=("XNYS", "XNAS", "XCBO"),
+        timezone_identity="America/New_York",
+        calendar_version="synthetic-m1-v1",
+        calendar_hash="c" * 64,
+        source_bundle_id="synthetic-m1-bundle",
+        coverage_start="2026-08-01",
+        coverage_end="2026-08-31",
+        authority_as_of="2026-08-01T00:00:00+00:00",
+        activation_cohort_id=cohort,
+        observed_at=OBSERVED_AT,
+        decision_as_of=OBSERVED_AT,
+        current_et_date=SAME_DAY,
+        market_phase="POST_CORE",
+        current_date_session=None,
+        expected_completed_session=expected,
+    )
+
+
+def account_reader_for(
+    holdings: dict[str, float],
+    costs: dict[str, float],
+    *,
+    holdings_status: str = "PASS",
+    holdings_complete: bool = True,
+    orderable_cash: float | None = 25.0,
+    retrieved_at: str | None = OBSERVED_AT,
+):
+    def reader(requests):
+        results = []
+        for request in requests:
+            operation = request["operation"]
+            data = []
+            status = "PASS"
+            complete = True
+            if operation == "account_holdings_read":
+                status = holdings_status
+                complete = holdings_complete
+                data = [
+                    {
+                        "stex_nm": "NASDAQ",
+                        "crnc_code": "USD",
+                        "stk_cd": ticker,
+                        "frgn_stk_nm": ticker,
+                        "qty": quantity,
+                        "poss_qty": quantity,
+                        "sell_alowq": quantity,
+                        "frgn_stk_book_uv": costs.get(ticker),
+                        "now_pric": None,
+                        "evlt_amt": None,
+                        "pl_amt": None,
+                        "pl_rt": None,
+                    }
+                    for ticker, quantity in holdings.items()
+                ] if status in {"PASS", "PARTIAL"} else []
+            elif operation == "account_deposit_read":
+                data = [{
+                    "crnc_code": "USD",
+                    "crnc_nm": "US Dollar",
+                    "fc_entra": orderable_cash,
+                    "fc_pymn_alowa": orderable_cash,
+                    "fc_ord_alowa": orderable_cash,
+                }]
+            elif operation == "account_deposit_detail_read":
+                data = [{}]
+            result = {
+                "bridge_status": status,
+                "operation": operation,
+                "data": data,
+                "pagination": {
+                    "api_id": ("ust21070" if operation == "account_holdings_read" else
+                               "ust21050" if operation == "account_open_items" else "READ_ONLY"),
+                    "pages": 1,
+                    "complete": complete,
+                    "exhausted": complete,
+                },
+                "portfolio_mutation": False,
+                "quantity_authority": "none",
+                "order_authority": False,
+            }
+            if retrieved_at is not None:
+                result["retrieved_at"] = retrieved_at
+            results.append(result)
+        return results
+
+    return reader
+
+
+def market_reader_for(
+    tickers: list[str],
+    *,
+    health: bool = True,
+    quote_missing: set[str] | None = None,
+    include_same_day: set[str] | None = None,
+    include_previous: set[str] | None = None,
+    request_log: list[dict] | None = None,
+    call_log: list[list[dict]] | None = None,
+    retrieved_at_by_operation: dict[str, str | None] | None = None,
+):
+    quote_missing = set(quote_missing or set())
+    same_day = set(tickers) if include_same_day is None else set(include_same_day)
+    previous = set(tickers) if include_previous is None else set(include_previous)
+    retrieved_at_by_operation = dict(retrieved_at_by_operation or {})
+
+    def reader(requests):
+        if request_log is not None:
+            request_log.extend(dict(request) for request in requests)
+        if call_log is not None:
+            call_log.append([dict(request) for request in requests])
+        results = []
+        for request in requests:
+            operation = request["operation"]
+            ticker = request.get("ticker")
+            if operation == "oauth_health":
+                result = {
+                    "bridge_status": "PASS" if health else "KIWOOM_API_UNAVAILABLE",
+                    "failure_type": None if health else "AUTHENTICATION_FAILURE",
+                    "authenticated": health,
+                    "operation": operation,
+                    "order_authority": False,
+                }
+            elif operation == "market_quote":
+                missing = ticker in quote_missing
+                result = {
+                    "bridge_status": "KIWOOM_API_UNAVAILABLE" if missing else "PASS",
+                    "operation": operation,
+                    "ticker": ticker,
+                    "data": [] if missing else [{"cur_prc": 100.0}],
+                    "order_authority": False,
+                }
+            elif operation == "daily_chart":
+                rows = []
+                if ticker in same_day:
+                    rows.append({"dt": "20260821", "cur_prc": 101.0,
+                                 "open_pric": 100.0, "high_pric": 102.0,
+                                 "low_pric": 99.0, "acc_trde_qty": 1000000})
+                if ticker in previous:
+                    rows.append({"dt": "20260820", "cur_prc": 99.0,
+                                 "open_pric": 98.0, "high_pric": 100.0,
+                                 "low_pric": 97.0, "acc_trde_qty": 1000000})
+                result = {
+                    "bridge_status": "PASS",
+                    "operation": operation,
+                    "ticker": ticker,
+                    "data": rows,
+                    "pagination": {"api_id": "usa06012", "status": "SUFFICIENT",
+                                   "pages_fetched": 1,
+                                   "pages": [{"page_index": 1, "api_id": "usa06012",
+                                              "retrieved_at": OBSERVED_AT}]},
+                    "requested_price_basis": "RAW",
+                    "order_authority": False,
+                }
+            timestamp_key = f"{operation}:{ticker}" if ticker is not None else operation
+            retrieved_at = retrieved_at_by_operation.get(
+                timestamp_key,
+                retrieved_at_by_operation.get(operation, OBSERVED_AT),
+            )
+            if retrieved_at is not None:
+                result["retrieved_at"] = retrieved_at
+            results.append(result)
+        return results
+
+    return reader
+
+
+def system_portfolio(
+    holdings: dict[str, float] | None = None,
+    costs: dict[str, float] | None = None,
+    cash: float = 25.0,
+) -> dict:
+    return {
+        "state_revision": 7,
+        "last_updated_at": "2026-08-20T00:00:00+00:00",
+        "holdings": holdings or {"AAA": 1.0},
+        "average_cost_usd": costs or {"AAA": 80.0},
+        "available_cash_usd": cash,
+    }
 
 
 MODULE_PATH = SCRIPTS / "run_manual_portfolio_analysis.py"

@@ -9,6 +9,7 @@ prove the released adapter still delegates to this gate.
 
 from __future__ import annotations
 
+import ast
 import copy
 from pathlib import Path
 import sys
@@ -53,6 +54,46 @@ class ScheduledInputGateShapeTest(unittest.TestCase):
         self.assertEqual("b" * 64, kwargs["evidence_sha256"])
         self.assertEqual("c" * 40, kwargs["expected_head"])
         self.assertIs(manual.derive_run_provenance, kwargs["provenance_deriver"])
+
+    def test_only_the_adapter_reaches_the_gate_and_only_with_the_canonical_deriver(self):
+        """provenance_deriver is a test seam; no production caller may pass anything else."""
+        importers = {}
+        for path in sorted(SCRIPTS.glob("*.py")):
+            if path.name == "scheduled_input_gate.py":
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                names = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                         else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+                if any(name.split(".")[0] == "scheduled_input_gate" for name in names):
+                    importers.setdefault(path.name, []).append(type(node).__name__)
+        self.assertEqual({"run_manual_portfolio_analysis.py": ["Import"]}, importers)
+
+        tree = ast.parse((SCRIPTS / "run_manual_portfolio_analysis.py").read_text(encoding="utf-8"))
+        gate_calls = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name) and node.func.value.id == "scheduled_input_gate"
+        ]
+        self.assertEqual(["validate_scheduled_input"], [call.func.attr for call in gate_calls])
+        deriver = [keyword.value for keyword in gate_calls[0].keywords if keyword.arg == "provenance_deriver"]
+        self.assertEqual(1, len(deriver))
+        self.assertIsInstance(deriver[0], ast.Name)
+        self.assertEqual("derive_run_provenance", deriver[0].id)
+        canonical_imports = [
+            node for node in tree.body
+            if isinstance(node, ast.ImportFrom) and node.module == "continuous_improvement_sidecar"
+            and any(alias.name == "derive_run_provenance" and alias.asname is None for alias in node.names)
+        ]
+        self.assertEqual(1, len(canonical_imports))
+        rebinds = [
+            node for node in ast.walk(tree)
+            if isinstance(node, (ast.Assign, ast.AnnAssign, ast.FunctionDef))
+            and ("derive_run_provenance" in [getattr(target, "id", None) for target in getattr(node, "targets", [])]
+                 or getattr(getattr(node, "target", None), "id", None) == "derive_run_provenance"
+                 or getattr(node, "name", None) == "derive_run_provenance")
+        ]
+        self.assertEqual([], rebinds)
 
 
 class ScheduledInputGateRegisteredTaskTest(unittest.TestCase):
