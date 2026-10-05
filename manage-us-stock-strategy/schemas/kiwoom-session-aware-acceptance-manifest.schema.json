@@ -12,7 +12,7 @@
     "provider_authority", "invariants", "operational_session_increment", "order_authority"
   ],
   "properties": {
-    "schema_version": {"enum": ["1.0", "1.1"]},
+    "schema_version": {"enum": ["1.0", "1.1", "1.2"]},
     "evidence_state": {
       "enum": [
         "KIWOOM_SESSION_AWARE_GUARDED_PRIORITY_ACCEPTED_SCOPED",
@@ -112,7 +112,12 @@
     "order_authority": {"const": false},
     "candidate_status": {"const": "INACTIVE_SUPERSEDING_CANDIDATE"},
     "supersedes_acceptance_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "hash_governance": {"const": "IMPLEMENTATION_BINDINGS_NORMALIZED_TEXT_SHA256"},
+    "hash_governance": {
+      "enum": [
+        "IMPLEMENTATION_BINDINGS_NORMALIZED_TEXT_SHA256",
+        "IMPLEMENTATION_AND_AUTHORITY_BINDINGS_NORMALIZED_TEXT_SHA256"
+      ]
+    },
     "authority_bindings": {
       "type": "object",
       "additionalProperties": false,
@@ -170,6 +175,88 @@
         },
         "provider_scope_policy_raw_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
         "order_authority": {"const": false}
+      }
+    },
+    "candidate_governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash_mode", "pin_scope", "authority_bindings", "provider_scope", "predecessor_implementation_drift"],
+      "properties": {
+        "hash_mode": {"const": "NORMALIZED_TEXT_SHA256"},
+        "pin_scope": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository_path", "sha256", "pin_scope_id"],
+          "properties": {
+            "repository_path": {"type": "string", "minLength": 1},
+            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "pin_scope_id": {"type": "string", "minLength": 1}
+          }
+        },
+        "authority_bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider_scope_policy", "active_priority_policy", "source_registry", "active_acceptance_manifest"],
+          "properties": {
+            "provider_scope_policy": {
+              "type": "object", "additionalProperties": false,
+              "required": ["repository_path", "sha256"],
+              "properties": {
+                "repository_path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            "active_priority_policy": {
+              "type": "object", "additionalProperties": false,
+              "required": ["repository_path", "sha256"],
+              "properties": {
+                "repository_path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            "source_registry": {
+              "type": "object", "additionalProperties": false,
+              "required": ["repository_path", "sha256"],
+              "properties": {
+                "repository_path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            "active_acceptance_manifest": {
+              "type": "object", "additionalProperties": false,
+              "required": ["repository_path", "sha256"],
+              "properties": {
+                "repository_path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            }
+          }
+        },
+        "provider_scope": {
+          "type": "object", "additionalProperties": false,
+          "required": ["count", "symbols", "provider_scope_policy_sha256", "order_authority"],
+          "properties": {
+            "count": {"type": "integer", "minimum": 1},
+            "symbols": {
+              "type": "array", "minItems": 1, "uniqueItems": true,
+              "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"}
+            },
+            "provider_scope_policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "order_authority": {"const": false}
+          }
+        },
+        "predecessor_implementation_drift": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["repository_path", "pinned_sha256", "current_sha256"],
+            "properties": {
+              "repository_path": {"type": "string", "minLength": 1},
+              "pinned_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "current_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            }
+          }
+        }
       }
     },
     "activation_performed": {"const": false},

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kiwoom-acceptance-pin-scope.schema.json",
+  "title": "Kiwoom Acceptance Pin Scope",
+  "description": "Which implementation files a schema 1.2 Kiwoom acceptance candidate pins, and which predecessor implementation drift a successor candidate may supersede.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "pin_scope_id", "candidate_schema_version", "hash_mode",
+    "required_implementation_paths", "allowed_drift_predecessor_sha256",
+    "allowed_predecessor_drift", "order_authority", "quantity_authority", "execution_quantity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "pin_scope_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9-]{2,63}$"},
+    "description": {"type": "string", "minLength": 1},
+    "candidate_schema_version": {"const": "1.2"},
+    "hash_mode": {"const": "NORMALIZED_TEXT_SHA256"},
+    "required_implementation_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^manage-us-stock-strategy/(scripts|schemas|tests|assets)/[A-Za-z0-9_.-]+$"}
+    },
+    "allowed_drift_predecessor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "allowed_predecessor_drift": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^manage-us-stock-strategy/(scripts|schemas|tests|assets)/[A-Za-z0-9_.-]+$"}
+    },
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"}
+  }
+}

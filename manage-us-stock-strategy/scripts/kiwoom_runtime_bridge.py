@@ -135,7 +135,10 @@ def _runtime_commit(runtime: Path) -> str:
 
 
 def _return_code_ok(body: dict[str, Any]) -> bool:
-    return body.get("return_code") in (None, 0, "0", "0000")
+    """Market reads succeed only with an explicit zero return_code; absence is a failure."""
+    if "return_code" not in body or isinstance(body["return_code"], bool):
+        return False
+    return body["return_code"] in (0, "0", "0000")
 
 
 def _safe_universe(body: dict[str, Any], key: str, fields: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -174,6 +177,8 @@ def _request(session: dict[str, Any], api_id: str, path: str, body: dict[str, An
             payload = response.body
             if not isinstance(payload, dict):
                 raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
+            if "return_code" not in payload:
+                raise BridgeError("KIWOOM_RETURN_CODE_MISSING")
             if not _return_code_ok(payload):
                 raise BridgeError("KIWOOM_API_UNAVAILABLE", "EMPTY_RESPONSE")
             return payload
@@ -210,6 +215,8 @@ def _fetch_page(
             payload = getattr(response, "body", None)
             if not isinstance(payload, dict):
                 raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
+            if "return_code" not in payload:
+                raise BridgeError("KIWOOM_RETURN_CODE_MISSING")
             if not _return_code_ok(payload):
                 raise BridgeError("KIWOOM_API_UNAVAILABLE", "EMPTY_RESPONSE")
             return response
