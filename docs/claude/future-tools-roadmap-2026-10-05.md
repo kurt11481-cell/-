@@ -14,7 +14,7 @@
 | ifixai-ai/iFixAi | 20.3k | **장기 후보** | 권한 단계 변경 검토 직전 감사 |
 | DietrichGebert/ponytail | 154.7k | **점검 기능만 후보** | P6 월간 점검 첫 회 |
 | vectorize-io/hindsight | 44.6k | 설계 차용, 도구 보류 | 원장 칸 설계 시 차용. 도구는 §2 재검토 조건 충족 시 |
-| paperclipai/paperclip | 95.9k | 패턴 차용, 도구 보류 | 예약 작업 비용 한도가 필요할 때 |
+| paperclipai/paperclip | 95.9k | 패턴 차용, 도구 보류 → **§7: 최종 목표 기준 재평가 필요(상향)** | 트레이딩 인프라 공백 검토(`f-trading-infra-gap`) 안에서 |
 | mvschwarz/openrig | 4.9k | 제외 | Windows 지원 + 권한 기본값 변경 시 재검토 |
 | hydra-db/hydradb | 13 | 제외 | — (Thesis Graph 아이디어만) |
 | Panniantong/Agent-Reach | 90.8k | 제외 (기결정) | `external-repos-review-2026-10-05.md` 따름 |
@@ -152,15 +152,55 @@
 - 카드의 root thesis 항목 형식(I1 전제).
 - 별 수 급증의 실사용 의미.
 
+## 7. 최종 목표 기준 재평가 (2026-10-05 추가)
+
+최종 목표: 포트폴리오 자동 감시 + 트레이딩. 헌법 §14 권한 단계(READ_ONLY → ORDER_INTENT_ONLY → HUMAN_PER_ORDER → GUARDED_AUTOMATIC_APPROVAL → AUTONOMOUS_GUARDED_EXECUTION)와 §27 실행 구조(ADD/HOLD/TRIM/EXIT → Intent → Independent Risk → Authorization → Broker)를 기준으로 다시 본다. 이 절은 설계 의견이며 권한·정책을 바꾸지 않는다(order_authority=false 유지).
+
+### 7-1. §0~§2가 놓친 관점
+- §0~§2는 권한 승격의 안전 장치(문지기) 관점이었다. 최종 목표를 실제로 돌리는 운영 장치(24시간 감시, 주문 실행 흐름, 장애 대응) 관점의 평가가 빠졌다.
+- 그 결과 Paperclip은 현재 단계 기준("Hot-Path blocker 해결 전 새 subsystem 금지")만으로 낮게 판정됐다.
+
+### 7-2. 판정 변화
+
+| 도구 | §0 판정 | 최종 목표 기준 | 근거 |
+|---|---|---|---|
+| Paperclip | 패턴 차용, 도구 보류 | **재평가 필요 (상향)** | 연결 도구 호출마다 허용 / 먼저 묻기 / 끔, "한 번 승인 또는 철회 가능한 규칙 저장"(README) → HUMAN_PER_ORDER 승인 구조와 맞음. heartbeat·정기 루틴·예산 100% 자동 정지·활동 감사 기록은 24시간 운영 기능. 단 Windows 상시 서비스 등록 미지원(소스상 systemd·launchd만, `cli/src/services/service-manager.ts`) |
+| OpenShell | 장기 1순위 | 유지 (더 핵심) | 주문 경로를 실행 컴포넌트에만 여는 마지막 울타리. 정책 단위 통제라 주문별 위험 판단(결정론 위험 점검)을 대신하지 못함. Windows는 WSL 2 + Docker Desktop 실험 지원 → 이 PC에서 실사용 검증 필요 |
+| iFixAi | 권한 승격 전 감사 | 유지 + 정기 재감사 | 승격 뒤 주기적 재감사(헌법 §20 POST-APPLY SURVEILLANCE) |
+| Hindsight | 설계 차용, 도구 보류 | 유지 | 시점 하드 필터 부재는 자동 매매 단계에서 더 치명적 |
+| Agent-Reach | 제외 | 유지. 단 공식 공시 피드는 상향 | 자동 감시에는 8-K·IR 보도자료 실시간 수집이 핵심 → `external-repos-review` A3(도구 없이 작게)를 우선순위 상향 |
+| OpenRig·HydraDB·Ponytail | 제외 / 점검 기능만 | 유지 | 최종 목표와 직접 관계 적음. OpenRig는 Windows 미지원 |
+
+### 7-3. 8개 도구 밖의 공백 (트레이딩 인프라)
+8개 저장소는 AI 에이전트 인프라다. 트레이딩 인프라는 별도 검토가 필요하다.
+
+1. **단일 PC 안정성** — 사용자 확인(2026-10-05): PC와 Claude 데스크톱 앱은 24시간 가동. 따라서 공백은 "실행 환경 없음"이 아니라 "모든 것이 PC 한 대에 걸림".
+   - 멈춤 원인: Windows 업데이트 재부팅, 정전, 인터넷 끊김, 앱 업데이트, 앱 연결 일시 끊김.
+   - 지금(읽기 전용)은 통합점검 v3.5 "점검 불완전" 알림으로 충분. 자동 매매에서는 감지만으로 부족: 재시작 시 미체결·체결 대조 먼저, 살아 있음 신호(heartbeat)가 끊기면 신규 주문 금지(fail-closed).
+   - 연결 경로가 하나(Claude 앱 경유) → 끊기면 감시와 주문이 함께 멈춤. 주문이 안 나가는 쪽이라 안전하지만, 손절이 필요한 순간 멈추면 손실이 커질 수 있음.
+2. **주문 실행 흐름** — 의도 → 결정론적 위험 점검 → 승인 → 브로커 → 체결 확인 → 상태 대조. 중복 주문 방지(같은 의도가 두 번 나가지 않음)와 긴급 정지 스위치 포함. 도구가 아니라 직접 만들 코드.
+3. **장중 감시** — 지금은 장 마감 뒤 하루 1회. 장중 시세·이벤트 반응을 위한 데이터 경로와 비용 검토.
+4. **실전 전 모의 운용** — 헌법 §28 Execution Digital Twin. 실제 주문 전에 모의 체결로 수 주 검증.
+
+### 7-4. 관제판
+- `f-trading-infra-gap` "트레이딩 인프라 공백 검토" 대기 항목 추가. Paperclip 재평가(§7-2)는 이 항목 안에서 함께 한다(관제판에 별도 Paperclip 항목은 없음).
+- 순서 권장: 이 검토가 `f-ifixai-audit`·`f-openshell`보다 먼저.
+
+### 7-5. 확인 필요 (추가)
+- 키움 연결 자동 만료 주기, 재로그인 필요 여부, 정기 점검 시간.
+- Paperclip의 Windows 실행 방식(Docker 또는 수동)과 안정성, 연결 도구 "먼저 묻기" 승인이 모바일에서 동작하는지.
+- 장중 시세 경로(키움 실시간 조회 범위·호출 한도)와 비용.
+
 ## 근거 파일
 - 투자_V2: `knowledge/fund_manager_system_constitution_v1_2_1.md`(프로젝트 지식), `docs/claude/system-review-p4-roadmap-2026-09-30.md` §5·§7, `stock-strategy-system/decision_journal.json`, `manage-us-stock-strategy/scripts/score_decision_journal.py`, `docs/claude/external-repos-review-2026-10-05.md`.
-- OpenShell: `README.md`, `docs/how-it-works/policies/network-rules.mdx`, `prover.mdx`, `advisor.mdx`.
+- OpenShell: `README.md`, `docs/how-it-works/policies/network-rules.mdx`, `prover.mdx`, `advisor.mdx`, `docs/about/overview.mdx`(지원표: Windows WSL 2 + Docker Desktop Experimental).
 - Hindsight: `README.md`, `hindsight-docs/docs/developer/api/recall.mdx`(query_timestamp·temporal_window), `api/mental-models.mdx`, `observations.mdx`.
 - iFixAi: `README.md`, `docs/inspections.md`, `docs/reproducibility.md`.
-- Paperclip: `README.md`, `docs/guides/board-operator/costs-and-budgets.md`, `docs/guides/agent-developer/skills-store.md`.
+- Paperclip: `README.md`, `docs/guides/board-operator/costs-and-budgets.md`, `docs/guides/agent-developer/skills-store.md`, `cli/src/services/service-manager.ts`(서비스 플랫폼 systemd·launchd).
 - Ponytail: `README.md`, `skills/ponytail-audit/SKILL.md`, `skills/ponytail-debt/SKILL.md`, `hooks/claude-codex-hooks.json`, GitHub 이슈 #735.
 - OpenRig: `README.md`. HydraDB: `README.md`, `CHANGELOG.md`, hydradb.com.
 
 ## 진행 기록
 - 2026-10-05: 검토 작성(Cowork). 설치·설정 변경 없음. 사용자 승인으로 이 문서 저장 + 관제판 대기 항목 4개 추가.
 - 2026-10-05: 작업 중 `git status`가 남긴 `.git/index.lock`(0바이트)을 사용자 삭제 승인 뒤 제거. 교훈: Cowork device_bash에서는 index를 건드리는 git 명령을 쓰지 않는다(삭제 권한이 없으면 잠금 파일이 남는다).
+- 2026-10-05: 사용자 승인으로 §7 "최종 목표 기준 재평가" 추가(Paperclip 판정 상향, 트레이딩 인프라 공백 4개, 사용자 확인: PC·앱 24시간 가동). 관제판 f-trading-infra-gap 추가.
