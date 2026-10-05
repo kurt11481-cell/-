@@ -26,6 +26,7 @@ from sec_official_event_intake import (
     create_only_utf8_dashboard,
     render_dashboard_html,
     render_dashboard_markdown,
+    validated_watchlist_groups,
 )
 from validation_common import file_hash, load_json, validate_instance
 
@@ -138,11 +139,11 @@ def runs_are_compatible(current: RunArtifact, previous: RunArtifact) -> bool:
 
 
 def canonical_watchlist() -> list[str]:
-    rules = load_json(DEFAULT_RULES_PATH)
-    watchlist = rules.get("corporate_watchlist") if isinstance(rules, dict) else None
-    if not isinstance(watchlist, list) or not watchlist or not all(isinstance(item, str) for item in watchlist):
-        raise IntakeError("SEC_SOURCE_INVALID", "CANONICAL_WATCHLIST_INVALID")
-    return list(watchlist)
+    try:
+        watchlist, _, _ = validated_watchlist_groups(load_json(DEFAULT_RULES_PATH))
+    except IntakeError as exc:
+        raise IntakeError("SEC_SOURCE_INVALID", "CANONICAL_WATCHLIST_INVALID") from exc
+    return watchlist
 
 
 def is_canonical_successful_run(run: RunArtifact) -> bool:

@@ -1,8 +1,8 @@
 {
   "schema_version": "0.1",
-  "corporate_watchlist": ["MRVL", "NBIS", "PGR", "JPM", "CME", "V"],
+  "corporate_watchlist": ["MRVL", "NBIS", "MU", "BE", "DELL", "PWR", "LITE"],
   "holdings": ["MRVL", "NBIS"],
-  "challengers": ["PGR", "JPM", "CME", "V"],
+  "watch": ["MU", "BE", "DELL", "PWR", "LITE"],
   "forms_of_interest": [
     "8-K", "10-Q", "10-K", "6-K", "20-F", "S-3", "S-3ASR",
     "424B2", "424B3", "424B5", "DEF 14A", "4", "144",
@@ -38,11 +38,7 @@
   "administrative_8k_items": ["5.07", "9.01"],
   "root_theses": {
     "MRVL": ["AI_INFRASTRUCTURE", "SEMICONDUCTOR"],
-    "NBIS": ["AI_INFRASTRUCTURE", "DATA_CENTER_POWER"],
-    "PGR": ["INSURANCE_PRICING"],
-    "JPM": ["BANK_CREDIT"],
-    "CME": ["MARKET_VOLATILITY"],
-    "V": ["PAYMENT_NETWORKS"]
+    "NBIS": ["AI_INFRASTRUCTURE", "DATA_CENTER_POWER"]
   },
   "derived_relations": {
     "MRVL": {

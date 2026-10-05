@@ -39,6 +39,7 @@ from sec_official_event_intake import (
     run_pipeline,
     sort_dashboard_events,
     validate_sec_url,
+    validated_watchlist_groups,
 )
 from validation_common import file_hash, load_json, validate_instance
 
@@ -173,22 +174,22 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
             "lookback_days": (scheduled_summary or {}).get("lookback_days", 14),
             "events": events,
             "ownership_coverage": "PARTIAL",
-            "company_status": {ticker: "PASS" for ticker in ("MRVL", "NBIS", "PGR", "JPM", "CME", "V")},
+            "company_status": {ticker: "PASS" for ticker in ("MRVL", "NBIS", "MU", "BE", "DELL", "PWR", "LITE")},
             "scheduled_summary": scheduled_summary,
         }
         return render_dashboard_markdown(**model), render_dashboard_html(model)
 
-    def routine_flood(self, count: int, *, form: str = "424B2") -> list[dict]:
+    def routine_flood(self, count: int, *, form: str = "424B2", relevance: str = "WATCHLIST") -> list[dict]:
         return [
             self.dashboard_event(
-                ticker="JPM",
+                ticker="MU",
                 form=form,
                 filing_date=f"2026-08-{17 + (index % 13):02d}",
                 accepted_at=f"2026-08-{17 + (index % 13):02d}T{10 + (index % 10):02d}:00:00+00:00",
                 accession=f"0000019617-26-{index:06d}",
                 event_type="OFFERING_PROSPECTUS",
                 materiality="MEDIUM",
-                relevance="CHALLENGER",
+                relevance=relevance,
                 impact="WATCH",
             )
             for index in range(count)
@@ -314,11 +315,111 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
     def test_materiality_separates_event_type_from_trade_signal(self) -> None:
         high = route_materiality(ticker="NBIS", form="424B5", event_type="OFFERING_PROSPECTUS", items=[], rules=self.rules)
         low = route_materiality(ticker="MRVL", form="8-K", event_type="CURRENT_REPORT", items=["9.01"], rules=self.rules)
-        challenger = route_materiality(ticker="PGR", form="10-Q", event_type="PERIODIC_FINANCIAL", items=[], rules=self.rules)
+        watch_periodic = route_materiality(ticker="MU", form="10-Q", event_type="PERIODIC_FINANCIAL", items=[], rules=self.rules)
         self.assertEqual(("HIGH", "HOLDING", "ASSET_REVIEW_REQUIRED"), high)
         self.assertEqual(("LOW", "HOLDING", "NO_CHANGE"), low)
-        self.assertEqual(("MEDIUM", "CHALLENGER", "WATCH"), challenger)
-        self.assertNotIn("SELL", {high[2], low[2], challenger[2]})
+        self.assertEqual(("HIGH", "WATCHLIST", "WATCH"), watch_periodic)
+        self.assertNotIn("SELL", {high[2], low[2], watch_periodic[2]})
+
+    def test_watch_ticker_routing_never_escalates_to_asset_review(self) -> None:
+        for ticker in self.rules["watch"]:
+            with self.subTest(ticker=ticker):
+                material_8k = route_materiality(ticker=ticker, form="8-K", event_type="CURRENT_REPORT", items=["2.02", "9.01"], rules=self.rules)
+                admin_8k = route_materiality(ticker=ticker, form="8-K", event_type="CURRENT_REPORT", items=["9.01"], rules=self.rules)
+                shelf = route_materiality(ticker=ticker, form="S-3", event_type="SHELF_REGISTRATION", items=[], rules=self.rules)
+                insider = route_materiality(ticker=ticker, form="4", event_type="INSIDER_OWNERSHIP", items=[], rules=self.rules)
+                self.assertEqual(("HIGH", "WATCHLIST", "WATCH"), material_8k)
+                self.assertEqual(("MEDIUM", "WATCHLIST", "WATCH"), admin_8k)
+                self.assertEqual(("HIGH", "WATCHLIST", "WATCH"), shelf)
+                self.assertEqual(("MEDIUM", "WATCHLIST", "WATCH"), insider)
+
+    def test_holding_routing_is_unchanged_for_material_8k(self) -> None:
+        for ticker in self.rules["holdings"]:
+            with self.subTest(ticker=ticker):
+                self.assertEqual(
+                    ("HIGH", "HOLDING", "ASSET_REVIEW_REQUIRED"),
+                    route_materiality(ticker=ticker, form="8-K", event_type="CURRENT_REPORT", items=["1.01"], rules=self.rules),
+                )
+
+    def test_unclassified_ticker_fails_closed(self) -> None:
+        for ticker in ("PGR", "JPM", "CME", "V", "SOXL"):
+            with self.subTest(ticker=ticker), self.assertRaisesRegex(IntakeError, "SEC_SOURCE_INVALID"):
+                route_materiality(ticker=ticker, form="10-Q", event_type="PERIODIC_FINANCIAL", items=[], rules=self.rules)
+
+    def test_rules_watchlist_matches_current_target_and_partition(self) -> None:
+        watchlist, holdings, watch = validated_watchlist_groups(self.rules)
+        self.assertEqual(["MRVL", "NBIS", "MU", "BE", "DELL", "PWR", "LITE"], watchlist)
+        self.assertEqual(["MRVL", "NBIS"], holdings)
+        self.assertEqual(["MU", "BE", "DELL", "PWR", "LITE"], watch)
+        self.assertTrue({"PGR", "JPM", "CME", "V"}.isdisjoint(watchlist))
+        self.assertNotIn("challengers", self.rules)
+
+    def test_watchlist_validation_fails_closed_on_empty_or_inconsistent_rules(self) -> None:
+        def variant(**changes: object) -> dict:
+            value = copy.deepcopy(self.rules)
+            value.update(changes)
+            return value
+
+        broken = {
+            "empty_watchlist": variant(corporate_watchlist=[]),
+            "missing_watchlist": {key: item for key, item in self.rules.items() if key != "corporate_watchlist"},
+            "missing_watch_group": {key: item for key, item in self.rules.items() if key != "watch"},
+            "unclassified_symbol": variant(corporate_watchlist=[*self.rules["corporate_watchlist"], "XYZ"]),
+            "symbol_in_both_groups": variant(watch=[*self.rules["watch"], "MRVL"]),
+            "duplicate_symbol": variant(corporate_watchlist=[*self.rules["corporate_watchlist"], "MU"]),
+            "non_string_symbol": variant(corporate_watchlist=[*self.rules["corporate_watchlist"], 7]),
+            "not_a_dict": [],
+        }
+        for name, rules in broken.items():
+            with self.subTest(case=name), self.assertRaisesRegex(IntakeError, "SEC_SOURCE_INVALID"):
+                validated_watchlist_groups(rules)
+
+    def test_pipeline_with_empty_watchlist_fails_before_network_or_output(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            rules_path = base / "rules.json"
+            rules_path.write_text(json.dumps({**self.rules, "corporate_watchlist": [], "holdings": [], "watch": []}), encoding="utf-8")
+            called = False
+
+            def transport(url, headers, timeout):
+                nonlocal called
+                called = True
+                return 200, {"Content-Type": "application/json"}, b"{}"
+
+            adapter = SecAdapter(user_agent="GuardedPortfolioManager/0.1 test-contact@example.invalid", transport=transport)
+            with self.assertRaisesRegex(IntakeError, "SEC_SOURCE_INVALID"):
+                run_pipeline(
+                    output_root=base / "outputs", run_id="empty-watchlist", decision_as_of=DECISION_AS_OF,
+                    rules_path=rules_path, adapter=adapter,
+                    portfolio_artifact_root=base / "portfolio-artifacts",
+                    portfolio_path=base / "portfolio_state.json", policy_path=base / "alert_policy.json",
+                )
+            self.assertFalse(called)
+            self.assertFalse((base / "outputs").exists())
+
+    def test_dashboard_lists_come_from_rules_not_hardcoded_symbols(self) -> None:
+        markdown, html_output = self.dashboard_outputs([])
+        for ticker in ("MU", "BE", "DELL", "PWR", "LITE"):
+            self.assertIn(f"{ticker}: ", markdown)
+            self.assertIn(f"<strong>{ticker}</strong>", html_output)
+        for output in (markdown, html_output):
+            for retired in ("PGR", "JPM", "CME"):
+                self.assertNotIn(retired, output)
+        self.assertIn("MRVL -> MVLL:", markdown)
+        self.assertIn("DERIVED_MAPPING_NOT_ENTITY_EQUIVALENCE", markdown)
+
+    def test_pipeline_emits_watchlist_relevance_for_watch_tickers_and_schema_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, run_dir, _, _ = self.run_mock_pipeline(Path(directory))
+            self.assertEqual(self.rules["corporate_watchlist"], manifest["watchlist"])
+            events = load_json(run_dir / "normalized-events.json")["events"]
+            self.assertFalse(validate_instance(load_json(run_dir / "normalized-events.json"), EVENTS_SCHEMA))
+            relevance_by_ticker = {event["ticker"]: event["portfolio_relevance"] for event in events}
+            self.assertEqual({"MRVL", "NBIS", "MU", "BE", "DELL", "PWR", "LITE"}, set(relevance_by_ticker))
+            for ticker, relevance in relevance_by_ticker.items():
+                self.assertEqual("HOLDING" if ticker in self.rules["holdings"] else "WATCHLIST", relevance)
+            self.assertFalse(any(event["decision_impact"] == "ASSET_REVIEW_REQUIRED" for event in events if event["ticker"] in self.rules["watch"]))
+            self.assertTrue({"PGR", "JPM", "CME", "V"}.isdisjoint(relevance_by_ticker))
 
     def test_mvll_relation_is_derived_and_not_cik_equivalence(self) -> None:
         identity = parse_ticker_association(self.association, ["MRVL"])["MRVL"]
@@ -339,18 +440,18 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
             manifest, run_dir, _, _ = self.run_mock_pipeline(Path(directory), fail_ticker="NBIS")
             self.assertEqual("PARTIAL", manifest["pipeline_status"])
             self.assertEqual("SEC_PARTIAL_SOURCE", manifest["company_source_status"]["NBIS"])
-            self.assertTrue(all(manifest["company_source_status"][ticker] == "PASS" for ticker in ("MRVL", "PGR", "JPM", "CME", "V")))
+            self.assertTrue(all(manifest["company_source_status"][ticker] == "PASS" for ticker in ("MRVL", "MU", "BE", "DELL", "PWR", "LITE")))
             self.assertTrue((run_dir / "normalized-events.json").is_file())
 
     def test_request_accounting_is_exact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             manifest, _, _, _ = self.run_mock_pipeline(Path(directory))
             accounting = manifest["request_accounting"]
-            self.assertEqual(7, accounting["http_request_count"])
-            self.assertEqual(7, accounting["successful_request_count"])
+            self.assertEqual(8, accounting["http_request_count"])
+            self.assertEqual(8, accounting["successful_request_count"])
             self.assertEqual(0, accounting["failed_request_count"])
             self.assertEqual(0, accounting["retry_count"])
-            self.assertEqual({"data.sec.gov": 6, "www.sec.gov": 1}, accounting["host_counts"])
+            self.assertEqual({"data.sec.gov": 7, "www.sec.gov": 1}, accounting["host_counts"])
 
     def test_raw_evidence_hash_and_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -358,7 +459,7 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
             raw = run_dir / "raw/company_tickers_exchange.json"
             self.assertEqual(hashlib.sha256(raw.read_bytes()).hexdigest(), manifest["raw_source_hashes"]["raw/company_tickers_exchange.json"])
             metadata = load_json(run_dir / "raw/source-metadata.json")
-            self.assertEqual(7, len(metadata["sources"]))
+            self.assertEqual(8, len(metadata["sources"]))
             self.assertNotIn("test-contact@example.invalid", json.dumps(metadata))
 
     def test_artifact_provenance_and_schemas(self) -> None:
@@ -407,6 +508,12 @@ class SecOfficialEventIntakeTests(unittest.TestCase):
         self.assertEqual(["high-1"], [event["accession_number"] for event in view["high_events"]])
         self.assertTrue(all(not is_routine_prospectus_watch(event) for event in view["high_events"]))
         self.assertEqual(0, view["individual_routine_top_events"])
+
+    def test_dashboard_01b_legacy_challenger_artifacts_still_aggregate_as_routine(self) -> None:
+        events = [self.dashboard_event(accession="high-1"), *self.routine_flood(12, relevance="CHALLENGER")]
+        view = build_dashboard_view(events)
+        self.assertEqual(["high-1"], [event["accession_number"] for event in view["high_events"]])
+        self.assertEqual(12, view["routine_event_count"])
 
     def test_dashboard_02_same_form_flood_becomes_one_aggregate_row(self) -> None:
         aggregates = aggregate_routine_prospectus(self.routine_flood(25))

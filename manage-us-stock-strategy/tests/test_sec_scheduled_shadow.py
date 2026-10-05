@@ -8,18 +8,21 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_ROOT = ROOT / "manage-us-stock-strategy/scripts"
 sys.path.insert(0, str(SCRIPT_ROOT))
 
-from sec_official_event_intake import IntakeError, build_dashboard_view
+import sec_scheduled_shadow
+from sec_official_event_intake import DEFAULT_RULES_PATH, IntakeError, build_dashboard_view
 from sec_scheduled_shadow import (
     ATTEMPT_SCHEMA,
     attempt_artifact_path,
     build_summary,
     build_scheduled_attempt,
+    canonical_watchlist,
     derive_accession_diff,
     discover_latest_compatible_successful_run,
     discover_previous_run,
@@ -37,7 +40,7 @@ SUMMARY_SCHEMA = ROOT / "manage-us-stock-strategy/schemas/sec-scheduled-shadow-s
 WRAPPER_PATH = SCRIPT_ROOT / "run_sec_scheduled_shadow.ps1"
 REGISTER_PATH = SCRIPT_ROOT / "register_sec_scheduled_shadow_task.ps1"
 PREFLIGHT_PATH = SCRIPT_ROOT / "sec_scheduled_shadow_preflight.ps1"
-WATCHLIST = ["MRVL", "NBIS", "PGR", "JPM", "CME", "V"]
+WATCHLIST = ["MRVL", "NBIS", "MU", "BE", "DELL", "PWR", "LITE"]
 
 
 def powershell_executable() -> str | None:
@@ -72,7 +75,7 @@ def event(ticker: str, accession: str, *, materiality: str = "MEDIUM", form: str
         "materiality": materiality,
         "form": form,
         "event_type": "CURRENT_REPORT" if form == "8-K" else "OFFERING_PROSPECTUS",
-        "portfolio_relevance": "HOLDING" if ticker in {"MRVL", "NBIS"} else "CHALLENGER",
+        "portfolio_relevance": "HOLDING" if ticker in {"MRVL", "NBIS"} else "WATCHLIST",
         "decision_impact": "ASSET_REVIEW_REQUIRED" if materiality == "HIGH" else "WATCH",
         "filing_date": "2026-08-30",
         "accepted_at": "2026-08-30T20:00:00+00:00",
@@ -342,7 +345,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             current_directory = write_run(root, "current", "2026-08-31T01:00:00+00:00", [
                 event("MRVL", "old", materiality="HIGH"),
                 event("NBIS", "new-high", materiality="HIGH"),
-                event("JPM", "new-medium"),
+                event("MU", "new-medium"),
             ])
             current = load_run_artifact(current_directory)
             status, previous = discover_previous_run(root, current)
@@ -410,7 +413,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             self.assertIsNone(summary["previous_run_id"])
 
     def test_17_routine_prospectus_aggregation_regression_is_preserved(self) -> None:
-        routine = [event("JPM", f"424b2-{index}", form="424B2") for index in range(25)]
+        routine = [event("MU", f"424b2-{index}", form="424B2") for index in range(25)]
         high = event("MRVL", "high", materiality="HIGH")
         view = build_dashboard_view([high, *routine])
         self.assertEqual(1, view["high_event_count"])
@@ -418,6 +421,31 @@ class SecScheduledShadowTests(unittest.TestCase):
         self.assertEqual(25, view["routine_aggregates"][0]["count"])
         self.assertEqual(0, view["individual_routine_top_events"])
         self.assertEqual("NOT_VERIFIED", view["confirmed_convertible_dilution"])
+
+    def test_17b_canonical_watchlist_follows_rules_and_fails_closed(self) -> None:
+        rules = load_json(DEFAULT_RULES_PATH)
+        self.assertEqual(rules["corporate_watchlist"], canonical_watchlist())
+        self.assertEqual(WATCHLIST, canonical_watchlist())
+        with tempfile.TemporaryDirectory() as directory:
+            broken = Path(directory) / "rules.json"
+            for name, value in {
+                "empty": {**rules, "corporate_watchlist": [], "holdings": [], "watch": []},
+                "unclassified": {**rules, "watch": rules["watch"][:-1]},
+            }.items():
+                broken.write_text(json.dumps(value), encoding="utf-8")
+                with self.subTest(case=name), mock.patch.object(sec_scheduled_shadow, "DEFAULT_RULES_PATH", broken):
+                    with self.assertRaises(IntakeError) as context:
+                        canonical_watchlist()
+                    self.assertEqual("SEC_SOURCE_INVALID", context.exception.code)
+
+    def test_17c_previous_run_with_retired_watchlist_is_incompatible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_run(root, "old-list", "2026-09-26T03:30:00+00:00", [event("MRVL", "old")],
+                      watchlist=["MRVL", "NBIS", "PGR", "JPM", "CME", "V"])
+            status, previous = discover_latest_compatible_successful_run(root)
+            self.assertEqual("PREVIOUS_RUN_INCOMPATIBLE", status)
+            self.assertIsNone(previous)
 
     def test_18_scheduled_components_have_no_network_or_secret_persistence_path(self) -> None:
         python_source = (SCRIPT_ROOT / "sec_scheduled_shadow.py").read_text(encoding="utf-8")

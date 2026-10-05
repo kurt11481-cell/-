@@ -64,7 +64,19 @@ function Write-AttemptCollision {
     } | ConvertTo-Json -Compress | Write-Output
 }
 
+function Get-CanonicalWatchlist {
+    $rulesPath = Join-Path $resolvedRepository "manage-us-stock-strategy\assets\sec-official-event-intake-rules-v0.1.json"
+    try {
+        $rules = Get-Content -Raw -LiteralPath $rulesPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        $symbols = @($rules.corporate_watchlist)
+        if ($symbols.Count -eq 0 -or @($symbols | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) { return $null }
+        return ($symbols -join ",")
+    } catch { return $null }
+}
+
 function Get-LatestFallbackSummary {
+    $canonicalWatchlist = Get-CanonicalWatchlist
+    if ($null -eq $canonicalWatchlist) { return $null }
     $candidates = @()
     if (Test-Path -LiteralPath $OutputRoot -PathType Container) {
         foreach ($path in Get-ChildItem -LiteralPath $OutputRoot -Filter "scheduled-dashboard.json" -File -Recurse -ErrorAction SilentlyContinue) {
@@ -77,7 +89,7 @@ function Get-LatestFallbackSummary {
                     ([string]::IsNullOrWhiteSpace($RunId) -or $value.run_id -ne $RunId) -and
                     [int]$value.lookback_days -eq 7 -and
                     $value.pipeline_version -eq "0.1" -and
-                    ($value.watchlist -join ",") -eq "MRVL,NBIS,PGR,JPM,CME,V" -and
+                    ($value.watchlist -join ",") -eq $canonicalWatchlist -and
                     $value.pipeline_status -in @("PASS", "PARTIAL")
                 ) { $candidates += $value }
             } catch { continue }

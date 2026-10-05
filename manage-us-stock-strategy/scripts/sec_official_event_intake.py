@@ -340,12 +340,41 @@ def map_event_type(form: str, rules: dict[str, Any]) -> str | None:
     return str(value) if value else None
 
 
+def validated_watchlist_groups(rules: Any) -> tuple[list[str], list[str], list[str]]:
+    """Return (watchlist, holdings, watch) or fail closed.
+
+    An empty or unclassified watchlist would otherwise end as a silent zero-event PASS.
+    """
+    def symbols(key: str, *, allow_empty: bool) -> list[str]:
+        value = rules.get(key) if isinstance(rules, dict) else None
+        if (
+            not isinstance(value, list)
+            or (not value and not allow_empty)
+            or not all(isinstance(item, str) and item.strip() for item in value)
+            or len(set(value)) != len(value)
+        ):
+            raise IntakeError("SEC_SOURCE_INVALID", f"RULES_{key.upper()}_INVALID")
+        return list(value)
+
+    watchlist = symbols("corporate_watchlist", allow_empty=False)
+    holdings = symbols("holdings", allow_empty=True)
+    watch = symbols("watch", allow_empty=True)
+    if set(holdings) & set(watch) or set(holdings) | set(watch) != set(watchlist):
+        raise IntakeError("SEC_SOURCE_INVALID", "RULES_WATCHLIST_PARTITION_INVALID")
+    return watchlist, holdings, watch
+
+
 def route_materiality(
     *, ticker: str, form: str, event_type: str, items: list[str], rules: dict[str, Any]
 ) -> tuple[str, str, str]:
     holding = ticker in rules["holdings"]
     if not holding:
-        return "MEDIUM", "CHALLENGER", "WATCH"
+        if ticker not in rules["watch"]:
+            raise IntakeError("SEC_SOURCE_INVALID", f"{ticker}:NOT_CLASSIFIED", scope=ticker)
+        review_candidate = event_type in rules["high_candidate_event_types"] or (
+            event_type == "CURRENT_REPORT" and any(item in rules["material_8k_items"] for item in items)
+        )
+        return ("HIGH" if review_candidate else "MEDIUM"), "WATCHLIST", "WATCH"
     if event_type in rules["high_candidate_event_types"]:
         return "HIGH", "HOLDING", "ASSET_REVIEW_REQUIRED"
     if event_type == "CURRENT_REPORT":
@@ -599,7 +628,7 @@ def sort_dashboard_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def is_routine_prospectus_watch(event: dict[str, Any]) -> bool:
     return (
-        event.get("portfolio_relevance") == "CHALLENGER"
+        event.get("portfolio_relevance") in {"WATCHLIST", "CHALLENGER"}
         and event.get("event_type") == "OFFERING_PROSPECTUS"
         and event.get("decision_impact") == "WATCH"
     )
@@ -631,7 +660,7 @@ def aggregate_routine_prospectus(events: list[dict[str, Any]]) -> list[dict[str,
 
 def materiality_rule_reason(event: dict[str, Any]) -> str:
     relation = "Direct holding underlying" if event.get("underlying_company_relevance") else (
-        "Direct holding" if event.get("portfolio_relevance") == "HOLDING" else "Direct challenger"
+        "Direct holding" if event.get("portfolio_relevance") == "HOLDING" else "Direct watchlist"
     )
     event_type = str(event["event_type"])
     impact = str(event["decision_impact"])
@@ -734,6 +763,15 @@ def _event_label(event: dict[str, Any]) -> str:
     return f"{event['ticker']} {event['form']} ({event['filing_date']}) - {event['decision_impact']}"
 
 
+def _dashboard_symbol_groups(
+    rules: dict[str, Any] | None,
+) -> tuple[list[str], list[str], list[str], dict[str, Any]]:
+    active = rules if rules is not None else load_json(DEFAULT_RULES_PATH)
+    watchlist, holdings, watch = validated_watchlist_groups(active)
+    relations = active.get("derived_relations", {})
+    return watchlist, holdings, watch, relations if isinstance(relations, dict) else {}
+
+
 def _ticker_summary(events: list[dict[str, Any]], ticker: str) -> str:
     matches = [event for event in events if event["ticker"] == ticker]
     if not matches:
@@ -752,8 +790,19 @@ def render_dashboard_markdown(
     ownership_coverage: str,
     company_status: dict[str, str],
     scheduled_summary: dict[str, Any] | None = None,
+    rules: dict[str, Any] | None = None,
 ) -> str:
     view = build_dashboard_view(events, scheduled_summary)
+    _, holdings, watch, relations = _dashboard_symbol_groups(rules)
+    holding_lines = [
+        (
+            f"{ticker} -> {relations[ticker]['leveraged_vehicle']}: {_ticker_summary(events, ticker)}"
+            f" / {relations[ticker]['relation_status']}"
+            if ticker in relations else f"{ticker}: {_ticker_summary(events, ticker)}"
+        )
+        for ticker in holdings
+    ]
+    watch_lines = [f"{ticker}: {_ticker_summary(events, ticker)}" for ticker in watch]
     periodic = [event for event in events if event["event_type"] == "PERIODIC_FINANCIAL"]
     unknowns = [f"{ticker}: {status}" for ticker, status in company_status.items() if status != "PASS"]
     if ownership_coverage != "VERIFIED":
@@ -820,14 +869,10 @@ def render_dashboard_markdown(
         lines.append(_T["render_dashboard_markdown.41"])
     lines.extend([
         "", _T["render_dashboard_markdown.42"], "",
-        f"MRVL -> MVLL: {_ticker_summary(events, 'MRVL')} / DERIVED_MAPPING_NOT_ENTITY_EQUIVALENCE",
-        f"NBIS: {_ticker_summary(events, 'NBIS')}",
+        *holding_lines,
         _T["render_dashboard_markdown.43"], "",
         _T["render_dashboard_markdown.44"], "",
-        f"PGR: {_ticker_summary(events, 'PGR')}",
-        f"JPM: {_ticker_summary(events, 'JPM')}",
-        f"CME: {_ticker_summary(events, 'CME')}",
-        f"V: {_ticker_summary(events, 'V')}", "",
+        *watch_lines, "",
         _T["render_dashboard_markdown.45"], "",
         f"{_T['render_dashboard_markdown.46']} {view['confirmed_convertible_dilution']}",
         f"{_T['render_dashboard_markdown.47']} {view['routine_event_count']}{_T['render_dashboard_markdown.03']}",
@@ -859,6 +904,7 @@ def render_dashboard_markdown(
 
 def render_dashboard_html(markdown_model: dict[str, Any]) -> str:
     events = markdown_model["events"]
+    watchlist, _, _, _ = _dashboard_symbol_groups(markdown_model.get("rules"))
     view = build_dashboard_view(events, markdown_model.get("scheduled_summary"))
     periodic_count = sum(event.get("event_type") == "PERIODIC_FINANCIAL" for event in events)
     count = lambda value: _T["render_dashboard_markdown.02"] if value is None else f"{value}{_T['render_dashboard_markdown.03']}"
@@ -893,7 +939,7 @@ def render_dashboard_html(markdown_model: dict[str, Any]) -> str:
     ) or ("<p>" + _T["render_dashboard_html.17"] + "</p>")
     summaries = "".join(
         "<div class='row'><strong>" + html.escape(ticker) + "</strong><span>" + html.escape(_ticker_summary(events, ticker)) + "</span></div>"
-        for ticker in ("MRVL", "NBIS", "PGR", "JPM", "CME", "V")
+        for ticker in watchlist
     )
     unknowns = [f"{ticker}: {status}" for ticker, status in markdown_model["company_status"].items() if status != "PASS"]
     if markdown_model["ownership_coverage"] != "VERIFIED":
@@ -975,7 +1021,7 @@ def run_pipeline(
     as_of = as_of.astimezone(timezone.utc)
     started_at = as_of.isoformat()
     rules = load_json(rules_path)
-    watchlist = [str(value) for value in rules["corporate_watchlist"]]
+    watchlist, _, _ = validated_watchlist_groups(rules)
     run_id_value = validate_run_id(run_id or generate_run_id(as_of))
     run_directory = Path(output_root).resolve() / as_of.date().isoformat() / run_id_value
     if run_directory.exists():
@@ -1083,6 +1129,7 @@ def run_pipeline(
         "events": all_events,
         "ownership_coverage": ownership_coverage,
         "company_status": company_status,
+        "rules": rules,
     }
     dashboard_md = render_dashboard_markdown(**dashboard_model)
     dashboard_html = render_dashboard_html(dashboard_model)

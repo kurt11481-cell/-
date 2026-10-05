@@ -44,7 +44,7 @@
           "items_if_available": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
           "event_type": {"enum": ["PERIODIC_FINANCIAL", "CURRENT_REPORT", "FOREIGN_CURRENT_REPORT", "SHELF_REGISTRATION", "OFFERING_PROSPECTUS", "GOVERNANCE_PROXY", "INSIDER_OWNERSHIP", "PROPOSED_SECURITY_SALE", "BENEFICIAL_OWNERSHIP"]},
           "materiality": {"enum": ["LOW", "MEDIUM", "HIGH"]},
-          "portfolio_relevance": {"enum": ["HOLDING", "CHALLENGER"]},
+          "portfolio_relevance": {"enum": ["HOLDING", "WATCHLIST", "CHALLENGER"]},
           "root_theses": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
           "verification_status": {"const": "OFFICIAL_SOURCE_VERIFIED"},
           "interpretation_status": {"const": "DERIVED_RULE_BASED"},

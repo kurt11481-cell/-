@@ -6,6 +6,11 @@
     [80661, "The Progressive Corporation", "PGR", "NYSE"],
     [19617, "JPMorgan Chase & Co.", "JPM", "NYSE"],
     [1156375, "CME Group Inc.", "CME", "Nasdaq"],
-    [1403161, "Visa Inc.", "V", "NYSE"]
+    [1403161, "Visa Inc.", "V", "NYSE"],
+    [9000001, "Synthetic Memory Corp (SYNTHETIC FIXTURE)", "MU", "Nasdaq"],
+    [9000002, "Synthetic Fuel Cell Corp (SYNTHETIC FIXTURE)", "BE", "NYSE"],
+    [9000003, "Synthetic Server Corp (SYNTHETIC FIXTURE)", "DELL", "NYSE"],
+    [9000004, "Synthetic Grid Services Corp (SYNTHETIC FIXTURE)", "PWR", "NYSE"],
+    [9000005, "Synthetic Optical Corp (SYNTHETIC FIXTURE)", "LITE", "Nasdaq"]
   ]
 }
