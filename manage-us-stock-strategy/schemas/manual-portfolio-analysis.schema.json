@@ -263,6 +263,19 @@
     "scheduled_occurrence_id": {"type": ["string", "null"]},
     "scheduled_pair_eligible": {"const": false},
     "mutation_status": {"const": "REPORT_ONLY_CREATE_ONLY"},
+    "code_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "git_commit", "git_branch", "code_tree_dirty", "dirty_scope", "k3_evidence_eligible"],
+      "properties": {
+        "status": {"enum": ["CLEAN_CODE_TREE", "DIRTY_CODE_TREE", "CODE_PROVENANCE_UNAVAILABLE"]},
+        "git_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "git_branch": {"type": ["string", "null"]},
+        "code_tree_dirty": {"type": ["boolean", "null"]},
+        "dirty_scope": {"const": "manage-us-stock-strategy/"},
+        "k3_evidence_eligible": {"type": "boolean"}
+      }
+    },
     "broker_observed_state": {
       "type": "object",
       "required": [

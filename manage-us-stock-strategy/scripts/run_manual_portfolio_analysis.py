@@ -13,9 +13,9 @@ import contextlib
 import ctypes
 import hashlib
 import json
-import math
 import os
 import re
+import subprocess
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -30,9 +30,23 @@ from integrated_authority_snapshot import (
     resolve_instrument_identity_from_snapshot,
 )
 from instrument_identity_authority import resolve_instrument_identity
-from kiwoom_account_readonly_bridge import SAFE_FAILURE_STATUSES, _sanitize, invoke_account_bridge_batch
-from kiwoom_broker_shadow import normalize_snapshot
+from kiwoom_account_readonly_bridge import SAFE_FAILURE_STATUSES, invoke_account_bridge_batch
 from kiwoom_runtime_bridge import invoke_bridge_batch
+# Pinned guards: re-exported under their historical names for existing callers.
+from manual_data_guards import (
+    BROKER_NORMALIZATION_FAILED,
+    _acquisition_complete_cutoff,
+    _cur_prc_price,
+    _evidence_timestamps,
+    _number,
+    _operation_result,
+    _temporal_evidence_valid,
+    _ticker,
+    _timestamp,
+    compare_broker_and_system,
+    normalize_broker_state,
+)
+import scheduled_input_gate
 from session_aware_market_data import (
     ET,
     kiwoom_broker_quote_observation,
@@ -55,6 +69,7 @@ ACCOUNT_READ_OPERATIONS = (
 MARKET_READ_OPERATIONS = ("oauth_health", "market_quote", "daily_chart")
 MANUAL_RUN_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{7,127}")
 APPROVED_FINALIZATION_BASIS = "NEXT_ET_CALENDAR_DAY_PROVIDER_ARCHIVE"
+CODE_PROVENANCE_SCOPE = "manage-us-stock-strategy/"
 AccountReader = Callable[[list[dict[str, Any]]], list[dict[str, Any]]]
 MarketReader = Callable[[list[dict[str, Any]]], list[dict[str, Any]]]
 
@@ -63,38 +78,45 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _timestamp(value: str) -> datetime:
-    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError("TIMESTAMP_MUST_BE_TIMEZONE_AWARE")
-    return parsed
+def collect_code_provenance(
+    repo: Path = ROOT, *, runner: Callable[..., Any] = subprocess.run,
+) -> dict[str, Any]:
+    """Record which code produced a manual report; a dirty code tree is never K3 evidence."""
+    unavailable = {
+        "status": "CODE_PROVENANCE_UNAVAILABLE",
+        "git_commit": None,
+        "git_branch": None,
+        "code_tree_dirty": None,
+        "dirty_scope": CODE_PROVENANCE_SCOPE,
+        "k3_evidence_eligible": False,
+    }
 
+    def git(*args: str) -> str:
+        completed = runner(
+            ["git", "--no-optional-locks", "-C", str(repo), *args],
+            capture_output=True, text=True, encoding="utf-8", timeout=30, check=False,
+        )
+        if completed.returncode != 0 or not isinstance(completed.stdout, str):
+            raise RuntimeError("GIT_READ_FAILED")
+        return completed.stdout
 
-def _number(value: Any, *, positive: bool = False) -> float | None:
-    if value is None or isinstance(value, bool):
-        return None
     try:
-        result = float(str(value).replace(",", "").strip())
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(result) or result < 0 or (positive and result <= 0):
-        return None
-    return result
-
-
-def _cur_prc_price(value: Any) -> float | None:
-    """Normalize the Kiwoom cur_prc sign prefix to a positive price."""
-    if value is None or isinstance(value, bool):
-        return None
-    match = re.fullmatch(r"[+-]?(\d+(?:\.\d+)?)", str(value))
-    if match is None:
-        return None
-    return _number(match.group(1), positive=True)
-
-
-def _ticker(value: Any) -> str | None:
-    result = str(value or "").strip().upper()
-    return result if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,14}", result) else None
+        commit = git("rev-parse", "HEAD").strip()
+        branch = git("branch", "--show-current").strip() or None
+        status = git("status", "--porcelain", "--untracked-files=normal", "--", CODE_PROVENANCE_SCOPE)
+    except (OSError, RuntimeError, subprocess.SubprocessError, UnicodeError, ValueError):
+        return unavailable
+    if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        return unavailable
+    dirty = bool(status.strip())
+    return {
+        "status": "DIRTY_CODE_TREE" if dirty else "CLEAN_CODE_TREE",
+        "git_commit": commit,
+        "git_branch": branch,
+        "code_tree_dirty": dirty,
+        "dirty_scope": CODE_PROVENANCE_SCOPE,
+        "k3_evidence_eligible": not dirty,
+    }
 
 
 def generate_manual_run_id(now: datetime | None = None) -> str:
@@ -280,84 +302,18 @@ def _safe_reader_call(
     return normalized
 
 
-def _operation_result(
-    results: list[dict[str, Any]], operation: str, ticker: str | None = None,
-) -> dict[str, Any] | None:
-    for result in results:
-        if result.get("operation") != operation:
-            continue
-        if ticker is not None and _ticker(result.get("ticker")) != ticker:
-            continue
-        return result
-    return None
-
-
 def _normalize_broker_state(
     account_results: list[dict[str, Any]], *, observed_at: str,
     maximum_age_seconds: int,
 ) -> tuple[dict[str, Any], str]:
-    try:
-        snapshot = normalize_snapshot(
-            account_results,
-            snapshot_role="POST_CLOSE_BROKER_SNAPSHOT",
-            generated_at=observed_at,
-            maximum_age_seconds=maximum_age_seconds,
-        )
-    except Exception:
-        snapshot = {
-            "broker_snapshot_as_of": None,
-            "scope_complete": False,
-            "operation_statuses": {},
-            "holdings": [],
-            "cash": {
-                "currency": "USD",
-                "withdrawable_cash": None,
-                "order_available_cash": None,
-                "settled_available_cash": None,
-                "cash_status": "UNVERIFIED",
-                "projected_proceeds_included": False,
-                "margin_or_credit_included": False,
-            },
-        }
-    holdings_result = _operation_result(account_results, "account_holdings_read")
-    if holdings_result is None or holdings_result.get("bridge_status") not in {"PASS", "PARTIAL"}:
-        broker_status = "UNAVAILABLE"
-    elif (
-        holdings_result.get("bridge_status") != "PASS"
-        or (holdings_result.get("pagination") or {}).get("complete") is not True
-    ):
-        broker_status = "INCOMPLETE"
-    else:
-        broker_status = "AVAILABLE"
-    open_results = [item for item in account_results if item.get("operation") == "account_open_items"]
-    open_evidence = None
-    if len(open_results) == 1:
-        open_result = open_results[0]
-        open_evidence = _sanitize(open_result, "account_open_items")
-        # Sanitizing malformed rows must never manufacture verified empty evidence.
-        data = open_result.get("data")
-        if not isinstance(data, list) or any(not isinstance(item, dict) for item in data):
-            open_evidence["data"] = None
-    # A generated_at fallback is a parent observation, not a Broker data timestamp.
-    broker_data_as_of = _acquisition_complete_cutoff([
-        result for result in account_results if result.get("bridge_status") in {"PASS", "PARTIAL"}
-    ])
-    state = {
-        "state_type": "BROKER_OBSERVED_STATE",
-        "status": broker_status,
-        "as_of": broker_data_as_of,
-        "scope_complete": snapshot.get("scope_complete") is True,
-        "operation_statuses": snapshot.get("operation_statuses") or {},
-        "holdings": snapshot.get("holdings") or [],
-        "open_order_evidence": open_evidence,
-        "cash": snapshot.get("cash") or {},
-        "source": "KIWOOM_ACCOUNT_READ_ONLY",
-        "canonical_apply": False,
-        "portfolio_mutation": False,
-        "quantity_authority": "none",
-        "order_authority": False,
-    }
-    return state, broker_status
+    # The rule lives in the pinned guard module; the module-level cutoff name
+    # is passed through so existing callers and test seams keep one cutoff.
+    return normalize_broker_state(
+        account_results,
+        observed_at=observed_at,
+        maximum_age_seconds=maximum_age_seconds,
+        acquisition_cutoff=_acquisition_complete_cutoff,
+    )
 
 
 def _system_portfolio_projection(
@@ -376,57 +332,6 @@ def _system_portfolio_projection(
         "portfolio_mutation": False,
         "order_authority": False,
     }
-
-
-def _maps_match(left: dict[str, Any], right: dict[str, Any]) -> bool:
-    if set(left) != set(right):
-        return False
-    for key in left:
-        left_value = _number(left[key])
-        right_value = _number(right[key])
-        if left_value is None or right_value is None:
-            if left[key] != right[key]:
-                return False
-        elif not math.isclose(left_value, right_value, rel_tol=1e-9, abs_tol=1e-8):
-            return False
-    return True
-
-
-def compare_broker_and_system(
-    broker_state: dict[str, Any], system_state: dict[str, Any],
-) -> tuple[str, list[str]]:
-    if broker_state.get("status") != "AVAILABLE":
-        return "UNKNOWN", ["BROKER_HOLDINGS_NOT_COMPLETE"]
-    system_holdings = system_state.get("holdings")
-    if not isinstance(system_holdings, dict):
-        return "UNKNOWN", ["SYSTEM_HOLDINGS_UNAVAILABLE"]
-    broker_holdings = {
-        item["ticker"]: item.get("held_quantity")
-        for item in broker_state.get("holdings", [])
-        if isinstance(item, dict) and _ticker(item.get("ticker"))
-    }
-    differences: list[str] = []
-    if not _maps_match(broker_holdings, system_holdings):
-        differences.append("HOLDINGS_DIFFER")
-    broker_costs = {
-        item["ticker"]: item.get("average_cost")
-        for item in broker_state.get("holdings", [])
-        if isinstance(item, dict) and _ticker(item.get("ticker"))
-        and item.get("average_cost") is not None
-    }
-    system_costs = system_state.get("average_cost_usd") or {}
-    if broker_costs and not _maps_match(broker_costs, system_costs):
-        differences.append("AVERAGE_COST_DIFFERS")
-    broker_cash = _number((broker_state.get("cash") or {}).get("settled_available_cash"))
-    system_cash = _number(system_state.get("available_cash_usd"))
-    cash_unknown = broker_cash is None or system_cash is None
-    if not cash_unknown and not math.isclose(broker_cash, system_cash, rel_tol=1e-9, abs_tol=1e-8):
-        differences.append("AVAILABLE_CASH_DIFFERS")
-    if differences:
-        return "DIFFERENT", differences
-    if cash_unknown or (system_costs and set(broker_costs) != set(system_costs)):
-        return "UNKNOWN", ["COMPARISON_FIELD_UNAVAILABLE"]
-    return "MATCH", []
 
 
 def _manual_analysis_view(
@@ -706,47 +611,6 @@ def _aggregate_status(available: int, total: int) -> str:
     if available:
         return "PARTIAL"
     return "UNAVAILABLE"
-
-
-def _evidence_timestamps(*result_sets: list[dict[str, Any]]) -> list[str]:
-    values: list[str] = []
-    for results in result_sets:
-        for result in results:
-            value = result.get("retrieved_at")
-            if isinstance(value, str):
-                values.append(value)
-    return values
-
-
-def _acquisition_complete_cutoff(
-    *result_sets: list[dict[str, Any]],
-) -> str | None:
-    """Freeze Tc at the latest required result-level evidence timestamp."""
-    values = _evidence_timestamps(*result_sets)
-    required_count = sum(len(results) for results in result_sets)
-    if required_count == 0 or len(values) != required_count:
-        return None
-    parsed: list[tuple[datetime, str]] = []
-    try:
-        for value in values:
-            parsed.append((_timestamp(value), value))
-    except (TypeError, ValueError):
-        return None
-    return max(parsed, key=lambda item: item[0])[1]
-
-
-def _temporal_evidence_valid(
-    cutoff: str, *result_sets: list[dict[str, Any]],
-) -> bool:
-    """Validate a frozen cutoff without advancing it for later evidence."""
-    values = _evidence_timestamps(*result_sets)
-    if len(values) != sum(len(results) for results in result_sets):
-        return False
-    try:
-        cutoff_dt = _timestamp(cutoff)
-        return bool(values) and all(_timestamp(value) <= cutoff_dt for value in values)
-    except (TypeError, ValueError):
-        return False
 
 
 def _requested_operations(value: list[str] | tuple[str, ...] | None,
@@ -1375,6 +1239,7 @@ def run_manual_preflight(
     market_operations: list[str] | tuple[str, ...] | None = None,
     parent_capture_artifacts: list[tuple[bytes, str]] | None = None,
     direction_only: bool = False,
+    code_provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Collect and validate M1 evidence without writing or invoking strategy logic."""
     run_id = validate_manual_run_id(manual_run_id)
@@ -1754,6 +1619,8 @@ def run_manual_preflight(
     # Missing scope is not an endpoint failure; genuine failures remain visible.
     if kiwoom_health_status != "HEALTHY" and "oauth_health" in requested_market:
         hard_fail_reasons.append("KIWOOM_UNAVAILABLE")
+    if broker_state.get("normalization_status") == BROKER_NORMALIZATION_FAILED:
+        hard_fail_reasons.append(BROKER_NORMALIZATION_FAILED)
     if broker_status == "UNAVAILABLE" and "account_holdings_read" in requested_accounts:
         hard_fail_reasons.append("BROKER_HOLDINGS_UNAVAILABLE")
     elif broker_status == "UNAVAILABLE":
@@ -1809,6 +1676,10 @@ def run_manual_preflight(
     )
     if not temporal_valid:
         hard_fail_reasons.append("TEMPORAL_EVIDENCE_VIOLATION")
+
+    if code_provenance is not None and code_provenance.get("status") != "CLEAN_CODE_TREE":
+        # Dirty or unknown code still analyzes, but the report says so and is not K3 evidence.
+        unknowns.append(str(code_provenance.get("status") or "CODE_PROVENANCE_UNAVAILABLE"))
 
     hard_fail_reasons = sorted(set(hard_fail_reasons))
     partial_reasons = sorted(set(partial_reasons))
@@ -1977,6 +1848,8 @@ def run_manual_preflight(
         "event_evidence_status": "NOT_EVALUATED_M1",
         "technical_evidence_status": "REPORT_ONLY_M1",
     }
+    if code_provenance is not None:
+        report["code_provenance"] = dict(code_provenance)
     if direction_only is True:
         manual_view["decision_evidence_scope"] = "EXISTING_HOLDINGS_AND_CASH_DIRECTION_ONLY"
         eligible = validate_manual_direction_evidence(
@@ -2202,142 +2075,16 @@ def validate_scheduled_input(
 ) -> dict[str, Any]:
     """Validate an externally supplied scheduled run; never collect or promote it.
 
-    scheduled_run_id identifies the logical run, while run_id identifies this
-    analysis and scheduled_occurrence_id identifies the task/phase occurrence.
-    The caller supplies an existing run and deployment manifest on every call.
-    This is a compilation gate, not operational maturity or delivery evidence.
+    The gate itself is pinned in scheduled_input_gate.py. The provenance
+    deriver is resolved here at call time so this module's name stays the one
+    consulted by callers that wrap or replace it.
     """
-    from continuous_improvement_sidecar import validate_temporal_evidence
-    from deployment_provenance import verify_current_provenance
-    from validation_common import canonical_hash
-
-    if not isinstance(supplied, dict) or not isinstance(supplied.get("run"), dict):
-        raise ValueError("SCHEDULED_PROVENANCE_REQUIRED")
-    run = supplied["run"]
-    pe = run.get("provenance_evidence")
-    manifest = supplied.get("deployment_provenance")
-    if not isinstance(pe, dict) or not isinstance(manifest, dict):
-        raise ValueError("SCHEDULED_PROVENANCE_REQUIRED")
-    policy_path = runtime_repo / "workspace/policies/continuous_improvement_policy.json"
-    failures = verify_current_provenance(
-        manifest, expected_head=expected_head, runtime_repo=runtime_repo,
-        provider_scope_path=runtime_repo / "workspace/policies/kiwoom-session-aware-priority-policy.json",
-        progress_path=runtime_repo / "workspace/state/integrated_shadow/shadow_progress.json",
-        required_code_paths=(
-            "manage-us-stock-strategy/scripts/run_manual_portfolio_analysis.py",
-            "manage-us-stock-strategy/scripts/portfolio_decision_dashboard.py",
-            "manage-us-stock-strategy/scripts/portfolio_decision_order_intent.py",
-            "manage-us-stock-strategy/scripts/deployment_provenance.py",
-            "manage-us-stock-strategy/schemas/manual-portfolio-analysis.schema.json",
-        ),
-        required_policy_paths=("workspace/policies/continuous_improvement_policy.json",),
+    return scheduled_input_gate.validate_scheduled_input(
+        evidence, supplied, evidence_sha256=evidence_sha256,
+        expected_head=expected_head, runtime_repo=runtime_repo,
+        session_authority_resolver=session_authority_resolver,
+        provenance_deriver=derive_run_provenance,
     )
-    if failures:
-        raise ValueError("SCHEDULED_DEPLOYMENT_NOT_VERIFIED:" + ";".join(sorted(set(failures))))
-    policy_bytes = policy_path.read_bytes()
-    policy = json.loads(policy_bytes)
-    if hashlib.sha256(policy_bytes).hexdigest() != (manifest.get("policy_hashes") or {}).get("workspace/policies/continuous_improvement_policy.json"):
-        failures.append("SCHEDULED_CONSUMED_POLICY_HASH_MISMATCH")
-    expected_mode = {
-        "report_type": "SCHEDULED_PORTFOLIO_ANALYSIS_PREFLIGHT",
-        "run_mode": "LIVE_READ_ONLY", "trigger_type": "SCHEDULED_GENUINE",
-        "operator_initiated": False, "run_provenance_status": "VERIFIED_SCHEDULED",
-        "evidence_grade": "GRADE_A", "backfill": False,
-        "maturity_eligible": False, "operational_maturity_eligible": False,
-        "policy_evolution_eligible": False, "scheduled_pair_eligible": False,
-    }
-    if any(evidence.get(k) != v for k, v in expected_mode.items()):
-        failures.append("SCHEDULED_EVIDENCE_MODE_MISMATCH")
-    if run.get("execution_origin") != "SCHEDULED_GENUINE" or run.get("decision_mode") != "LIVE_READ_ONLY":
-        failures.append("SCHEDULED_SOURCE_MODE_MISMATCH")
-    if pe.get("operator_initiated") is not False or pe.get("trigger_type") != "SCHEDULED_GENUINE":
-        failures.append("SCHEDULED_SOURCE_TRIGGER_MISMATCH")
-    if pe.get("manual_run_id") is not None:
-        failures.append("MANUAL_PROVENANCE_MASQUERADING")
-    if run.get("run_id") != evidence.get("manual_run_id") or run.get("decision_as_of") != evidence.get("decision_as_of"):
-        failures.append("SCHEDULED_EVIDENCE_BINDING_MISMATCH")
-    phase = pe.get("expected_operational_phase")
-    task_phase = "REGULAR_CLOSE_T_PLUS_30" if phase == "POST_MARKET_FINALIZED" else phase
-    task_mapping = {"PRE_OPEN_T_MINUS_30": "automation",
-                    "REGULAR_CLOSE_T_PLUS_30": "post-close-portfolio-strategy"}
-    actual_task_id = supplied.get("task_id")
-    # The analytics policy uses logical phase IDs; deployment uses App task IDs.
-    if (actual_task_id != task_mapping.get(task_phase) or task_phase is None
-            or pe.get("task_id") != task_phase
-            or not any(t.get("task_id") == actual_task_id and t.get("run_phase") == task_phase
-                       for t in manifest.get("tasks", []) if isinstance(t, dict))):
-        failures.append("SCHEDULED_TASK_PHASE_MAPPING_MISMATCH")
-    occurrence = canonical_hash({"task_id": actual_task_id, "run_phase": phase,
-                                 "scheduled_run_id": pe.get("scheduled_run_id"),
-                                 "scheduled_at": supplied.get("scheduled_at")})
-    if evidence.get("scheduled_occurrence_id") != occurrence or supplied.get("scheduled_occurrence_id") != occurrence:
-        failures.append("SCHEDULED_OCCURRENCE_BINDING_MISMATCH")
-    try:
-        scheduled_at = _timestamp(supplied.get("scheduled_at"))
-        observed = _timestamp(evidence.get("observed_at"))
-        cutoff = _timestamp(evidence.get("decision_as_of"))
-        from dual_run_scheduler import build_session_schedule
-        authority = session_authority_resolver(
-            evidence["decision_as_of"], primary_listing_operating_mic="XNYS",
-            decision_as_of=evidence["decision_as_of"],
-        )
-        window = authority.current_date_session
-        if (authority.authority_status != "VERIFIED" or window is None
-                or authority.calendar_hash != evidence.get("calendar_hash")
-                or authority.activation_cohort_id != evidence.get("session_activation_cohort_id")):
-            raise ValueError("SCHEDULED_OFFICIAL_SESSION_NOT_VERIFIED")
-        schedule = build_session_schedule({
-            "official_calendar_verified": True, "is_trading_day": True,
-            "session": window.session_date, "core_open_at": window.core_open_at,
-            "core_close_at": window.core_close_at, "calendar_source": authority.calendar_hash,
-        })
-        times = (schedule["finalization_retry_at"] if phase == "POST_MARKET_FINALIZED" else
-                 [r["scheduled_at"] for r in schedule["runs"] if r["run_phase"] == phase])
-        if scheduled_at not in [_timestamp(t) for t in times] or pe.get("scheduled_run_id") != schedule["scheduled_run_id"]:
-            failures.append("SCHEDULED_OFFICIAL_OCCURRENCE_MISMATCH")
-        if not scheduled_at <= observed <= cutoff or (cutoff - scheduled_at).total_seconds() > 900:
-            failures.append("SCHEDULED_TEMPORAL_BINDING_MISMATCH")
-        if pe.get("expected_trading_day") != evidence.get("trading_date") or scheduled_at.astimezone(ET).date().isoformat() != evidence.get("trading_date"):
-            failures.append("SCHEDULED_TRADING_DAY_MISMATCH")
-    except (AttributeError, KeyError, OSError, TypeError, ValueError):
-        failures.append("SCHEDULED_TIMESTAMP_OR_OFFICIAL_SESSION_INVALID")
-    if (run.get("git_sha") != expected_head or pe.get("runtime_manifest_hash") != manifest.get("record_hash")
-            or run.get("runtime_manifest_hash") != manifest.get("record_hash")
-            or run.get("semantic_cohort") != manifest.get("semantic_cohort_id")):
-        failures.append("SCHEDULED_DEPLOYMENT_BINDING_MISMATCH")
-    portfolio_hash = (evidence.get("system_portfolio_state") or {}).get("source_sha256")
-    if not portfolio_hash or run.get("portfolio_hash_before") != portfolio_hash or run.get("portfolio_hash_after") != portfolio_hash:
-        failures.append("SCHEDULED_PORTFOLIO_HASH_MISMATCH")
-    sources = run.get("source_artifacts")
-    if (not isinstance(sources, list) or not sources
-            or any(not isinstance(s, dict) for s in sources)
-            or not any(s.get("sha256") == evidence_sha256 and s.get("observed_at") == evidence.get("decision_as_of") for s in sources)):
-        failures.append("SCHEDULED_SOURCE_EVIDENCE_HASH_MISSING")
-    else:
-        try:
-            if not validate_temporal_evidence(run["decision_as_of"], sources)["evaluation_valid"]:
-                failures.append("SCHEDULED_TEMPORAL_EVIDENCE_INVALID")
-        except (KeyError, TypeError, ValueError):
-            failures.append("SCHEDULED_TEMPORAL_EVIDENCE_INVALID")
-    if run.get("temporal_evidence_status") != "TEMPORAL_EVIDENCE_VALID":
-        failures.append("SCHEDULED_TEMPORAL_STATUS_REQUIRED")
-    derived = derive_run_provenance(run, policy)
-    if derived["run_provenance_status"] != "VERIFIED_SCHEDULED" or not derived["decision_quality_eligible"]:
-        failures.append("SCHEDULED_CANONICAL_PROVENANCE_NOT_VERIFIED")
-    p = evidence.get("provenance") or {}
-    if any(p.get(k) != v for k, v in {
-        "execution_origin": "SCHEDULED_GENUINE", "decision_mode": "LIVE_READ_ONLY",
-        "run_provenance_status": "VERIFIED_SCHEDULED", "evidence_grade": "GRADE_A",
-        "decision_quality_eligible": True, "maturity_eligible": False,
-        "operational_maturity_eligible": False, "policy_evolution_eligible": False,
-    }.items()):
-        failures.append("SCHEDULED_REPORT_PROVENANCE_MISMATCH")
-    if failures:
-        raise ValueError("SCHEDULED_INPUT_NOT_VERIFIED:" + ";".join(sorted(set(failures))))
-    return {"trigger_type": "SCHEDULED_GENUINE",
-            "run_provenance_status": "VERIFIED_SCHEDULED_GENUINE",
-            "actual_scheduled_run": True, "scheduled_occurrence_id": occurrence,
-            "operational_grade": "GRADE_A_CANDIDATE", "scheduled_maturity_promoted": False}
 
 
 def main() -> int:
@@ -2418,6 +2165,7 @@ def main() -> int:
         extra_tickers=args.ticker,
         k3_shadow_combined_activation=shadow_activation,
         k3_production_combined_activation=production_activation,
+        code_provenance=collect_code_provenance(repo),
     )
     target = write_immutable_report(
         report,
