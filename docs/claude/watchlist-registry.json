@@ -2,7 +2,7 @@
  "schema": "watchlist-registry/v1",
  "note": "관심(미보유) 명단 단일 출처. 설계: docs/claude/watchlist-rotation-design-2026-10-03.md. 점수표 R1·교체 규칙은 사용자 승인으로만 바꾼다. 관심 편입은 매수 승인이 아니다.",
  "mode": "proposal",
- "proposalRunsLeft": 2,
+ "proposalRunsLeft": 1,
  "slots": 5,
  "capUsd": 1000000000000.0,
  "capExempt": [
@@ -301,7 +301,7 @@
     "s1": "강"
    },
    "s1Basis": "공식 보도자료: Electrical Americas 12개월 수주 +41% 유기, 백로그 +33%",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 8,
    "detail": {
     "r60": 7.5,
@@ -319,10 +319,19 @@
     "c10": 451.51,
     "c10Date": "20260814",
     "nextBelow": false,
-    "drift10": 16.7
+    "drift10": 16.7,
+    "close": 436.11,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 28.99,
+    "mcapNow": 169390000000
    },
    "sectorFull": true,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "AAOI",
@@ -349,7 +358,7 @@
     "s1": "강"
    },
    "s1Basis": "공식 보도자료: 데이터센터 매출 $107.7M, +140.3%",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 6,
    "detail": {
     "r60": -5.4,
@@ -367,10 +376,19 @@
     "c10": 124.82,
     "c10Date": "20260821",
     "nextBelow": false,
-    "drift10": 0.5
+    "drift10": 0.5,
+    "close": 115.59,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 50.23,
+    "mcapNow": 9810000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "AMD",
@@ -397,7 +415,7 @@
     "s1": "강"
    },
    "s1Basis": "공식 보도자료: Data Center $6.7B, +107%",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "capExempt": true,
    "note": "관심 제외(사용자 결정) 뒤 후보로 복귀, 시총 예외 유지",
    "r1Score": 5,
@@ -417,10 +435,19 @@
     "c10": 466.42,
     "c10Date": "20260819",
     "nextBelow": true,
-    "drift10": -10.1
+    "drift10": -10.1,
+    "close": 633.91,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 57.38,
+    "mcapNow": 1030000000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "AXTI",
@@ -447,7 +474,7 @@
     "s1": "약"
    },
    "s1Basis": "공식 보도자료: InP 분기 최대(금액 미공개), 백로그 $100M 초과는 콜 발언, 중국 수출허가 위험",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 4,
    "detail": {
     "r60": 37.3,
@@ -465,10 +492,19 @@
     "c10": 81.64,
     "c10Date": "20260814",
     "nextBelow": false,
-    "drift10": 73.9
+    "drift10": 73.9,
+    "close": 85.87,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 53.69,
+    "mcapNow": 5510000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "ALAB",
@@ -495,7 +531,7 @@
     "s1": "강"
    },
    "s1Basis": "SEC 8-K: 매출 +104%(AI 연결 전업, 총매출을 부문 대용)",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 7,
    "detail": {
     "r60": -16.1,
@@ -513,10 +549,19 @@
     "c10": 289.02,
     "c10Date": "20260819",
     "nextBelow": true,
-    "drift10": -20.1
+    "drift10": -20.1,
+    "close": 350.33,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 62.43,
+    "mcapNow": 60780000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "COHR",
@@ -543,7 +588,7 @@
     "s1": "강"
    },
    "s1Basis": "공식 보도자료 수치로 산술: Datacenter & Communications FY26 +40.5%",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 9,
    "detail": {
     "r60": 3.0,
@@ -561,10 +606,19 @@
     "c10": 295.39,
     "c10Date": "20260827",
     "nextBelow": true,
-    "drift10": -16.9
+    "drift10": -16.9,
+    "close": 337.04,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 35.78,
+    "mcapNow": 66000000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "HUBB",
@@ -591,7 +645,7 @@
     "s1": "약"
    },
    "s1Basis": "공식 보도자료: 데이터센터 투자 등으로 유기 10% 성장(데이터센터 수치 없음)",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 8,
    "detail": {
     "r60": -2.0,
@@ -609,10 +663,19 @@
     "c10": 519.62,
     "c10Date": "20260811",
     "nextBelow": true,
-    "drift10": 4.3
+    "drift10": 4.3,
+    "close": 475.52,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 21.85,
+    "mcapNow": 25120000000
    },
    "sectorFull": true,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "ANET",
@@ -639,7 +702,7 @@
     "s1": "약"
    },
    "s1Basis": "콜 전사본: AI 패브릭 목표 $3.5B 이상, 이연매출 $6.9B(전년 대비 미공개)",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 6,
    "detail": {
     "r60": 12.3,
@@ -657,10 +720,19 @@
     "c10": 186.45,
     "c10Date": "20260819",
     "nextBelow": false,
-    "drift10": -2.1
+    "drift10": -2.1,
+    "close": 207.35,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 44.64,
+    "mcapNow": 261510000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "GEV",
@@ -687,7 +759,7 @@
     "s1": "강"
    },
    "s1Basis": "공식 보도자료: 데이터센터 수주 연초 이후 $5B 초과(2025 전체의 2배 이상), 수주 +88% 유기, 가스 116GW",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 8,
    "detail": {
     "r60": -8.1,
@@ -705,10 +777,19 @@
     "c10": 1017.96,
     "c10Date": "20260805",
     "nextBelow": true,
-    "drift10": -5.6
+    "drift10": -5.6,
+    "close": 988.7,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 47.22,
+    "mcapNow": 263320000000
    },
    "sectorFull": true,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "CRDO",
@@ -737,7 +818,7 @@
     "s1": "강"
    },
    "s1Basis": "SEC 8-K: 매출 +114.7%(데이터센터 연결 전업, 총매출 대용)",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 9,
    "detail": {
     "r60": -17.7,
@@ -755,11 +836,20 @@
     "c10": 168.25,
     "c10Date": "20260917",
     "nextBelow": true,
-    "drift10": -18.6
+    "drift10": -18.6,
+    "close": 218.64,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 30.0,
+    "mcapNow": 41090000000
    },
    "note": "관심 제외(사용자 결정 10/3), 카드 보관",
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "FN",
@@ -786,7 +876,7 @@
     "s1": "약"
    },
    "s1Basis": "콜 전사본(공식 IR 미대조): 데이터센터 매출 $669M +68% → 한 단계 낮춤",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 8,
    "detail": {
     "r60": -4.0,
@@ -804,10 +894,19 @@
     "c10": 402.07,
     "c10Date": "20260901",
     "nextBelow": true,
-    "drift10": -32.8
+    "drift10": -32.8,
+    "close": 463.69,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 25.48,
+    "mcapNow": 16620000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "VRT",
@@ -834,7 +933,7 @@
     "s1": "약"
    },
    "s1Basis": "공식 보도자료: Americas 매출 +29.2%(30% 미만), 수주·백로그 미확인",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 7,
    "detail": {
     "r60": -22.1,
@@ -852,10 +951,19 @@
     "c10": 288.36,
     "c10Date": "20260812",
     "nextBelow": true,
-    "drift10": 7.0
+    "drift10": 7.0,
+    "close": 252.18,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 31.99,
+    "mcapNow": 97090000000
    },
    "sectorFull": true,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   },
   {
    "code": "CIEN",
@@ -882,7 +990,7 @@
     "s1": "약"
    },
    "s1Basis": "콜 전사본(공식 IR 미대조): 클라우드 직접 매출 +80% 초과, 백로그 $8.5B → 한 단계 낮춤",
-   "scoredAt": "2026-10-03",
+   "scoredAt": "2026-10-04",
    "r1Score": 8,
    "detail": {
     "r60": -15.4,
@@ -900,10 +1008,19 @@
     "c10": 348.8,
     "c10Date": "20260918",
     "nextBelow": true,
-    "drift10": -1.5
+    "drift10": -1.5,
+    "close": 391.34,
+    "closeDate": "20261002",
+    "s7prov": false,
+    "peNow": 37.67,
+    "mcapNow": 55500000000
    },
    "sectorFull": false,
-   "aboveStreak": 0
+   "aboveStreak": 0,
+   "weekly": {
+    "date": "2026-10-04",
+    "status": "갱신"
+   }
   }
  ],
  "excluded": [
@@ -995,5 +1112,217 @@
  },
  "capExemptRule": "MU·AMD는 관심 명단 안팎과 관계없이 시총 $1T 예외 유지(2026-10-03 사용자 결정)",
  "rubricNote": "R2.1(2026-10-03 사용자 채택): S1 공식 테제 0~2, S2 실적 가속 0~2, S3 주도 신호 0~2, S4 성장 대비 가격 0~1, S5 EMA50 위 0~1, S7 실적 반응(10세션) 0~2. 분야 등급은 입장 조건·분야당 2종목 한도로만. R1 점수는 비교용으로 r1Score에 보존",
- "scoresFile": "docs/claude/watchlist-rubric-r2-scores-2026-10-03.json"
+ "scoresFile": "docs/claude/watchlist-rubric-r2-scores-2026-10-03.json",
+ "weeklyRun": {
+  "date": "2026-10-04",
+  "basis": "20261002",
+  "action": "none",
+  "in": "",
+  "out": "",
+  "reason": "변경 없음 — 최약 MU 8점, 기준선 10",
+  "weakest": {
+   "code": "MU",
+   "score": 8,
+   "threshold": 10,
+   "ageDays": 2
+  },
+  "pushed": false,
+  "memberData": {
+   "MU": {
+    "score": 8,
+    "items": {
+     "S1": 2,
+     "S2": 2,
+     "S3": 2,
+     "S4": 0,
+     "S5": 1,
+     "S7": 1
+    },
+    "detail": {
+     "r60": 8.4,
+     "bm": "SOXX",
+     "b60": 1.2,
+     "fromHi252": -11.4,
+     "ema50": 981.6,
+     "closeVsEma50": 9.5,
+     "pe": 6.09,
+     "yoy": 379,
+     "prevYoy": 345.8,
+     "react": 3.0,
+     "reactDate": "20261001",
+     "p0": 1065.11,
+     "c10": 1074.89,
+     "c10Date": "20261002",
+     "nextBelow": false,
+     "drift10": 0.9,
+     "close": 1074.89,
+     "closeDate": "20261002",
+     "s7prov": true,
+     "peNow": 6.09,
+     "mcapNow": 1210000000000
+    },
+    "inputs": {
+     "s1": "강",
+     "guideRaised": true
+    },
+    "s1Basis": "공식 Prepared Remarks: SCA 26건, 고객 약정 $32B, RPO 약 $150B"
+   },
+   "BE": {
+    "score": 9,
+    "items": {
+     "S1": 2,
+     "S2": 2,
+     "S3": 1,
+     "S4": 1,
+     "S5": 1,
+     "S7": 2
+    },
+    "detail": {
+     "r60": 12.5,
+     "bm": "GRID",
+     "b60": -0.7,
+     "fromHi252": -16.4,
+     "ema50": 252.17,
+     "closeVsEma50": 14.7,
+     "pe": 81.55,
+     "yoy": 165.5,
+     "prevYoy": 130.4,
+     "react": -1.9,
+     "reactDate": "20260729",
+     "p0": 166.84,
+     "c10": 237.16,
+     "c10Date": "20260812",
+     "nextBelow": false,
+     "drift10": 42.1,
+     "close": 289.15,
+     "closeDate": "20261002",
+     "s7prov": false,
+     "peNow": 81.55,
+     "mcapNow": 85160000000
+    },
+    "inputs": {
+     "s1": "강",
+     "guideRaised": true
+    },
+    "s1Basis": "공식 보도자료: Oracle 최대 2.8GW MSA, 초기 1.2GW 계약"
+   },
+   "DELL": {
+    "score": 9,
+    "items": {
+     "S1": 2,
+     "S2": 1,
+     "S3": 2,
+     "S4": 1,
+     "S5": 1,
+     "S7": 2
+    },
+    "detail": {
+     "r60": 24.9,
+     "bm": "SOXX",
+     "b60": 1.2,
+     "fromHi252": -4.4,
+     "ema50": 495.78,
+     "closeVsEma50": 13.5,
+     "pe": 19.25,
+     "yoy": 58,
+     "prevYoy": 87.5,
+     "react": 15.8,
+     "reactDate": "20260902",
+     "p0": 425.0,
+     "c10": 588.4,
+     "c10Date": "20260917",
+     "nextBelow": false,
+     "drift10": 38.4,
+     "close": 562.52,
+     "closeDate": "20261002",
+     "s7prov": false,
+     "peNow": 19.25,
+     "mcapNow": 357660000000
+    },
+    "inputs": {
+     "s1": "강",
+     "guideRaised": true
+    },
+    "s1Basis": "공식 보도자료: AI 수주 $60.9B, AI 백로그 $95B, AI 서버 매출 +100%"
+   },
+   "PWR": {
+    "score": 10,
+    "items": {
+     "S1": 2,
+     "S2": 2,
+     "S3": 2,
+     "S4": 1,
+     "S5": 1,
+     "S7": 2
+    },
+    "detail": {
+     "r60": 1.3,
+     "bm": "GRID",
+     "b60": -0.7,
+     "fromHi252": -13.8,
+     "ema50": 645.43,
+     "closeVsEma50": 4.8,
+     "pe": 36.73,
+     "yoy": 41.1,
+     "prevYoy": 26.3,
+     "react": 17.3,
+     "reactDate": "20260730",
+     "p0": 561.14,
+     "c10": 672.78,
+     "c10Date": "20260813",
+     "nextBelow": false,
+     "drift10": 19.9,
+     "close": 676.56,
+     "closeDate": "20261002",
+     "s7prov": false,
+     "peNow": 36.73,
+     "mcapNow": 101720000000
+    },
+    "inputs": {
+     "s1": "강",
+     "guideRaised": true
+    },
+    "s1Basis": "공식 보도자료: 총 백로그 $53.44B, 전년 $35.84B 대비 +49.1%"
+   },
+   "LITE": {
+    "score": 10,
+    "items": {
+     "S1": 2,
+     "S2": 2,
+     "S3": 2,
+     "S4": 1,
+     "S5": 1,
+     "S7": 2
+    },
+    "detail": {
+     "r60": 38.1,
+     "bm": "SOXX",
+     "b60": 1.2,
+     "fromHi252": 0.0,
+     "ema50": 902.85,
+     "closeVsEma50": 20.2,
+     "pe": 49.84,
+     "yoy": 109.3,
+     "prevYoy": 90.1,
+     "react": 13.6,
+     "reactDate": "20260812",
+     "p0": 820.59,
+     "c10": 939.03,
+     "c10Date": "20260826",
+     "nextBelow": false,
+     "drift10": 14.4,
+     "close": 1085.42,
+     "closeDate": "20261002",
+     "s7prov": false,
+     "peNow": 49.84,
+     "mcapNow": 97360000000
+    },
+    "inputs": {
+     "s1": "강",
+     "guideRaised": true
+    },
+    "s1Basis": "공식 보도자료: Components +102.7%, Systems +122.6%"
+   }
+  }
+ }
 }
