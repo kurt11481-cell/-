@@ -2,11 +2,11 @@
 id: library-index
 type: index
 status: current
-as_of: 2026-10-04
+as_of: 2026-10-05
 summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐시이지 권한이 아님 — 가격·계좌는 항상 키움 재조회.
 ---
 
-# 분석 라이브러리 색인 (수동, 2026-10-04)
+# 분석 라이브러리 색인 (수동, 2026-10-05)
 
 규칙: 설계 `docs/claude/analysis-library-design-2026-10-03.md` 3절 읽기 순서 — INDEX → 필요한 절만(`grep -n "^#" <파일>`로 헤딩 확인 후 범위 읽기). 색인 갱신은 카드 수락·상태 변경 때만(수동). 요약은 원문 등급(D)을 넘지 못한다. 못 읽으면 기존 방식으로 진행.
 
@@ -29,6 +29,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | research | ALL | 2026-10-04 | — | library/research/next-sandisk-2026-10-04/ | Next 샌디스크 조사 3건 정리 기록(D급) + 원 보고서 출처 193개, 리플레이 스크립트·SNDK/SOXX 일봉(참고값), 수시 발굴 1회차 원 보고서 6건(scan-*.md), 어닝콜 공급 제약 지도(10/5, 연결 L4). 설계 부록 E-4·19절 |
 | leadership-n | CIEN·HWM·CRS·SOLS 외 | 2026-10-04 | 2026-11-07 | next-sandisk-scan-2026-10-04.md | Next 샌디스크 수시 1회차(사용자 수락 10/4): 씨앗 0 · 관찰 4(CIEN·HWM·CRS·SOLS, v1.1 표시로 모두 병목 품질주) · GFS 제외(X2) · G2 해석 유지. 다음 달 조사 목록 포함 |
 | design-review | ALL | 2026-10-04 | 2027-01-02 | next-sandisk-lens-v2-review-2026-10-04.md | 판별 기준 재검토(위원회 Lite): v1.1 적용(10/4, 관찰 표시 분리·질문 3 보강, 판정 불변). ②③⑥은 2027-01 검토 |
+| design-review | ALL | 2026-10-05 | — | strategy-risk-framework-review-2026-10-05.md | 외부 리스크 지침 검토(사용자 승인 10/5): **L1/L2 한 화면 검토 템플릿 5-1**(계좌 점검선 도달 시 사용, fail-closed: N·E>1.9면 위험 감수 불가), 종목 프로토콜 개정 a1(반영 주장 3문·리스크 분류·이벤트 유사 사례·ETF 투시), M6 v2 입력 2줄(판단 영수증 사양 1-1), 원장 EXT-20261005-07~10. 리스크 전체 표는 리플레이 검증 뒤 |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
