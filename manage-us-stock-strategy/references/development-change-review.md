@@ -70,9 +70,18 @@ or doubtful evidence into a normal-looking result:
   requiring every precondition, so a new or intermediate state passes.
 - Swallowed errors: a broad except returning None/{}/[]/0, `.get(key, 0)` on
   price, quantity or cash, or a lost traceback.
+- Fallback inheriting authority: when the primary source (e.g. Kiwoom price
+  or close) is missing, a fallback provider's value keeps the primary's grade
+  or fires a trigger; a fallback is labeled reference only and never decides.
+- Permission widening: a settings, hook or MCP config change allows Kiwoom
+  order tools, skips permission prompts, or runs downloaded code from a hook
+  or Bash allow rule.
 
 Idea adapted from affaan-m/ECC agents/silent-failure-hunter.md (MIT, commit
 ef648e0); patterns from the S7-1 Judge fixes (2026-10-02).
+Fallback pattern adapted from Panniantong/Agent-Reach backend fallback and
+doctor (MIT, commit a19a171); permission pattern from ruvnet/ruflo
+init/settings-risk-scanner.ts (MIT, commit cd010ee) (2026-10-05).
 
 ## Report and return to the Builder
 
