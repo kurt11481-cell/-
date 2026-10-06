@@ -223,8 +223,8 @@ class V263FreeWebNewBuyTests(unittest.TestCase):
         rules=self.alert["holding_risk_rules"]["positions"]
         self.assertEqual((rules["SOXL"]["maximum_loss_fraction_from_average_cost"],rules["MVLL"]["maximum_loss_fraction_from_average_cost"],rules["NBIS"]["maximum_loss_fraction_from_average_cost"]),(0.2,0.6,0.1))
     def test_inv_06_timing_quantities_unchanged(self):
-        positions=self.alert["holding_timing_rules"]["positions"]
-        self.assertEqual([s["quantity"] for s in positions["SOXL"]["slots"]],[24,24,24,27]); self.assertEqual([s["quantity"] for s in positions["MVLL"]["slots"]],[99,99,99,99])
+        # I0-b (2026-10-06) removed the MVLL/SOXL timing slots from the active policy.
+        self.assertEqual(self.alert["holding_timing_rules"]["positions"],{})
     def test_inv_07_rearm_rules_unchanged(self): self.assertEqual(self.alert["holding_timing_rules"]["weakness_rearm"]["minimum_completed_sessions_after_fill"],3)
     def test_inv_10_no_json_order_authority_true(self):
         def walk(v):

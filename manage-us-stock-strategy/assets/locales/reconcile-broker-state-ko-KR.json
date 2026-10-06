@@ -26,7 +26,7 @@
     "show_check_other": "적용 후 알림 엔진 검사: {status}",
     "show_unchanged": "바뀌지 않는 것: 단계(stage), timing_plan, 체결 기록, 후보 목록, 화면 표시용 스냅샷, 전략 필드",
     "warning_OPEN_ORDERS_UNVERIFIED": "주의: 미체결 주문 조회 실패. 미체결 반영 여부 확인 불가 (상태에 open_orders_verified=false로 기록)",
-    "warning_TIMING_PLAN_TICKER_CHANGED": "주의: timing_plan 종목의 수량이 바뀝니다. 적용하면 체결 기록(I0-b)이 생길 때까지 알림 엔진이 STATE_MISMATCH로 멈출 수 있습니다.",
+    "warning_TIMING_PLAN_TICKER_CHANGED": "주의: timing_plan 종목의 수량이 바뀝니다. 위 '적용 후 알림 엔진 검사' 결과를 확인하세요.",
     "warning_POLICY_POSITIONS_MISMATCH": "주의: 보유 종목 구성이 알림 정책의 종목과 다릅니다. 적용하면 알림 엔진이 STATE_MISMATCH로 멈출 수 있습니다.",
     "warning_STATE_CHANGED_OUTSIDE_LEDGER": "주의: 마지막 조정 적용 뒤 상태 파일이 조정 원장 밖에서 바뀌었습니다. 표의 '상태 파일(현재)'은 지금 파일의 값입니다. 확인 코드를 보내면 적용하고, 원장에 외부 변경이 있었다고 기록합니다.",
     "blocked_STATE_CHANGED_OUTSIDE_LEDGER": "중단: 조정 원장에는 마지막 적용이 기록됐지만 상태 파일은 적용 전 그대로입니다(원장 기록 뒤 상태 쓰기 실패로 보임, P4 §1-12). 적용할 수 없습니다. 백업과 원장을 보존하고 복원 절차를 먼저 정해야 합니다.",

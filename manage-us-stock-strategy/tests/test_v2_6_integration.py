@@ -61,7 +61,7 @@ class V26IntegrationTests(unittest.TestCase):
         self.assertEqual(before,canonical_hash(load_json(path)))
     def test_int_11_strategy_version_unchanged(self): self.assertEqual(load_json(ROOT/"stock-strategy-system/alert_policy.json")["strategy_version"],"2026-08-05-v4")
     def test_int_12_hard_risk_and_quantities_unchanged(self):
-        policy=load_json(ROOT/"stock-strategy-system/alert_policy.json"); rules=policy["holding_risk_rules"]["positions"]; self.assertEqual((rules["SOXL"]["maximum_loss_fraction_from_average_cost"],rules["MVLL"]["maximum_loss_fraction_from_average_cost"],rules["NBIS"]["maximum_loss_fraction_from_average_cost"]),(0.2,0.6,0.1)); self.assertEqual(policy["holding_timing_rules"]["positions"]["SOXL"]["slots"][0]["quantity"],24)
+        policy=load_json(ROOT/"stock-strategy-system/alert_policy.json"); rules=policy["holding_risk_rules"]["positions"]; self.assertEqual((rules["SOXL"]["maximum_loss_fraction_from_average_cost"],rules["MVLL"]["maximum_loss_fraction_from_average_cost"],rules["NBIS"]["maximum_loss_fraction_from_average_cost"]),(0.2,0.6,0.1)); self.assertEqual(policy["holding_timing_rules"]["positions"],{})
     def test_int_13_no_forbidden_artifact_tracked(self):
         tracked=subprocess.check_output(["git","ls-files"],cwd=ROOT,text=True,encoding="utf-8").splitlines(); forbidden=[p for p in tracked if p=="repo_tree.txt" or p.lower().endswith((".png",".jpg",".jpeg",".webp",".env")) or "broker_raw" in p]; self.assertEqual(forbidden,[])
     def test_int_14_deployment_and_registry_hashes_match(self):

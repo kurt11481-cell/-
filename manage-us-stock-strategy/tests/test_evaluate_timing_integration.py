@@ -55,6 +55,46 @@ VALIDATOR = load_module(
     SCRIPTS / "validate_technical_snapshot.py",
 )
 
+# Test-only copy of the MVLL/SOXL timing slots that I0-b removed from
+# alert_policy.json (2026-10-06). The engine still enforces them when present.
+RETIRED_TIMING_POSITIONS = {
+    "SOXL": {
+        "anchor_shares": 99,
+        "confirmation_symbol": "SOXX",
+        "default_direction": "hold",
+        "r_multiple_targets_enabled": False,
+        "watch_only_triggers": ["weakness_10ema", "gap_risk", "halt_risk"],
+        "slots": [
+            {"id": "SOXL-R25", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
+            {"id": "SOXL-R50", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
+            {"id": "SOXL-R75", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim"]},
+            {"id": "SOXL-FINAL-RESIDUAL", "quantity": 27, "allowed_triggers": []},
+        ],
+        "final_residual_policy": "hard-risk review or later explicit user instruction only",
+    },
+    "MVLL": {
+        "anchor_shares": 396,
+        "confirmation_symbol": "MRVL",
+        "default_direction": "reduce",
+        "r_multiple_targets_enabled": False,
+        "watch_only_triggers": ["gap_risk", "halt_risk"],
+        "slots": [
+            {"id": "MVLL-R25", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "weakness_10ema", "strength_20ema_reclaim", "strength_10ema_reclaim", "strength_extension"]},
+            {"id": "MVLL-R50", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_20ema_reclaim", "strength_extension"]},
+            {"id": "MVLL-R75", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_extension"]},
+            {"id": "MVLL-FINAL-RESIDUAL", "quantity": 99, "allowed_triggers": ["technical_stop"]},
+        ],
+    },
+}
+
+
+def with_timing_positions(policy: dict, *symbols: str) -> dict:
+    synthetic = copy.deepcopy(policy)
+    synthetic["holding_timing_rules"]["positions"] = {
+        symbol: copy.deepcopy(RETIRED_TIMING_POSITIONS[symbol]) for symbol in symbols
+    }
+    return synthetic
+
 
 class EvaluateTimingIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -105,16 +145,19 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         self.snapshot = fixture
 
     def test_active_policy_generates_only_review_candidate(self) -> None:
+        # Since I0-b the active policy has no timing positions: no timing candidate.
         result = EVALUATOR.evaluate(self.state, self.policy, self.snapshot, {})
-        self.assertEqual(result["grade"], "B", result)
-        active = [item for item in result["candidates"] if item["grade"] == "B"]
-        self.assertEqual(len(active), 1)
-        self.assertEqual(active[0]["symbol"], "MVLL")
-        self.assertEqual(active[0]["tranche_id"], "MVLL-R25")
-        self.assertEqual(active[0]["quantity"], 99)
-        self.assertFalse(active[0]["actionable"])
+        self.assertNotEqual(result["state"], "STATE_MISMATCH", result)
+        self.assertEqual(
+            [
+                item
+                for item in result["candidates"]
+                if item["event_type"] in {"holding_timing_review", "holding_timing_watch"}
+            ],
+            [],
+        )
+        self.assertTrue(all(item["quantity"] is None for item in result["candidates"]))
         self.assertTrue(all(item["quantity"] is None for item in result["watchlist"]))
-        self.assertTrue(active[0]["evidence_verification"]["all_required_evidence_verified"])
         cash_verified = (
             self.state["last_confirmed_broker_snapshot"].get("cash_verified") is True
         )
@@ -141,7 +184,8 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
     def test_unreconciled_holding_change_fails_closed(self) -> None:
         broken = copy.deepcopy(self.state)
         broken["holdings"]["SOXL"] = 98
-        result = EVALUATOR.evaluate(broken, self.policy, self.snapshot, {})
+        policy = with_timing_positions(self.policy, "SOXL")
+        result = EVALUATOR.evaluate(broken, policy, self.snapshot, {})
         self.assertEqual(result["grade"], "F")
         self.assertTrue(any("anchor" in item for item in result["warnings"]))
 
@@ -223,6 +267,72 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         self.assertEqual(result["state"], "DATA_INCOMPLETE")
         self.assertEqual(result["grade"], "F")
         self.assertTrue(any("market-data source" in item for item in result["warnings"]))
+
+    def test_i0b_t1_timing_position_left_in_policy_still_fails_on_anchor_mismatch(self) -> None:
+        policy = with_timing_positions(self.policy, "MVLL", "SOXL")
+        state = copy.deepcopy(self.state)
+        state["holdings"]["MVLL"] = 396  # synthetic holding equal to the retained state anchor
+        result = EVALUATOR.evaluate(state, policy, self.snapshot, {})
+        self.assertNotEqual(result["state"], "STATE_MISMATCH", result)
+        active = [
+            (item["symbol"], item["tranche_id"], item["quantity"], item["actionable"])
+            for item in result["candidates"]
+            if item["grade"] == "B"
+        ]
+        self.assertEqual(active, [("MVLL", "MVLL-R25", 99, False)])
+        state["holdings"]["MVLL"] = 395
+        result = EVALUATOR.evaluate(state, policy, self.snapshot, {})
+        self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
+        self.assertIn(
+            "MVLL: holdings 395 do not equal anchor less confirmed tranches 396",
+            result["warnings"],
+        )
+
+    def test_i0b_t2_holding_risk_checks_still_run_without_timing_positions(self) -> None:
+        self.assertEqual(self.policy["holding_timing_rules"]["positions"], {})
+        snapshot = copy.deepcopy(self.snapshot)
+        row = snapshot["symbols"]["NBIS"]
+        row.update({"open": 91.0, "high": 92.0, "low": 89.0, "close": 90.0})
+        row["quote_crosscheck"].update({"close": 90.0, "difference_fraction": 0.0})
+        result = EVALUATOR.evaluate(self.state, self.policy, snapshot, {})
+        self.assertEqual(result["grade"], "D", result)
+        hard = {
+            item["symbol"]: item
+            for item in result["candidates"]
+            if item["event_type"] == "holding_max_loss_breach"
+        }
+        self.assertEqual(set(hard), set(self.policy["holding_risk_rules"]["positions"]))
+        self.assertEqual((hard["NBIS"]["hard_boundary_usd"], hard["NBIS"]["breached"]), (90.0, True))
+        unregistered = copy.deepcopy(self.state)
+        unregistered["holdings"]["ZZZT"] = 5
+        unregistered["average_cost_usd"]["ZZZT"] = 10.0
+        unregistered["position_cost_basis_usd"]["ZZZT"] = 50.0
+        result = EVALUATOR.evaluate(unregistered, self.policy, self.snapshot, {})
+        self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
+        self.assertTrue(
+            any("neither a holding-risk rule" in item and "ZZZT" in item for item in result["warnings"])
+        )
+
+    def test_i0b_t3_real_policy_and_state_pass_integrity_without_state_write(self) -> None:
+        state_path = SYSTEM_ROOT / "portfolio_state.json"
+        before = state_path.read_bytes()
+        state = json.loads(before.decode("utf-8"))
+        policy = json.loads((SYSTEM_ROOT / "alert_policy.json").read_text(encoding="utf-8"))
+        session_date = state["last_confirmed_broker_snapshot"]["as_of"]
+        self.assertEqual(
+            EVALUATOR.leveraged_state_integrity_errors(state, policy, session_date), []
+        )
+        self.assertEqual(state_path.read_bytes(), before)
+
+    def test_i0b_t4_timing_plan_policy_version_mismatch_still_fails(self) -> None:
+        state = copy.deepcopy(self.state)
+        state["timing_plan"]["policy_version"] = "SYNTHETIC-STALE-TIMING-PLAN"
+        result = EVALUATOR.evaluate(state, self.policy, self.snapshot, {})
+        self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
+        self.assertIn(
+            "timing-plan policy version does not match active timing policy",
+            result["warnings"],
+        )
 
 
 if __name__ == "__main__":

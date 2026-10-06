@@ -494,35 +494,7 @@
       "take_profit_rejection",
       "buy_review"
     ],
-    "positions": {
-      "SOXL": {
-        "anchor_shares": 99,
-        "confirmation_symbol": "SOXX",
-        "default_direction": "hold",
-        "r_multiple_targets_enabled": false,
-        "watch_only_triggers": ["weakness_10ema", "gap_risk", "halt_risk"],
-        "slots": [
-          {"id": "SOXL-R25", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
-          {"id": "SOXL-R50", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "take_profit_rejection"]},
-          {"id": "SOXL-R75", "quantity": 24, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim"]},
-          {"id": "SOXL-FINAL-RESIDUAL", "quantity": 27, "allowed_triggers": []}
-        ],
-        "final_residual_policy": "hard-risk review or later explicit user instruction only"
-      },
-      "MVLL": {
-        "anchor_shares": 396,
-        "confirmation_symbol": "MRVL",
-        "default_direction": "reduce",
-        "r_multiple_targets_enabled": false,
-        "watch_only_triggers": ["gap_risk", "halt_risk"],
-        "slots": [
-          {"id": "MVLL-R25", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "weakness_10ema", "strength_20ema_reclaim", "strength_10ema_reclaim", "strength_extension"]},
-          {"id": "MVLL-R50", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_20ema_reclaim", "strength_extension"]},
-          {"id": "MVLL-R75", "quantity": 99, "allowed_triggers": ["technical_stop", "weakness_20ema", "weakness_failed_reclaim", "strength_extension"]},
-          {"id": "MVLL-FINAL-RESIDUAL", "quantity": 99, "allowed_triggers": ["technical_stop"]}
-        ]
-      }
-    },
+    "positions": {},
     "watch_confirmations": {
       "DRAM": {"leveraged": false, "confirmation_symbol": null},
       "NBIS": {"leveraged": false, "confirmation_symbol": null},

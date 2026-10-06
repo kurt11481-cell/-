@@ -390,9 +390,8 @@ class InvariantTests(unittest.TestCase):
     def test_inv_04_mvll_hard_risk_threshold_unchanged(self): self.assertEqual(self._alert_policy()["holding_risk_rules"]["positions"]["MVLL"]["maximum_loss_fraction_from_average_cost"], 0.6)
     def test_inv_05_nbis_hard_risk_threshold_unchanged(self): self.assertEqual(self._alert_policy()["holding_risk_rules"]["positions"]["NBIS"]["maximum_loss_fraction_from_average_cost"], 0.1)
     def test_inv_06_timing_quantities_unchanged(self):
-        positions=self._alert_policy()["holding_timing_rules"]["positions"]
-        self.assertEqual([slot["quantity"] for slot in positions["SOXL"]["slots"]], [24,24,24,27])
-        self.assertEqual([slot["quantity"] for slot in positions["MVLL"]["slots"]], [99,99,99,99])
+        # I0-b (2026-10-06) removed the MVLL/SOXL timing slots from the active policy.
+        self.assertEqual(self._alert_policy()["holding_timing_rules"]["positions"], {})
     def test_inv_07_rearm_rules_unchanged(self):
         rearm=self._alert_policy()["holding_timing_rules"]["weakness_rearm"]
         self.assertEqual((rearm["minimum_common_recovery_sessions"],rearm["minimum_completed_sessions_after_fill"]),(1,3))

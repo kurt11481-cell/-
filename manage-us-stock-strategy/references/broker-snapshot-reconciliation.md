@@ -116,9 +116,11 @@ recorded or inferred.
    line.
 4. If the table shows `TIMING_PLAN_TICKER_CHANGED`, `POLICY_POSITIONS_MISMATCH`,
    or a failed post-apply alert-engine check, tell the user before any
-   confirmation and let them choose: apply (the alert engine may stop with
-   `STATE_MISMATCH` until fills are confirmed through I0-b) or hold (do I0-b
-   first).
+   confirmation and let them choose: apply or hold. Timing slots were removed
+   from the approved policy (`holding_timing_rules.positions` is empty since
+   I0-b, 2026-10-06), so the check should not report timing-anchor errors. If
+   the post-apply check fails, explain its errors to the user before any
+   confirmation; if the cause is unknown, do not apply.
 5. Apply only when the user, in this conversation and after seeing this table,
    sends `확인 <code>` with exactly this proposal's code. Never type, complete,
    or guess the code yourself; never reuse a confirmation from an earlier
