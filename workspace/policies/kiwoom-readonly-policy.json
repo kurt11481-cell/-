@@ -10,6 +10,7 @@
   "official_runtime_remote": "https://github.com/Kiwoom-Securities/Kiwoom-REST-API.git",
   "official_runtime_commit": "69642586f7d84ba9fd8a6faf1f1537c7fda6568b",
   "bridge_boundary": "LOCAL_SUBPROCESS_JSON",
+  "token_profile_alias": "실전계좌",
   "allowed_request_fields": ["ticker", "operation", "completed_session", "price_basis", "fx_applied"],
   "allowed_operations": ["oauth_health", "exchange_lookup", "stock_list", "stock_lookup", "etf_etn_list", "daily_chart", "market_quote"],
   "allowed_api_targets": [

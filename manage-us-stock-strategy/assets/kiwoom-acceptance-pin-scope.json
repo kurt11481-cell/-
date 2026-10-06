@@ -33,14 +33,10 @@
     "manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json",
     "manage-us-stock-strategy/schemas/kiwoom-acceptance-pin-scope.schema.json"
   ],
-  "allowed_drift_predecessor_sha256": "f0bab7101b618a0598a6c4faf0c1feabd2b9e9617352df697d27f75df5267c25",
+  "allowed_drift_predecessor_sha256": "45cf188892601d61c117519b4d34fc9e6b2ee82074489b8dd9cc0b661ca8bc80",
   "allowed_predecessor_drift": [
-    "manage-us-stock-strategy/scripts/run_manual_portfolio_analysis.py",
-    "manage-us-stock-strategy/tests/test_manual_portfolio_analysis.py",
     "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py",
-    "manage-us-stock-strategy/schemas/kiwoom-session-aware-acceptance-manifest.schema.json",
-    "manage-us-stock-strategy/scripts/materialize_kiwoom_session_aware_acceptance_candidate.py",
-    "manage-us-stock-strategy/scripts/validate_kiwoom_session_aware_acceptance_candidate.py"
+    "manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json"
   ],
   "order_authority": false,
   "quantity_authority": "none",

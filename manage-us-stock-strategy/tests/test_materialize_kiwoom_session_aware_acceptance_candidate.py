@@ -38,6 +38,7 @@ from validate_kiwoom_session_aware_acceptance_candidate import (
     IMPLEMENTATION_DRIFT_PREFIX,
     PIN_SCOPE_RELATIVE_PATH,
     allowed_drift_for,
+    disallowed_predecessor_errors,
     normalized_sha256,
     ordered_policy_symbols,
     predecessor_implementation_drift,
@@ -446,6 +447,45 @@ class SyntheticPredecessorDriftTest(unittest.TestCase):
         errors = self.validate(manifest, paths)
         self.assertIn(f"predecessor drift not allowed: {self.DRIFT_PATH}", errors)
         self.assertTrue(any(error.startswith("active Acceptance invalid beyond allowed drift") for error in errors))
+
+
+class PinScopeAllowanceTest(unittest.TestCase):
+    """The committed allowance for the token-reuse re-pin (2026-10-06, K3).
+
+    Only a K3 pin-scope edit may change these values; widening the list or
+    rebinding the predecessor must fail here first.
+    """
+
+    PREDECESSOR = "45cf188892601d61c117519b4d34fc9e6b2ee82074489b8dd9cc0b661ca8bc80"
+    ALLOWED = [
+        "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py",
+        PIN_SCOPE_RELATIVE_PATH,
+    ]
+
+    def test_21_allowance_is_exactly_bridge_and_pin_scope_for_45cf(self):
+        pin = load_json(PIN_SCOPE)
+        self.assertEqual(self.PREDECESSOR, pin["allowed_drift_predecessor_sha256"])
+        self.assertEqual(self.ALLOWED, pin["allowed_predecessor_drift"])
+        self.assertEqual(self.ALLOWED, allowed_drift_for(pin, self.PREDECESSOR))
+        predecessor = load_json(resolve_active_manifest(self.PREDECESSOR, EVIDENCE_ROOT))
+        for relative in self.ALLOWED:
+            with self.subTest(relative=relative):
+                self.assertIn(relative, predecessor["implementation_hashes"])
+
+    def test_22_allowance_for_any_other_predecessor_excuses_nothing(self):
+        pin = load_json(PIN_SCOPE)
+        flipped = ("0" if self.PREDECESSOR[0] != "0" else "1") + self.PREDECESSOR[1:]
+        for other in ("f0bab7101b618a0598a6c4faf0c1feabd2b9e9617352df697d27f75df5267c25",
+                      flipped, "0" * 64, "", None):
+            with self.subTest(other=other):
+                self.assertEqual([], allowed_drift_for(pin, other))
+                self.assertEqual(
+                    [IMPLEMENTATION_DRIFT_PREFIX + relative for relative in self.ALLOWED],
+                    disallowed_predecessor_errors(
+                        [IMPLEMENTATION_DRIFT_PREFIX + relative for relative in self.ALLOWED],
+                        allowed_drift_for(pin, other),
+                    ),
+                )
 
 
 if __name__ == "__main__":

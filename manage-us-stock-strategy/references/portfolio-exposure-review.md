@@ -214,6 +214,12 @@ first kiwoomcli command run `kiwoomcli auth refresh` (first use: confirm the com
 ends without a prompt; otherwise `kiwoomcli auth login`). A kiwoomcli exit code 0 is not proof of
 success: open each saved file and check that `return_code` is 0 (an auth failure can be saved
 with exit code 0). Never run kiwoomcli while a bridge run is in progress.
+Pending change (kiwoom-token-reuse, K3, 2026-10-06): keep the order above until that change is
+merged, the acceptance is re-pinned and the live check in section 5 of
+`docs/claude/kiwoom-token-reuse-review-2026-10-06.md` has passed. After that check, the bridges
+reuse the same file token as kiwoomcli (policy alias `token_profile_alias`; a new token only when
+none is saved or it is within 10 minutes of expiry), so the token order and the `kiwoomcli auth
+refresh` / `auth login` before the routine are no longer needed.
 
 1. Save the 30-minute bars of each symbol (SOXX and every held instrument) into
    `workspace/outputs/regular-session-closes/pages/<SYMBOL>/`:

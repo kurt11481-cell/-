@@ -47,6 +47,10 @@ SAFE_QUOTE_FIELDS = (
     "pre_high_pric", "pre_low_pric", "open_pric", "high_pric", "low_pric",
     "curr_unit", "trd_susp_tp",
 )
+READONLY_POLICY_PATH = Path(__file__).resolve().parents[2] / "workspace" / "policies" / "kiwoom-readonly-policy.json"
+# Token failures; the provider also answers return_code 3 with the real code only inside return_msg.
+AUTH_FAILURE_RETURN_CODES = frozenset({8005, 8031, 8103})
+AUTH_FAILURE_MESSAGE_MARKERS = ("[8005:", "[8031:", "[8103:")
 
 
 class BridgeError(RuntimeError):
@@ -56,6 +60,10 @@ class BridgeError(RuntimeError):
         super().__init__(status)
         self.status = status
         self.failure_type = failure_type
+
+
+class KiwoomAuthFailure(RuntimeError):
+    """Token still rejected after the worker session's single recovery; carries no message or token."""
 
 
 def utc_now() -> str:
@@ -156,7 +164,7 @@ def _exception_failure(exc: Exception) -> str:
     status_code = getattr(exc, "status_code", None)
     if status_code == 429:
         return "HTTP_429"
-    if status_code in {401, 403}:
+    if status_code in {401, 403} or isinstance(exc, KiwoomAuthFailure):
         return "AUTHENTICATION_FAILURE"
     if isinstance(exc, BridgeError):
         return exc.failure_type
@@ -344,6 +352,98 @@ def _resolve_identity(session: dict[str, Any], ticker: str) -> dict[str, Any]:
     return {"status": "VERIFIED", "identity": next(iter(unique.values()))}
 
 
+def _token_profile_alias() -> str:
+    """The kiwoomcli account alias whose file token the bridge shares; anything else fails closed."""
+    try:
+        policy = json.loads(READONLY_POLICY_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        policy = None
+    alias = policy.get("token_profile_alias") if isinstance(policy, dict) else None
+    if not isinstance(alias, str) or not alias.strip():
+        raise BridgeError("KIWOOM_API_UNAVAILABLE", "AUTHENTICATION_FAILURE")
+    return alias
+
+
+def _auth_failure(outcome: Any, runtime_auth_errors: tuple[type[BaseException], ...] = ()) -> bool:
+    """The one token-failure test: HTTP 401, an auth return_code, or return_code 3 naming one in
+    return_msg. Only this boolean leaves; the message and the token are never kept."""
+    if isinstance(outcome, BaseException):
+        return (isinstance(outcome, (KiwoomAuthFailure, *runtime_auth_errors))
+                or getattr(outcome, "status_code", None) == 401)
+    body = getattr(outcome, "body", None)
+    if not isinstance(body, dict) or isinstance(body.get("return_code"), bool):
+        return False
+    try:
+        code = int(str(body.get("return_code")).strip())
+    except ValueError:
+        return False
+    message = body.get("return_msg")
+    return code in AUTH_FAILURE_RETURN_CODES or (
+        code == 3 and isinstance(message, str)
+        and any(marker in message for marker in AUTH_FAILURE_MESSAGE_MARKERS))
+
+
+class _SingleRecoveryAuth:
+    """Auth facade: every recovery, including the runtime client's own 401 retry, shares one budget."""
+
+    def __init__(self, auth: Any, pacer: Callable[[], None]) -> None:
+        self._auth = auth
+        self._pacer = pacer
+        self.mode = auth.mode
+        self.recovery_attempted = False
+
+    def authorization_header(self) -> str:
+        return self._auth.authorization_header()
+
+    def recover_from_auth_failure(self) -> None:
+        if self.recovery_attempted:
+            raise KiwoomAuthFailure()
+        self.recovery_attempted = True
+        try:
+            # Clears the shared file token and saves the new one there, so kiwoomcli keeps working.
+            self._auth.recover_from_auth_failure()
+        except Exception:
+            raise KiwoomAuthFailure() from None
+        self._pacer()
+
+
+class _AuthRecoveringClient:
+    """Client facade: a token failure recovers once per worker session and resends that request once."""
+
+    def __init__(self, client: Any, auth: _SingleRecoveryAuth,
+                 runtime_auth_errors: tuple[type[BaseException], ...]) -> None:
+        self._client = client
+        self._auth = auth
+        self._runtime_auth_errors = runtime_auth_errors
+
+    def request(self, **kwargs: Any) -> Any:
+        return self._send(self._client.request, kwargs)
+
+    def fetch_page(self, **kwargs: Any) -> Any:
+        return self._send(self._client.fetch_page, kwargs)
+
+    def _send(self, call: Callable[..., Any], kwargs: dict[str, Any]) -> Any:
+        try:
+            response = call(**kwargs)
+        except Exception as exc:
+            if not _auth_failure(exc, self._runtime_auth_errors):
+                raise
+        else:
+            if not _auth_failure(response):
+                return response
+        self._auth.recover_from_auth_failure()
+        try:
+            response = call(**kwargs)
+        except Exception as exc:
+            if _auth_failure(exc, self._runtime_auth_errors):
+                raise KiwoomAuthFailure() from None
+            raise
+        if _auth_failure(response):
+            raise KiwoomAuthFailure()
+        # Callers still apply their own return_code checks to this response.
+        return response
+
+
 def _runtime_session(
     runtime: Path, minimum_interval_seconds: float, maximum_attempts: int,
     retry_backoff_seconds: float, retryable_failure_types: set[str],
@@ -352,11 +452,20 @@ def _runtime_session(
     no_progress_page_limit: int,
 ) -> dict[str, Any]:
     from kiwoom import get_auth, get_client
+    from kiwoom.core.errors import AuthenticationError
 
     commit = _runtime_commit(runtime)
-    auth = get_auth(mode="real", token_store_kind="memory")
-    token_received = bool(auth.refresh_access_token())
-    client = get_client(auth=auth)
+    alias = _token_profile_alias()
+    try:
+        # The alias keyring only (never env keys) and kiwoomcli's file token; mode stays real.
+        auth = get_auth(mode="real", profile=alias, token_store_kind="file")
+        ready = auth.mode == "real" and auth.status().has_credentials is True
+    except Exception:
+        ready = False
+    if not ready:
+        raise BridgeError("KIWOOM_API_UNAVAILABLE", "AUTHENTICATION_FAILURE")
+    # Reuses a valid shared token; issues and saves one only when absent or inside the refresh buffer.
+    token_received = bool(auth.get_access_token())
     last_request = 0.0
 
     def pacer() -> None:
@@ -366,8 +475,10 @@ def _runtime_session(
             time.sleep(wait)
         last_request = time.monotonic()
 
+    guarded = _SingleRecoveryAuth(auth, pacer)
+    client = _AuthRecoveringClient(get_client(auth=guarded), guarded, (AuthenticationError,))
     return {
-        "commit": commit, "auth": auth, "client": client, "token_received": token_received,
+        "commit": commit, "auth": guarded, "client": client, "token_received": token_received,
         "pacer": pacer, "stock_universe": None, "etf_universe": None,
         "maximum_attempts": max(1, maximum_attempts),
         "retry_backoff_seconds": max(0.0, retry_backoff_seconds),
