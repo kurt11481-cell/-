@@ -143,7 +143,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             [executable, "-NoProfile", "-File", str(REGISTER_PATH), "-SkipTaskQuery"],
             cwd=ROOT,
             env=environment,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             capture_output=True,
             timeout=30,
             check=False,
@@ -213,7 +213,7 @@ class SecScheduledShadowTests(unittest.TestCase):
                 ],
                 cwd=ROOT,
                 env=environment,
-                text=True,
+                text=True, encoding="utf-8", errors="replace",
                 capture_output=True,
                 timeout=30,
                 check=False,
@@ -278,7 +278,7 @@ class SecScheduledShadowTests(unittest.TestCase):
                 ],
                 cwd=ROOT,
                 env=environment,
-                text=True,
+                text=True, encoding="utf-8", errors="replace",
                 capture_output=True,
                 timeout=30,
                 check=False,
@@ -498,7 +498,7 @@ class SecScheduledShadowTests(unittest.TestCase):
         )
         result = subprocess.run(
             [executable, "-NoProfile", "-Command", command],
-            cwd=ROOT, text=True, capture_output=True, timeout=30, check=False,
+            cwd=ROOT, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
         )
         self.assertEqual(0, result.returncode, result.stderr)
         output = json.loads(result.stdout)
@@ -521,7 +521,7 @@ class SecScheduledShadowTests(unittest.TestCase):
         )
         result = subprocess.run(
             [executable, "-NoProfile", "-Command", command],
-            cwd=ROOT, text=True, capture_output=True, timeout=30, check=False,
+            cwd=ROOT, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
         )
         self.assertEqual(0, result.returncode, result.stderr)
         output = json.loads(result.stdout)
@@ -688,7 +688,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             result = subprocess.run(
                 [executable, "-NoProfile", "-File", str(WRAPPER_PATH), "-RepositoryRoot", str(root),
                  "-PythonPath", sys.executable, "-AttemptOutputRoot", str(attempt_root), "-AttemptId", "timezone-block"],
-                cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30, check=False,
+                cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
             )
             self.assertEqual(2, result.returncode, result.stderr)
             self.assertIn("WINDOWS_TIMEZONE_MISMATCH", result.stdout)
@@ -712,7 +712,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             result = subprocess.run(
                 [executable, "-NoProfile", "-File", str(WRAPPER_PATH), "-RepositoryRoot", str(root),
                  "-PythonPath", sys.executable, "-AttemptOutputRoot", str(attempt_root), "-AttemptId", "persistent-block"],
-                cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30, check=False,
+                cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
             )
             self.assertEqual(2, result.returncode, result.stderr)
             self.assertIn("SEC_USER_AGENT_USER_ENV_REQUIRED", result.stdout)
@@ -735,7 +735,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             result = subprocess.run(
                 [executable, "-NoProfile", "-File", str(WRAPPER_PATH), "-RepositoryRoot", str(root),
                  "-PythonPath", sys.executable, "-AttemptOutputRoot", str(attempt_root), "-AttemptId", "runner-missing"],
-                cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30, check=False,
+                cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
             )
             self.assertEqual(3, result.returncode, result.stderr)
             self.assertIn("RUNNER_NOT_FOUND", result.stdout)
@@ -765,7 +765,7 @@ class SecScheduledShadowTests(unittest.TestCase):
                 [executable, "-NoProfile", "-File", str(WRAPPER_PATH), "-RepositoryRoot", str(root),
                  "-PythonPath", str(root / "missing-python.exe"), "-AttemptOutputRoot", str(attempt_root),
                  "-AttemptId", "python-missing"],
-                cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30, check=False,
+                cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
             )
             self.assertEqual(3, result.returncode, result.stderr)
             self.assertIn("PYTHON_RUNTIME_NOT_FOUND", result.stdout)
@@ -819,7 +819,7 @@ class SecScheduledShadowTests(unittest.TestCase):
                 [executable, "-NoProfile", "-File", str(WRAPPER_PATH), "-RepositoryRoot", str(root),
                  "-PythonPath", sys.executable, "-OutputRoot", str(root / "sec"),
                  "-AttemptOutputRoot", str(attempt_root), "-AttemptId", "late-failure"],
-                cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30, check=False,
+                cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=30, check=False,
             )
             self.assertEqual(7, result.returncode, result.stderr)
             self.assertIn("SEC_ACCESS_BLOCKED", result.stdout + result.stderr)
@@ -892,7 +892,7 @@ class SecScheduledShadowTests(unittest.TestCase):
                 "-AttemptId", "fixed-test-attempt-id",
             ]
             first = subprocess.run(
-                arguments, cwd=ROOT, env=environment, text=True, capture_output=True,
+                arguments, cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True,
                 timeout=30, check=False,
             )
             self.assertEqual(7, first.returncode, first.stderr)
@@ -903,7 +903,7 @@ class SecScheduledShadowTests(unittest.TestCase):
             self.assertEqual(1, int(runner_count.read_text(encoding="utf-8")))
 
             second = subprocess.run(
-                arguments, cwd=ROOT, env=environment, text=True, capture_output=True,
+                arguments, cwd=ROOT, env=environment, text=True, encoding="utf-8", errors="replace", capture_output=True,
                 timeout=30, check=False,
             )
             self.assertEqual(3, second.returncode, second.stderr)
