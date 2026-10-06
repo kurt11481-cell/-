@@ -122,9 +122,8 @@ class PolicyValueTests(unittest.TestCase):
                           for symbol, rule in positions.items()}, {"SOXL": 0.2, "MVLL": 0.6, "NBIS": 0.1})
         self.assertIs(policy["holding_risk_rules"]["freeze_new_buy_candidates_on_any_breach"], True)
         self.assertIn("NBIL", policy["holding_risk_rules"]["de_minimis_manual_exit_positions"])
-        timing = policy["holding_timing_rules"]["positions"]
-        self.assertTrue(timing["SOXL"]["slots"] and timing["MVLL"]["slots"])
-        self.assertIn("weakness_10ema", timing["SOXL"]["watch_only_triggers"])
+        # I0-b (2026-10-06) removed the MVLL/SOXL timing slots ahead of S7 stage 2.
+        self.assertEqual(policy["holding_timing_rules"]["positions"], {})
         registry = policy["decision_harness"]["approved_rule_registry"]
         self.assertEqual(len(registry), 7)
         self.assertTrue(all(not item["new_buy_instrument_approved"]

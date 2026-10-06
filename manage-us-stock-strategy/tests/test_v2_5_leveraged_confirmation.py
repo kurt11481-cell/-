@@ -51,9 +51,8 @@ class V25LeveragedConfirmationTests(unittest.TestCase):
         rules = self.policy["holding_risk_rules"]["positions"]
         self.assertEqual(rules["SOXL"]["maximum_loss_fraction_from_average_cost"], 0.2)
         self.assertEqual(rules["MVLL"]["maximum_loss_fraction_from_average_cost"], 0.6)
-        timing = self.policy["holding_timing_rules"]["positions"]
-        self.assertEqual([slot["quantity"] for slot in timing["SOXL"]["slots"]], [24, 24, 24, 27])
-        self.assertEqual([slot["quantity"] for slot in timing["MVLL"]["slots"]], [99, 99, 99, 99])
+        # I0-b (2026-10-06) removed the MVLL/SOXL timing slots from the active policy.
+        self.assertEqual(self.policy["holding_timing_rules"]["positions"], {})
 
     def test_v25_lv_08_legacy_proxy_helper_remains_callable(self):
         value = leveraged_proxy_check(

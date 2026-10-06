@@ -13,6 +13,15 @@ from pathlib import Path
 
 from shadow_acceptance import initial_progress, semantic_fingerprint
 
+SUPERSEDED_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas/superseded-shadow-cohort.schema.json"
+DEFAULT_REASON = "GLOBAL_AUTHORITY_VOLUME_AND_DUAL_RUN_SEMANTICS_CHANGE"
+
+
+def allowed_reasons() -> list[str]:
+    """Archive reasons accepted by the superseded-cohort schema enum."""
+    schema = json.loads(SUPERSEDED_SCHEMA_PATH.read_text(encoding="utf-8"))
+    return list(schema["properties"]["reason"]["enum"])
+
 
 def _atomic_write(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +38,9 @@ def _atomic_write(path: Path, value: dict) -> None:
             os.unlink(temporary)
 
 
-def migrate(root: Path, *, generated_at: str) -> dict:
+def migrate(root: Path, *, generated_at: str, reason: str = DEFAULT_REASON) -> dict:
+    if reason not in allowed_reasons():
+        raise ValueError("UNSUPPORTED_SUPERSEDED_COHORT_REASON")
     progress_path = root / "workspace/state/integrated_shadow/shadow_progress.json"
     prior = json.loads(progress_path.read_text(encoding="utf-8"))
     fingerprint = semantic_fingerprint(root)
@@ -46,7 +57,7 @@ def migrate(root: Path, *, generated_at: str) -> dict:
         "cohort_status": "COHORT_SUPERSEDED",
         "superseded_at": generated_at,
         "superseded_by": current["cohort_id"],
-        "reason": "GLOBAL_AUTHORITY_VOLUME_AND_DUAL_RUN_SEMANTICS_CHANGE",
+        "reason": reason,
         "prior_progress": deepcopy(prior),
         "order_authority": False,
     }
@@ -71,9 +82,11 @@ def migrate(root: Path, *, generated_at: str) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[2]))
+    parser.add_argument("--reason", default=DEFAULT_REASON, choices=allowed_reasons())
     args = parser.parse_args()
     generated_at = datetime.now(timezone.utc).isoformat()
-    print(json.dumps(migrate(Path(args.repo_root).resolve(), generated_at=generated_at), ensure_ascii=False))
+    result = migrate(Path(args.repo_root).resolve(), generated_at=generated_at, reason=args.reason)
+    print(json.dumps(result, ensure_ascii=False))
     return 0
 
 
