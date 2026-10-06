@@ -2,10 +2,14 @@
 param(
     [switch]$Apply,
     [switch]$SkipTaskQuery,
-    [string]$RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+    [string]$RepositoryRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+    # Windows PowerShell 5.1 leaves $PSScriptRoot empty inside param defaults of advanced scripts.
+    $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+}
 $resolvedRepository = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $contractPath = Join-Path $resolvedRepository "manage-us-stock-strategy\assets\sec-scheduled-shadow-contract-v0.1.json"
 $wrapperPath = Join-Path $resolvedRepository "manage-us-stock-strategy\scripts\run_sec_scheduled_shadow.ps1"

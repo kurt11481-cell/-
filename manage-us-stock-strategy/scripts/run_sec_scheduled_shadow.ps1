@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
+    [string]$RepositoryRoot = "",
     [string]$PythonPath = "",
     [string]$OutputRoot = "",
     [string]$AttemptOutputRoot = "",
@@ -9,6 +9,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+    # Windows PowerShell 5.1 leaves $PSScriptRoot empty inside param defaults of advanced scripts.
+    $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+}
 $expectedTaskName = "GuardedPortfolio-SEC-Shadow-v0.1"
 $attemptStartedAt = [DateTimeOffset]::UtcNow.ToString("o")
 if ([string]::IsNullOrWhiteSpace($AttemptId)) {
@@ -272,8 +276,15 @@ if ([string]::IsNullOrWhiteSpace($RunId)) {
     $RunId = "sec-scheduled-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssfffffffZ")
 }
 $intakeArguments = @($intakePath, "--output-root", $OutputRoot, "--lookback-days", ([string][int]$contract.lookback_days), "--run-id", $RunId)
-$intakeOutput = @(& $PythonPath @intakeArguments 2>&1)
-$intakeExitCode = $LASTEXITCODE
+# Windows PowerShell 5.1 turns native stderr under 2>&1 into a terminating error when Stop is active.
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    $intakeOutput = @(& $PythonPath @intakeArguments 2>&1)
+    $intakeExitCode = $LASTEXITCODE
+} finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
 $intakeOutput | ForEach-Object { $_.ToString() } | Write-Output
 
 $requestCount = $null
