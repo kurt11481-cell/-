@@ -30,7 +30,7 @@ import os
 import re
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -127,7 +127,82 @@ def load_journal(path: Path) -> dict[str, Any]:
         if entry["previous_entry_sha256"] != previous or entry["sequence"] != index + 1:
             return {**result, "status": "CORRUPT", "errors": [f"JOURNAL_CHAIN_BROKEN:{index + 1}"]}
         previous = canonical_hash(entry)
+    inconsistent = entry_inconsistencies(document["entries"])
+    if inconsistent:
+        return {**result, "status": "CORRUPT", "errors": inconsistent}
     return {"status": "OK", "entries": document["entries"], "errors": [], "head_sha256": previous}
+
+
+def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, Any]]) -> str | None:
+    """Reason code if one chained entry contradicts itself or an earlier entry, else None.
+
+    The chain commits every entry except the last to the entry after it, so a hand edit of the last
+    entry changes only the head. Every rule here is one apply_proposal_entries already enforces when
+    it writes the entry, recomputed from the entry's own fields. Rules that need another source
+    (card file, price history) are not checked here."""
+    entry_type, payload = entry["entry_type"], entry["payload"]
+    code = entry["confirm_code"]
+    if code not in entry["user_message"].upper():
+        return "CONFIRM_CODE_NOT_IN_USER_MESSAGE"
+    expected_fields = CARD_DECISION_FIELDS if entry_type == JOURNAL_CARD_DECISION else PAYLOAD_FIELDS[entry_type]
+    if sorted(payload) != sorted(expected_fields):
+        return "PAYLOAD_FIELDS_INVALID"
+    # A card proposal's code is not derived from a decision id (one proposal appends several entries).
+    if entry_type != JOURNAL_CARD_DECISION and code != entry["entry_id"][:8].upper():
+        return "CONFIRM_CODE_ENTRY_ID_MISMATCH"
+    session = date.fromisoformat(entry["evaluation_session"])
+    if entry_type == JOURNAL_ACTIVATION:
+        if not entry["evaluation_session"] == payload["activation_date"] == payload["window_end"]:
+            return "ACTIVATION_SESSION_MISMATCH"
+        if not (date.fromisoformat(payload["window_start"]) <= date.fromisoformat(payload["hwm_as_of"])
+                <= date.fromisoformat(payload["window_end"])):
+            return "ACTIVATION_HWM_DATE_OUTSIDE_WINDOW"
+        if Decimal(payload["hwm_usd"]) - Decimal(payload["hwm_policy_initial_usd"]) != Decimal(
+                payload["hwm_difference_usd"]):
+            return "ACTIVATION_HWM_DIFFERENCE_MISMATCH"
+    elif entry_type == JOURNAL_LINE_REVIEW:
+        if date.fromisoformat(payload["breach_date"]) > session:
+            return "LINE_REVIEW_BREACH_AFTER_SESSION"
+    elif entry_type == JOURNAL_PEAK_REVIEW:
+        if not date.fromisoformat(payload["peak_date"]) <= date.fromisoformat(payload["breach_date"]) <= session:
+            return "PEAK_REVIEW_DATES_OUT_OF_ORDER"
+    elif entry_type == JOURNAL_CARD_DECISION:
+        if payload["decision_id"] != entry["entry_id"] or payload["decision_id"] != card_decision_id(
+                payload["card_sha256"], payload["ticker"]):
+            return "CARD_DECISION_ID_MISMATCH"
+        if entry["review_id"] != payload["card_sha256"]:
+            return "CARD_REVIEW_ID_MISMATCH"
+        if entry["evaluation_session"] != payload["decision_session"]:
+            return "CARD_SESSION_MISMATCH"
+        if payload["sidecar_action"] not in ALLOWED_SIDECAR_ACTIONS.get(payload["analysis_action"], ()):
+            return "CARD_SIDECAR_ACTION_NOT_ALLOWED"
+        if payload["decision_id"] in decisions:
+            return "CARD_DECISION_DUPLICATE"
+    elif entry_type == JOURNAL_CARD_USER_DECISION:
+        decision = decisions.get(payload["decision_id"])
+        if decision is None or decision["ticker"] != payload["ticker"]:
+            return "USER_DECISION_REFERENCE_INVALID"
+        if entry["review_id"] != decision["card_sha256"]:
+            return "USER_DECISION_REVIEW_ID_MISMATCH"
+        if entry["evaluation_session"] != payload["effective_session"] or (
+                payload["effective_session"] < decision["decision_session"]):
+            return "USER_DECISION_SESSION_INCONSISTENT"
+    return None
+
+
+def entry_inconsistencies(entries: list[dict[str, Any]]) -> list[str]:
+    """JOURNAL_ENTRY_INCONSISTENT:<sequence>:<reason> for the first entry that contradicts itself, else []."""
+    decisions: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        try:
+            reason = _entry_inconsistency(entry, decisions)
+        except (KeyError, TypeError, ValueError, ArithmeticError):
+            reason = "ENTRY_MALFORMED"
+        if reason is not None:
+            return [f"JOURNAL_ENTRY_INCONSISTENT:{entry.get('sequence')}:{reason}"]
+        if entry["entry_type"] == JOURNAL_CARD_DECISION:
+            decisions[entry["payload"]["decision_id"]] = entry["payload"]
+    return []
 
 
 def proposal_content_hash(proposal: dict[str, Any]) -> str:

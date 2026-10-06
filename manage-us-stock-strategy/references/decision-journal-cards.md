@@ -5,7 +5,7 @@ sessions later. It grants no order or quantity authority: every proposal, entry 
 `order_authority=false`, `quantity_authority="none"` and carries no quantity, price target or order field.
 
 There is **one ledger**: `stock-strategy-system/decision_journal.json` (git-ignored, hash chained). No
-other ledger file exists. Scores are never stored in it.
+other ledger file exists. Scores are never stored in it. `load_journal` also recomputes each entry's own invariants (`JOURNAL_ENTRY_INCONSISTENT:<sequence>:<reason>` is CORRUPT, so R0), because the chain cannot see an edit of the last entry; it does not detect truncation, fields with no other source, or a forgery that stays self-consistent.
 
 ## Entry types
 

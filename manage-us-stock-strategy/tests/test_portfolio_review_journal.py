@@ -21,8 +21,9 @@ import portfolio_review_journal as journal_module  # noqa: E402
 import s5_exposure_fixtures as fx  # noqa: E402
 from portfolio_exposure import review_content_hash  # noqa: E402
 from test_portfolio_exposure import EVAL, Scenario  # noqa: E402
+from test_holding_card import make_card  # noqa: E402
 from test_portfolio_exposure_fail_closed import line_scenario  # noqa: E402
-from validation_common import validate_instance  # noqa: E402
+from validation_common import canonical_hash, validate_instance  # noqa: E402
 
 NOW = datetime.now(timezone.utc)
 
@@ -235,6 +236,161 @@ class JournalTests(unittest.TestCase):
                            "--output-root", str(output_root))
         self.assertEqual(code, 2)
         self.assertIn("S5_ALREADY_ACTIVATED", output)
+
+
+class LastEntryRecomputeTests(unittest.TestCase):
+    """A hand edit of the last entry changes only the head, so the chain cannot see it (S7 9.2-2).
+    load_journal recomputes each entry's own invariants; an edit that breaks one is CORRUPT (R0)."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="review_journal_last_"))
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.path = self.tmp / "decision_journal.json"
+        self.texts: dict[str, str] = {}
+        self.build_every_entry_type()
+
+    def apply(self, proposal: dict) -> list[dict]:
+        confirmation = {"confirm_code": proposal["confirm_code"], "confirmation_method": "COWORK_CHAT_USER_MESSAGE",
+                        "user_message": f"확인 {proposal['confirm_code']}"}
+        return journal_module.apply_proposal_entries(journal_path=self.path, proposal=proposal,
+                                                     confirmation=confirmation)
+
+    def append_s5(self, entry_type: str, payload: dict, review: dict) -> None:
+        proposal = journal_module.build_proposal(entry_type=entry_type, payload=payload, review=review,
+                                                 journal=journal_module.load_journal(self.path), now=NOW)
+        self.apply(proposal)
+        self.texts[entry_type] = self.path.read_text(encoding="utf-8")
+
+    def build_every_entry_type(self) -> None:
+        """One journal through the real apply path with every entry type; a text snapshot after each."""
+        review = not_activated_review()
+        self.append_s5("s5_activation", journal_module.activation_payload(review), review)
+        review = line_scenario(["100", "80", "80", "60", "60"]).review()
+        self.append_s5("line_review_completed",
+                       journal_module.line_review_payload(review, "L1", "continue", "TEST_ONLY"), review)
+        scenario = Scenario({"SOXL": 3}, "9700")
+        index = scenario.sessions.index(EVAL)
+        scenario.journal = fx.journal(fx.activation_entry(scenario.sessions[index - 3], "10150"))
+        for offset, price in ((3, "150"), (2, "150"), (1, "104"), (0, "100")):
+            scenario.closes["SOXL"][scenario.sessions[index - offset]] = price
+        scenario.snapshots = [fx.snapshot(scenario.sessions[index - 3], {"SOXL": 3}, "9700"),
+                              fx.snapshot(scenario.sessions[index - 1], {"SOXL": 3}, "9700")]
+        review = scenario.review()
+        self.append_s5("peak_review_card_completed", journal_module.peak_review_payload(review, "SOXL"), review)
+        card, pack = make_card()
+        entries = self.apply(journal_module.build_card_proposal(
+            card=card, fact_pack=pack, journal=journal_module.load_journal(self.path), now=NOW))
+        self.texts["card_decision"] = self.path.read_text(encoding="utf-8")
+        proposal = journal_module.build_user_decision_proposal(
+            journal=journal_module.load_journal(self.path), decision_id=entries[0]["payload"]["decision_id"],
+            user_action="HOLD", effective_session=None, note="", now=NOW)
+        self.apply(proposal)
+        self.texts["card_user_decision"] = self.path.read_text(encoding="utf-8")
+
+    def tampered(self, stage: str, mutate) -> tuple[dict, int]:
+        """Edit the last entry of that stage's journal text (the chain stays intact) and load it."""
+        document = json.loads(self.texts[stage])
+        mutate(document["entries"])
+        self.path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+        return journal_module.load_journal(self.path), len(document["entries"])
+
+    def assert_corrupt(self, stage: str, mutate, reason: str) -> None:
+        loaded, sequence = self.tampered(stage, mutate)
+        self.assertEqual((loaded["status"], loaded["errors"], loaded["entries"]),
+                         ("CORRUPT", [f"JOURNAL_ENTRY_INCONSISTENT:{sequence}:{reason}"], []))
+
+    def test_every_entry_type_written_by_apply_loads_ok(self) -> None:
+        for stage, text in self.texts.items():
+            with self.subTest(stage=stage):
+                self.path.write_text(text, encoding="utf-8")
+                loaded = journal_module.load_journal(self.path)
+                self.assertEqual((loaded["status"], loaded["errors"]), ("OK", []))
+        self.assertEqual([entry["entry_type"] for entry in loaded["entries"]],
+                         ["s5_activation", "line_review_completed", "peak_review_card_completed", "card_decision",
+                          "card_decision", "card_user_decision"])
+
+    def test_edited_last_activation_entry_is_corrupt(self) -> None:
+        def last(entries: list[dict]) -> dict:
+            return entries[-1]
+
+        def set_payload(key: str, value):
+            return lambda entries: last(entries)["payload"].__setitem__(key, value)
+
+        def drop_field(entries: list[dict]) -> None:
+            del last(entries)["payload"]["hwm_as_of"]
+
+        def forge_code_and_message(entries: list[dict]) -> None:
+            last(entries).update(confirm_code="00000000", user_message="확인 00000000")
+
+        cases = {
+            "ACTIVATION_HWM_DIFFERENCE_MISMATCH": set_payload("hwm_usd", "1"),
+            "CONFIRM_CODE_NOT_IN_USER_MESSAGE": lambda entries: last(entries).update(confirm_code="00000000"),
+            "ACTIVATION_SESSION_MISMATCH": set_payload("window_end", "2999-01-01"),
+            "ACTIVATION_HWM_DATE_OUTSIDE_WINDOW": set_payload("hwm_as_of", "2000-01-01"),
+            "PAYLOAD_FIELDS_INVALID": drop_field,
+            "CONFIRM_CODE_ENTRY_ID_MISMATCH": forge_code_and_message,
+        }
+        for reason, mutate in cases.items():
+            with self.subTest(reason=reason):
+                self.assert_corrupt("s5_activation", mutate, reason)
+        self.assert_corrupt("s5_activation", lambda entries: entries[-1].update(user_message="확인"),
+                            "CONFIRM_CODE_NOT_IN_USER_MESSAGE")
+        self.assert_corrupt("s5_activation", lambda entries: entries[-1].update(entry_id="1" * 64),
+                            "CONFIRM_CODE_ENTRY_ID_MISMATCH")
+
+    def test_edited_last_review_entries_are_corrupt(self) -> None:
+        self.assert_corrupt("line_review_completed",
+                            lambda entries: entries[-1]["payload"].update(breach_date="2999-01-01"),
+                            "LINE_REVIEW_BREACH_AFTER_SESSION")
+        self.assert_corrupt("peak_review_card_completed",
+                            lambda entries: entries[-1]["payload"].update(peak_date="2999-01-01"),
+                            "PEAK_REVIEW_DATES_OUT_OF_ORDER")
+
+    def test_edited_last_card_entries_are_corrupt(self) -> None:
+        def clone_previous(entries: list[dict]) -> None:
+            clone = copy.deepcopy(entries[-2])  # a chain-valid forged append of an already recorded decision
+            clone.update(sequence=len(entries) + 1, previous_entry_sha256=canonical_hash(entries[-1]))
+            entries.append(clone)
+
+        cases = {
+            "CARD_DECISION_ID_MISMATCH": lambda entries: entries[-1]["payload"].update(decision_id="1" * 64),
+            "CARD_REVIEW_ID_MISMATCH": lambda entries: entries[-1].update(review_id="2" * 64),
+            "CARD_SESSION_MISMATCH": lambda entries: entries[-1]["payload"].update(decision_session="2000-01-01"),
+            "CARD_SIDECAR_ACTION_NOT_ALLOWED": lambda entries: entries[-1]["payload"].update(sidecar_action="ADD_REVIEW"),
+        }
+        for reason, mutate in cases.items():
+            with self.subTest(reason=reason):
+                self.assert_corrupt("card_decision", mutate, reason)
+        loaded, sequence = self.tampered("card_decision", clone_previous)
+        self.assertEqual(loaded["errors"], [f"JOURNAL_ENTRY_INCONSISTENT:{sequence}:CARD_DECISION_DUPLICATE"])
+        cases = {
+            "USER_DECISION_REFERENCE_INVALID": lambda entries: entries[-1]["payload"].update(ticker="ZZZ"),
+            "USER_DECISION_REVIEW_ID_MISMATCH": lambda entries: entries[-1].update(review_id="2" * 64),
+            "USER_DECISION_SESSION_INCONSISTENT": lambda entries: entries[-1].update(evaluation_session="2000-01-01"),
+        }
+        for reason, mutate in cases.items():
+            with self.subTest(reason=reason):
+                self.assert_corrupt("card_user_decision", mutate, reason)
+
+    def test_a_corrupt_last_entry_is_never_extended_and_stops_the_review(self) -> None:
+        review = line_scenario(["100", "80", "80", "60", "60"]).review()
+        payload = journal_module.line_review_payload(review, "L2", "continue", "")
+        proposal = journal_module.build_proposal(entry_type="line_review_completed", payload=payload, review=review,
+                                                 journal=journal_module.load_journal(self.path), now=NOW)
+        loaded, _ = self.tampered("card_user_decision", lambda entries: entries[-1]["payload"].update(ticker="ZZZ"))
+        self.assertEqual(loaded["status"], "CORRUPT")
+        with self.assertRaisesRegex(journal_module.JournalError, "JOURNAL_CORRUPT"):
+            journal_module.build_proposal(entry_type="line_review_completed", payload=payload, review=review,
+                                          journal=loaded, now=NOW)
+        with self.assertRaisesRegex(journal_module.JournalError, "JOURNAL_CORRUPT"):
+            self.apply(proposal)
+        # The exposure review reads the corrupt journal as R0 (decision_journal_missing_or_corrupt).
+        scenario = Scenario({"SOXL": 50}, "5000")
+        scenario.journal = loaded
+        trigger = next(item for item in scenario.review()["fail_closed"]["triggers"]
+                       if item["id"] == "decision_journal_missing_or_corrupt")
+        self.assertTrue(trigger["active"])
+        self.assertIn("JOURNAL_ENTRY_INCONSISTENT:6:USER_DECISION_REFERENCE_INVALID", trigger["reasons"])
 
 
 if __name__ == "__main__":
