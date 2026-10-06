@@ -256,4 +256,18 @@
 - 2026-10-06 **결정 3 = MVLL+SOXL, gap·halt 일시 중단 수용.** `holding_timing_rules.positions`가 빈 객체가 된다(빈 값 허용 여부는 Builder 첫 확인, 막히면 멈춤). S7 2차 완료 기준에 "MVLL·SOXL gap·halt watch-only 복구"를 넣고, 예약 자동화 재개 전 필수로 한다. SOXL weakness_10ema 감시와 SOXL-R50 재무장 잠금도 함께 빠진다(D5·#7·#14에서 이미 은퇴 결정).
 - 2026-10-06 결정 4(K0 문구)는 (나)를 골라 Builder 범위(§5-3)에 포함한다. 병합 전까지의 대조 확인은 §4-A-2 판단 규칙으로 Cowork가 설명한다(문서 수정 없음).
 - 2026-10-06 Builder 지시문 작성: `docs/claude/i0b-policy-builder-prompt-2026-10-06.md`. §5에 더해 이관 스크립트 `--reason` 선택 인자(K2, R9 보고 §5-1 제안)와 사유 `HOLDING_BASELINE_SEMANTIC_CHANGE`를 넣었다. 정책 편집 직전에 Builder 세션에서 사용자 승인을 한 번 더 받는다.
+- 2026-10-06 **Builder 완료**(worktree `i0b-policy`, 브랜치 `worktree-i0b-policy`, 기준 `dfca99d`, 커밋 전). 보고서는 worktree의 `docs/claude/i0b-policy-builder-report-2026-10-06.md`. 정책 `holding_timing_rules.positions` = {}, cohort `integrated-shadow-4f11526e…` → `integrated-shadow-a0d3e69e…`(사유 `HOLDING_BASELINE_SEMANTIC_CHANGE`, 카운터 0), 대상 모듈·전체 스위트 새 실패 0·해소 7.
+  - Cowork 읽기 확인(판정 아님): 바뀐 파일 11 + 새 파일 3(autocrlf 기준), 정책 말단 삭제 59개 모두 MVLL·SOXL 아래·값 변경 0·`deployment_gate`·`holding_risk_rules` 동일, 새 정책 + 원본 실제 상태(r19) 무결성 `[]`·상태 바이트 불변, 원본 `shadow_progress.json` = HEAD·카운터 0.
+  - Builder가 새로 알린 것: 이전 지문 차이에 5269cfd(키움 별칭 키)가 함께 들어 있음, 대시보드 타이밍 테스트 묶음이 실제 정책·상태에 묶여 있음(후속 K2 제안), 병합 순서(이 브랜치 먼저, 키움 재고정 9번 이관은 그 뒤).
+  - Judge 지시문: `docs/claude/i0b-policy-judge-prompt-2026-10-06.md`.
+- 2026-10-06 **Judge: PASS_WITH_CONDITIONS**(별도 Claude Code 세션, worktree `i0b-policy`, 기준 `dfca99d`, 파일 수정 없음). 0~11번 모두 PASS, 막는 결함 없음.
+  - 확인 요지: 변경 11 + 새 3, 정책 말단 삭제 59개 모두 MVLL·SOXL 아래·값 변경 0, 상태 바이트 불변, 검증 코드 불변(gate 해시 일치), 고정 27개 불일치 0, 실제 r19 상태 무결성 `[]`, cohort 이관 지문 재계산 일치, 대상 17개 모듈 새 실패 0·해소 7.
+  - 빠지는 검사(MVLL·SOXL): anchor 검사 전부(원장 밖 보유 수정 2차 탐지 포함), 슬롯 축소 후보, gap·halt·SOXL weakness_10ema, SOXL-R50 재무장 잠금, SOXX·MRVL 기술 검증. D5와 결정 3 범위 안.
+  - 병합 조건: C1 병합 직전 원본 `shadow_progress.json`이 HEAD와 같고(원시 `24148CD7…`) 카운터 0인지 재확인(Cowork 사전 확인: 같음·0, 2026-10-06). C2 병합 때 관제판 `p-s7-p2` 완료 기준에 "MVLL·SOXL gap·halt watch-only 복구", `r-sched-b` 보류 목록에 "S7 2차 복구 전 예약 재개 금지" 기록.
+  - 병합 순서: 이 브랜치 먼저 → 키움 재고정 3~9번. 9번 이관은 카운터 0 확인 뒤 `--reason SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE`.
+  - 비차단 권고: ① 커밋 메시지·관제판에 "지문 차이 = 5269cfd token_profile_alias + 타이밍 positions 삭제" ② 대시보드 타이밍 테스트 픽스처(K2, 알려진 실패 139건)를 S7 2차 착수 전에 ③ T2에 0주 분기("not positive verified holdings") 단언 추가 ④ T1에 `all_required_evidence_verified` 단언 복원 ⑤ Builder 보고서 브랜치명 정정(Cowork가 정정함) ⑥ 이름·단언 어긋난 테스트 3개 이름은 S7 2차에서.
+- 2026-10-07 **커밋·병합 완료.** worktree 커밋 `6bd5c5a`(부모 `dfca99d`, 14개 파일, 커밋 메시지에 지문 차이 원인 기록 — Judge 권고 ①) → 사용자가 `git merge --no-ff` → 병합 커밋 `def0897`(부모 `dfca99d`·`6bd5c5a`). push 안 함.
+  - C1: 병합 직전 원본 `shadow_progress.json` 원시 `24148CD7…`·카운터 0 재확인(Cowork).
+  - 병합 뒤 Cowork 확인: 병합 트리 = 브랜치 트리(`6cd3d11f…`), 원본 `alert_policy.json` 원시 `860FB038…`·정규화 `3F4E1BB5…`·CRLF 932줄, `holding_timing_rules.positions` = {}, `shadow_progress.json` CRLF 28줄·cohort `integrated-shadow-a0d3e69e9bc23a1b`·카운터 0, 실제 상태(revision 19)로 무결성 `[]`·상태 바이트 불변, `test_evaluate_timing_integration` 14건 OK(Cowork VM).
+  - C2와 후속은 관제판에 기록: `p-s7-p2` 완료 기준(gap·halt 복구), `r-sched-b`(S7 2차 복구 전 예약 재개 금지), 후속 K2(대시보드 타이밍 테스트 픽스처 139건 + T2 0주 분기 + T1 증거 단언, 권고 ②③④, 사용자 결정 "병합 뒤 후속 K2"), 키움 재고정 9번 이관 사유·순서.
 - 2026-10-06 운영 주의: Cowork VM에서 실행한 `git status`가 `.git/index`의 stat 캐시를 갱신했고, 마지막 호출은 빈 `.git/index.lock`을 남겼다(연결 폴더 삭제 금지 때문). 사용자 승인(삭제 권한)으로 그 잠금 파일 1개만 지웠다. 이후 Cowork VM에서는 `git status`처럼 인덱스를 쓰는 git 명령을 피하고, 필요하면 `git --no-optional-locks status`를 쓴다.
