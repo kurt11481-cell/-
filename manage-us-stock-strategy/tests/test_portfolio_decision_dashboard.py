@@ -2332,9 +2332,21 @@ class ManualStep2TimingTests(unittest.TestCase):
 
     def setUp(self):
         from datetime import date, datetime, timedelta, timezone
-        from test_evaluate_timing_integration import EvaluateTimingIntegrationTests
+        from test_evaluate_timing_integration import EvaluateTimingIntegrationTests, with_timing_positions
         case = EvaluateTimingIntegrationTests(methodName="runTest")
         case.setUp()
+        # I0-b removed the MVLL/SOXL timing block from the real policy: use the
+        # synthetic block and align in-memory holdings to its anchors (no file write).
+        case.policy = with_timing_positions(case.policy, "MVLL", "SOXL")
+        plans = case.state["timing_plan"]["positions"]
+        for symbol, rule in case.policy["holding_timing_rules"]["positions"].items():
+            sold = {slot["id"]: slot["quantity"] for slot in rule["slots"]}
+            case.state["holdings"][symbol] = plans[symbol]["anchor_shares"] - sum(
+                sold[tranche] for tranche in plans[symbol]["completed_tranche_ids"])
+        # Synthetic NBIS 15 so the Broker NBIS=13 cases below stay a real mismatch.
+        case.state["holdings"]["NBIS"] = 15
+        case.state["average_cost_usd"]["NBIS"] = 100.0
+        case.state["position_cost_basis_usd"]["NBIS"] = 1500.0
         self.inputs = {"snapshot": case.snapshot, "state": case.state, "policy": case.policy}
         stamp = "2026-08-21T22:00:00+00:00"
         end = "2026-08-20"
