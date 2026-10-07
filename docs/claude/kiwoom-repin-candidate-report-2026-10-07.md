@@ -3,7 +3,7 @@ id: kiwoom-repin-candidate-report-2026-10-07
 type: cowork-report
 status: current
 as_of: 2026-10-07
-summary: s-token-repin(빌더 보고 8절) 3~7번 결과. 원본 폴더에서 새 키움 acceptance 후보 835d4f46…를 만들고 후보 검증 PASS. 사본 활성화 모의에서 새 실패 0, v2_6_7 acceptance 2건 해소. 원본 정책·상태는 그대로(45cf 활성). Judge PASS-WITH-CONDITIONS(8절), 적용 도구 v2로 조건 반영. 활성화(8번)·cohort 이전(9번)은 사용자 커밋·승인 대기.
+summary: s-token-repin(빌더 보고 8절) 3~7번 결과. 원본 폴더에서 새 키움 acceptance 후보 835d4f46…를 만들고 후보 검증 PASS. 사본 활성화 모의에서 새 실패 0, v2_6_7 acceptance 2건 해소. 원본 정책·상태는 그대로(45cf 활성). Judge PASS-WITH-CONDITIONS(8절), 적용 도구 v2로 조건 반영. 후보 커밋 e25edd1. 8번 활성화·9번 cohort 이전·10번 확인 완료(9절, 사용자 승인 2026-10-07). 남은 것: 11번 사용자 커밋, 실측 검증, 루틴 문장 갱신.
 consumers: [kiwoom-repin-judge-prompt-2026-10-07.md(독립 Judge), kiwoom-repin-judge-report-2026-10-07.md, s-token-repin 활성화 단계(8절 8~11), 개발 관제판 s-token-repin]
 ---
 
@@ -113,3 +113,17 @@ v2 시험(VM, 원본과 같은 정책 2개의 사본, 원본 쓰기 없음):
 1. 확인 모드 → 17, 파일 불변 / 2. `--apply` → APPLIED 17, 결과 바이트가 v1 sim 결과와 같음, 임시 파일 남지 않음 / 3. 재적용 → 거부(old 0곳) / 4. `-O` + 틀린 old + `zz` → 시작 즉시 거부, 불변 / 5. `PYTHONOPTIMIZE=1` → 거부, 불변 / 6. new `zz` → 거부 / 7. 틀린 old(16진 64자) → 거부 / 8. 소문자 하나를 대소문자 섞음 → 거부 / 8b. 대소문자 섞인 해시 추가 → "mixed-case" 거부 / 9. 포인터 하나를 다른 필드로 옮겨 개수 유지 → "changed paths differ" 거부 / 10. 두 번째 `os.replace` 실패 주입 → 첫 파일 복구, 두 파일 모두 원래 바이트, 임시 파일 없음.
 
 Judge가 "확인 필요"로 남긴 것: 저장소 밖 Cowork 예약이 shadow 기록을 하는지, dashboard 공통 실패 69건 원인. VM의 `PYTHONOPTIMIZE`는 비어 있음(확인함, v2에서는 무관).
+
+## 9. 활성화 결과 (8~10번, 2026-10-07)
+
+- 후보 커밋: `e25edd1`(사용자, 파일 4개). `git ls-files --eol` = `i/lf w/lf`(사용자 확인).
+- 승인: 사용자가 이 대화에서 "승인 — 8번 실행" 선택(2026-10-07 16:3x). 직전 확인: 카운터 0, 정책·상태 git status 0줄, 확인 모드 17곳 통과, 예약 작업 중 16:30~22:00 사이 실행 없음(관제판 schedules).
+- **8번(Cowork, 적용 도구 v2 `--apply`):** `APPLIED 17`. priority `d315c3d3…` → `2136f53c…`, source `351a3495…` → `b6e91a2f…`(Judge 모의와 같음). 크기 불변, CR 0, 45cf 0곳, 835d 17곳, 임시 파일 없음. 운영 검증기(835d, 원본) `PASS, errors []`.
+- **9번(사용자 Windows PowerShell, 16:37):** `COHORT_SUPERSEDED_AND_ZERO_INITIALIZED`, `integrated-shadow-a0d3e69e9bc23a1b` → `integrated-shadow-2acacfbba4400474`.
+  - `shadow_progress.json` 922 B, CRLF 28, LF만 있는 줄 0. 저장 지문 = 재계산 지문(`2acacfbb…`), 카운터 0.
+  - 보관 `cohorts/integrated-shadow-a0d3e69e9bc23a1b/superseded_progress.json` 1277 B, CRLF 36, reason `SESSION_AWARE_KIWOOM_PROVIDER_AUTHORITY_CHANGE`, 이전 카운터 0.
+- **10번 확인(원본, VM Python 3.13):** `test_v2_6_7…` 42 OK(acceptance 2건과 `test_provider_authority_change_starts_zero_count_cohort` 통과), `test_kiwoom_token_reuse` 15 OK, `test_migrate_integrated_shadow_cohort` 3 OK, `test_scheduled_input_gate` 8 OK, `validate_schema_contracts.py` PASS.
+  - `test_materialize…`는 원본 마운트에서 유효하지 않았다: VM 연결 폴더는 기본적으로 삭제가 막혀 테스트의 임시 폴더 정리가 실패(오류)했고, 증거 폴더(`workspace/research/provider-evidence/kiwoom/`)에 `tmp*` 폴더 17개가 남았다. 그중 835d·45cf manifest와 같은 정규화 해시 파일은 0개(확인). 사용자 삭제 권한(이 세션)으로 그 17개만 지웠고 git status는 테스트 전과 같다(96줄). 이 테스트는 두 사본(VM 26 OK, Judge Windows 26 OK)에서 통과했다. 원본 확인은 사용자 Windows 터미널에서 한다(11번 전).
+  - 테스트가 정책·상태 파일을 바꾸지 않았음을 확인(파일 시각·내용).
+- 11번 커밋 대상(경로 지정): 정책 2개, `shadow_progress.json`, 새 보관 파일, 이 보고서.
+- 남은 것: 빌더 보고 9절 실측 검증(사용자 PC) → 통과하면 `portfolio-exposure-review.md` "Pending change" 문단 확정(K0, 배포 해시 대상 여부 먼저 확인).
