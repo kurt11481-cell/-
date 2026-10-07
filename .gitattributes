@@ -1,0 +1,4 @@
+# Content-addressed authority artifacts are hashed over their raw bytes.
+# Keep them byte-identical to the stored blobs on every checkout (no CRLF conversion).
+workspace/calendar-authority/artifacts/** -text
+workspace/instrument-identity-authority/artifacts/** -text
