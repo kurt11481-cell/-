@@ -230,6 +230,10 @@ Proposed next test, **not approved or executed by this note**:
   server's enforced JSON format. Do not inject `profile`, `mode` or `confirm`
   into options or change target selection. Omit exchange/symbol filters to
   inspect the API's default scope. Do not use `pages=0`.
+  Correction (2026-10-07, user standing rule): the "Do not inject `profile`, `mode`
+  or `confirm`" sentence above is superseded for `profile` and `mode`. Pass
+  `"profile": "실전계좌"` and `"mode": "real"` on every `kiwoom_query`
+  (see CLAUDE.md "Kiwoom query rules"); `confirm` stays prohibited.
 - Purpose: inspect holdings field presence/types, currency and the distinction
   among held, possessed and sellable quantities. Do not derive a trading plan.
 - Memory token storage in a fresh CLI normally entails one token request plus

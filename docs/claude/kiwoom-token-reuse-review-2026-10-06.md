@@ -18,6 +18,8 @@ consumers: [docs/claude/s7-builder-report-2026-10-01.md 9번(매 세션 루틴),
   - 시장 데이터 브리지와 계좌 브리지(`kiwoom_account_readonly_bridge.py` 274행)가 같은 함수를 쓴다. 대조 propose·수동 분석이 실행될 때마다 새 토큰이 나온다.
 - kiwoomcli(MCP 조회 포함)는 계좌 별칭(실전계좌) 파일 토큰을 쓴다. 같은 앱키로 새 토큰이 발급되면 저장된 토큰이 서버에서 무효가 되는 현상이 두 번 재현됐다(10/02 13:37, 10/06 09:37 return_code 3·메시지 8005). 서버 규칙 자체는 키움 문서에서 찾지 못함(확인 필요).
 
+- 추가 증거(10/6 18:2x KST, 사용자 `kiwoomcli auth login` 화면): 재발급 직전 저장 토큰은 "존재 예 · 유효 예 · 재사용 예"(저장 14:23:57, 만료 10/7 14:23:58)였는데 16:36·17:3x 조회는 8005였다. 로컬로는 유효한 토큰이 서버에서 무효가 된 것 → 14:23 뒤 같은 앱키로 다른 발급이 있었다는 뜻(어느 실행인지는 확인 필요). 계좌 별칭 이름 "실전계좌"(mode real, 자격 증명은 운영체제 자격 증명 저장소)도 이 화면에서 확인됨.
+
 ## 2. 부수 발견: kiwoomcli 자동 복구가 작동하지 않는 이유
 
 - 런타임 `kiwoom/core/client.py` 84행은 return_code가 8005·8031·8103이면 토큰을 다시 받아 한 번 재시도한다.
@@ -51,3 +53,5 @@ consumers: [docs/claude/s7-builder-report-2026-10-01.md 9번(매 세션 루틴),
 2. MCP 미체결 조회 → 정상
 3. 대조 propose 또는 수동 분석 1회
 4. MCP 미체결 조회 → 8005가 없으면 통과
+
+**실측 결과(2026-10-06 22:20 KST, 병합 `5269cfd` 뒤):** ① 토큰 재발급(18:2x) ② MCP 조회 정상(profile 실전계좌) ③ 수동 분석 `manual-20261006T131845264224Z-208d3ee056e8`(preflight PASS) + 대조 propose(22:18:51) ④ MCP 미체결 조회 return_code 20(미체결 없음, 8005 아님) → **통과**. 주의: MCP 조회는 `profile 실전계좌`(+ mode real)를 넣어야 한다. 넣지 않으면 옛 토큰으로 8005(`kiwoom-profile-prompt-change-2026-10-06.md`). 남은 일: acceptance 재고정(K3, Builder 보고 8절), shadow cohort 이전.

@@ -17,6 +17,12 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Never read or print secrets (.env*, tokens, account numbers).
 - Missing or stale data stays visible and fails closed. Deterministic rules outrank LLM output.
 
+## Kiwoom query rules (standing user rule 2026-10-07)
+- Every read-only `kiwoom_query` call (Cowork, Claude Code, Codex, scheduled tasks, Manual runs) must pass options `"profile": "실전계좌"` and `"mode": "real"`. Without the profile the call uses an old token and fails with 8005. Bridge code reads the same alias from policy key `token_profile_alias` in workspace/policies/kiwoom-readonly-policy.json.
+- On 8005 or any auth error: do not run auth, login or token reissue (it can invalidate another task's token). Mark that query failed, keep the gap visible (fail closed) and report it.
+- This fixes the token profile only. It adds no authority: never inject `confirm`, never call order tools, and targets and filters stay as approved.
+- New scheduled tasks and manual calls follow the same rule (checklist: docs/claude/analysis-linkage-map-2026-10-05.md). Evidence: docs/claude/kiwoom-profile-prompt-change-2026-10-06.md.
+
 ## Change classes
 - K0 wording / K1 output behavior / K2 runtime contract or validator (targeted tests) /
   K3 production semantics or authority (stop, ask the user, independent Judge).
@@ -43,6 +49,7 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Identifiers, schemas, commands in English; user-facing reports in Korean.
 - Do not commit or push unless asked. Never force-push.
 - Every analysis/inquiry/discovery output must be linked: write results where other tasks read them and name at least one consumer (docs/claude/analysis-linkage-map-2026-10-05.md, user standing rule 2026-10-05).
+- Option layer for order prices (user approval 2026-10-07, docs/claude/order-instruction-design-2026-10-06.md section 7-5): every buy or sell price proposed in any session (limit, LOC cap or floor, ladder, ad-hoc price suggestion) is checked against option layer O1~O4 (CBOE delayed chain, Yahoo fallback, snapshot time shown), and the result (일치 / 경고 + 이유 1줄) is written next to the price. It is a cross-check and warning, not a trade reason and not a price-formula input; changing the formula is K3. If option data is missing write "옵션 층: 확인 필요(사유)" and continue.
 
 ## Session hygiene (투자_V2 setup guide, apply automatically)
 - At task start, state the recommended model/effort in one line: simple = low, routine = medium,
