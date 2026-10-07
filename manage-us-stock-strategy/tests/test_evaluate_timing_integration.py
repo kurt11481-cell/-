@@ -274,12 +274,12 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         state["holdings"]["MVLL"] = 396  # synthetic holding equal to the retained state anchor
         result = EVALUATOR.evaluate(state, policy, self.snapshot, {})
         self.assertNotEqual(result["state"], "STATE_MISMATCH", result)
-        active = [
-            (item["symbol"], item["tranche_id"], item["quantity"], item["actionable"])
-            for item in result["candidates"]
-            if item["grade"] == "B"
-        ]
-        self.assertEqual(active, [("MVLL", "MVLL-R25", 99, False)])
+        active = [item for item in result["candidates"] if item["grade"] == "B"]
+        self.assertEqual(
+            [(item["symbol"], item["tranche_id"], item["quantity"], item["actionable"]) for item in active],
+            [("MVLL", "MVLL-R25", 99, False)],
+        )
+        self.assertTrue(active[0]["evidence_verification"]["all_required_evidence_verified"])
         state["holdings"]["MVLL"] = 395
         result = EVALUATOR.evaluate(state, policy, self.snapshot, {})
         self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
@@ -311,6 +311,14 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
         self.assertTrue(
             any("neither a holding-risk rule" in item and "ZZZT" in item for item in result["warnings"])
+        )
+        zero = copy.deepcopy(self.state)
+        zero["holdings"]["NBIS"] = 0
+        result = EVALUATOR.evaluate(zero, self.policy, self.snapshot, {})
+        self.assertEqual((result["state"], result["grade"]), ("STATE_MISMATCH", "F"))
+        self.assertIn(
+            "holding-risk policy symbols are not positive verified holdings: NBIS",
+            result["warnings"],
         )
 
     def test_i0b_t3_real_policy_and_state_pass_integrity_without_state_write(self) -> None:
