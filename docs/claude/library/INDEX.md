@@ -19,6 +19,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | card(관심) | PWR | 2026-10-03 | 확인 필요 | watch-card-PWR-2026-10-03.md | 사용자 수락, kill ①~④ |
 | card(관심) | LITE | 2026-10-03 | 확인 필요 | watch-card-LITE-2026-10-03.md | 사용자 수락, R2.1 10/10, CRDO 대체 |
 | plan | MVLL | 2026-10-04 | 2026-10-08 | mvll-investor-day-plan-2026-10-04.md | Investor Day 대응 B+ 사용자 채택(10/4): ① 행사 전 약 118주(V5 지정) ② 반응 보고 약 119주 ③ 159주는 M6 v2. 9절 발표 예측 · 13절 ② 경계(시가 -10% 이하 큰 갭만 저점 매도 안 함) |
+| technical | MRVL(→MVLL) | 2026-10-06 | 2026-10-07 | 외부 폴더 chatgpt_종목분석결과/기술분석/MRVL_20261006/MRVL_기술분석_리포트.md (+ 같은 폴더 MVLL_이벤트_시나리오_매도가.md: 시나리오 5개 확률 A20·A'15·B35·C1 20·C2 10, ① 사다리 $39·$40+21:30 정리, ② 시나리오별 가격대) | 행사 당일 기술·옵션(D): 중기 상승, 단기 266~280 박스 가능성, 옵션 중립/변동성 대기(10/9 ±7.2%). MVLL 환산선(V1≈272.5·V2≈268.3·②≈257.7·$40≈279.7). 소비처: Investor Day 계획 ①②, 10/7·10/8 통합점검, 10/8 M6 v2 |
 | m6 | MVLL·SOXL | 2026-10-03 | 확인 필요 | m6-relative-comparison-mvll-soxl-cash-2026-10-03.md | 현금화 근거 없음, 비교상 MVLL 근소하게 약함 |
 | leadership | ALL | 2026-10-03 | 확인 필요 | next-leading-sectors-2026-10-03.md | 차기 후보 1 전력 병목·2 AI 네트워크·3 광부품 상류 |
 | ledger | ALL | 2026-10-03 | — | external-claims-ledger.md | 외부 주장 원장(강도 0, 추가 전용) |
@@ -31,12 +32,17 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | design-review | ALL | 2026-10-04 | 2027-01-02 | next-sandisk-lens-v2-review-2026-10-04.md | 판별 기준 재검토(위원회 Lite): v1.1 적용(10/4, 관찰 표시 분리·질문 3 보강, 판정 불변). ②③⑥은 2027-01 검토 |
 | design-review | ALL | 2026-10-05 | — | strategy-risk-framework-review-2026-10-05.md | 외부 리스크 지침 검토(사용자 승인 10/5): **L1/L2 한 화면 검토 템플릿 5-1**(계좌 점검선 도달 시 사용, fail-closed: N·E>1.9면 위험 감수 불가), 종목 프로토콜 개정 a1(반영 주장 3문·리스크 분류·이벤트 유사 사례·ETF 투시), M6 v2 입력 2줄(판단 영수증 사양 1-1), 원장 EXT-20261005-07~10. 리스크 전체 표는 리플레이 검증 뒤 |
 | design | ALL | 2026-10-05 | — | analysis-linkage-map-2026-10-05.md | **분석 결과 연결 지도·규칙(사용자 상시 지시 10/5)**: 모든 분석 결과는 다른 작업이 읽는 곳에 남기고 소비자 지정. 새 작업 체크리스트 1절 |
+| design | ALL | 2026-10-06 | K3 승인 전(시범 3회 뒤) | order-instruction-design-2026-10-06.md | **주문 지시서(ORDER_INTENT_ONLY) 설계**: 9단계 판단 회로(관문→3층 확률→체결 포함 후회표→4인 위원회 줄이기·보류만→결정론 수량), 낮 발행·저녁 LOC·다음 날 대조, 봉인 SHADOW 시범 10/7~(기록 order-instructions/). 권한 변화 없음 |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
 - 점검 기록: 대시보드 ArtifactData runs (파일 아님)
 - 개장 전 기록: workspace/outputs/pre-open/<날짜>-<이벤트>.md (월요일·이벤트일 예약이 씀, 공식 사실=URL / 프리마켓=참고)
 - 종목 분석(Chat): chatgpt_종목분석결과/종목분석/SNDK_20261005/SNDK_종목분석_요약.md (Phase 1~2·WATCH 판정) · 옵션 분석: chatgpt_종목분석결과/옵션분석/SNDK_20261002/SNDK_옵션분석_리포트.md
+- 종목 분석(Chat): chatgpt_종목분석결과/종목분석/CIEN_20261006/CIEN_종목분석_요약.md (Phase 2·WATCH 판정, 2026-10-06) · 데이터시트: CIEN_Phase1_데이터시트.md (Level 1~3) — 소비처: 주간 재채점·Next 샌디스크 주간 점검·M6 v2
+- 행사 뒤 시나리오(Cowork): chatgpt_종목분석결과/기술분석/MRVL_20261006/MRVL_CIEN_행사후_시나리오_후회분석.md (2026-10-07, MRVL·CIEN 시나리오 4개 D · ② 119주/CIEN 후회 비교 · 권장 P 결정 대기) — 소비처: Investor Day 계획 11-3, 10/8 M6 v2(CIEN 도전자 행), CIEN 주간 재채점
+- 옵션 분석(Cowork): chatgpt_종목분석결과/옵션분석/MRVL_20261007/MRVL_옵션분석_리포트.md (+ CBOE 체인 CSV, 2026-10-07 프리마켓 스냅샷: 중립/변동성 대기, $270~$300 박스, MVLL 매도 시점 몬테카를로) — 소비처: MVLL ②③ 가격(설계 7-5), 10/8 M6 v2, oi-pilot-1
+- 종목 분석(Chat): chatgpt_종목분석결과/종목분석/PWR_20261006/PWR_종목분석_요약.md (Phase 2·WATCH 유지, 2026-10-06, 가격 키움 미검증) · 데이터시트: PWR_Phase1_데이터시트.md (Level 1~3) — 소비처: PWR 관심 카드 갱신 제안·통합 점검·주간 재채점·M6 v2
 
 ## 보관 (superseded, 파일은 옮기지 않음)
 - mvll-holding-card-2026-10-01.md → 통합 카드 2절로 대체

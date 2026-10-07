@@ -33,17 +33,19 @@ summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는�
 | SAVE 시장환경 메모(매일 06:15) | workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md + web-feed/<날짜>/ | 통합 점검 4), Next 샌디스크 L1, 월요일 점검 2), 카드 작성(INDEX) | 연결 |
 | 월요일 개장 전 점검(월 21:20) | SAVE 메모 + workspace/outputs/pre-open/<날짜>-monday.md | 통합 점검 2-1, Next 샌디스크 L1b, Cowork(예약 누락) | 연결(10/5, 첫 기록 확인) |
 | 개장 전 이벤트 일회성(10/14·10/15·11/6·11/10·11/13) | workspace/outputs/pre-open/<날짜>-<이벤트>.md | 통합 점검 2-1(공식 사실 재사용·TSMC→S2·S3·U2), Next 샌디스크 L1b, M6 v2·카드(INDEX) | 연결(10/5) |
-| 보유·관심 통합 점검 v3.10(화~토 06:40) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
+| 보유·관심 통합 점검 v3.11(화~토 06:40) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
 | 외부자료 PDF 처리(수시, 스킬) | 외부자료 .md 캐시 + docs/claude/external-claims-ledger.md | 통합 점검 7), Next 샌디스크 L3·R4 | 연결 |
 | 카드·M6 비교(Cowork 수시) | docs/claude 카드 문서 + INDEX | 통합 점검(문서 읽기), Next 샌디스크, 관심 명단 | 연결 |
 | Next 샌디스크 발굴 v3.1(토 07:32) | docs/claude/next-sandisk-scan-*.md + library/research/ | INDEX → 관심 명단 재평가(예정)·M6 v2·카드 (사람 수락 뒤) | 연결 |
 | 종목 분석·옵션 분석(Chat/수시) | chatgpt_종목분석결과/종목분석·옵션분석/<티커_날짜>/ | INDEX 포인터 → 카드·Next 샌디스크·M6 | 연결(10/5 INDEX 등록, SNDK) |
 | 미국주식 현황판(화~토 09:10) | 현황판 Artifact snapshots | 사람(표시). 계좌·가격은 키움 재조회 원칙이라 다른 작업은 읽지 않음 | 표시 전용(의도) |
 | 관제판 주간 점검(토 10:50) | 알림만 | 사람(관제판) | 메타(분석 아님) |
-| SEC 섀도 수집기(Windows 작업, 월~금 22:00) | workspace/outputs/official-event-intake/sec/ | 없음 → e-filing-k1에서 통합 점검 연결 예정 | 미연결(진행 중) |
+| SEC 섀도 수집기(Windows 작업, 월~금 22:00·화~토 12:30) | workspace/outputs/official-event-intake/sec/ | 통합 점검 2-2)(v3.11) | 연결(10/5 적용, 10/6 06:40 첫 실행 확인 대기) |
+| 주문 지시서(봉인 SHADOW 시범, Cowork·트리거 날 09:30~12:00) | docs/claude/order-instructions/OI-<날짜>-<티커>-<번호>.md (봉인 해시·사용자 결정·결과) · 설계 order-instruction-design-2026-10-06.md | 다음 날 Cowork 대조(결과 분류)·다음 카드/M6 카드(INDEX)·관제판 oi-*·통합점검 대시보드 "주문 지시" 칸(저장소 orders, 공개 뒤 Cowork 기록, 10/7 — dashboard-order-panel-2026-10-07.md). 통합 점검 직접 읽기는 v3.12 승인 뒤 | 시범(10/6 설계, 첫 회 10/8로 이동) |
+| 주문가 옵션 층(가격 결정 때마다, 10/7 사용자 승인) | 주문 지시서 본문 4줄 · 수시 가격 제안 문서(chatgpt_종목분석결과/…) 4줄 · 설계 order-instruction-design-2026-10-06.md 7-5 | 같은 지시서의 가격 칸 대조·경고 → 다음 날 Cowork 대조·채점(원장 30건 뒤 가격 산식 반영 검증, K3) | 연결(10/7 첫 적용 MVLL ②) |
 | 관심 명단 주간 재평가(예정, 미생성) | docs/claude/watchlist-registry.json history | 통합 점검(관심 명단) | 예정 |
 
 ## 3. 미연결·남은 일
-- SEC 수집기 → 통합 점검: e-filing-k1(관제판 작업)에서 연결.
+- SEC 수집기 → 통합 점검: 연결 완료(10/5 v3.11 적용). 10/6 첫 실행 확인과 5회 대조(onlyInSearch)는 관제판 e-filing-k1·e-filing-k4.
 - 종목 분석 폴더(chatgpt_종목분석결과)는 새 분석이 생길 때마다 INDEX "문서 밖 최신본"에 1줄 추가(수동, 체크리스트 5).
 - 관제판 주간 점검에 "연결 지도에 없는 예약 작업" 탐지 규칙 추가는 미적용(필요 시 별도 승인).
