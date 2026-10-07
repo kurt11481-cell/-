@@ -133,3 +133,10 @@ summary: Next 샌디스크 수시 발굴 1회차(2026-10-04). 씨앗 0 · 점화
 - GFS: 20-F(내부통제) https://www.sec.gov/Archives/edgar/data/1709048/000170904826000022/gfs-20251231.htm · 2Q 콜 전사 https://stockanalysis.com/stocks/gfs/transcripts/635688-q2-2026/
 - GLW: 2Q26 8-K https://www.sec.gov/Archives/edgar/data/24741/000002474126000253/glw-20260728xex99xq22026.htm · 3Q 실적일 https://investor.corning.com/news-and-events/events-and-presentations/event-details/2026/Corning-Incorporated-Quarter-3-2026-Earnings-Call-2026-PqCAFWCqa4/default.aspx
 - 조사 원본: `docs/claude/library/research/next-sandisk-2026-10-04/scan-*.md`
+
+## 부록 · 10/6 외부 단서 — Marvell Investor Day 뒤 CIEN 동반 상승 (사용자 승인 2026-10-06, 강도 0)
+
+- 관찰(Yahoo 1분봉, 10/6 10:30 ET): MRVL +7.1% 뒤 CIEN +7.7%(09:35부터 시차를 두고 상승, MRVL 고점 반락 중에도 상승, 1분 수익률 상관 0.39). 같은 시각 FN +6.4%·CRDO +5.4%·AAOI +4.9%·GLW +3.8%·AVGO +3.4% / LITE +1.3%·COHR +0.5% / SOXX·QQQ +0.5%. 연결성 시스템·DSP·모듈 쪽만 동반 상승.
+- CIEN 자체 공식 소식 없음(saveticker CIEN 최신 9/17). 계기: 로이터 속보로 전해진 Marvell 발표(FY31 매출 $700억~900억, 2030 TAM 약 $4,000억, "AI 다음 핵심은 연결성") — Marvell 공식 원문 확인 필요.
+- 판정 영향 없음: CIEN G1~G3·I1~I3는 시에나 자체 공식 자료로만 바꾼다. 상태는 "관찰" 유지. 동반 상승은 되돌림 위험(6/5 호실적에도 −9%, 52주 고점 대비 −34%)이 있어 추격 근거로 쓰지 않는다.
+- 다음: CIEN FQ4 실적(12월 예상, 날짜 확인 필요)에서 증설 가동 일정 공식화 여부로 G2 재판정. 11/7 월간 발굴에 이 단서를 입력으로 넘긴다(관제판 c-cien-fq4, c-nextsndk-1107).
