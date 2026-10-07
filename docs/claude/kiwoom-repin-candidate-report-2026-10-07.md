@@ -3,7 +3,7 @@ id: kiwoom-repin-candidate-report-2026-10-07
 type: cowork-report
 status: current
 as_of: 2026-10-07
-summary: s-token-repin(빌더 보고 8절) 3~7번 결과. 원본 폴더에서 새 키움 acceptance 후보 835d4f46…를 만들고 후보 검증 PASS. 사본 활성화 모의에서 새 실패 0, v2_6_7 acceptance 2건 해소. 원본 정책·상태는 그대로(45cf 활성). Judge PASS-WITH-CONDITIONS(8절), 적용 도구 v2로 조건 반영. 후보 커밋 e25edd1. 8번 활성화·9번 cohort 이전·10번 확인 완료(9절, 사용자 승인 2026-10-07). 남은 것: 11번 사용자 커밋, 실측 검증, 루틴 문장 갱신.
+summary: s-token-repin(빌더 보고 8절) 3~7번 결과. 원본 폴더에서 새 키움 acceptance 후보 835d4f46…를 만들고 후보 검증 PASS. 사본 활성화 모의에서 새 실패 0, v2_6_7 acceptance 2건 해소. 원본 정책·상태는 그대로(45cf 활성). Judge PASS-WITH-CONDITIONS(8절), 적용 도구 v2로 조건 반영. 후보 커밋 e25edd1, 활성화 커밋 fdddc87(8~11번, 9절, 사용자 승인 2026-10-07). 루틴 문장 갱신(10절)으로 s-token-repin 완료.
 consumers: [kiwoom-repin-judge-prompt-2026-10-07.md(독립 Judge), kiwoom-repin-judge-report-2026-10-07.md, s-token-repin 활성화 단계(8절 8~11), 개발 관제판 s-token-repin]
 ---
 
@@ -126,4 +126,10 @@ Judge가 "확인 필요"로 남긴 것: 저장소 밖 Cowork 예약이 shadow �
   - `test_materialize…`는 원본 마운트에서 유효하지 않았다: VM 연결 폴더는 기본적으로 삭제가 막혀 테스트의 임시 폴더 정리가 실패(오류)했고, 증거 폴더(`workspace/research/provider-evidence/kiwoom/`)에 `tmp*` 폴더 17개가 남았다. 그중 835d·45cf manifest와 같은 정규화 해시 파일은 0개(확인). 사용자 삭제 권한(이 세션)으로 그 17개만 지웠고 git status는 테스트 전과 같다(96줄). 이 테스트는 두 사본(VM 26 OK, Judge Windows 26 OK)에서 통과했다. 원본 확인은 사용자 Windows 터미널에서 한다(11번 전).
   - 테스트가 정책·상태 파일을 바꾸지 않았음을 확인(파일 시각·내용).
 - 11번 커밋 대상(경로 지정): 정책 2개, `shadow_progress.json`, 새 보관 파일, 이 보고서.
-- 남은 것: 빌더 보고 9절 실측 검증(사용자 PC) → 통과하면 `portfolio-exposure-review.md` "Pending change" 문단 확정(K0, 배포 해시 대상 여부 먼저 확인).
+- 11번: 사용자 커밋 `fdddc87`(파일 5개). 그 전에 사용자 Windows에서 `test_materialize…` 26 OK.
+
+## 10. 루틴 문장 갱신 (K0, 2026-10-07)
+
+- 조건 3개 충족: 병합(`5269cfd`), 재고정(`fdddc87`), 실측 검증 통과(`kiwoom-token-reuse-review-2026-10-06.md` 5절, 2026-10-06 22:20 — ① 토큰 재발급 ② MCP 조회 정상 ③ 수동 분석·대조 propose ④ MCP 미체결 return_code 20, 8005 없음). 재고정은 브리지 코드·토큰 정책을 바꾸지 않으므로 실측을 다시 하지 않았다.
+- `manage-us-stock-strategy/references/portfolio-exposure-review.md` Routine 서두: "Token order" 문단과 "Pending change" 문단(14줄)을 확정 문단(10줄)으로 교체. 토큰 순서·`auth refresh`/`auth login` 사전 절차 삭제. 유지: `return_code` 확인, 브리지 실행 중 kiwoomcli 금지. 추가: 8005가 나면 Claude는 auth·login·재발급을 하지 않고 그 단계를 실패로 표시·보고(CLAUDE.md 키움 조회 규칙과 같음).
+- CRLF 유지(340 → 336줄, 모두 CRLF). 이 파일은 스킬 배포 해시 6개(`validate_skill_deployment.py` ARTIFACTS) 대상이 아니고, 테스트·스크립트가 이 문장을 읽지 않음(git grep).

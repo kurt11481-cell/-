@@ -206,20 +206,16 @@ official sources; nothing generates it automatically.
 
 ## Routine (Cowork, after the U.S. close, read-only Kiwoom CLI)
 
-Token order (K0 procedure, 2026-10-03). Every bridge run (broker-shadow proposal, manual
-analysis) requests a new Kiwoom token, which can invalidate the token kiwoomcli saved
-(return_code 8005). So do all kiwoomcli work first (steps 1, 2 and the transaction-history raw
-save), and only then run the reconciliation proposal and the manual analysis. Right before the
-first kiwoomcli command run `kiwoomcli auth refresh` (first use: confirm the command exists and
-ends without a prompt; otherwise `kiwoomcli auth login`). A kiwoomcli exit code 0 is not proof of
-success: open each saved file and check that `return_code` is 0 (an auth failure can be saved
-with exit code 0). Never run kiwoomcli while a bridge run is in progress.
-Pending change (kiwoom-token-reuse, K3, 2026-10-06): keep the order above until that change is
-merged, the acceptance is re-pinned and the live check in section 5 of
-`docs/claude/kiwoom-token-reuse-review-2026-10-06.md` has passed. After that check, the bridges
-reuse the same file token as kiwoomcli (policy alias `token_profile_alias`; a new token only when
-none is saved or it is within 10 minutes of expiry), so the token order and the `kiwoomcli auth
-refresh` / `auth login` before the routine are no longer needed.
+Token (updated 2026-10-07; kiwoom-token-reuse `5269cfd`, live check passed 2026-10-06, acceptance
+re-pinned to `835d4f46` in `fdddc87`). The bridges (broker-shadow proposal, manual analysis) reuse
+the same file token as kiwoomcli (policy alias `token_profile_alias` in
+`workspace/policies/kiwoom-readonly-policy.json`; a new token only when none is saved or it is
+within 10 minutes of expiry, and at most one recovery per bridge session). No token order is
+needed and no `kiwoomcli auth refresh` / `auth login` before the routine. If a kiwoomcli command
+or a bridge run still reports an auth failure (8005), do not run auth, login or token reissue from
+Claude: mark that step failed, keep the gap visible and report it. A kiwoomcli exit code 0 is not
+proof of success: open each saved file and check that `return_code` is 0 (an auth failure can be
+saved with exit code 0). Never run kiwoomcli while a bridge run is in progress.
 
 1. Save the 30-minute bars of each symbol (SOXX and every held instrument) into
    `workspace/outputs/regular-session-closes/pages/<SYMBOL>/`:
