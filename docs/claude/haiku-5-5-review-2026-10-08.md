@@ -20,7 +20,7 @@
 | 에이전트 파일 `model: haiku`, 위치 .claude/agents/ · ~/.claude/agents/ | 확인됨 | code.claude.com/docs/en/sub-agents |
 | CLAUDE_CODE_SUBAGENT_MODEL은 기본값(에이전트 파일 지정이 우선), FORCE는 전부 고정(v2.1.257+), 기본값만으로는 Explore·Plan 안 바뀜 | 확인됨. 추가: FORCE를 켜면 에이전트 파일의 model도 무시되고 호출 때 모델 지정도 막힘 | sub-agents |
 | 평균 운영비 약 75% 감소, 같은 글 토큰 약 30% 증가 | 확인 필요(공식 원문 미확인) | — |
-| Sonnet 5.5 캐시 읽기 0.2→0.1달러 | 확인 필요 | — |
+| Sonnet 5.5 캐시 읽기 0.2→0.1달러 | 현재 0.1달러(입력가의 0.05배) 확인됨. 이전 값 0.2달러는 미확인 | platform.claude.com 프롬프트 캐싱 가격표(2026-10-09, docs/claude/prompt-caching-review-2026-10-09.md) |
 | Max·Team 월 API 크레딧(금액·이월 없음) | 확인 필요 | — |
 | 달걀 낙하 실험 수치 | 확인 필요(적용과 무관) | — |
 

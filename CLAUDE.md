@@ -54,11 +54,15 @@ Read-only U.S. stock research and portfolio decision support. No execution autho
 - Do not commit or push unless asked. Never force-push.
 - Every analysis/inquiry/discovery output must be linked: write results where other tasks read them and name at least one consumer (docs/claude/analysis-linkage-map-2026-10-05.md, user standing rule 2026-10-05).
 - Option layer for order prices (user approval 2026-10-07, docs/claude/order-instruction-design-2026-10-06.md section 7-5): every buy or sell price proposed in any session (limit, LOC cap or floor, ladder, ad-hoc price suggestion) is checked against option layer O1~O4 (CBOE delayed chain, Yahoo fallback, snapshot time shown), and the result (일치 / 경고 + 이유 1줄) is written next to the price. It is a cross-check and warning, not a trade reason and not a price-formula input; changing the formula is K3. If option data is missing write "옵션 층: 확인 필요(사유)" and continue.
+- Council before any order recommendation (user approval 2026-10-08, docs/claude/order-instruction-design-2026-10-06.md section 6): every buy or sell recommendation or instruction that carries a quantity or price (official, pilot, Cowork ad-hoc recommendation, user manual-decision instruction) goes through the decision-council BEFORE it is shown to the user for a decision. Lite by default; Full when the order is >= 10% of equity, a sell-only product, or uses a first-time rule or exception (e.g. user-recognized evidence). Write the 4 voice lines, strongest dissent, pre-mortem and pre-celebration into the instruction; without that section do not issue it. The council can only lower, hold or require confirmation, never raise, and is not trade evidence. Not required for analysis or scenario comparison without quantity/price, or for scheduled checks.
+- Recovery gate R-REC1 (user instruction 2026-10-09, docs/claude/recovery-gate-R-REC1-2026-10-09.md): while a shock event is open (SOXX close <= -2 sigma60, 20-session drawdown >= 3 sigma60, user/check-designated root-thesis news shock, account line L1, or a candidate's own -2 sigma60 day), every exposure-increasing buy needs RG1 thesis (no official damage within 2 sessions), RG2 trend (benchmark and candidate close >= EMA50), RG3 shock absorbed (2 closes above event close, no new low below the event-day low), RG4 volatility normalized. It only blocks or delays buys: never blocks sells, never counts as trade evidence, never raises the budget; missing data fails closed for buys. Rule candidate until replay + Judge (K3).
 
 ## Session hygiene (투자_V2 setup guide, apply automatically)
 - At task start, state the recommended model/effort in one line: simple = low, routine = medium,
-  analysis/dev = high, cross-file design / K3 / Judge = Opus xhigh. If the session differs, ask the
-  user to restart with it; never suggest switching model or effort mid-session.
+  analysis/dev = high, cross-file design / K3 / Judge = Opus xhigh. If the model differs, ask the
+  user to restart with it; never suggest switching model mid-session (it rebuilds the prompt cache).
+  Effort may change mid-session only in Claude Code on Opus 5.5 / Sonnet 5.5 (`/effort`, cache kept);
+  elsewhere restart (docs/claude/prompt-caching-review-2026-10-09.md).
 - When the topic changes, tell the user to run /clear; if the task continues but context is long,
   suggest /compact at a natural stopping point.
 - Before multi-file edits, present a plan first (or ask the user to press Shift+Tab for plan mode).
