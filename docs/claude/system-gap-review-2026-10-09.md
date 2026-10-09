@@ -42,3 +42,5 @@ consumers: 통합 점검 v3.12 수정안 작업, 개발 관제판, 주간 관제
 - 적용: SAVE 메모 v2.1(10/9 06:16 실행에서 PWR·LITE 포함 확인)·월요일 점검 v2.1 적용 완료. 통합 점검 v3.12는 예약 작업 지시문 변경에 사용자 컴퓨터 승인이 필요해 미적용(10/9 06:40 실행은 v3.11).
 - 관제판: gap-v312(결정 대기), gap-dash-k1, gap-s7-daily, gap-followups 추가.
 - 2026-10-09 06:5x: 통합 점검 v3.12를 규칙 파일 + 해시 고정 방식으로 적용(사용자 선택). 첫 실행 10/10 06:40 KST.
+- 2026-10-09 18:1x G9 결정 A(사용자 "G9 A"): 옛 경보 엔진은 Windows 작업 스케줄러에 없고(투자 관련은 GuardedPortfolio-SEC-Shadow-v0.1 Ready·정상 실행 1개뿐), Codex 자동화 Post-Close Portfolio Strategy·Pre-Open Portfolio Risk Refresh 2개가 PAUSED(.codex/automations). alert_runtime_state.json 마지막 실행(8/12 07:36 KST)이 Post-Close였는지는 시각 유사 추정, 확인 필요. 변경 없음, PAUSED 유지, 정식 폐기는 S7 2단계(p-s7-p2)에서 처리. 재개는 관제판 r-sched-b(K3).
+- 2026-10-09 18:2x G8 결정 A(사용자 "G8 A"): 변경 없음. 주문 지시서 수명(유효기간·미체결·재발행)은 Cowork 판정 때 수동 확인하고, 시범 3회 뒤 oi-k3에서 함께 정한다. 통합 점검 규칙 변경 없음(동결 유지). 이로써 공백 후속 G4·G6·C 기준값·G8·G9 모두 처리됨.
