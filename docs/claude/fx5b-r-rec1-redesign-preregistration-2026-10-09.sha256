@@ -1,0 +1,4 @@
+raw_bytes_sha256=11758d086bdb1c1bd3854e7f0075b8b1e768db6a837f76b2d99a4705ae1ba3c0
+lf_normalized_sha256=11758d086bdb1c1bd3854e7f0075b8b1e768db6a837f76b2d99a4705ae1ba3c0
+fixed_at=2026-10-09T16:47:05+09:00 before any replay computation (fx-5b Cowork, user instruction 2026-10-09 16:25 KST: write preregistration and fix sha256 before computing)
+items_doc_sha256=aa2b373b5db71e1625982f63dccc8ee2d6f8ab6230d2dca95328a1e8a6cfb55a verbatim_sections=s2:PASS:abc38de3cf18679a s3:PASS:f4a919b8df55193a s4:PASS:798bdea253367a86 s5:PASS:94337cd587523993

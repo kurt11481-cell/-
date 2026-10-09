@@ -1,0 +1,3 @@
+raw_bytes_sha256=da07052a771392fd2b1a7eb14492b305933dab50c506712e5f40103ed6779375
+lf_normalized_sha256=da07052a771392fd2b1a7eb14492b305933dab50c506712e5f40103ed6779375
+fixed_at=2026-10-09T16:47:05+09:00 before any replay computation (fx-5b Cowork, user instruction 2026-10-09 16:25 KST: write preregistration and fix sha256 before computing)

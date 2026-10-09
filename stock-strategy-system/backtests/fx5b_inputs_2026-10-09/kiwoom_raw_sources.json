@@ -1,0 +1,23 @@
+{
+  "collected_at_kst": "2026-10-09",
+  "collector": "Cowork session (fx-5b), read-only kiwoom_query via 키움증권 OpenAPI Exec MCP",
+  "command_path": "overseas candles stock-daily",
+  "api_id": "usa06012",
+  "common_options": {"adjusted": "1", "pages": 0, "format": "json", "profile": "실전계좌", "mode": "real"},
+  "save_method": "Responses exceeded the tool output limit and were saved verbatim by the tool harness to a file; that file was copied byte-for-byte (cp -p) to the repo. No value was retyped. The response JSON does not echo the ticker, so the ticker label comes from the call order and was cross-checked against recent closes in repo docs (MU ~1,045-1,091, BE ~291-296, DELL ~574-579, PWR ~701, LITE ~1,111).",
+  "files": [
+    {"ticker": "PWR",  "exchange": "NYSE",   "called_kst": "2026-10-09 16:28", "file": "kiwoom_raw/PWR_kiwoom_usa06012_daily_adj1_20261009.json",  "sha256": "02d9c7d2b0b451581d5df10ea099134fd0a9dc5b82a112aaec32e273eecafc27", "rows": 7208, "first": "1998-02-12", "last": "2026-10-08"},
+    {"ticker": "GRID", "exchange": "NASDAQ", "called_kst": "2026-10-09 16:36", "file": "kiwoom_raw/GRID_kiwoom_usa06012_daily_adj1_20261009.json", "sha256": "538d94e6efba6e0114a98cffae7e65f9f8b0d7d7b7ca787a5fa79493bce8b50f", "rows": 4247, "first": "2009-11-18", "last": "2026-10-08"},
+    {"ticker": "NBIS", "exchange": "NASDAQ", "called_kst": "2026-10-09 16:36", "file": "kiwoom_raw/NBIS_kiwoom_usa06012_daily_adj1_20261009.json", "sha256": "70bf3302cf750631b49187f32b18199a5a2cbe28ed7213b565247e86fddf8e94", "rows": 535, "first": "2024-08-21", "last": "2026-10-08", "note": "first 42 rows 2024-08-21..2024-10-18 are zero-volume placeholders (O=H=L=C=18.94); trading starts 2024-10-21"},
+    {"ticker": "MU",   "exchange": "NASDAQ", "called_kst": "2026-10-09 16:37", "file": "kiwoom_raw/MU_kiwoom_usa06012_daily_adj1_20261009.json",   "sha256": "db9f9fa7a9e0492b5521ba8b7b10eb30a05005495417185622338f75f5359cc1", "rows": 9419, "first": "1989-05-16", "last": "2026-10-08"},
+    {"ticker": "LITE", "exchange": "NASDAQ", "called_kst": "2026-10-09 16:37", "file": "kiwoom_raw/LITE_kiwoom_usa06012_daily_adj1_20261009.json", "sha256": "d81ede0bb41ea3f692185352045ff721134085046dce256e52d0529ef3fbe193", "rows": 2811, "first": "2015-08-05", "last": "2026-10-08"},
+    {"ticker": "BE",   "exchange": "NYSE",   "called_kst": "2026-10-09 16:37", "file": "kiwoom_raw/BE_kiwoom_usa06012_daily_adj1_20261009.json",   "sha256": "4f1f9aba713a05f63af24f9d81fbf1762e5953cab4f02856b5f03b3ab1de6426", "rows": 2063, "first": "2018-07-25", "last": "2026-10-08"},
+    {"ticker": "DELL", "exchange": "NYSE",   "called_kst": "2026-10-09 16:37", "file": "kiwoom_raw/DELL_kiwoom_usa06012_daily_adj1_20261009.json", "sha256": "982a91b232255bf36f6affa75a0c134278df213aab35a18efa1e4cc087ae30cd", "rows": 1955, "first": "2018-12-28", "last": "2026-10-08"},
+    {"ticker": "SOXL", "exchange": "NYSE",   "called_kst": "2026-10-09 16:37", "file": "kiwoom_raw/SOXL_kiwoom_usa06012_daily_adj1_20261009.json", "sha256": "e8faa3ac68bf2c283b2c4ae84c232cbb60a3a2b61dddc7869dee03c37aba980f", "rows": 4152, "first": "2010-04-05", "last": "2026-10-08"}
+  ],
+  "failed_or_not_saved": [
+    {"ticker": "SOXL", "exchange": "AMEX", "called_kst": "2026-10-09 16:37", "result": "return_code 7, 1903 종목 정보가 없습니다 (exchange mismatch, not an auth error) — retried with exchange NYSE, which succeeded"},
+    {"ticker": "PWR", "exchange": "NYSE", "called_kst": "2026-10-09 16:2x (just before the pages=0 call)", "options_diff": {"pages": 1}, "result": "probe of response shape (100 rows); viewed only, not saved"}
+  ],
+  "auth_errors": "none (no 8005, no token reissue)"
+}
