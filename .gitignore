@@ -151,3 +151,6 @@ workspace/outputs/**/*_analysis.json
 .claude/settings.local.json
 CLAUDE.local.md
 graphify-out/
+
+# Cowork pending doc-commit lists (consumed by tools/commit-docs.ps1)
+docs/claude/_pending/
