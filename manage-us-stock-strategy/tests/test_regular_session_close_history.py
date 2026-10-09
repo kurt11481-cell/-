@@ -140,6 +140,29 @@ class CloseHistoryTests(unittest.TestCase):
         self.assertIn("BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET", early["unverified_reasons"])
         self.assertFalse(early["verified"])
 
+    def test_early_close_is_verified_when_the_winter_offset_is_added_to_the_verified_set(self) -> None:
+        # Prepared path for the measurement planned after the 2026-11-02 session: once "-05:00" is
+        # measured, adding it to LABEL_VERIFIED_UTC_OFFSETS is the only change a winter session needs.
+        # The constant itself stays ("-04:00",) until then; this only patches it inside the test.
+        trusted = self.tmp / "trusted"
+        calendar_copy = build_authority_root(trusted, extra_calendars=(SESSION_0829,))
+        with mock.patch.object(rsch, "TRUSTED_ROOT", trusted):
+            snapshot, failure = rsch.load_production_snapshot(datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertIsNone(failure)
+        active = rsch.load_calendar(calendar_copy, snapshot)
+        self.assertEqual(active["identity"]["authority_status"], "ACTIVE")
+        folder = self.pages_dir("TEST", {"p1.json": page([
+            ("20261127133000", "9.99"), ("20261127130000", "9.90"), ("20261127123000", "9.80"),
+            ("20261127120000", "9.70"), ("20261125153000", "9.50"), ("20261125150000", "9.40")])})
+        unmeasured = self.build(folder, "TEST", calendar=active)["sessions"][-1]
+        self.assertEqual(unmeasured["unverified_reasons"], ["BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET"])
+        with mock.patch.object(rsch, "LABEL_VERIFIED_UTC_OFFSETS", ("-04:00", "-05:00")):
+            early = self.build(folder, "TEST", calendar=active)["sessions"][-1]
+        self.assertEqual((early["session_date"], early["close"], early["bar_cntr_tm"], early["close_type"]),
+                         ("2026-11-27", "9.80", "20261127123000", "EARLY"))
+        self.assertTrue(early["verified"])
+        self.assertEqual(early["unverified_reasons"], [])
+
     def test_missing_session_inside_the_range_is_reported_as_a_gap(self) -> None:
         folder = self.pages_dir("TEST", {"p1.json": page([
             ("20260930160000", "3"), ("20260930153000", "3"), ("20260928153000", "1"), ("20260928150000", "1")])})
