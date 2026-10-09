@@ -2,7 +2,7 @@
 id: library-index
 type: index
 status: current
-as_of: 2026-10-09
+as_of: 2026-10-10
 summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐시이지 권한이 아님 — 가격·계좌는 항상 키움 재조회.
 ---
 
@@ -31,6 +31,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | design | ALL | 2026-10-04 | 확인 필요 | next-sandisk-discovery-design-2026-10-04.md | Next 샌디스크 발굴: 결과 문서 next-sandisk-scan-*.md(병목 씨앗)·N-렌즈 v1.1, 예약(매월 첫 토요일 전체 + 나머지 토요일 주간 점검, 제안 모드)+수시(17절)·다른 작업 연결(19절), 사용자 결정(10/4~5, 15·16절). 유지 보호(다음 실적까지·최대 13주)·F5는 자동 모드 전, 씨앗 칸 1개(관심 5+1)는 첫 점화 씨앗 전. 사이클 시계 → 10/8 M6 카드 입력 |
 | research | ALL | 2026-10-04 | — | library/research/next-sandisk-2026-10-04/ | Next 샌디스크 조사 3건 정리 기록(D급) + 원 보고서 출처 193개, 리플레이 스크립트·SNDK/SOXX 일봉(참고값), 수시 발굴 1회차 원 보고서 6건(scan-*.md), 어닝콜 공급 제약 지도(10/5, 연결 L4). 설계 부록 E-4·19절 |
 | leadership-n | CIEN·HWM·CRS·SOLS 외 | 2026-10-04 | 2026-11-07 | next-sandisk-scan-2026-10-04.md | Next 샌디스크 수시 1회차(사용자 수락 10/4): 씨앗 0 · 관찰 4(CIEN·HWM·CRS·SOLS, v1.1 표시로 모두 병목 품질주) · GFS 제외(X2) · G2 해석 유지. 다음 달 조사 목록 포함 |
+| leadership(SCN 섹터) | TER·CLS·NVT·CRWD·VRTX·VLO / 저평가 AEIS·JBL·MTZ·S·NBIX·DINO | 2026-10-10 | 2026-11-07 | scn27h1-sector-discovery-2026-10-10.md (원본 library/research/scn27h1-discovery-2026-10-10/ 6건) | SCN-27H1 섹터별 수혜·저평가 수시 발굴(사용자 수락 10/10, 결정 d-scn27h1-disc Q1 a): 6섹터 최고 수혜·저평가, 전체 저평가(성장 대비) JBL, AI 6종목 N-렌즈 G 1/3(병목 씨앗 아님), 저평가 후보 대부분 추세 이탈. 18종목 미승인 상품·매수 근거 아님. Q2 d → S·VLO 관심 명단 candidates 추가(비교용 — CRWD는 7/1 분할로 가격 항목 실패라 S로 교체, 10/10 08:48). 소비처: 다음 M6 도전자 행·10/13 PWR 판정 반대 입력·Next 샌디스크 11/7 |
 | design-review | ALL | 2026-10-04 | 2027-01-02 | next-sandisk-lens-v2-review-2026-10-04.md | 판별 기준 재검토(위원회 Lite): v1.1 적용(10/4, 관찰 표시 분리·질문 3 보강, 판정 불변). ②③⑥은 2027-01 검토 |
 | design-review | ALL | 2026-10-05 | — | strategy-risk-framework-review-2026-10-05.md | 외부 리스크 지침 검토(사용자 승인 10/5): **L1/L2 한 화면 검토 템플릿 5-1**(계좌 점검선 도달 시 사용, fail-closed: N·E>1.9면 위험 감수 불가), 종목 프로토콜 개정 a1(반영 주장 3문·리스크 분류·이벤트 유사 사례·ETF 투시), M6 v2 입력 2줄(판단 영수증 사양 1-1), 원장 EXT-20261005-07~10. 리스크 전체 표는 리플레이 검증 뒤 |
 | design | ALL | 2026-10-05 | — | analysis-linkage-map-2026-10-05.md | **분석 결과 연결 지도·규칙(사용자 상시 지시 10/5)**: 모든 분석 결과는 다른 작업이 읽는 곳에 남기고 소비자 지정. 새 작업 체크리스트 1절 |
