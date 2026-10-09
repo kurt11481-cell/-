@@ -21,7 +21,7 @@
 
 | 컬렉션 | 문서 id | 필드 |
 |---|---|---|
-| tasks | 짧은 영문 id(예 `p-s7-p2`) | title, stream, status, order, k(K0~K3), surface, session, model, next, resume{type,date,after[],text}, deadline, doc, startPrompt, commit, doneAt, verify, note, updatedAt(ISO), updatedBy |
+| tasks | 짧은 영문 id(예 `p-s7-p2`) | title, stream, status, order, k(K0~K3), surface, session, model, next, resume{type,date,after[],text}, deadline, doc, startPrompt, commit, doneAt, verify, note, ask, default, answerHint, updatedAt(ISO), updatedBy |
 | streams | policy·recon·cards·external·system | name, goal, order, hue(1~5) |
 | events | ev-MMDD | date(YYYY-MM-DD), label, stream |
 | schedules | sch-* | name, cron{m,h,dows[0=일..6=토]}(한국 시간), cadence, purpose, url, lastRun, lastStatus |
@@ -31,6 +31,14 @@
 초보자용 칸(2026-10-03 추가, 사용자가 개발 초보자라 "다음에 무엇을 할지" 바로 알도록):
 plain(쉬운 이름, 전문 용어 없이) · why(왜 하는지 한두 문장, 쉬운 말) · priority(추천 순서, 1이 먼저 — 값이 있는 예정 작업만 "지금 할 일" 후보) · size(짧음/보통/김) · mode(cowork·decide·code·terminal·wait — 화면의 따라 하기 단계가 이 값으로 정해짐) · worktree(code 작업의 폴더 이름) · doneWhen(끝났다는 기준).
 "지금 할 일" 순서: 조건이 풀린 일 → 진행 중 → 막힘 → priority 작은 순 → 마감 가까운 순. 새 작업을 넣을 때 plain·why·mode는 반드시 채운다.
+
+결정함 칸(2026-10-09 추가, 사용자 결정 Q6 — `ops-dev-touch-reduction-2026-10-09.md` D4):
+status=decision 작업은 화면 맨 위 "결정함"에 모인다. 결정 작업을 만들 때 다음을 채운다.
+- `ask`: 물어보는 것 한 줄(쉬운 말).
+- `default`: 답이 없을 때 적용할 값. CLAUDE.md "Default disposition"에 따라 항상 위험·권한을 늘리지 않는 쪽(보통 "현행 유지").
+- `answerHint`: 복사해서 보낼 한 줄 답 양식. **`결정 <작업 id>: ` 로 시작**한다(예: `결정 ops-touch-reduce: Q1 a, Q2 a`). 어느 Cowork 세션이 받아도 관제판에서 그 작업을 찾을 수 있게 하기 위해서다.
+- `deadline`: 답 기한(기존 필드 재사용). 기한이 지나면 화면이 "기한 지남"으로 표시하고, 다음 관제판 갱신 세션이 `default`를 결정 기록으로 남긴 뒤 작업을 닫는다(정책·상태·권한·주문을 바꾸는 결정은 기본값으로 바꾸지 않는다).
+- 사용자가 `결정 <id>: …`를 보내면 받은 세션이 그 작업의 doc를 읽고 결정 기록 → 반영 → 작업 갱신을 한다.
 
 status: active(진행 중) · waiting(조건 대기) · decision(결정 대기) · blocked(막힘) · planned(예정) · paused(보류) · done(완료).
 "재개 가능"은 저장하지 않는다 — waiting이고 resume 조건(날짜 도래, 선행 작업 모두 done)이 풀리면 화면이 계산한다.

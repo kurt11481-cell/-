@@ -1,7 +1,7 @@
 ---
 id: ops-dev-touch-reduction-2026-10-09
 type: design-review (proposal, 아이디어)
-status: 제안 — 사용자 결정 대기(9절 답 시트). 10절 확인 3건 반영(2026-10-09 18:4x KST, R9 축소·D1 전달 방식 수정). 정책·상태·원장·예약 지시문·코드 변경 없음
+status: 결정됨 2026-10-09 18:41 KST(Q1~Q6 모두 a, 9절 결정 기록). 10절 확인 3건 반영(2026-10-09 18:4x KST, R9 축소·D1 전달 방식 수정). 정책·상태·원장·예약 지시문·코드 변경 없음
 as_of: 2026-10-09 18:xx KST (Cowork)
 authority: order_authority=false · quantity_authority=none · execution_quantity=null
 consumers: [관제판 ops-touch-reduce(결정 대기) · fx-6 마감 점검(동결 해제 때 순서 결정) · gap-s7-daily(R1) · oi-k3(R6 = 수령 검토 2-4) · 다음 K2 Builder 작업(D1 시험)]
@@ -101,7 +101,7 @@ consumers: [관제판 ops-touch-reduce(결정 대기) · fx-6 마감 점검(동�
 ## 8. 순서
 
 1. 지금(동결 중, K0·K1): R4 기본 처분 문구 → 사전 등록 양식·fx 절차에 1줄. D5 개입 예산 → CLAUDE.md 1줄 + 제안서 양식 칸. D4 결정함 → 관제판 화면.
-2. fx-6 뒤 1순위: D1 시험(순수 K2 1건, 예: 관제판 r-ss "안 쓰는 스크린샷 기능 코드 지우기" — 고정 파일 해당 여부는 0단계 확인) → 쓰기 좋으면 기본 경로로.
+2. fx-6 뒤 1순위: D1 시험(순수 K2 1건 — 대상은 fx-6 때 고른다. r-ss는 "I8 은퇴와 묶어서" 조건이 있어 그 조건 확인 뒤 후보) → 쓰기 좋으면 기본 경로로.
 3. fx-6 뒤 2순위: R1(gap-s7-daily와 합침, Builder → Judge → Windows 작업 등록은 사용자 1회).
 4. 그다음: R2·R7·R5·R8(기존 예약 지시문 변경을 한 번에 묶어 교체 승인 1회), D3(그 교체를 마지막 해시 교체로).
 5. K3 안건: R3 확인 묶음, R6(시범 3회 뒤). (R9는 10-1 확인으로 불필요)
@@ -118,6 +118,16 @@ consumers: [관제판 ops-touch-reduce(결정 대기) · fx-6 마감 점검(동�
 | Q4 | R1 아침 수집 Windows 작업 | a) fx-6 뒤 Builder(스크립트 이동 선행) · b) 현행(사용자 PowerShell) |
 | Q5 | D2 문서 커밋 | a) `commit-docs.ps1` 한 줄(docs/claude만) · b) 매일 자동 커밋 · c) 현행 |
 | Q6 | D4 결정함 화면 | a) 지금 관제판에 추가 · b) 현행 |
+
+### 결정 기록
+
+- 2026-10-09 18:41 KST 사용자(이 Cowork 대화에서 직접 입력): "개입 결정: Q1 a, Q2 a, Q3 a, Q4 a, Q5 a, Q6 a". 같은 메시지에 "커밋 완료"(795faaf).
+- 반영(같은 세션):
+  - Q1·Q2 → CLAUDE.md Working rules에 "Default disposition"·"Touch budget" 각 1줄(K0). Q5 → 같은 곳에 "Doc-only commits" 1줄.
+  - Q5 → `tools/commit-docs.ps1` 작성(ASCII·CRLF, PowerShell 5.1 호환, 메시지는 `.git/COMMIT_DOCS_MSG` UTF-8 파일로 전달), `.gitignore`에 `docs/claude/_pending/` 추가. 첫 실행은 사용자 `-DryRun` 1회로 확인(관제판 touch-d2-commit).
+  - Q6 → 관제판 "결정함" 칸 + 작업 필드 `default`·`answerHint`(기존 `deadline` 재사용), `dev-dashboard-protocol.md` 3절에 필드 추가.
+  - Q3·Q4 → 관제판 대기 작업: D1 파이프라인 touch-d1-pipeline(fx-6 뒤, 첫 시험 대상은 그때 선택) · R1 = 기존 gap-s7-daily 갱신(fx-6 뒤, collect_30m.ps1 추적 위치 이동 선행, 실행 시각 여름 05:15·겨울 06:15 KST).
+- 답 시트 밖 안(R2·R3·R5·R6·R7·R8·D3·D6·D7)은 승인되지 않았다. 8절 순서대로 fx-6 때 다시 묻는다(R4 기본값 = 현행 유지).
 
 ## 10. 확인 결과 (2026-10-09 18:3x~18:4x KST, 읽기 전용)
 
