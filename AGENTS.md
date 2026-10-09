@@ -87,17 +87,7 @@ Reuse installation evidence; documentation work must not call authentication,
 account, or market endpoints. A scoped read approval does not change the
 official collection path, policy, pins, portfolio state, or order authority.
 
-Kiwoom query token profile (standing user rule 2026-10-07): every read-only
-`kiwoom_query` call must pass options `"profile": "실전계좌"` and `"mode": "real"`
-(without the profile an old token is used and the call fails with 8005). On
-8005 or any auth error do not run auth, login or token reissue; mark the query
-failed and report it. This fixes the token profile only and adds no authority:
-never inject `confirm`, never call order tools. See CLAUDE.md "Kiwoom query
-rules" and docs/claude/kiwoom-profile-prompt-change-2026-10-06.md.
-
-Order-price option layer (user approval 2026-10-07): every proposed buy or sell
-price is cross-checked against option layer O1~O4 and the result is written next
-to the price (cross-check and warning only; the price formula is unchanged).
+Kiwoom query token profile, order-price option layer, order-recommendation council and recovery gate R-REC1: rules live only in CLAUDE.md ("Kiwoom query rules", "Working rules"); follow them there.
 
 # context-mode — MANDATORY routing rules
 

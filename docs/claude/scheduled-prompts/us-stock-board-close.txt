@@ -1,0 +1,28 @@
+미국주식 현황판(https://claude.ai/artifact/K5HqLvCGfQD9AQNbSHVE3Q)의 저장소를 키움증권 조회 결과로 갱신하는 작업입니다. 사용자에게 묻지 말고 끝까지 진행하세요. 주문·환전 등 쓰기 명령은 절대 실행하지 말고, 키움은 조회 전용 도구 kiwoom_query만 쓰세요.
+
+도구
+- 키움: 사용자 컴퓨터의 로컬 MCP "키움증권 OpenAPI Exec MCP"의 kiwoom_query (ToolSearch로 "kiwoom_query" 검색해 불러오기). 모든 호출의 options에 "format": "json", "named": true, "profile": "실전계좌", "mode": "real" 을 넣습니다(profile/mode를 빼면 옛 토큰으로 호출되어 8005 인증 오류가 납니다). 응답은 {"result": {...}} 형태이며, 아래에서 raw는 이 result 안의 객체를 가공 없이 그대로 쓴 것입니다.
+- 저장소: ArtifactData 도구(ToolSearch로 불러오기), url은 위 주소.
+
+순서
+1. ArtifactData list로 collection "snapshots"와 "config"를 읽어 각 문서의 version을 기억합니다. config/watchlist의 tickers(없으면 빈 목록), config/exchanges(티커→거래소 맵, 없으면 빈 객체)를 가져옵니다.
+2. balance: command_path "overseas accounts balance".
+3. cash: "overseas accounts cash".
+4. quotes: 티커 목록 = SPY, QQQ, DIA, SOXX + balance 결과리스트의 종목코드 전부 + watchlist tickers (중복 제거, 대문자). 각 티커마다 "overseas quotes info"를 options {"exchange": X, "code": 티커}로 호출합니다. X는 config/exchanges에 있으면 그 값, 없으면 NASDAQ → NYSE → AMEX 순서로 return_code 0이 나올 때까지 시도합니다(1903 "종목 정보가 없습니다"는 거래소가 틀렸다는 뜻). 성공하면 items[티커] = raw, 찾은 거래소를 exchanges 맵에 기록합니다. 셋 다 실패하면 items[티커] = {"error": "<return_msg>"}.
+5. realized: "overseas accounts realized-profit-daily", options from = 한국시간 오늘 − 30일, to = 한국시간 오늘 (YYYYMMDD).
+6. trades: "overseas accounts today-trades", options {"scope": "all-sells", "currency-basis": "foreign", "date": D}. D는 한국시간 기준 어제 날짜(YYYYMMDD) — 방금 끝난 미국 세션이 시작된 한국 날짜입니다.
+7. ArtifactData batch 한 번으로 기록합니다(기존 문서는 1번에서 읽은 version을 if_version으로 지정). updatedAt은 현재 epoch 밀리초.
+   - snapshots/balance: {"updatedAt", "raw"}
+   - snapshots/cash: {"updatedAt", "raw"}
+   - snapshots/quotes: {"updatedAt", "items"}
+   - snapshots/realized: {"updatedAt", "raw", "from", "to"}
+   - snapshots/trades: {"updatedAt", "raw", "date": D}
+   - config/exchanges: 갱신된 맵
+   return_code 20(조회내역 없음·선택자료가 존재하지 않습니다)은 정상적인 빈 결과이므로 그대로 raw로 저장합니다.
+
+실패 처리
+- 어떤 호출이 {"result": {"error": ...}} 형태(권한 오류, 인증 만료 등)거나 return_code가 0·20이 아니면, 그 문서의 raw는 덮어쓰지 말고 update로 {"error": "<메시지>", "errorAt": 현재 epoch 밀리초}만 기록합니다(문서가 없으면 set).
+- kiwoom_query 도구를 찾을 수 없거나 컴퓨터에 연결되지 않으면, snapshots의 다섯 문서 모두에 {"error": "컴퓨터에 연결되지 않아 조회하지 못했습니다", "errorAt": ...}를 update로 기록하고 끝냅니다.
+- 버전 충돌이 나면 다시 읽고 한 번만 재시도합니다.
+
+마지막으로 한 줄 요약을 남기세요: 총평가금액($), 총손익($, %), 실패한 항목(있다면).

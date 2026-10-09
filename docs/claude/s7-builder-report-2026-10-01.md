@@ -1020,6 +1020,8 @@ r2에서 빠진 경로는 없다. 다른 값과 r2에 없는 경로는 아래가
 
 #1~#8·#13·#14(옛 통제 은퇴), #12(등록부, SEC 1차 출처 확인), `timing_engine.py`·`evaluate_alerts.py`와 `deployment_gate`(P5), `validate_research_packet.py`, P8-1~5(universe, 위험 한도표, 신원·시세 범위, cohort 이관, BE·DRAM 신원), `alert_grades.D` 문장 보강(P2), 새 섹션 `status` → `approved_display_only`, K132-G 원장(별도 K2), 예약 작업 연결.
 
+정정(2026-10-09, FX-1009 A4): 옛 경보 엔진은 2026-08-12 뒤 미실행이다(`alert_runtime_state.json` last_run_at). 1단계 "유지"는 표시 참고선뿐이다. 은퇴는 S7 2단계에서 처리한다.
+
 Builder 완료, worktree s7-policy, 새 실패 수 0
 
 Builder 수정 완료, worktree s7-policy, 새 실패 수 0

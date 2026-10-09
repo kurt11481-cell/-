@@ -33,7 +33,7 @@ summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는�
 | SAVE 시장환경 메모(매일 06:15) | workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md + web-feed/<날짜>/ | 통합 점검 4), Next 샌디스크 L1, 월요일 점검 2), 카드 작성(INDEX) | 연결 |
 | 월요일 개장 전 점검(월 21:20) | SAVE 메모 + workspace/outputs/pre-open/<날짜>-monday.md | 통합 점검 2-1, Next 샌디스크 L1b, Cowork(예약 누락) | 연결(10/5, 첫 기록 확인) |
 | 개장 전 이벤트 일회성(10/14·10/15·11/6·11/10·11/13) | workspace/outputs/pre-open/<날짜>-<이벤트>.md | 통합 점검 2-1(공식 사실 재사용·TSMC→S2·S3·U2), Next 샌디스크 L1b, M6 v2·카드(INDEX) | 연결(10/5) |
-| 보유·관심 통합 점검 v3.11(화~토 06:40) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
+| 보유·관심 통합 점검 v3.12.2(화~토 06:40) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
 | 외부자료 PDF 처리(수시, 스킬) | 외부자료 .md 캐시 + docs/claude/external-claims-ledger.md | 통합 점검 7), Next 샌디스크 L3·R4 | 연결 |
 | 카드·M6 비교(Cowork 수시) | docs/claude 카드 문서 + INDEX | 통합 점검(문서 읽기), Next 샌디스크, 관심 명단 | 연결 |
 | Next 샌디스크 발굴 v3.1(토 07:32) | docs/claude/next-sandisk-scan-*.md + library/research/ | INDEX → 관심 명단 재평가(예정)·M6 v2·카드 (사람 수락 뒤) | 연결 |

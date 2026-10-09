@@ -2,7 +2,7 @@
 id: library-index
 type: index
 status: current
-as_of: 2026-10-05
+as_of: 2026-10-09
 summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐시이지 권한이 아님 — 가격·계좌는 항상 키움 재조회.
 ---
 
@@ -14,13 +14,14 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 
 | 종류 | 종목 | as_of | 유효기한 | 경로(docs/claude/) | 한 줄 요약 |
 |---|---|---|---|---|---|
-| card(보유 현행) | MVLL·SOXL·NBIS | 2026-10-02 | 확인 필요 | integrated-stock-cards-v1-2026-10-02.md 2~4절 | 보유 3종목 HOLD·트리거 표(10/2 17:20 갱신). 보유 현행 카드로 확정(2026-10-04) |
+| card(보유 현행) | MVLL·SOXL·NBIS | 2026-10-02 | 다음 M6 카드에서 갱신 | integrated-stock-cards-v1-2026-10-02.md 2~4절 | 보유 3종목 HOLD·트리거 표(10/2 17:20 갱신). 보유 현행 카드로 확정(2026-10-04) |
 | card(관심) | MU·BE·DELL·AMD | 2026-10-02 | 확인 필요 | 같은 파일 5절(BE·DELL·AMD)·6절(MU) | 관심 카드·트리거 표 |
 | card(관심) | PWR | 2026-10-03 | 확인 필요 | watch-card-PWR-2026-10-03.md | 사용자 수락, kill ①~④ |
 | card(관심) | LITE | 2026-10-03 | 확인 필요 | watch-card-LITE-2026-10-03.md | 사용자 수락, R2.1 10/10, CRDO 대체 |
 | plan | MVLL | 2026-10-04 | 2026-10-08 | mvll-investor-day-plan-2026-10-04.md | Investor Day 대응 B+ 사용자 채택(10/4): ① 행사 전 약 118주(V5 지정) ② 반응 보고 약 119주 ③ 159주는 M6 v2. 9절 발표 예측 · 13절 ② 경계(시가 -10% 이하 큰 갭만 저점 매도 안 함) |
 | technical | MRVL(→MVLL) | 2026-10-06 | 2026-10-07 | 외부 폴더 chatgpt_종목분석결과/기술분석/MRVL_20261006/MRVL_기술분석_리포트.md (+ 같은 폴더 MVLL_이벤트_시나리오_매도가.md: 시나리오 5개 확률 A20·A'15·B35·C1 20·C2 10, ① 사다리 $39·$40+21:30 정리, ② 시나리오별 가격대) | 행사 당일 기술·옵션(D): 중기 상승, 단기 266~280 박스 가능성, 옵션 중립/변동성 대기(10/9 ±7.2%). MVLL 환산선(V1≈272.5·V2≈268.3·②≈257.7·$40≈279.7). 소비처: Investor Day 계획 ①②, 10/7·10/8 통합점검, 10/8 M6 v2 |
 | m6 | MVLL·SOXL | 2026-10-03 | 확인 필요 | m6-relative-comparison-mvll-soxl-cash-2026-10-03.md | 현금화 근거 없음, 비교상 MVLL 근소하게 약함 |
+| m6 | MVLL·SOXL·NBIS·MU·BE·DELL·PWR·LITE | 2026-10-08 | 다음 M6 카드 | m6-relative-comparison-7stock-2026-10-08.md | 7종목+현금 비교(10/6 확정 종가, 10/8 사용자 수락 "판단에 씀"): M6 약세 철회·MVLL 20%(159주) 유지 결정, 보유 3 HOLD(MVLL 근거 약 1), 관심 5 WATCH(MU·BE·DELL ② E 1.93, PWR·LITE 상품 승인). Marvell 발표 자료 원문 재확인(C2 없음). 7절 매도 뒤 경로 재계산 → oi-pilot-1 입력 |
 | leadership | ALL | 2026-10-03 | 확인 필요 | next-leading-sectors-2026-10-03.md | 차기 후보 1 전력 병목·2 AI 네트워크·3 광부품 상류 |
 | ledger | ALL | 2026-10-03 | — | external-claims-ledger.md | 외부 주장 원장(강도 0, 추가 전용) |
 | external-review | ALL | 2026-10-03 | — | external-batch-review-2026-10-03.md | 외부자료 10건 검토, 판단 변화 없음 |
@@ -33,6 +34,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | design-review | ALL | 2026-10-05 | — | strategy-risk-framework-review-2026-10-05.md | 외부 리스크 지침 검토(사용자 승인 10/5): **L1/L2 한 화면 검토 템플릿 5-1**(계좌 점검선 도달 시 사용, fail-closed: N·E>1.9면 위험 감수 불가), 종목 프로토콜 개정 a1(반영 주장 3문·리스크 분류·이벤트 유사 사례·ETF 투시), M6 v2 입력 2줄(판단 영수증 사양 1-1), 원장 EXT-20261005-07~10. 리스크 전체 표는 리플레이 검증 뒤 |
 | design | ALL | 2026-10-05 | — | analysis-linkage-map-2026-10-05.md | **분석 결과 연결 지도·규칙(사용자 상시 지시 10/5)**: 모든 분석 결과는 다른 작업이 읽는 곳에 남기고 소비자 지정. 새 작업 체크리스트 1절 |
 | design | ALL | 2026-10-06 | K3 승인 전(시범 3회 뒤) | order-instruction-design-2026-10-06.md | **주문 지시서(ORDER_INTENT_ONLY) 설계**: 9단계 판단 회로(관문→3층 확률→체결 포함 후회표→4인 위원회 줄이기·보류만→결정론 수량), 낮 발행·저녁 LOC·다음 날 대조, 봉인 SHADOW 시범 10/7~(기록 order-instructions/). 권한 변화 없음 |
+| rules(예약) | ALL | 2026-10-09 | 사용자 승인 때까지 | integrated-check-prompt-v3.12.2-2026-10-09.txt (규칙 본문) + integrated-check-prompt-v3.12.2-L-loader-2026-10-09.txt (예약 작업 지시문, 해시 고정) | **통합 점검 현행 규칙**(화~토 06:40). 로더는 규칙 파일 sha256(LF) ee098920…1e59를 확인한다. 롤백 원본: integrated-check-prompt-v3.12.1-2026-10-09.txt · v3.12.1-L 로더. 예약 지시문 원문 보관: scheduled-prompts/README.md (8개, 해시 표) |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
@@ -48,6 +50,16 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 - mvll-holding-card-2026-10-01.md → 통합 카드 2절로 대체
 - soxl-nbis-holding-cards-2026-10-01.md → 통합 카드 3·4절로 대체
 - watch-card-CRDO-2026-10-03.md → 관심 제외, LITE로 교체
+
+## 구판 (참고만, 삭제·이동 안 함)
+- 통합 점검 지시문 v3.4~v3.12 전체 파일(integrated-check-prompt-v3.4-baseline · v3.5~v3.9-draft · v3.10-reconstructed · v3.11-draft · v3.12), 구 로더 v3.12-L. 롤백용으로만 v3.12.1 규칙 파일과 v3.12.1-L 로더가 남아 있다. 현행은 위 rules 행의 v3.12.2.
+- 관심 명단 주간 초안 watchlist-weekly-prompt-v1-draft-2026-10-03.txt · weekly-watchlist-rotation-prompt-v2-draft-2026-10-03.txt (현행 예약 원문은 scheduled-prompts/watchlist-weekly-rescore.txt)
+- 관제판 점검 초안 dev-board-review-prompt-v1-draft-2026-10-03.txt (v1.1 초안은 현행 예약과 끝 개행만 다름)
+
+## 이름 접두어 (A5, 이름 변경은 하지 않음 — 새 문서에서 첫 등장 때 붙인다)
+- 로드맵 S0~S8: 예 "로드맵 S7b" = 일지, S7a = 카드 코드화 (future-tools-roadmap-2026-10-05.md)
+- 정책(손실한도 검토) S0~S7: 예 "정책 S7" = 정책 적용 (loss-limit-review-s5-policy-proposal-2026-10-01.md)
+- 카드 트리거 S4·S5·S6·S8: 예 "카드 트리거 S4" (SOXL 카드 트리거, 통합 점검 규칙 파일·OI-20261009-SOXL-2)
 
 ## 확인 필요
 - 유효기한(valid_until)은 문서에 명시된 기한이 없어 비워 둠 — 카드 수락 때 정할지 결정 필요.
