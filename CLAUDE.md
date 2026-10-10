@@ -40,10 +40,13 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
 - New scheduled tasks and manual calls follow the same rule (checklist: docs/claude/analysis-linkage-map-2026-10-05.md). Evidence: docs/claude/kiwoom-profile-prompt-change-2026-10-06.md.
 
 ## Change classes (redesign A5, 2026-10-10)
-- General change (old K0-K2): targeted tests + 0 new failures vs baseline + independent Judge (headless pipeline
-  after T3); merge = 1 user click. Docs-only changes need no Judge.
+- General change (old K0-K2): dev pipeline (redesign T3, tools/dev_pipeline/README.md). Cowork writes docs/claude/<id>-builder-prompt.md
+  with a dev-run block and queues docs/claude/_dev-queue/<id>.txt; Windows task InvestmentV2-DevQueue runs tools/dev-run.ps1 (headless
+  Builder, deterministic scope/test checks vs a measured baseline, headless Judge, one fix retry); merge = the user runs
+  `.\tools\dev-merge.ps1 <id>` once. Docs-only changes need no Judge.
 - Authority/limit change (old K3: order stage, order tools, budget/ceiling/caps, approved products, reconciliation
-  invariants, kill switch): stop, user approval, independent Judge.
+  invariants, kill switch): stop, user approval, independent Judge (manual route). If the pipeline escalates a run to authority,
+  dev-merge needs -ApproveAuthority, used only after the user's decision.
 - Transition: the Kiwoom acceptance pin (manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json) is retired
   by redesign T1 and replaced by recording the git commit SHA in every run. Until that change is merged, editing a
   pinned file still invalidates the active acceptance: bundle such edits into the T1 Builder change.
@@ -80,7 +83,7 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
 - Decision journal: when a card or order decision is accepted in Cowork, record the S7b entry in the same session as described in Hard safety (no separate confirmation code).
 - Default disposition (user decision 2026-10-09 Q1, docs/claude/ops-dev-touch-reduction-2026-10-09.md R4): every replay, review or rule candidate pre-registers its default outcome. Criterion not met, or no user answer by the stated deadline → NO_CHANGE (current rule and policy kept); Cowork records it and only notifies. Ask the user only when the result proposes a change. A default never raises exposure, budget or authority; changes to policy, state, authority or orders still need explicit approval.
 - Touch budget (2026-10-09 Q2, superseded 2026-10-10 by Goal): routine user touches target 0 except order entry. Every proposal states its weekly user-touch cost and may not add a routine touch. At most 3 active development tasks and 1 authority/limit change in progress at a time.
-- Doc-only commits (user decision 2026-10-09 Q5; until the redesign T3 auto-commit task exists): when a Cowork session leaves docs/claude/ changes, write docs/claude/_pending/<task-id>.txt (line 1 = commit message, then one repo-relative path per line, docs/claude/ only) and tell the user to run `tools\commit-docs.ps1`. Files outside docs/claude/ still get an explicit commit block.
+- Doc-only commits (user decision 2026-10-09 Q5, automated by redesign T3 2026-10-10): when a Cowork session leaves docs/claude/ changes, write docs/claude/_pending/<task-id>.txt (line 1 = commit message, then one repo-relative path per line, docs/claude/ only). Windows task InvestmentV2-DocsCommit commits them daily at 23:30 (dev-queue also runs commit-docs before a run); do not ask the user to run it. Files outside docs/claude/ still get an explicit commit block.
 
 ## Session hygiene (투자_V2 setup guide, apply automatically)
 - At task start, state the recommended model/effort in one line: simple = low, routine = medium,
@@ -91,8 +94,10 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
 - When the topic changes, tell the user to run /clear; if the task continues but context is long,
   suggest /compact at a natural stopping point.
 - Before multi-file edits, present a plan first (or ask the user to press Shift+Tab for plan mode).
-- Builder work runs in a worktree (claude --worktree <name>); a Judge runs in a separate session (headless
-  pipeline after redesign T3) and never edits files.
+- Manual route (authority/limit changes, pipeline-protected paths such as tools/**, .claude/**, CLAUDE.md, AGENTS.md, .gitignore, or a
+  stopped pipeline run): Builder in a worktree (claude --worktree <name>), then a Judge in a separate session that never edits files.
+  Claude Code sessions never run dev-run/dev-merge/dev-queue and never edit .claude/settings*.json (deny); Cowork makes settings
+  changes with user approval.
 - Talk to the user in Korean, one step at a time, giving the exact command to type.
 - Cowork 세션에서 작업 상태가 바뀌었으면(완료·시작·새 재개 조건), 세션 끝에 한 번 docs/claude/dev-dashboard-protocol.md대로 관제판의 바뀐 작업만 갱신한다. 변화가 없으면 갱신하지 않는다. Claude Code·Judge·예약 작업은 갱신하지 않는다.
 - Shared docs (design, rules files, cards, OI): record sha256 before editing and re-check just before saving; if it changed, re-read and merge.
