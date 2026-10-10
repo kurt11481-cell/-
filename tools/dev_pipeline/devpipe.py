@@ -9,7 +9,9 @@ The safety constants below (protected paths, task-id format, CLI requirements, t
 code: a task prompt or its dev-run block cannot change them. git and python run with argument lists
 through subprocess and their output is kept as bytes (no shell, no PowerShell pipes). Nothing here
 publishes to a remote, deletes a task branch or worktree, reads secrets, or touches an order or
-broker path. A Builder's own report is never used for a decision.
+broker path; the only branch and worktree it removes are its own temporary baseline checkout
+(.claude/worktrees/_base-<sha8> on branch devpipe-base-<sha8>, see delete_base_branch). A Builder's
+own report is never used for a decision.
 """
 from __future__ import annotations
 
@@ -72,6 +74,31 @@ SCHEMA_TIMEOUT_S = 10 * 60
 GIT_TIMEOUT_S = 10 * 60
 CLI_TIMEOUT_S = 90
 
+# D1: Windows MAX_PATH is 260 including the terminating NUL. git for Windows without core.longpaths refuses
+# a file path longer than 259 ("Filename too long") and a folder path of MAX_PATH - 12 or more
+# (CreateDirectoryW keeps room for an 8.3 name). Measured on this PC (redesign T3b step 0c): file 259 ok /
+# 260 refused, folder 247 ok / 248 refused. Lengths are UTF-16 code units, the unit Windows counts.
+MAX_FILE_PATH = 259
+MAX_DIR_PATH = 247
+# D2: the temporary baseline checkout sits on a branch like a Builder worktree (a detached HEAD leaves
+# git_branch empty and fails tests that fail only there). The cache key carries the method so detached-era
+# (b1) results are never reused.
+BASE_WORKTREE_PREFIX = "_base-"
+BASE_BRANCH_PREFIX = "devpipe-base-"
+BASELINE_METHOD = "b2"
+BASELINE_WORKTREE_JSON = "baseline-worktree.json"
+BASELINE_CLEANUP_JSON = "baseline-cleanup.json"
+SHA_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
+# O3: run records whose sha256 dev-run keeps in memory between steps, and what a Builder's code could
+# change in the main checkout (tracked status lines outside docs/claude/, every file under the watch dirs).
+MAIN_BEFORE_JSON = "main-before.json"
+RECORD_ORDER = ("run.json", "baseline.json", "cache", BASELINE_WORKTREE_JSON, MAIN_BEFORE_JSON)
+MAIN_WATCH_DIRS = ("workspace/policies", "stock-strategy-system")
+STATE_DIR = "stock-strategy-system/"
+DOCS_DIR = "docs/claude/"
+KST = datetime.timezone(datetime.timedelta(hours=9))
+AUTO_CORE_WINDOW_KST = ((6, 10), (6, 40))  # auto-core writes state files at 06:15 in recording mode
+
 # P6 protected paths: a pipeline task can never change these; changing them takes the old route
 # (worktree Builder + separate Judge + user). Compared in lower case because Windows file names ignore
 # case. The task's own prompt (docs/claude/<id>-builder-prompt.md) is added per task.
@@ -98,6 +125,16 @@ ORDER_AUTHORITY_TRUE_RE = re.compile(r"order_authority\W{0,3}\s*[:=]\s*\W{0,2}tr
 REMOVED_LINE_MARKERS = ("order_authority", "kill_switch", "quantity_authority", "execution_quantity",
                         "watchlist_approved", "active_universe_approved", "new_buy_instrument_approved")
 CHANGED_LINE_MARKERS = ("kill_switch",)
+# N1 (added lines, raise only): an approval written as true, a quantity_authority other than none/null, or an
+# execution_quantity other than null/None. The value is the token right after `:` or `=` (not `==`); a schema
+# {"const": X} or {"type": X} wrapper is looked through, and anything else (a variable, an enum, a list) counts
+# as not none. Comparisons and keys without a value are not matched.
+ADDED_VALUE_RE = re.compile(
+    r"(?P<key>(?:watchlist|active_universe|new_buy_instrument)_approved|quantity_authority|execution_quantity)"
+    r"[\"'`]?\s*[:=](?!=)\s*(?:\{\s*[\"']?(?:const|type)[\"']?\s*:\s*)?"
+    r"(?P<value>\"[^\"]*\"|'[^']*'|[A-Za-z0-9_.$+-]+|\S)", re.I)
+ADDED_NONE_VALUES = {"quantity_authority": ("none", "null", "$null"),
+                     "execution_quantity": ("null", "none", "$null")}
 SECRET_NAME_RE = re.compile(
     r"^(\.env.*|.*\.(pem|key|p12|pfx|ppk)|credentials.*\.json|secrets.*\.json|tokens?\.json"
     r"|id_(rsa|dsa|ecdsa|ed25519).*)$", re.I)
@@ -321,6 +358,55 @@ def parse_authority_patterns(text):
         if line and not line.startswith("#"):
             patterns.append(line.replace("\\", "/"))
     return patterns
+
+
+# ---------------------------------------------------------------------------------- path length (D1)
+
+def utf16_len(text):
+    """Length in UTF-16 code units, as Windows counts path limits (a Korean syllable is 1, not 3 UTF-8 bytes)."""
+    return len(str(text).encode("utf-16-le")) // 2
+
+
+def longest_tracked_paths(repo, base):
+    """(longest file path, longest folder path) of the files tracked at base, repository-relative, UTF-16 units."""
+    file_len = dir_len = 0
+    for name in git_z(repo, "ls-tree", "-r", "-z", "--name-only", "--full-tree", base):
+        file_len = max(file_len, utf16_len(name))
+        if "/" in name:
+            dir_len = max(dir_len, utf16_len(name.rsplit("/", 1)[0]))
+    return file_len, dir_len
+
+
+def base_worktree_name(base):
+    return BASE_WORKTREE_PREFIX + str(base)[:8]
+
+
+def path_budget(repo, task_id, file_len, dir_len, base_name):
+    """Deepest absolute paths of a checkout at <repo>/.claude/worktrees/<name> for the task worktree and the
+    temporary baseline worktree ('/' and '\\' are one unit each, so the separator does not matter).
+
+    reason is None or PATH_TOO_LONG:<need>>259:max_id=<n> (file) / PATH_TOO_LONG:dir<need>>247:max_id=<n> (folder),
+    where max_id is the longest worktree name that still fits both limits.
+    """
+    parent = utf16_len(Path(repo) / WORKTREES_REL) + 1  # "<repo>\.claude\worktrees\"
+    file_tail = 1 + file_len if file_len else 0
+    dir_tail = 1 + dir_len if dir_len else 0
+    name_len = max(utf16_len(task_id), utf16_len(base_name))
+    need_file = parent + name_len + file_tail
+    need_dir = parent + name_len + dir_tail
+    max_id = min(MAX_FILE_PATH - parent - file_tail, MAX_DIR_PATH - parent - dir_tail)
+    reason = None
+    if need_file > MAX_FILE_PATH:
+        reason = "PATH_TOO_LONG:%d>%d:max_id=%d" % (need_file, MAX_FILE_PATH, max_id)
+    elif need_dir > MAX_DIR_PATH:
+        reason = "PATH_TOO_LONG:dir%d>%d:max_id=%d" % (need_dir, MAX_DIR_PATH, max_id)
+    return {"need_file": need_file, "need_dir": need_dir, "max_id": max_id, "longest_file": file_len,
+            "longest_dir": dir_len, "names": [task_id, base_name], "reason": reason}
+
+
+def path_length_check(repo, base, task_id):
+    file_len, dir_len = longest_tracked_paths(repo, base)
+    return path_budget(repo, task_id, file_len, dir_len, base_worktree_name(base))
 
 
 # ------------------------------------------------------------------------------ dev-run block (P5)
@@ -741,6 +827,21 @@ def patch_lines(patch):
     return added, removed
 
 
+def added_value_reasons(line):
+    """N1: ADDED_LINE:<key> for each approval true / quantity authority not none / execution quantity not null."""
+    reasons = []
+    for match in ADDED_VALUE_RE.finditer(line):
+        key = match.group("key").lower()
+        value = match.group("value").strip("\"'`").rstrip(".").lower()
+        if key.endswith("_approved"):
+            hit = value == "true"
+        else:
+            hit = value not in ADDED_NONE_VALUES[key]
+        if hit:
+            reasons.append("ADDED_LINE:%s" % key)
+    return reasons
+
+
 def authority_reasons(changes, patch, authority_patterns):
     """Check 5 (class part): order markers, authority paths. Only ever raises the class."""
     reasons = []
@@ -755,6 +856,7 @@ def authority_reasons(changes, patch, authority_patterns):
         for marker in CHANGED_LINE_MARKERS:
             if marker in low:
                 reasons.append("ADDED_LINE:%s" % marker)
+        reasons.extend(added_value_reasons(line))
     for line in removed:
         low = line.lower()
         for marker in REMOVED_LINE_MARKERS:
@@ -857,19 +959,23 @@ def run_test_checks(run, baseline, out_dir, changes):
 
 # ---------------------------------------------------------------------------------------- baseline
 
+def baseline_cache_name(base, python):
+    return "%s-py%s-%s.json" % (base, python, BASELINE_METHOD)
+
+
 def baseline_cache_path(repo, base):
-    return runs_root(repo) / "_baseline" / ("%s-py%s.json" % (base, python_version()))
+    return runs_root(repo) / "_baseline" / baseline_cache_name(base, python_version())
 
 
 def remove_temp_worktree(repo, path):
     path = Path(path)
-    if not path.name.startswith(("_base-",)) or not same_path(path.parent, Path(repo) / WORKTREES_REL):
+    if not path.name.startswith((BASE_WORKTREE_PREFIX,)) or not same_path(path.parent, Path(repo) / WORKTREES_REL):
         raise Stop("STOP_INTERNAL", "temp_worktree_path")
     registered = any(same_path(e["path"], path) for e in list_worktrees(repo))
     if registered:
         git(repo, "worktree", "remove", str(path), check=False)
     if path.exists():
-        # Only the pipeline's own temporary detached checkout: delete the folder, then let git forget it.
+        # Only the pipeline's own temporary baseline checkout: delete the folder, then let git forget it.
         def _retry(func, target, _info):
             os.chmod(target, 0o700)
             func(target)
@@ -880,42 +986,249 @@ def remove_temp_worktree(repo, path):
     git(repo, "worktree", "prune", check=False)
 
 
-def ensure_baseline(repo, base, include_snapshot):
-    """Full suite + schema audit at base (temporary detached worktree), cached per base SHA and python."""
-    repo = Path(repo)
+def cached_baseline(repo, base):
+    """The cached baseline of this base, python and method, or None."""
     cache = baseline_cache_path(repo, base)
-    if cache.is_file():
-        try:
-            data = read_json(cache)
-            if data.get("base") == base and data.get("python") == python_version() and isinstance(data.get("ran"), int):
-                data["source"] = "cache"
-                return data
-        except (ValueError, OSError):
-            pass
-    temp = repo / WORKTREES_REL / ("_base-" + base[:8])
-    remove_temp_worktree(repo, temp)
-    git(repo, "worktree", "add", "--detach", str(temp), base)
+    if not cache.is_file():
+        return None
     try:
+        data = read_json(cache)
+    except (ValueError, OSError):
+        return None
+    if (isinstance(data, dict) and data.get("base") == base and data.get("python") == python_version()
+            and data.get("method") == BASELINE_METHOD and isinstance(data.get("ran"), int)):
+        data["source"] = "cache"
+        return data
+    return None
+
+
+def base_branch_name(base):
+    return BASE_BRANCH_PREFIX + str(base)[:8]
+
+
+def branch_tip(repo, name):
+    code, out = git(repo, "rev-parse", "--verify", "--quiet", "refs/heads/%s" % name, check=False)
+    return out.decode("utf-8", "replace").strip() if code == 0 else None
+
+
+def baseline_worktree_info(repo, base):
+    if not isinstance(base, str) or not SHA_RE.match(base):
+        raise Stop("STOP_INTERNAL", "base_sha")
+    repo = Path(repo)
+    return {"repo": str(repo), "base": base, "path": str(repo / WORKTREES_REL / base_worktree_name(base)),
+            "branch": base_branch_name(base)}
+
+
+def check_baseline_branch(info):
+    """The temporary checkout is on its own branch at base (same branch condition as a Builder worktree)."""
+    temp = Path(info["path"])
+    code, out = git(temp, "symbolic-ref", "-q", "HEAD", check=False)
+    if code != 0 or out.decode("utf-8", "replace").strip() != "refs/heads/" + info["branch"]:
+        raise Stop("STOP_BASELINE", "base_worktree_not_on_branch")
+    if git_text(temp, "rev-parse", "HEAD") != info["base"]:
+        raise Stop("STOP_BASELINE", "base_worktree_head")
+
+
+def prepare_baseline_worktree(repo, base, include_snapshot, marker=None):
+    """D2: create .claude/worktrees/_base-<sha8> on branch devpipe-base-<sha8> at base, synchronously (D3: before
+    the Builder creates its own worktree, so two worktree additions never overlap). The marker (a run-folder
+    file) is written before git runs, so every exit path can clean up what this call created."""
+    repo = Path(repo)
+    info = baseline_worktree_info(repo, base)
+    temp = Path(info["path"])
+    remove_temp_worktree(repo, temp)
+    before = branch_tip(repo, info["branch"])
+    if before is not None and before != base:
+        # -B would move a branch this run did not create: stop instead.
+        raise Stop("STOP_BASELINE", "base_branch_elsewhere:%s" % info["branch"])
+    info.update(branch_created=before is None, created_utc=utc_now())
+    if marker is not None:
+        write_json(marker, info)
+    try:
+        git(repo, "worktree", "add", "-B", info["branch"], str(temp), base)
+        check_baseline_branch(info)
         for rel in include_snapshot:
             source, target = repo / rel, temp / rel
             if source.is_file():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, target)
-        out_base = cache.with_suffix("")
-        full = run_unittest(temp, FULL_SUITE_PATTERN, Path(str(out_base) + ".full"), FULL_TIMEOUT_S)
-        schema = run_schema_audit(temp, Path(str(out_base) + ".schema"))
-    finally:
-        remove_temp_worktree(repo, temp)
+    except Exception:
+        cleanup_baseline_worktree(repo, info)
+        raise
+    return info
+
+
+def run_baseline_in(info):
+    """Full suite + schema audit in the prepared checkout; writes the cache (per base SHA, python and method)."""
+    check_baseline_branch(info)
+    base = info["base"]
+    cache = baseline_cache_path(info["repo"], base)
+    out_base = cache.with_suffix("")
+    full = run_unittest(info["path"], FULL_SUITE_PATTERN, Path(str(out_base) + ".full"), FULL_TIMEOUT_S)
+    schema = run_schema_audit(info["path"], Path(str(out_base) + ".schema"))
     if full.get("timed_out"):
         raise Stop("STOP_BASELINE_TIMEOUT", "full")
     if full["ran"] is None or full["status"] is None:
         raise Stop("STOP_TESTS_DID_NOT_RUN", "baseline")
-    data = {"base": base, "python": python_version(), "ran": full["ran"], "skipped": full["skipped"],
-            "counts": full["counts"], "failures": full["failures"], "status": full["status"],
-            "schema": schema.get("result"), "computed_utc": utc_now()}
+    data = {"base": base, "python": python_version(), "method": BASELINE_METHOD, "branch": info["branch"],
+            "ran": full["ran"], "skipped": full["skipped"], "counts": full["counts"], "failures": full["failures"],
+            "status": full["status"], "schema": schema.get("result"), "computed_utc": utc_now()}
     write_json(cache, data)
     data["source"] = "computed"
     return data
+
+
+def delete_base_branch(repo, info):
+    """git branch -D only for devpipe-base-<sha8> of this base, only when this run created it, it still points at
+    base and no worktree has it checked out. Every other branch is left alone. Returns what happened."""
+    name, base = info.get("branch"), info.get("base")
+    if not (isinstance(base, str) and SHA_RE.match(base) and isinstance(name, str)
+            and name.startswith(BASE_BRANCH_PREFIX) and name == base_branch_name(base)):
+        return "kept_not_pipeline_name"
+    if info.get("branch_created") is not True:
+        return "kept_not_created_by_run"
+    tip = branch_tip(repo, name)
+    if tip is None:
+        return "absent"
+    if tip != base:
+        return "kept_moved"
+    if any(e.get("branch") == "refs/heads/" + name for e in list_worktrees(repo)):
+        return "kept_checked_out"
+    code, _ = git(repo, "branch", "-D", name, check=False)
+    return "deleted" if code == 0 else "kept_delete_failed"
+
+
+def cleanup_baseline_worktree(repo, info):
+    """Remove the temporary baseline checkout, then its branch (delete_base_branch rules)."""
+    error = None
+    try:
+        remove_temp_worktree(repo, Path(info["path"]))
+    except OSError as exc:
+        error = type(exc).__name__
+    return {"utc": utc_now(), "worktree_left": Path(info["path"]).exists(), "worktree_error": error,
+            "branch": delete_base_branch(repo, info)}
+
+
+def ensure_baseline(repo, base, include_snapshot):
+    """Full suite + schema audit at base in one call (cache, else prepare -> run -> clean up). dev-merge uses
+    this after a rebase; dev-run uses the three steps separately so the suite overlaps the Builder."""
+    cached = cached_baseline(repo, base)
+    if cached is not None:
+        return cached
+    info = prepare_baseline_worktree(repo, base, include_snapshot)
+    try:
+        return run_baseline_in(info)
+    finally:
+        cleanup_baseline_worktree(repo, info)
+
+
+def load_baseline_marker(run_dir, repo):
+    """baseline-worktree.json of this run, checked against the names this repo and base must have (or None)."""
+    path = Path(run_dir) / BASELINE_WORKTREE_JSON
+    if not path.is_file():
+        return None
+    info = read_json(path)
+    expected = baseline_worktree_info(repo, info.get("base") if isinstance(info, dict) else None)
+    if (info.get("branch") != expected["branch"] or not same_path(str(info.get("path", "")), expected["path"])
+            or not same_path(str(info.get("repo", "")), repo)):
+        raise Stop("STOP_BASELINE", "marker_mismatch")
+    return info
+
+
+def load_baseline_for_check(run, run_dir):
+    """check compares only with the baseline of the same base, python and method (fail closed when missing)."""
+    path = Path(run_dir) / "baseline.json"
+    if not path.is_file():
+        raise Stop("STOP_BASELINE_MISSING", "baseline.json")
+    data = read_json(path)
+    if (not isinstance(data, dict) or data.get("base") != run["base"] or data.get("python") != run.get("python")
+            or data.get("method") != BASELINE_METHOD or not isinstance(data.get("ran"), int)
+            or not isinstance(data.get("failures"), list)):
+        raise Stop("STOP_BASELINE_MISMATCH", "baseline.json")
+    return data
+
+
+# ------------------------------------------------------------------------------- run records (O3)
+
+def record_paths(run_dir):
+    run_dir = Path(run_dir)
+    paths = {name: run_dir / name for name in RECORD_ORDER if name != "cache"}
+    try:
+        run = read_json(run_dir / "run.json")
+        paths["cache"] = baseline_cache_path(run["repo"], run["base"])
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return paths
+
+
+def current_records(run_dir):
+    """sha256 of the run records that exist now (run.json, baseline.json, the baseline cache, markers)."""
+    return {name: sha256_file(path) for name, path in record_paths(run_dir).items() if path.is_file()}
+
+
+def changed_record(run_dir, expected):
+    """First record (RECORD_ORDER) whose sha256 differs from what dev-run kept in memory, or None."""
+    current = current_records(run_dir)
+    for name in RECORD_ORDER:
+        if name in expected and current.get(name) != expected[name]:
+            return name
+    unknown = sorted(set(expected) - set(RECORD_ORDER))
+    return unknown[0] if unknown else None
+
+
+# ------------------------------------------------------------------------- main checkout watch (O3)
+
+def parse_utc(text):
+    return datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+
+
+def auto_core_window_overlaps(start_utc, end_utc):
+    """True when [start, end] touches 06:10-06:40 KST on any day (the auto-core state write at 06:15)."""
+    start, end = parse_utc(start_utc).astimezone(KST), parse_utc(end_utc).astimezone(KST)
+    (h1, m1), (h2, m2) = AUTO_CORE_WINDOW_KST
+    day = start.date()
+    while day <= end.date():
+        w_start = datetime.datetime(day.year, day.month, day.day, h1, m1, tzinfo=KST)
+        w_end = datetime.datetime(day.year, day.month, day.day, h2, m2, tzinfo=KST)
+        if start <= w_end and end >= w_start:
+            return True
+        day += datetime.timedelta(days=1)
+    return False
+
+
+def main_snapshot(repo):
+    """Tracked status lines outside docs/claude/ (index not refreshed: no optional locks) and the sha256 of every
+    file, tracked or ignored, under workspace/policies/ and stock-strategy-system/ of the main checkout."""
+    repo = Path(repo)
+    status = []
+    for entry in git_z(repo, "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=no",
+                       "--no-renames"):
+        if not norm_rel(entry[3:]).startswith(DOCS_DIR):
+            status.append(entry)
+    files = {}
+    for rel_dir in MAIN_WATCH_DIRS:
+        for folder, dirs, names in os.walk(repo / rel_dir):
+            dirs.sort()
+            for name in names:
+                full = Path(folder) / name
+                rel = full.relative_to(repo).as_posix()
+                try:
+                    files[rel] = sha256_file(full)
+                except OSError as exc:
+                    files[rel] = "unreadable:%s" % type(exc).__name__
+    return {"utc": utc_now(), "head": git_text(repo, "rev-parse", "HEAD"), "status": sorted(status), "files": files}
+
+
+def compare_main(before, after, skip_state):
+    """New status lines and changed watched files since before. Changes present before the run are not targets;
+    docs/claude/ lines and HEAD moves are ignored. skip_state drops stock-strategy-system/ only."""
+    def keep(path):
+        return not (skip_state and norm_rel(path).startswith(STATE_DIR))
+    new_lines = sorted(line for line in set(after["status"]) - set(before["status"]) if keep(line[3:]))
+    files_before, files_after = before["files"], after["files"]
+    changed = sorted(p for p in set(files_before) | set(files_after)
+                     if files_before.get(p) != files_after.get(p) and keep(p))
+    return new_lines, changed
 
 
 # ------------------------------------------------------------------------------------------- judge
@@ -1088,6 +1401,17 @@ def cmd_preflight(args):
     except Stop as exc:
         add("GIT", False, exc.reason, reason="GIT_NOT_RUNNABLE")
 
+    # D1: before any model, baseline or worktree. Same sum for the temporary baseline worktree name.
+    if valid_id and git_ok:
+        try:
+            budget = path_length_check(repo, git_text(repo, "rev-parse", "HEAD"), task_id)
+            report["path_budget"] = budget
+            add("PATH_LENGTH", budget["reason"] is None, "file=%d/%d dir=%d/%d max_id=%d" % (
+                budget["need_file"], MAX_FILE_PATH, budget["need_dir"], MAX_DIR_PATH, budget["max_id"]),
+                reason=budget["reason"])
+        except Stop as exc:
+            add("PATH_LENGTH", False, exc.reason, reason="PATH_LENGTH_UNKNOWN")
+
     claude_exe = shutil.which("claude")
     report["claude_exe"] = claude_exe
     flag_results = []
@@ -1150,6 +1474,9 @@ def cmd_init_run(args):
     if used:
         raise Stop("STOP_PREFLIGHT", used)
     base = git_text(repo, "rev-parse", "HEAD")
+    budget = path_length_check(repo, base, task_id)
+    if budget["reason"]:
+        raise Stop("STOP_PREFLIGHT", budget["reason"])
     code, raw = git(repo, "show", "%s:%s" % (base, prompt_rel(task_id)), check=False)
     if code != 0:
         raise Stop("STOP_PREFLIGHT", "PROMPT_NOT_COMMITTED")
@@ -1172,6 +1499,7 @@ def cmd_init_run(args):
         "started_utc": utc_now(),
         "include_snapshot": include_snapshot(repo, base),
         "authority_patterns": parse_authority_patterns(authority_raw.decode("utf-8", "replace")) if code == 0 else None,
+        "path_budget": budget,
     }
     if run["main_branch"] is None:
         raise Stop("STOP_PREFLIGHT", "MAIN_DETACHED")
@@ -1181,13 +1509,105 @@ def cmd_init_run(args):
         block["builder_timeout_min"], block["class"]), 0)
 
 
+def baseline_line(data):
+    return "BASELINE OK source=%s ran=%d failures=%d skipped=%d schema=%s cache=%s" % (
+        data["source"], data["ran"], len(data["failures"]), data["skipped"], data["schema"],
+        baseline_cache_name(data["base"], data["python"]))
+
+
 def cmd_baseline(args):
+    """One-call baseline (cache or prepare -> run -> clean up). dev-run uses baseline-prepare/run/cleanup."""
     run_dir = Path(args.run_dir)
     run = load_run(run_dir)
     data = ensure_baseline(run["repo"], run["base"], run["include_snapshot"])
     write_json(run_dir / "baseline.json", data)
-    return emit("BASELINE OK source=%s ran=%d failures=%d skipped=%d schema=%s" % (
-        data["source"], data["ran"], len(data["failures"]), data["skipped"], data["schema"]), 0)
+    return emit(baseline_line(data), 0)
+
+
+def cmd_baseline_prepare(args):
+    """D3 step 1 (synchronous): cache hit -> baseline.json now (BASELINE OK); else create the temporary
+    worktree on its branch and print BASELINE PENDING (dev-run then starts baseline-run in the background)."""
+    run_dir = Path(args.run_dir)
+    run = load_run(run_dir)
+    cached = cached_baseline(run["repo"], run["base"])
+    if cached is not None:
+        write_json(run_dir / "baseline.json", cached)
+        return emit(baseline_line(cached), 0)
+    info = prepare_baseline_worktree(run["repo"], run["base"], run["include_snapshot"], run_dir / BASELINE_WORKTREE_JSON)
+    return emit("BASELINE PENDING branch=%s worktree=%s" % (info["branch"], Path(info["path"]).name), 0)
+
+
+def cmd_baseline_run(args):
+    """D3 step 2 (background, while the Builder works): full suite + schema audit in the prepared worktree. It
+    never touches the Builder worktree and never removes anything (cleanup runs after the Builder ends)."""
+    run_dir = Path(args.run_dir)
+    run = load_run(run_dir)
+    info = load_baseline_marker(run_dir, run["repo"])
+    if info is None or info.get("base") != run["base"]:
+        raise Stop("STOP_BASELINE", "no_prepared_worktree")
+    data = run_baseline_in(info)
+    write_json(run_dir / "baseline.json", data)
+    return emit(baseline_line(data), 0)
+
+
+def cmd_baseline_cleanup(args):
+    """D3 step 3 (every exit path, before the lock is released): remove what baseline-prepare created. --repo
+    comes from dev-run itself, so a changed run.json cannot point the cleanup elsewhere."""
+    repo = Path(args.repo).resolve()
+    run_dir = Path(args.run_dir)
+    info = load_baseline_marker(run_dir, repo)
+    if info is None:
+        return emit("BASELINE_CLEANUP OK none", 0)
+    result = cleanup_baseline_worktree(repo, info)
+    write_json(run_dir / BASELINE_CLEANUP_JSON, result)
+    ok = not result["worktree_left"] and result["branch"] in ("deleted", "absent", "kept_not_created_by_run")
+    return emit("BASELINE_CLEANUP %s worktree=%s branch=%s" % (
+        "OK" if ok else "LEFT", "left" if result["worktree_left"] else "removed", result["branch"]), 0 if ok else 1)
+
+
+def cmd_records(args):
+    """O3a: without --expect prints the sha256 of every run record (dev-run keeps them in memory); with --expect
+    name=sha256 stops with STOP_RUN_RECORD_CHANGED when one differs or is gone."""
+    expected = {}
+    for item in args.expect or []:
+        name, _, value = item.partition("=")
+        expected[name] = value
+    changed = changed_record(args.run_dir, expected)
+    if changed:
+        raise Stop("STOP_RUN_RECORD_CHANGED", changed)
+    current = current_records(args.run_dir)
+    return emit("RECORDS OK " + " ".join("%s=%s" % (name, current[name]) for name in RECORD_ORDER if name in current), 0)
+
+
+def cmd_main_snapshot(args):
+    """O3b: main checkout snapshot right before Builder attempt 1."""
+    run_dir = Path(args.run_dir)
+    run = load_run(run_dir)
+    snap = main_snapshot(run["repo"])
+    write_json(run_dir / MAIN_BEFORE_JSON, snap)
+    return emit("MAIN SNAPSHOT status_lines=%d files=%d" % (len(snap["status"]), len(snap["files"])), 0)
+
+
+def cmd_main_compare(args):
+    """O3b: right before each check, compare the main checkout with the snapshot (STOP_MAIN_TOUCHED, no retry).
+    A run that touches 06:10-06:40 KST skips only the stock-strategy-system/ comparison (not fail-closed: the
+    auto-core may write state files then); policy files and other tracked files are still compared."""
+    run_dir = Path(args.run_dir)
+    run = load_run(run_dir)
+    before_path = run_dir / MAIN_BEFORE_JSON
+    if not before_path.is_file():
+        raise Stop("STOP_MAIN_TOUCHED", "no_snapshot")
+    before = read_json(before_path)
+    after = main_snapshot(run["repo"])
+    skip_state = auto_core_window_overlaps(before["utc"], after["utc"])
+    new_lines, changed = compare_main(before, after, skip_state)
+    note = "SKIPPED_AUTO_CORE_WINDOW" if skip_state else None
+    write_json(run_dir / ("main-%s.json" % args.name), dict(after, skipped=note, new_status_lines=new_lines,
+                                                           changed_files=changed))
+    if new_lines or changed:
+        first = new_lines[0][3:] if new_lines else changed[0]
+        raise Stop("STOP_MAIN_TOUCHED", ascii_safe(first.replace(" ", "?"), 160), new_lines + changed)
+    return emit("MAIN OK new_status_lines=0 changed_files=0%s" % (" skipped=%s" % note if note else ""), 0)
 
 
 def refresh_include_snapshot(run_dir):
@@ -1242,7 +1662,7 @@ def run_checks(run, run_dir, attempt, baseline, with_tests=True):
 def cmd_check(args):
     run_dir = Path(args.run_dir)
     run = load_run(run_dir)
-    baseline = read_json(run_dir / "baseline.json")
+    baseline = load_baseline_for_check(run, run_dir)
     result = run_checks(run, run_dir, args.attempt, baseline)
     status = result["status"]
     first = result["reasons"][0] if result["reasons"] else ""
@@ -1475,6 +1895,8 @@ def cmd_write_result(args):
         "started_utc": run["started_utc"], "finished_utc": utc_now(),
         "next": next_hint(run["id"], status),
     }
+    if (run_dir / BASELINE_CLEANUP_JSON).is_file():
+        result["baseline_cleanup"] = read_json(run_dir / BASELINE_CLEANUP_JSON)
     line = "DEV-RUN %s %s judge=%s new_failures=%d ran=%s retries=%d next=%s" % (
         run["id"], status, judge_verdict, len(tests["new_failures"]), tests["ran"], args.retries, result["next"])
     result["line"] = ascii_safe(line, 2000)
@@ -1724,6 +2146,18 @@ def build_parser():
     p = sub.add_parser("init-run"); p.add_argument("--repo", required=True); p.add_argument("--id", required=True)
     p.set_defaults(func=cmd_init_run, kw="INIT")
     p = sub.add_parser("baseline"); p.add_argument("--run-dir", required=True); p.set_defaults(func=cmd_baseline, kw="BASELINE")
+    p = sub.add_parser("baseline-prepare"); p.add_argument("--run-dir", required=True)
+    p.set_defaults(func=cmd_baseline_prepare, kw="BASELINE")
+    p = sub.add_parser("baseline-run"); p.add_argument("--run-dir", required=True)
+    p.set_defaults(func=cmd_baseline_run, kw="BASELINE")
+    p = sub.add_parser("baseline-cleanup"); p.add_argument("--repo", required=True); p.add_argument("--run-dir", required=True)
+    p.set_defaults(func=cmd_baseline_cleanup, kw="BASELINE_CLEANUP")
+    p = sub.add_parser("records"); p.add_argument("--run-dir", required=True); p.add_argument("--expect", action="append")
+    p.set_defaults(func=cmd_records, kw="RECORDS")
+    p = sub.add_parser("main-snapshot"); p.add_argument("--run-dir", required=True)
+    p.set_defaults(func=cmd_main_snapshot, kw="MAIN")
+    p = sub.add_parser("main-compare"); p.add_argument("--run-dir", required=True)
+    p.add_argument("--name", choices=("check-1", "check-2"), required=True); p.set_defaults(func=cmd_main_compare, kw="MAIN")
     p = sub.add_parser("snapshot-includes"); p.add_argument("--run-dir", required=True)
     p.set_defaults(func=cmd_snapshot_includes, kw="SNAPSHOT")
     for name, func, kw in (("check", cmd_check, "CHECK"), ("judge-prep", cmd_judge_prep, "JUDGE_PREP"),

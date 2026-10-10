@@ -1,4 +1,4 @@
-# dev-queue.ps1 - started every 15 minutes by the Windows task InvestmentV2-DevQueue (redesign T3).
+# dev-queue.ps1 - started every 5 minutes by the Windows task InvestmentV2-DevQueue (redesign T3, T3b).
 #
 # 1. If a dev-run holds the lock (workspace\outputs\dev-runs\_lock, live process), stop at once.
 # 2. Take the oldest docs\claude\_dev-queue\<id>.txt (first line = id) and move it to

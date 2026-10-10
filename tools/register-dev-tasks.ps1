@@ -1,7 +1,8 @@
 # register-dev-tasks.ps1 - registers the two Windows tasks of the dev pipeline (redesign T3).
 #
 #   InvestmentV2-DocsCommit : daily 23:30 local time (KST), limit 15 minutes, runs tools\run-docs-commit.ps1
-#   InvestmentV2-DevQueue   : every 15 minutes without end, limit 6 hours, runs tools\dev-queue.ps1
+#   InvestmentV2-DevQueue   : every 5 minutes without end, limit 6 hours, runs tools\dev-queue.ps1
+#                             (a running instance makes the next starts no-ops: IgnoreNew + dev-run lock)
 #
 # Same pattern as manage-us-stock-strategy\scripts\register_auto_core_task.ps1: Interactive logon,
 # Limited run level, start when available, no wake, one instance (IgnoreNew); applying is refused unless
@@ -30,7 +31,7 @@ $docsScript = Join-Path $resolvedRepository "tools\run-docs-commit.ps1"
 $queueScript = Join-Path $resolvedRepository "tools\dev-queue.ps1"
 $docsTime = "23:30"
 $docsLimitMinutes = 15
-$queueIntervalMinutes = 15
+$queueIntervalMinutes = 5
 $queueLimitHours = 6
 
 foreach ($path in @($docsScript, $queueScript)) {

@@ -6,14 +6,15 @@
 ## 흐름
 
 1. Cowork: `docs/claude/<id>-builder-prompt.md`(아래 dev-run 블록 포함) + `docs/claude/_pending/<id>.txt`(지시문 커밋 목록) + 큐 파일 `docs/claude/_dev-queue/<id>.txt`.
-2. Windows 작업 `InvestmentV2-DevQueue`(15분마다) → `tools/dev-queue.ps1`: 잠금 확인 → 가장 오래된 큐 1개를 `workspace/outputs/dev-runs/_taken/`으로 옮김 → 지시문이 커밋돼 있지 않으면 `commit-docs.ps1` 1번 → `tools/dev-run.ps1 <id>`.
-3. dev-run: preflight → 기준선(같은 base SHA·python이면 캐시) → 헤드리스 Builder(`claude -p --worktree <id>`) → 스크립트 판정(범위·보호 경로·위생·테스트·스키마) → 헤드리스 Judge(Read·Grep·Glob만) → 실패면 같은 worktree에서 수정 1회 → 결과.
+2. Windows 작업 `InvestmentV2-DevQueue`(5분마다) → `tools/dev-queue.ps1`: 잠금 확인 → 가장 오래된 큐 1개를 `workspace/outputs/dev-runs/_taken/`으로 옮김 → 지시문이 커밋돼 있지 않으면 `commit-docs.ps1` 1번 → `tools/dev-run.ps1 <id>`.
+3. dev-run: preflight(경로 길이 포함) → 기준선 임시 worktree 준비(같은 base SHA·python·방식이면 캐시) → 헤드리스 Builder(`claude -p --worktree <id>`)와 기준선 전체 스위트를 **동시에** → Builder 끝 → 기준선 끝을 기다림 → 메인 체크아웃 비교 → 스크립트 판정(범위·보호 경로·위생·테스트·스키마) → 헤드리스 Judge(Read·Grep·Glob만) → 실패면 같은 worktree에서 수정 1회 → 결과.
 4. 사용자: `.\tools\dev-merge.ps1 <id>` 1번 (authority면 사용자 결정 뒤 `-ApproveAuthority`).
 5. Windows 작업 `InvestmentV2-DocsCommit`(매일 23:30): `tools/run-docs-commit.ps1` → `commit-docs.ps1` (결과 요약 `docs/claude/dev-runs/<id>.md`도 이때 커밋된다).
 
 ## 지시문 (`docs/claude/<id>-builder-prompt.md`)
 
 - `<id>`: `^[a-z0-9][a-z0-9-]{1,47}$`. 한 번만 쓴다(같은 id의 run 폴더·worktree·브랜치가 있으면 preflight에서 멈춤).
+- id는 **14자 이하 권장**(지금 저장소·경로 기준). preflight가 정확히 검사한다: `.claude/worktrees/<id>`와 기준선 임시 이름 `_base-<sha8>` 아래 최장 추적 파일 경로가 259, 폴더 경로가 247(UTF-16 단위)을 넘으면 `STOP_PREFLIGHT reason=PATH_TOO_LONG:<필요>>259:max_id=<허용 최대 id 길이>`.
 - 본문: 목표, 바꿀 내용, 테스트, 보고 위치, 그리고 `## Judge 확인 항목`(Judge가 G8로 하나씩 본다).
 - 지시문 안에 ```` ```dev-run ```` 펜스 **정확히 1개**, 안은 JSON 한 개, **ASCII만**:
 
@@ -53,7 +54,7 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 
 ## 권한 경로 (P7 — `authority-paths.txt`)
 
-여기 있는 경로를 바꾸거나, 추가된 줄에 주문 표지(`/api/us/ordr`, `ust2000`, `ust2001`, `kiwoom_order`, `order_submit`, `overseas orders`, `order_authority … true`)가 있거나, 추가된 줄에 `kill_switch`가 있거나, 지운(또는 바꾼) 줄에 `order_authority`·`kill_switch`·`quantity_authority`·`execution_quantity`·`watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved`가 있거나, Judge가 `class_ok=false`를 쓰면 class = authority(내려가지 않음) → `NEEDS_APPROVAL`.
+여기 있는 경로를 바꾸거나, 추가된 줄에 주문 표지(`/api/us/ordr`, `ust2000`, `ust2001`, `kiwoom_order`, `order_submit`, `overseas orders`, `order_authority … true`)가 있거나, 추가된 줄에 `kill_switch`가 있거나, 추가된 줄에서 `:`·`=` 바로 뒤 값(스키마 `{"const": X}`·`{"type": X}`는 X)이 `watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved` = true, `quantity_authority` ≠ none/null, `execution_quantity` ≠ null/None이거나, 지운(또는 바꾼) 줄에 `order_authority`·`kill_switch`·`quantity_authority`·`execution_quantity`·`watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved`가 있거나, Judge가 `class_ok=false`를 쓰면 class = authority(내려가지 않음) → `NEEDS_APPROVAL`.
 
 ## 결과 읽기
 
@@ -69,6 +70,7 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 | BLOCKED | Builder가 BLOCKED.md를 씀(판단 필요) | Cowork가 이유를 보고 결정 |
 | JUDGE_ERROR / TIMEOUT | Judge 출력을 못 읽음 / 시간 초과 | 재시도 없음. 새 id로 |
 | STOP_PROTECTED / STOP_SCOPE / STOP_SECRET | 보호·허용 경로 밖·비밀 파일 이름 | 재시도 없음 |
+| STOP_MAIN_TOUCHED / STOP_RUN_RECORD_CHANGED | 실행 중 메인 체크아웃(정책·상태·추적 파일)이 바뀜 / run 기록(run.json·기준선·표지 파일)이 바뀜 | 재시도 없음. 원인 확인 뒤 새 id |
 | STOP_PREFLIGHT 등 STOP_* | 시작 조건 실패(reason 참고) | 원인 해결 뒤 새 id |
 
 ## 고정 상수 (지시문·머리말로 못 바꿈)
@@ -77,7 +79,9 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 - 복사 파일 스냅샷: Builder 1회차 시작 바로 앞에서 다시 잰다(`devpipe.py snapshot-includes`, run.json `include_snapshot`; init-run 값은 `include_snapshot_init`). 수정 회차는 같은 스냅샷을 쓴다.
 - dev-queue 상한: commit-docs 15분 + dev-run 340분 + 여유 5분 = 작업 한도 360분.
 - Judge: `--model opus --effort xhigh --tools "Read,Grep,Glob"`, 같은 MCP·설정 제한, 80턴, 45분.
-- 테스트: `PYTHONUTF8=1 PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1`, 실행마다 새 `PYTHONPYCACHEPREFIX`. 새 실패 = 실패 id − 기준선. Ran 감소·skipped 증가·`def test_` 감소·테스트 파일 삭제·스키마 감사 FAIL = 실패. Ran 줄이 없으면 `STOP_TESTS_DID_NOT_RUN`.
+- 테스트: `PYTHONUTF8=1 PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1`, 실행마다 새 `PYTHONPYCACHEPREFIX`. 새 실패 = 실패 id − 기준선. Ran 감소·skipped 증가·`expected failures` 증가·`def test_` 감소·테스트 파일 삭제·스키마 감사 FAIL = 실패(재시도 대상). Ran 줄이 없으면 `STOP_TESTS_DID_NOT_RUN`.
+- 기준선: 임시 worktree `.claude/worktrees/_base-<sha8>`을 브랜치 `devpipe-base-<sha8>` 위에 만든다(Builder worktree와 같은 브랜치 조건). 캐시 키 `<base>-py<버전>-b2.json`(detached 시절 캐시는 쓰지 않음). Builder와 동시에 돌고(로그 `BASELINE start/end`), 상한은 그대로(전체 60분 + 스키마 10분, 바깥 75분). 어느 종료 경로든 잠금 해제 전에 그 worktree와 **이 실행이 만든** `devpipe-base-` 브랜치(base를 가리킬 때만)를 지운다. check는 base·python·방식이 같은 `baseline.json`만 쓴다(없으면 `STOP_BASELINE_MISSING`).
+- 기록·메인 보호(O3): run.json·baseline.json·기준선 캐시·표지 파일의 sha256을 dev-run 프로세스가 단계마다 기억하고 다음 단계 전에 대조(`STOP_RUN_RECORD_CHANGED`). Builder 1회차 직전에 메인의 추적 파일 상태 줄(docs/claude/ 밖)과 `workspace/policies/`·`stock-strategy-system/` 전 파일 sha256을 찍고 check 직전마다 비교(`STOP_MAIN_TOUCHED`). 실행이 06:10~06:40 KST에 걸치면 `stock-strategy-system/` 비교만 건너뛴다(`SKIPPED_AUTO_CORE_WINDOW`, fail-closed가 아닌 예외).
 - 재시도: 전체 1회(테스트 실패·Judge FAIL만), 같은 worktree에서, ①부터 전부 다시.
 
 ## 설치 (사용자 1번)

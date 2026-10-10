@@ -16,6 +16,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 PIPELINE = ROOT / "tools" / "dev_pipeline"
@@ -765,6 +766,431 @@ class CliFlagTests(unittest.TestCase):
         self.assertGreaterEqual(devpipe.parse_claude_version("2.1.296"), devpipe.MIN_CLAUDE_VERSION)
 
 
+# ------------------------------------------------------------------------------------- T3b helpers
+
+def args_of(**values):
+    return type("A", (), values)()
+
+
+def call(func, **values):
+    with contextlib.redirect_stdout(io.StringIO()) as out:
+        code = func(args_of(**values))
+    return code, out.getvalue().strip()
+
+
+def run_main(argv):
+    with contextlib.redirect_stdout(io.StringIO()) as out:
+        code = devpipe.main(argv)
+    return code, out.getvalue().strip()
+
+
+def plain_repo(case, files):
+    """A temp main repository without any worktree (for paths a worktree could not hold)."""
+    tmp = Path(tempfile.mkdtemp(prefix="devpipe-plain-")).resolve()
+    case.addCleanup(remove_tree, tmp)
+    repo = tmp / "repo"
+    for rel, data in files.items():
+        target = repo / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    run_git(repo, "init", "-q", "-b", "main")
+    for key, value in (("core.autocrlf", "false"), ("user.name", "devpipe-test"),
+                       ("user.email", "devpipe-test@example.invalid"), ("commit.gpgsign", "false")):
+        run_git(repo, "config", key, value)
+    run_git(repo, "add", "-A")
+    run_git(repo, "commit", "-q", "-m", "init")
+    return repo, run_git(repo, "rev-parse", "HEAD")
+
+
+def branch_exists(repo, name):
+    return subprocess.run(["git", "rev-parse", "--verify", "--quiet", "refs/heads/" + name], cwd=str(repo),
+                          stdin=subprocess.DEVNULL, capture_output=True).returncode == 0
+
+
+# ------------------------------------------------------------------------------- D1 path length
+
+class PathLengthTests(unittest.TestCase):
+    MAIN = "E:\\사업\\##금동한\\코덱스저장소"  # this PC's main checkout (redesign T3b step 0b)
+
+    def test_utf16_units_not_utf8_bytes(self):
+        self.assertEqual(devpipe.utf16_len(self.MAIN), 18)
+        self.assertEqual(len(self.MAIN.encode("utf-8")), 40)
+        self.assertEqual(devpipe.utf16_len("a\U0001F600"), 3)  # a surrogate pair is two units
+
+    def _parent(self):
+        parent = devpipe.utf16_len(Path(self.MAIN) / devpipe.WORKTREES_REL) + 1
+        self.assertEqual(parent, 37)  # "E:\사업\##금동한\코덱스저장소\.claude\worktrees\"
+        return parent
+
+    def test_file_boundary_259_passes_260_refused(self):
+        parent, name = self._parent(), "a" * 14
+        ok = devpipe.path_budget(self.MAIN, name, 259 - parent - 14 - 1, 10, "_base-12345678")
+        self.assertEqual((ok["need_file"], ok["reason"]), (259, None))
+        bad = devpipe.path_budget(self.MAIN, name, 260 - parent - 14 - 1, 10, "_base-12345678")
+        self.assertEqual(bad["need_file"], 260)
+        self.assertEqual(bad["reason"], "PATH_TOO_LONG:260>259:max_id=13")
+
+    def test_folder_boundary_247_passes_248_refused(self):
+        parent, name = self._parent(), "a" * 14
+        ok = devpipe.path_budget(self.MAIN, name, 100, 247 - parent - 14 - 1, "_base-12345678")
+        self.assertEqual((ok["need_dir"], ok["reason"]), (247, None))
+        bad = devpipe.path_budget(self.MAIN, name, 100, 248 - parent - 14 - 1, "_base-12345678")
+        self.assertEqual(bad["need_dir"], 248)
+        self.assertEqual(bad["reason"], "PATH_TOO_LONG:dir248>247:max_id=13")
+
+    def test_baseline_worktree_name_is_counted(self):
+        short = devpipe.path_budget(self.MAIN, "ab", 203, 119, devpipe.base_worktree_name("0" * 40))
+        self.assertEqual(devpipe.base_worktree_name("0" * 40), "_base-00000000")
+        self.assertEqual(short["need_file"], 37 + 14 + 1 + 203)
+
+    def test_this_pc_ten_and_twenty_eight_chars(self):
+        # Longest tracked file 203 / folder 119 at redesign T3b step 0b; t3-trial-1 round 1 used a 28-char id.
+        ten = devpipe.path_budget(self.MAIN, "a" * 10, 203, 119, "_base-12345678")
+        self.assertEqual((ten["need_file"], ten["reason"], ten["max_id"]), (255, None, 18))
+        long_id = devpipe.path_budget(self.MAIN, "t3-trial-prompt-profile-test", 203, 119, "_base-12345678")
+        self.assertEqual(long_id["reason"], "PATH_TOO_LONG:269>259:max_id=18")
+
+    def test_longest_tracked_paths_reads_base_in_utf16(self):
+        repo, base = plain_repo(self, {"a.txt": b"x\n", "dir1/dir2/file.txt": b"x\n", "가나다라마바사/아자차카타.txt": b"x\n"})
+        # The Korean path is 41 UTF-8 bytes but 17 UTF-16 units: the ASCII one (18) is the longest.
+        self.assertEqual(devpipe.longest_tracked_paths(repo, base), (18, 9))
+        (repo / "untracked-and-much-longer-than-anything-else.txt").write_bytes(b"x\n")
+        self.assertEqual(devpipe.longest_tracked_paths(repo, base), (18, 9))
+        (repo / "deeper/and/longer").mkdir(parents=True)
+        (repo / "deeper/and/longer/name-x.txt").write_bytes(b"x\n")
+        run_git(repo, "add", "-A")
+        run_git(repo, "commit", "-q", "-m", "more")
+        self.assertEqual(devpipe.longest_tracked_paths(repo, base), (18, 9))
+        self.assertEqual(devpipe.longest_tracked_paths(repo, "HEAD")[0],
+                         len("untracked-and-much-longer-than-anything-else.txt"))
+
+    def _too_long_repo(self):
+        probe = Path(tempfile.gettempdir()).resolve() / "devpipe-plain-xxxxxxxx" / "repo"
+        parent = devpipe.utf16_len(probe / devpipe.WORKTREES_REL) + 1
+        length = 260 - parent - 14 - 1  # with the 14-char baseline name: exactly 260
+        if devpipe.utf16_len(probe) + 1 + length > 259:
+            self.skipTest("temp folder too long to hold the fixture in the main checkout")
+        rel = "d" * 20 + "/" + "f" * (length - 21)
+        repo, base = plain_repo(self, {".gitignore": b"workspace/outputs/dev-runs/\n", rel: b"x\n"})
+        self.assertEqual(devpipe.utf16_len(repo), devpipe.utf16_len(probe))
+        return repo, base
+
+    def test_preflight_stops_before_cli_baseline_and_worktree(self):
+        repo, _ = self._too_long_repo()
+        with mock.patch.object(devpipe.shutil, "which", return_value=None):
+            code, line = call(devpipe.cmd_preflight, repo=str(repo), id=TASK, mode="run")
+        self.assertEqual(code, 2)
+        self.assertTrue(line.startswith("DEV-RUN t-demo STOP_PREFLIGHT reason=PATH_TOO_LONG:260>259:max_id=13 "), line)
+        report = devpipe.read_json(repo / devpipe.RUNS_REL / "_preflight" / "t-demo.json")
+        names = [c["name"] for c in report["checks"]]
+        self.assertLess(names.index("PATH_LENGTH"), names.index("CLAUDE_FOUND"))
+        self.assertEqual(report["first_failure"], "PATH_TOO_LONG:260>259:max_id=13")
+        self.assertEqual(devpipe.read_json(repo / devpipe.RUNS_REL / "LATEST.json")["status"], "STOP_PREFLIGHT")
+        self.assertFalse((repo / devpipe.WORKTREES_REL).exists())
+        self.assertFalse((repo / devpipe.RUNS_REL / "_baseline").exists())
+
+    def test_init_run_stops_too(self):
+        repo, _ = self._too_long_repo()
+        with self.assertRaises(devpipe.Stop) as ctx:
+            devpipe.cmd_init_run(args_of(repo=str(repo), id=TASK))
+        self.assertEqual((ctx.exception.status, ctx.exception.reason), ("STOP_PREFLIGHT", "PATH_TOO_LONG:260>259:max_id=13"))
+        self.assertFalse((repo / devpipe.RUNS_REL / TASK).exists())
+
+
+# ------------------------------------------------------------------------- D2 baseline on a branch
+
+class BaselineBranchTests(unittest.TestCase):
+    def setUp(self):
+        self.fx = RepoFixture(self)
+        self.repo, self.base = self.fx.repo, self.fx.base
+        self.branch = "devpipe-base-" + self.base[:8]
+
+    def worktree_paths(self):
+        return [Path(e["path"]).name for e in devpipe.list_worktrees(self.repo)]
+
+    def test_prepared_worktree_is_on_branch_and_cleanup_leaves_nothing(self):
+        marker = self.fx.tmp / "marker.json"
+        info = devpipe.prepare_baseline_worktree(self.repo, self.base, {}, marker)
+        self.assertEqual(run_git(info["path"], "branch", "--show-current"), self.branch)
+        self.assertEqual(run_git(info["path"], "rev-parse", "HEAD"), self.base)
+        self.assertTrue(devpipe.read_json(marker)["branch_created"])
+        result = devpipe.cleanup_baseline_worktree(self.repo, info)
+        self.assertEqual((result["branch"], result["worktree_left"]), ("deleted", False))
+        self.assertFalse(Path(info["path"]).exists())
+        self.assertFalse(branch_exists(self.repo, self.branch))
+        self.assertNotIn("_base-" + self.base[:8], self.worktree_paths())
+        # The Builder worktree and every other branch stay.
+        self.assertIn(TASK, self.worktree_paths())
+        self.assertTrue(branch_exists(self.repo, "worktree-" + TASK))
+        self.assertTrue(branch_exists(self.repo, "main"))
+
+    def test_ensure_baseline_cache_key_and_other_branches_untouched(self):
+        run_git(self.repo, "branch", "devpipe-base-other", self.base)
+        run_git(self.repo, "branch", "feature-x", self.base)
+        data = devpipe.ensure_baseline(self.repo, self.base, {})
+        self.assertEqual((data["source"], data["method"], data["branch"], data["ran"]), ("computed", "b2", self.branch, 2))
+        cache = devpipe.baseline_cache_path(self.repo, self.base)
+        self.assertTrue(cache.name.endswith("-py%s-b2.json" % devpipe.python_version()))
+        self.assertTrue(cache.is_file())
+        for name in ("devpipe-base-other", "feature-x", "main", "worktree-" + TASK):
+            self.assertEqual(run_git(self.repo, "rev-parse", name), self.base, name)
+        self.assertFalse(branch_exists(self.repo, self.branch))
+        self.assertEqual(sorted(self.worktree_paths()), sorted(["repo", TASK]))
+        self.assertEqual(devpipe.ensure_baseline(self.repo, self.base, {})["source"], "cache")
+
+    def test_detached_era_cache_is_not_reused(self):
+        old = {"base": self.base, "python": devpipe.python_version(), "ran": 2, "skipped": 0, "failures": [],
+               "status": "OK", "schema": "MISSING", "counts": {}}
+        devpipe.write_json(devpipe.runs_root(self.repo) / "_baseline" / ("%s-py%s.json" % (self.base, devpipe.python_version())), old)
+        self.assertIsNone(devpipe.cached_baseline(self.repo, self.base))
+        devpipe.write_json(devpipe.baseline_cache_path(self.repo, self.base), old)  # right name, no method
+        self.assertIsNone(devpipe.cached_baseline(self.repo, self.base))
+
+    def test_preexisting_branch_is_kept(self):
+        run_git(self.repo, "branch", self.branch, self.base)
+        info = devpipe.prepare_baseline_worktree(self.repo, self.base, {})
+        self.assertFalse(info["branch_created"])
+        result = devpipe.cleanup_baseline_worktree(self.repo, info)
+        self.assertEqual(result["branch"], "kept_not_created_by_run")
+        self.assertTrue(branch_exists(self.repo, self.branch))
+
+    def test_preexisting_branch_elsewhere_stops_without_moving_it(self):
+        run_git(self.fx.wt, "commit", "-q", "--allow-empty", "-m", "elsewhere")
+        other = run_git(self.fx.wt, "rev-parse", "HEAD")
+        run_git(self.repo, "branch", self.branch, other)
+        with self.assertRaises(devpipe.Stop) as ctx:
+            devpipe.prepare_baseline_worktree(self.repo, self.base, {})
+        self.assertEqual(ctx.exception.status, "STOP_BASELINE")
+        self.assertEqual(run_git(self.repo, "rev-parse", self.branch), other)
+
+    def test_delete_rules_only_pipeline_name_created_and_at_base(self):
+        info = dict(devpipe.baseline_worktree_info(self.repo, self.base), branch_created=True)
+        run_git(self.repo, "branch", "keep-me", self.base)
+        self.assertEqual(devpipe.delete_base_branch(self.repo, dict(info, branch="keep-me")), "kept_not_pipeline_name")
+        self.assertEqual(devpipe.delete_base_branch(self.repo, dict(info, branch="worktree-" + TASK)), "kept_not_pipeline_name")
+        self.assertTrue(branch_exists(self.repo, "keep-me"))
+        run_git(self.fx.wt, "commit", "-q", "--allow-empty", "-m", "moved")
+        run_git(self.repo, "branch", self.branch, run_git(self.fx.wt, "rev-parse", "HEAD"))
+        self.assertEqual(devpipe.delete_base_branch(self.repo, info), "kept_moved")
+        self.assertTrue(branch_exists(self.repo, self.branch))
+        self.assertEqual(devpipe.delete_base_branch(self.repo, dict(info, branch_created=False)), "kept_not_created_by_run")
+
+
+# ---------------------------------------------------------------------- D3 baseline next to the Builder
+
+class BaselineStepTests(unittest.TestCase):
+    def setUp(self):
+        self.fx = RepoFixture(self)
+        self.run_dir = self.fx.repo / devpipe.RUNS_REL / TASK
+        devpipe.write_json(self.run_dir / "run.json", self.fx.run)
+        self.temp = self.fx.repo / devpipe.WORKTREES_REL / ("_base-" + self.fx.base[:8])
+        self.branch = "devpipe-base-" + self.fx.base[:8]
+
+    def test_prepare_run_cleanup(self):
+        code, line = call(devpipe.cmd_baseline_prepare, run_dir=str(self.run_dir))
+        self.assertEqual((code, line), (0, "BASELINE PENDING branch=%s worktree=_base-%s" % (self.branch, self.fx.base[:8])))
+        self.assertTrue((self.run_dir / devpipe.BASELINE_WORKTREE_JSON).is_file())
+        self.assertFalse((self.run_dir / "baseline.json").exists())
+        code, line = call(devpipe.cmd_baseline_run, run_dir=str(self.run_dir))
+        self.assertEqual(code, 0, line)
+        self.assertTrue(line.startswith("BASELINE OK source=computed ran=2 failures=0 skipped=0 schema=MISSING cache="), line)
+        self.assertTrue(self.temp.is_dir())  # baseline-run never removes: cleanup runs after the Builder ends
+        baseline = devpipe.load_baseline_for_check(self.fx.run, self.run_dir)
+        self.assertEqual((baseline["method"], baseline["branch"]), ("b2", self.branch))
+        code, line = call(devpipe.cmd_baseline_cleanup, repo=str(self.fx.repo), run_dir=str(self.run_dir))
+        self.assertEqual((code, line), (0, "BASELINE_CLEANUP OK worktree=removed branch=deleted"))
+        self.assertFalse(self.temp.exists())
+        self.assertFalse(branch_exists(self.fx.repo, self.branch))
+        self.assertEqual(devpipe.read_json(self.run_dir / devpipe.BASELINE_CLEANUP_JSON)["branch"], "deleted")
+        # Idempotent: a second cleanup (finally block) finds nothing to remove.
+        self.assertEqual(call(devpipe.cmd_baseline_cleanup, repo=str(self.fx.repo), run_dir=str(self.run_dir))[1],
+                         "BASELINE_CLEANUP OK worktree=removed branch=absent")
+        # Next run with the same base: cache, nothing created.
+        other = self.fx.repo / devpipe.RUNS_REL / "next-run"
+        devpipe.write_json(other / "run.json", self.fx.run)
+        code, line = call(devpipe.cmd_baseline_prepare, run_dir=str(other))
+        self.assertTrue(line.startswith("BASELINE OK source=cache ran=2"), line)
+        self.assertFalse((other / devpipe.BASELINE_WORKTREE_JSON).exists())
+        self.assertEqual(call(devpipe.cmd_baseline_cleanup, repo=str(self.fx.repo), run_dir=str(other))[1],
+                         "BASELINE_CLEANUP OK none")
+
+    def test_cleanup_when_the_run_ends_before_the_baseline(self):
+        # Builder TIMEOUT / BLOCKED / STOP: dev-run stops the baseline process, then cleans up.
+        call(devpipe.cmd_baseline_prepare, run_dir=str(self.run_dir))
+        code, line = call(devpipe.cmd_baseline_cleanup, repo=str(self.fx.repo), run_dir=str(self.run_dir))
+        self.assertEqual((code, line), (0, "BASELINE_CLEANUP OK worktree=removed branch=deleted"))
+        self.assertFalse(self.temp.exists())
+        self.assertFalse((self.run_dir / "baseline.json").exists())
+        code, line = run_main(["check", "--run-dir", str(self.run_dir), "--attempt", "1"])
+        self.assertEqual((code, line), (2, "CHECK STOP_BASELINE_MISSING reason=baseline.json"))
+
+    def test_marker_pointing_elsewhere_is_refused(self):
+        call(devpipe.cmd_baseline_prepare, run_dir=str(self.run_dir))
+        marker = devpipe.read_json(self.run_dir / devpipe.BASELINE_WORKTREE_JSON)
+        devpipe.write_json(self.run_dir / devpipe.BASELINE_WORKTREE_JSON, dict(marker, path=str(self.fx.wt)))
+        code, line = run_main(["baseline-cleanup", "--repo", str(self.fx.repo), "--run-dir", str(self.run_dir)])
+        self.assertEqual((code, line), (2, "BASELINE_CLEANUP STOP_BASELINE reason=marker_mismatch"))
+        self.assertTrue(self.fx.wt.is_dir())
+        self.assertTrue(branch_exists(self.fx.repo, "worktree-" + TASK))
+        devpipe.write_json(self.run_dir / devpipe.BASELINE_WORKTREE_JSON, marker)
+        call(devpipe.cmd_baseline_cleanup, repo=str(self.fx.repo), run_dir=str(self.run_dir))
+
+    def test_check_refuses_a_baseline_of_another_base_or_method(self):
+        good = {"base": self.fx.base, "python": devpipe.python_version(), "method": "b2", "ran": 2, "skipped": 0,
+                "failures": [], "schema": "MISSING", "counts": {}}
+        for bad in (dict(good, base="0" * 40), dict(good, method="b1"), {k: v for k, v in good.items() if k != "method"},
+                    dict(good, python="0.0.0")):
+            with self.subTest(bad=bad):
+                devpipe.write_json(self.run_dir / "baseline.json", bad)
+                code, line = run_main(["check", "--run-dir", str(self.run_dir), "--attempt", "1"])
+                self.assertEqual((code, line), (2, "CHECK STOP_BASELINE_MISMATCH reason=baseline.json"))
+        devpipe.write_json(self.run_dir / "baseline.json", good)
+        self.assertEqual(devpipe.load_baseline_for_check(self.fx.run, self.run_dir)["ran"], 2)
+
+
+# ------------------------------------------------------------------------------ N1 added-line markers
+
+class AddedLineMarkerTests(unittest.TestCase):
+    def test_raising_values(self):
+        for line in ('"watchlist_approved": true,', "active_universe_approved = True",
+                     '"new_buy_instrument_approved": {"const": true}', 'quantity_authority = "full"',
+                     '"quantity_authority": "deterministic_existing_holdings"', "quantity_authority: 5",
+                     '"quantity_authority": {"enum": ["none", "full"]}', '"quantity_authority": {"const": false}',
+                     "execution_quantity = 5", '"execution_quantity": 12,', '"execution_quantity": {"type": ["integer", "null"]}',
+                     "EXECUTION_QUANTITY: qty"):
+            with self.subTest(line=line):
+                self.assertTrue(devpipe.added_value_reasons(line), line)
+                self.assertTrue(all(r.startswith("ADDED_LINE:") for r in devpipe.added_value_reasons(line)))
+
+    def test_values_that_stay_general(self):
+        for line in ('"watchlist_approved": false,', "active_universe_approved = False",
+                     '"new_buy_instrument_approved": {"const": false}', '"quantity_authority": "none"',
+                     "quantity_authority = None", '"quantity_authority": null', '"quantity_authority": {"const": "none"}',
+                     "order_authority=false · quantity_authority=none · execution_quantity=null",
+                     "execution_quantity = None", '"execution_quantity": null', '"execution_quantity": "null"',
+                     '"execution_quantity": {"type": "null"}', "$execution_quantity = $null",
+                     'if quantity_authority == "full":', 'value = run.get("quantity_authority")',
+                     "| execution_quantity | 5 |"):
+            with self.subTest(line=line):
+                self.assertEqual(devpipe.added_value_reasons(line), [], line)
+
+    def test_in_tree_raise_only(self):
+        fx = RepoFixture(self)
+        fx.write("manage-us-stock-strategy/scripts/app.py", b'def f():\r\n    return {"execution_quantity": 5}\r\n')
+        tree = devpipe.inspect_tree(fx.run)
+        self.assertEqual(tree["class"], "authority")
+        self.assertIn("ADDED_LINE:execution_quantity", tree["class_reasons"])
+        fx.write("manage-us-stock-strategy/scripts/app.py", b'def f():\r\n    return {"execution_quantity": None}\r\n')
+        self.assertEqual(devpipe.inspect_tree(fx.run)["class"], "general")
+        fx.run["class_initial"] = "authority"  # nothing lowers a class
+        self.assertEqual(devpipe.inspect_tree(fx.run)["class"], "authority")
+
+
+# --------------------------------------------------------------------------- O3 records and main checkout
+
+class RunRecordTests(unittest.TestCase):
+    def setUp(self):
+        repo = Path(tempfile.mkdtemp(prefix="devpipe-records-"))
+        self.addCleanup(remove_tree, repo)
+        self.run_dir = repo / devpipe.RUNS_REL / TASK
+        self.cache = devpipe.baseline_cache_path(repo, "a" * 40)
+        devpipe.write_json(self.run_dir / "run.json", {"id": TASK, "repo": str(repo), "base": "a" * 40})
+        devpipe.write_json(self.run_dir / "baseline.json", {"ran": 2})
+        devpipe.write_json(self.cache, {"ran": 2})
+
+    def expect_args(self):
+        code, line = run_main(["records", "--run-dir", str(self.run_dir)])
+        self.assertEqual(code, 0, line)
+        tokens = line.split()[2:]
+        self.assertEqual([t.split("=")[0] for t in tokens], ["run.json", "baseline.json", "cache"])
+        return [item for token in tokens for item in ("--expect", token)]
+
+    def test_unchanged_records_pass(self):
+        expect = self.expect_args()
+        self.assertEqual(run_main(["records", "--run-dir", str(self.run_dir)] + expect)[0], 0)
+
+    def test_changed_or_missing_record_stops(self):
+        cases = (("run.json", lambda: (self.run_dir / "run.json").write_bytes(b"{}")),
+                 ("baseline.json", lambda: (self.run_dir / "baseline.json").unlink()),
+                 ("cache", lambda: devpipe.write_json(self.cache, {"ran": 3})))
+        for name, tamper in cases:
+            with self.subTest(name=name):
+                self.setUp()
+                expect = self.expect_args()
+                tamper()
+                code, line = run_main(["records", "--run-dir", str(self.run_dir)] + expect)
+                self.assertEqual((code, line), (2, "RECORDS STOP_RUN_RECORD_CHANGED reason=%s" % name))
+
+
+class MainCheckoutTests(unittest.TestCase):
+    def setUp(self):
+        self.repo, base = plain_repo(self, {
+            ".gitignore": b"workspace/outputs/dev-runs/\n*.log\n", "docs/claude/notes.md": b"notes\n",
+            "workspace/policies/p.json": b'{"a": 1}\r\n', "stock-strategy-system/state.json": b'{"s": 1}\r\n',
+            "manage-us-stock-strategy/scripts/app.py": b"def f():\r\n    return 1\r\n",
+            "manage-us-stock-strategy/scripts/lf.py": b"x = 1\n"})
+        (self.repo / "stock-strategy-system/runtime.log").write_bytes(b"ignored state\n")  # git-ignored (*.log)
+        self.run_dir = self.repo / devpipe.RUNS_REL / TASK
+        devpipe.write_json(self.run_dir / "run.json", {"id": TASK, "repo": str(self.repo), "base": base})
+
+    def snapshot(self):
+        self.assertEqual(call(devpipe.cmd_main_snapshot, run_dir=str(self.run_dir))[0], 0)
+
+    def compare(self):
+        return run_main(["main-compare", "--run-dir", str(self.run_dir), "--name", "check-1"])
+
+    def test_untouched_and_preexisting_change_pass(self):
+        (self.repo / "manage-us-stock-strategy/scripts/lf.py").write_bytes(b"x = 9\n")  # user change before the run
+        self.snapshot()
+        self.assertEqual(self.compare()[0], 0)
+
+    def test_policy_state_ignored_and_tracked_changes_stop(self):
+        self.snapshot()
+        for rel, data in (("workspace/policies/p.json", b'{"a": 2}\r\n'), ("stock-strategy-system/state.json", b"{}\r\n"),
+                          ("stock-strategy-system/runtime.log", b"changed\n"), ("workspace/policies/new.json", b"{}\n"),
+                          ("manage-us-stock-strategy/scripts/app.py", b"def f():\r\n    return 7\r\n")):
+            with self.subTest(rel=rel):
+                target = self.repo / rel
+                original = target.read_bytes() if target.exists() else None
+                target.write_bytes(data)
+                code, line = self.compare()
+                self.assertEqual((code, line), (2, "MAIN STOP_MAIN_TOUCHED reason=%s" % rel))
+                if original is None:
+                    target.unlink()
+                else:
+                    target.write_bytes(original)
+                self.assertEqual(self.compare()[0], 0)  # restored: back to the snapshot
+
+    def test_docs_change_and_docs_commit_pass(self):
+        self.snapshot()
+        (self.repo / "docs/claude/notes.md").write_bytes(b"edited during the run\n")
+        (self.repo / "docs/claude/new.md").write_bytes(b"new\n")
+        run_git(self.repo, "add", "docs/claude/new.md")
+        run_git(self.repo, "commit", "-q", "-m", "docs(claude): during the run")
+        (self.repo / "docs/claude/notes.md").write_bytes(b"edited again\n")
+        self.assertEqual(self.compare(), (0, "MAIN OK new_status_lines=0 changed_files=0"))
+
+    def test_auto_core_window_skips_state_files_only(self):
+        with mock.patch.object(devpipe, "utc_now", return_value="2026-10-09T21:12:00Z"):  # 06:12 KST
+            self.snapshot()
+        (self.repo / "stock-strategy-system/state.json").write_bytes(b'{"s": 2}\r\n')
+        (self.repo / "stock-strategy-system/runtime.log").write_bytes(b"auto-core wrote this\n")
+        with mock.patch.object(devpipe, "utc_now", return_value="2026-10-09T21:30:00Z"):  # 06:30 KST
+            self.assertEqual(self.compare(), (0, "MAIN OK new_status_lines=0 changed_files=0 skipped=SKIPPED_AUTO_CORE_WINDOW"))
+            self.assertEqual(devpipe.read_json(self.run_dir / "main-check-1.json")["skipped"], "SKIPPED_AUTO_CORE_WINDOW")
+            (self.repo / "workspace/policies/p.json").write_bytes(b'{"a": 3}\r\n')
+            code, line = self.compare()
+        self.assertEqual((code, line), (2, "MAIN STOP_MAIN_TOUCHED reason=workspace/policies/p.json"))
+
+    def test_window_bounds(self):
+        overlaps = devpipe.auto_core_window_overlaps
+        self.assertTrue(overlaps("2026-10-09T21:00:00Z", "2026-10-09T21:10:00Z"))   # 06:00-06:10 KST
+        self.assertTrue(overlaps("2026-10-09T21:40:00Z", "2026-10-09T22:00:00Z"))   # 06:40-07:00
+        self.assertFalse(overlaps("2026-10-09T21:40:01Z", "2026-10-10T21:09:59Z"))  # 06:40:01 - next day 06:09:59
+        self.assertTrue(overlaps("2026-10-09T00:00:00Z", "2026-10-10T00:00:00Z"))   # 09:00 - next day 09:00
+        self.assertFalse(overlaps("2026-10-09T22:00:00Z", "2026-10-09T21:00:00Z"))  # reversed: never skips
+
+
 # ---------------------------------------------------------------------------------------- static checks
 
 PS1_NAMES = ("dev-run.ps1", "dev-merge.ps1", "dev-queue.ps1", "run-docs-commit.ps1", "register-dev-tasks.ps1",
@@ -870,8 +1296,69 @@ class StaticScriptTests(unittest.TestCase):
             self.assertNotIn(word, text)
         for word in ("-LogonType Interactive -RunLevel Limited", "-StartWhenAvailable", "-WakeToRun:$false",
                      "-MultipleInstances IgnoreNew", '"Korea Standard Time"', "APPLY_BLOCKED_TIMEZONE",
-                     '$docsTime = "23:30"', "$queueIntervalMinutes = 15", "$queueLimitHours = 6", "$docsLimitMinutes = 15"):
+                     '$docsTime = "23:30"', "$queueIntervalMinutes = 5", "$queueLimitHours = 6", "$docsLimitMinutes = 15"):
             self.assertIn(word, text)
+        self.assertIn("every 5 minutes", self.read("dev-queue.ps1").decode("ascii"))
+
+    @staticmethod
+    def ps_function(text, name):
+        return re.search(r"^function %s\b[^\n]*\{\r?\n(.*?)^\}\r?$" % re.escape(name), text, re.S | re.M).group(1)
+
+    def test_baseline_runs_next_to_the_builder(self):
+        text = self.read("dev-run.ps1").decode("ascii")
+        body = self.ps_function(text, "Invoke-Pipeline")
+        order = ["'baseline-prepare'", "Start-Baseline", "'snapshot-includes'", "'main-snapshot'",
+                 "Start-Builder -Attempt 1", "Wait-Baseline", "'main-compare'", "@('check', "]
+        positions = [body.index(item) for item in order]
+        self.assertEqual(positions, sorted(positions), order)
+        self.assertNotIn("@('baseline', ", text)  # the old blocking baseline before the Builder is gone
+        self.assertEqual(text.count("Start-Builder -Attempt 1"), 1)
+        # Every exit path cleans up before the lock is released.
+        self.assertTrue(self.ps_function(text, "Complete-Run").lstrip().startswith("Stop-Baseline"))
+        self.assertTrue(self.ps_function(text, "Stop-RecordChanged").lstrip().startswith("Stop-Baseline"))
+        final = text[text.rindex("} finally {"):]  # the main block (Enter-Lock has its own finally)
+        self.assertLess(final.index("Stop-Baseline"), final.index("Exit-Lock"))
+        stop = self.ps_function(text, "Stop-Baseline")
+        self.assertIn("Stop-ProcessTree -ProcessId $script:baselineProc.Id", stop)
+        self.assertIn("@('baseline-cleanup', '--repo', $repo, '--run-dir', $script:runDir)", stop)
+        self.assertIn("$BaselineLimitMinutes = 75", text)
+        self.assertIn("Write-Log ('BASELINE start pid='", text)
+        self.assertIn("Write-Log ('BASELINE end exit='", text)
+
+    def test_records_checked_before_every_step(self):
+        text = self.read("dev-run.ps1").decode("ascii")
+        body = self.ps_function(text, "Invoke-Pipeline") + self.ps_function(text, "Invoke-FixPass") + \
+            self.ps_function(text, "Complete-Run")
+        for step in ("'baseline-prepare'", "'snapshot-includes'", "'main-snapshot'", "'builder-1'", "'baseline-wait'",
+                     "('check-' + $attempt)", "('judge-prep-' + $attempt)", "('judge-' + $attempt)",
+                     "('parse-judge-' + $attempt)", "'fix-prep-1'", "'builder-2'", "'write-result'"):
+            with self.subTest(step=step):
+                self.assertIn("$changed = Test-Records " + step + "\r\n", body)
+        self.assertEqual(body.count("$changed = Test-Records"), body.count("if ($changed -ne '') { return (Stop-RecordChanged $changed) }"))
+        record_stop = self.ps_function(text, "Stop-RecordChanged")
+        self.assertIn("'write-latest'", record_stop)
+        self.assertNotIn("write-result", record_stop)
+
+    def test_branch_delete_is_only_the_baseline_branch(self):
+        source = (PIPELINE / "devpipe.py").read_text(encoding="utf-8")
+        self.assertEqual(source.count('"branch", "-D"'), 1)
+        self.assertNotIn('"update-ref", "-d"', source)
+        func = re.search(r"^def delete_base_branch\(.*?(?=^def )", source, re.S | re.M).group(0)
+        self.assertIn('git(repo, "branch", "-D", name, check=False)', func)
+        for guard in ("name.startswith(BASE_BRANCH_PREFIX)", "name == base_branch_name(base)",
+                      'info.get("branch_created") is not True', "tip != base", "kept_checked_out"):
+            self.assertLess(func.index(guard), func.index('"branch", "-D"'), guard)
+        self.assertEqual(source.count('"worktree", "add"'), 1)
+        self.assertIn('git(repo, "worktree", "add", "-B", info["branch"], str(temp), base)', source)
+        self.assertNotIn("--detach", source)
+
+    def test_docs_lines_n2_and_id_length(self):
+        readme = (PIPELINE / "README.md").read_text(encoding="utf-8")
+        self.assertIn("`expected failures` 증가", readme)
+        self.assertIn("14자 이하 권장", readme)
+        self.assertIn("(5분마다)", readme)
+        judge = (PIPELINE / "judge-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("`expected failures` 증가(`@expectedFailure`로 실패를 숨김) = 실패(재시도 대상)", judge)
 
     def test_docs_commit_runner_keeps_commit_docs_safety(self):
         runner = self.read("run-docs-commit.ps1").decode("ascii")
