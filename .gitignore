@@ -155,3 +155,5 @@ graphify-out/
 # Cowork pending doc-commit lists (consumed by tools/commit-docs.ps1)
 docs/claude/_pending/
 workspace/outputs/auto-core/
+workspace/outputs/dev-runs/
+docs/claude/_dev-queue/

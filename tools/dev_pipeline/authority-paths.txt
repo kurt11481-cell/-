@@ -1,0 +1,61 @@
+# P7 authority paths (redesign T3, 2026-10-10).
+# A pipeline task that changes any path below still runs (Builder, checks, Judge), but it ends as
+# NEEDS_APPROVAL and merges only with one user approval: .\tools\dev-merge.ps1 <id> -ApproveAuthority.
+# Glob syntax: * stays inside one folder, ** crosses folders; matched case-insensitively against
+# repo-relative paths. Source: CLAUDE.md "Authority/limit change" (order stage, order tools,
+# budget/ceiling/caps, approved products, reconciliation invariants, kill switch). The grep evidence for
+# each line is in docs/claude/redesign-t3-builder-report-2026-10-10.md.
+# workspace/policies/** and stock-strategy-system/** are protected paths (pipeline tasks cannot touch
+# them at all). This file is under tools/, so it is protected as well.
+
+# Reconciliation invariants (I1-I5) and the auto-core kill switch
+manage-us-stock-strategy/scripts/auto_core*.py
+manage-us-stock-strategy/scripts/apply_user_confirmed_broker_snapshot.py
+manage-us-stock-strategy/scripts/reconcile_broker_state.py
+manage-us-stock-strategy/scripts/kiwoom_broker_shadow.py
+manage-us-stock-strategy/scripts/cash_flow_evidence.py
+manage-us-stock-strategy/schemas/auto-core-config.schema.json
+manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json
+manage-us-stock-strategy/assets/kiwoom-transaction-history-classification.json
+manage-us-stock-strategy/references/broker-snapshot-reconciliation.md
+docs/claude/automation-redesign-2026-10-10.md
+manage-us-stock-strategy/scripts/run_auto_core.ps1
+manage-us-stock-strategy/scripts/register_auto_core_task.ps1
+manage-us-stock-strategy/scripts/collect_30m.ps1
+manage-us-stock-strategy/tests/test_auto_core*.py
+manage-us-stock-strategy/tests/test_reconcile_broker_state*.py
+
+# Order tools and order paths (the Kiwoom bridges block order endpoints)
+manage-us-stock-strategy/scripts/kiwoom_*bridge*.py
+manage-us-stock-strategy/scripts/future_order_shadow.py
+manage-us-stock-strategy/scripts/portfolio_decision_order_intent.py
+manage-us-stock-strategy/tests/test_future_order_shadow*.py
+manage-us-stock-strategy/tests/test_portfolio_decision_order_intent*.py
+
+# Order stage and order-authority gates
+manage-us-stock-strategy/scripts/portfolio_decision_dashboard.py
+manage-us-stock-strategy/scripts/shadow_acceptance.py
+manage-us-stock-strategy/scripts/staged_promotion.py
+manage-us-stock-strategy/scripts/validate_decision_record.py
+manage-us-stock-strategy/scripts/validate_new_buy_strategy_draft.py
+manage-us-stock-strategy/schemas/strategy-evolution-policy.schema.json
+
+# Budget, exposure ceiling and per-symbol caps
+manage-us-stock-strategy/scripts/portfolio_exposure.py
+manage-us-stock-strategy/scripts/run_portfolio_exposure_review.py
+manage-us-stock-strategy/scripts/portfolio_policy_gates.py
+manage-us-stock-strategy/scripts/build_capital_redeployment_plan.py
+manage-us-stock-strategy/scripts/evaluate_alerts.py
+manage-us-stock-strategy/scripts/validate_research_packet.py
+manage-us-stock-strategy/assets/portfolio-decision-risk-envelope-v0.2.json
+manage-us-stock-strategy/tests/test_portfolio_exposure*.py
+manage-us-stock-strategy/tests/test_run_portfolio_exposure_review*.py
+
+# Approved products and new-buy approval
+manage-us-stock-strategy/scripts/run_tactical_opportunity_radar.py
+manage-us-stock-strategy/scripts/screen_tactical_candidates.py
+manage-us-stock-strategy/scripts/validate_registry_consistency.py
+manage-us-stock-strategy/scripts/build_new_buy_strategy_draft.py
+manage-us-stock-strategy/scripts/build_new_buy_approval_proposal.py
+manage-us-stock-strategy/scripts/build_candidate_discovery_proposal.py
+manage-us-stock-strategy/schemas/candidate-discovery-proposal.schema.json
