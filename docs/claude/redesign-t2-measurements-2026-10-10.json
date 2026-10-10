@@ -1,0 +1,531 @@
+{
+ "schema_version": "redesign-t2-measurements-1.0",
+ "measured_at": "2026-10-10 KST (Cowork, read-only)",
+ "authority": {
+  "order_authority": false,
+  "quantity_authority": "none",
+  "execution_quantity": null
+ },
+ "consumers": [
+  "redesign-t2 Builder (fixtures, replay anchors)",
+  "redesign-t2 Judge",
+  "auto_core_replay.py"
+ ],
+ "privacy": "no account number, account label or owner name is stored here",
+ "kiwoom_orders_by_period": {
+  "source": "kiwoomcli overseas accounts orders-by-period (ust21180) --from 20260711 --to 20261010 --pages 0, profile alias + mode real",
+  "note": "query window limit 3 months (2026-07-01 start returned code 20 '조회기간은 3개월 이내만 가능합니다'). order_date_kst = ord_dt. type LOC = trde_tp 'Limit On Close'. A LIMIT row with price null had ord_uv 0.0000 (as returned).",
+  "rows": [
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 396,
+    "order_price": 21.7,
+    "filled_qty": 396,
+    "fill_price": 21.7,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SOXL",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 69,
+    "order_price": 122.44,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SOXL",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 69,
+    "order_price": 122.5,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 69
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SOXL",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 69,
+    "order_price": 123.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 69
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SOXL",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 69,
+    "order_price": 123.41,
+    "filled_qty": 69,
+    "fill_price": 123.41,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SNXX",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 318,
+    "order_price": 11.8,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SNXX",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 318,
+    "order_price": 11.75,
+    "filled_qty": 318,
+    "fill_price": 11.75,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-07-31",
+    "symbol": "SOXL",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 30,
+    "order_price": 123.2,
+    "filled_qty": 30,
+    "fill_price": 123.13,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-11",
+    "symbol": "SOXL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 24,
+    "order_price": 131.5,
+    "filled_qty": 24,
+    "fill_price": 131.5,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-12",
+    "symbol": "NBIS",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 15,
+    "order_price": 210.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-12",
+    "symbol": "NBIS",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 15,
+    "order_price": 212.88,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-12",
+    "symbol": "NBIS",
+    "side": "buy",
+    "type": "LIMIT",
+    "order_qty": 15,
+    "order_price": 215.0,
+    "filled_qty": 15,
+    "fill_price": 215.0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-12",
+    "symbol": "NBIL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 1,
+    "order_price": 26.64,
+    "filled_qty": 1,
+    "fill_price": 26.64,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-12",
+    "symbol": "NBIS",
+    "side": "sell",
+    "type": "STOP_MARKET",
+    "order_qty": 15,
+    "order_price": null,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-08-20",
+    "symbol": "NBIS",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 2,
+    "order_price": 227.68,
+    "filled_qty": 2,
+    "fill_price": 227.68,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-05",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 118,
+    "order_price": 40.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 118,
+    "order_price": 38.25,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 39.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 40.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 38.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 38.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 37.8,
+    "filled_qty": 59,
+    "fill_price": 37.8,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-06",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 59,
+    "order_price": 37.8,
+    "filled_qty": 59,
+    "fill_price": 37.8,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-07",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 119,
+    "order_price": 44.0,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 119
+   },
+   {
+    "order_date_kst": "2026-10-07",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 119,
+    "order_price": null,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-07",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 60,
+    "order_price": 42.84,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-07",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LOC",
+    "order_qty": 59,
+    "order_price": 37.77,
+    "filled_qty": 59,
+    "fill_price": 41.35,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-07",
+    "symbol": "MVLL",
+    "side": "sell",
+    "type": "LIMIT",
+    "order_qty": 60,
+    "order_price": 41.6,
+    "filled_qty": 60,
+    "fill_price": 41.6,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-08",
+    "symbol": "SOXL",
+    "side": "sell",
+    "type": "LOC",
+    "order_qty": 35,
+    "order_price": 145.76,
+    "filled_qty": 0,
+    "fill_price": 0,
+    "cancelled_qty": 0
+   },
+   {
+    "order_date_kst": "2026-10-09",
+    "symbol": "SOXL",
+    "side": "sell",
+    "type": "LOC",
+    "order_qty": 22,
+    "order_price": 130.62,
+    "filled_qty": 22,
+    "fill_price": 139.76,
+    "cancelled_qty": 0
+   }
+  ]
+ },
+ "kiwoom_order_fills_daily_example": {
+  "source": "ust21150 --date 20261009 --order order-asc --side all",
+  "row": {
+   "symbol": "SOXL",
+   "frgn_trde_tp": "Limit On Close",
+   "ord_qty": 22,
+   "cntr_qty": 22,
+   "ord_uv": 130.62,
+   "cntr_uv": 139.76,
+   "ord_time_kst": "17:29:23",
+   "cntr_time_kst": "05:00:02",
+   "ord_stat_nm": "체결완료",
+   "channel": "영웅문S#"
+  },
+  "facts": [
+   "LOC entered 17:29 KST (Kiwoom pre-market window) was kept to the regular close and filled at the closing price (SOXL, 1 case)",
+   "ord_dt is the KST order date; the fill is at 05:00 KST the next day (summer time)",
+   "an unfilled LOC ended with ord_stat_nm '무효주문' (OI-20261008-SOXL-1, read 2026-10-09 07:5x KST, docs/claude/order-instructions/OI-20261009-SOXL-2.md 2절)"
+  ]
+ },
+ "fees_measured": {
+  "source": "ust21100 transaction-history --kind trade 20260801~20261010 (fc_cmsn, fc_deal_tax, fc_deal_amt)",
+  "commission_rate": "0.0699% of fc_deal_amt (8 settled trades: MVLL 6.01/8593.20, SNXX 2.61/3736.50, SOXL 8.54/12209.19, SOXL 2.20/3156.00, NBIS 2.25/3225.00, NBIS 0.31/455.36, MVLL 3.12/4460.40, MVLL 3.45/4935.65)",
+  "sell_side_tax": "about 0.002% (fc_deal_tax 0.18/8593.20, 0.08/3736.50, 0.07/3156.00, 0.09/4460.40, 0.10/4935.65); buys 0.00",
+  "settlement_row_date": "deal_dt = 2 KST business days after the US session (MVLL 10/6 session -> 10/8, 10/7 session -> 10/9)",
+  "design_buffer_kept": "order-instruction design G4 cash buffer 0.25% stays (gate value, not changed in T2); the measured 0.07% is shown in the ticket check line only"
+ },
+ "earnings_announcements_sec": {
+  "source": "data.sec.gov submissions API, form 8-K with item 2.02, filed 2026-04-01 or later (fetched 2026-10-10 from the user's computer VM)",
+  "timing_rule": "8-K acceptance time in New York: before 09:30 = BEFORE_OPEN, at/after 16:00 = AFTER_CLOSE. The press release can precede the 8-K acceptance (D, replay only).",
+  "not_included": "NBIS (foreign private issuer, 6-K without item codes; results filing date 확인 필요) — the replay treats NBIS buys as EARNINGS_DATE_UNVERIFIED (fail closed)",
+  "records": [
+   {
+    "symbol": "AMD",
+    "announcement_session": "2026-05-05",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-05-05T16:16",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000072/amd-20260505.htm"
+   },
+   {
+    "symbol": "AMD",
+    "announcement_session": "2026-08-04",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-08-04T16:16",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000121/amd-20260804.htm"
+   },
+   {
+    "symbol": "BE",
+    "announcement_session": "2026-04-28",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-04-28T16:07",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026027913/be-20260428.htm"
+   },
+   {
+    "symbol": "BE",
+    "announcement_session": "2026-07-28",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-07-28T16:07",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026050150/be-20260728.htm"
+   },
+   {
+    "symbol": "DELL",
+    "announcement_session": "2026-05-28",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-05-28T20:15",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000021/dell-20260528.htm"
+   },
+   {
+    "symbol": "DELL",
+    "announcement_session": "2026-09-01",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-09-01T20:10",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000039/dell-20260901.htm"
+   },
+   {
+    "symbol": "LITE",
+    "announcement_session": "2026-05-05",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-05-05T20:11",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828026030530/lite-20260505.htm"
+   },
+   {
+    "symbol": "LITE",
+    "announcement_session": "2026-08-11",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-08-11T20:24",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828026055726/lite-20260811.htm"
+   },
+   {
+    "symbol": "MRVL",
+    "announcement_session": "2026-05-27",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-05-27T20:06",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000014/mrvl-20260527.htm"
+   },
+   {
+    "symbol": "MRVL",
+    "announcement_session": "2026-08-27",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-08-27T20:05",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000022/mrvl-20260827.htm"
+   },
+   {
+    "symbol": "MU",
+    "announcement_session": "2026-06-24",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-06-24T20:02",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/mu-20260624.htm"
+   },
+   {
+    "symbol": "MU",
+    "announcement_session": "2026-09-30",
+    "timing": "AFTER_CLOSE",
+    "sec_8k_accepted_et": "2026-09-30T20:02",
+    "items": "2.02,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/mu-20260930.htm"
+   },
+   {
+    "symbol": "PWR",
+    "announcement_session": "2026-04-30",
+    "timing": "BEFORE_OPEN",
+    "sec_8k_accepted_et": "2026-04-30T06:58",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312526193918/d107542d8k.htm"
+   },
+   {
+    "symbol": "PWR",
+    "announcement_session": "2026-07-30",
+    "timing": "BEFORE_OPEN",
+    "sec_8k_accepted_et": "2026-07-30T06:58",
+    "items": "2.02,7.01,9.01",
+    "source_kind": "SEC_FILING",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312526324855/d56853d8k.htm"
+   }
+  ]
+ },
+ "close_history_coverage": {
+  "MVLL": "2026-04-01..2026-10-09 (133 sessions)",
+  "NBIS": "same",
+  "SOXL": "same",
+  "SOXX": "same",
+  "watchlist_members": "no saved 30-minute pages yet; the auto-core collects MU, BE, DELL, PWR, LITE from 2026-04-01 on its first run (2026-10-13 06:15)",
+  "GRID": "not collected (needs symbols_extra)"
+ },
+ "split_flags": {
+  "kiwoom_daily_adjusted": "usa06012 adjusted=1 marks the MVLL 3:1 split on 20260626 with upd_stkpc_tp '3231', upd_rt '-66.66700' (workspace/outputs/regular-session-closes/split-check-20261010/mvll_daily_adj1.json); '1f' rows are not splits",
+  "kiwoom_30m_raw": "usa06011 pages carry no split flag (only '1f' on 388 rows); raw closes jump at a split (CRWD 7/1 $772.74 -> 7/2 $193.98, board s-split-adj)",
+  "official_record": "workspace/outputs/regular-session-closes/corporate-actions.json (MVLL only)"
+ },
+ "integrated_check_runtime": {
+  "runAt_samples_kst": {
+   "2026-10-09": "07:30",
+   "2026-10-10": "06:50"
+  },
+  "note": "06:40 start; the record write is the last step"
+ }
+}
