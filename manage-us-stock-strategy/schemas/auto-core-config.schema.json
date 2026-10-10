@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-config.schema.json",
+  "title": "Auto-core configuration (workspace/policies/auto_core.json)",
+  "description": "Redesign T1. Only a person changes this file. compare never writes state; apply writes through apply_auto_core only when invariants I1-I5 pass and kill_switch is false. kill_switch true stops the run before any read.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "kill_switch", "compare_days_required", "schedule_kst", "symbols_extra"],
+  "properties": {
+    "mode": {"enum": ["compare", "apply"]},
+    "kill_switch": {"type": "boolean"},
+    "compare_days_required": {"type": "integer", "minimum": 1},
+    "schedule_kst": {"type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"},
+    "symbols_extra": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9.]{0,11}$"}
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "redesign-t1-policy-proposals",
+  "date": "2026-10-10",
+  "source": "docs/claude/redesign-t1-auto-core-builder-prompt-2026-10-10.md section 3 F7",
+  "status": "PROPOSED_NOT_APPLIED",
+  "apply_by": "Cowork after the user's approval (deployment step 3: user says \"적용\")",
+  "authority": {"order_authority": false, "quantity_authority": "none", "execution_quantity": null},
+  "proposals": [
+    {
+      "path": "workspace/policies/auto_core.json",
+      "action": "CREATE",
+      "content": {
+        "mode": "compare",
+        "kill_switch": false,
+        "compare_days_required": 3,
+        "schedule_kst": "06:15",
+        "symbols_extra": ["SOXX"]
+      },
+      "schema": "manage-us-stock-strategy/schemas/auto-core-config.schema.json",
+      "reason": "Auto-core configuration (F4/F5). compare never writes state, ledger or journal; it records would_apply and counts the compare streak. Switching to apply (deployment step 6, the user's \"켜\") is a change of this one field. kill_switch true stops the run before any Kiwoom read. Without this file the core still runs read-only in compare mode and reports HOLD AUTO_CORE_CONFIG_MISSING."
+    }
+  ],
+  "f6_policy_changes": [],
+  "f6_note": "F6 (acceptance pin retirement) needs no workspace/policies change: no runtime path reads the pin (0단계 a). The pin scope asset is kept and marked RETIRED; the commit SHA and dirty-path guard lives in the auto-core code.",
+  "not_a_policy_but_needed": [
+    {
+      "path": ".gitignore",
+      "action": "APPEND_LINE",
+      "content": "workspace/outputs/auto-core/",
+      "reason": "Auto-core run outputs (result.json, reconcile.json, proposal, snapshot, logs) are generated data like workspace/outputs/reconciliation/ and workspace/outputs/exposure-review/, which are already ignored. Outside the Builder's allowed paths, so it is listed here for Cowork."
+    }
+  ]
+}

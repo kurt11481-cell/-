@@ -30,6 +30,9 @@
     },
     "order_authority": {"const": false},
     "quantity_authority": {"const": "none"},
-    "execution_quantity": {"type": "null"}
+    "execution_quantity": {"type": "null"},
+    "status": {"enum": ["ACTIVE", "RETIRED"], "description": "Redesign T1 F6: RETIRED means no acceptance re-pin is required; every auto-core run records the git commit SHA and dirty paths, and apply mode fails when a listed file has an uncommitted change."},
+    "retired_at": {"type": "string", "format": "date"},
+    "retirement_note": {"type": "string", "minLength": 1}
   }
 }

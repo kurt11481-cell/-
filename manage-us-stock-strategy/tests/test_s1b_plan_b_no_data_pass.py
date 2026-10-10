@@ -33,6 +33,10 @@ OBSERVED = "2026-10-03T13:05:00+00:00"
 COMMIT = "a" * 40
 OPEN_MESSAGE = "[2000](571758:해당 계좌의미체결내역이 없습니다.)"
 PNL_MESSAGE = "[2000](571758:조회내역이 없습니다.)"
+HISTORY_MESSAGE = "[2000](501724:관련자료가 없습니다)"
+# T1 r2 measurements 2026-10-10 (M5 ust21150 day without orders, M4 ust21610 day without trades).
+DAILY_FILLS_MESSAGE = "[2000](571758:해당 계좌의 체결내역이 없습니다.)"
+DAY_TRADES_MESSAGE = "[2000](571758:조회내역이 없습니다.)"
 DECLARED = {"account_open_items": ("ust21050", OPEN_MESSAGE),
             "account_realized_pnl_read": ("ust21630", PNL_MESSAGE)}
 OTHER_OPERATIONS = ("account_deposit_read", "account_deposit_detail_read", "account_holdings_read",
@@ -390,13 +394,21 @@ class TableTests(PlanBCase):
                         self.assert_not_promoted(operation, {"return_code": 20, "return_msg": foreign})
 
     def test_production_tables_are_locked(self):
+        # T1 F2 adds ust21100 501724 (S7 U3 measurement); T1 r2 adds ust21150 and ust21610 571758, each with
+        # its own measured message (2026-10-10).
         self.assertEqual(bridge.NO_DATA_PASS_MESSAGE_CODES, {
             "account_open_items": frozenset({"571758"}),
             "account_realized_pnl_read": frozenset({"571758"}),
+            "account_transaction_history_read": frozenset({"501724"}),
+            "account_daily_fills_read": frozenset({"571758"}),
+            "account_day_trades_read": frozenset({"571758"}),
         })
         self.assertEqual(bridge.NO_DATA_PASS_MESSAGES, {
             "account_open_items": frozenset({OPEN_MESSAGE}),
             "account_realized_pnl_read": frozenset({PNL_MESSAGE}),
+            "account_transaction_history_read": frozenset({HISTORY_MESSAGE}),
+            "account_daily_fills_read": frozenset({DAILY_FILLS_MESSAGE}),
+            "account_day_trades_read": frozenset({DAY_TRADES_MESSAGE}),
         })
         self.assertEqual(bridge.NO_DATA_TERMINATION, "PROVIDER_NO_DATA_DECLARATION")
 
@@ -407,6 +419,58 @@ class TableTests(PlanBCase):
                 with self.subTest(operation=operation):
                     self.assertTrue(any(message.startswith(f"[2000]({code}:")
                                         for code in bridge.NO_DATA_PASS_MESSAGE_CODES[operation]))
+
+
+class DatedReadDeclarationTests(PlanBCase):
+    """T1 r2: the measured no-data declarations of the dated reads (ust21150, ust21610), end to end."""
+
+    REQUESTS = {"account_daily_fills_read": ({"ord_dt": "20261005"}, DAILY_FILLS_MESSAGE, "ust21150"),
+                "account_day_trades_read": ({"base_dt": "20261005"}, DAY_TRADES_MESSAGE, "ust21610")}
+
+    @staticmethod
+    def dated_end_to_end(operation, params, message):
+        offline = session([page({"return_code": 20, "return_msg": message})])
+        request = [{"operation": operation, "params": params}]
+        with patch.object(bridge, "_load_env_without_echo"), \
+                patch.object(bridge, "_runtime_session", return_value=offline), \
+                patch.object(bridge, "utc_now", return_value=NOW):
+            worker = bridge.external_worker(json.dumps(request), Path("X:/offline-only"))
+        runner = Mock(return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout=json.dumps(worker),
+                                                               stderr=""))
+        with patch.object(Path, "is_file", return_value=True):
+            result = bridge.invoke_account_bridge_batch(
+                request, runtime=Path("X:/offline-only"),
+                policy={"external_python_relative_path": "offline-python", "request_timeout_seconds": 1},
+                runner=runner)[0]
+        return worker, result, offline
+
+    def test_measured_declarations_are_empty_passes_with_their_dates(self):
+        for operation, (params, message, api_id) in self.REQUESTS.items():
+            with self.subTest(operation=operation):
+                worker, result, offline = self.dated_end_to_end(operation, params, message)
+                self.assertEqual((worker["results"][0]["bridge_status"], result["bridge_status"]), ("PASS", "PASS"))
+                self.assertEqual(result["data"], [])
+                self.assertEqual(result["pagination"], {"api_id": api_id, "pages": 1, "exhausted": True,
+                                                        "complete": True, "secret_fields_retained": False,
+                                                        "terminated_by": "PROVIDER_NO_DATA_DECLARATION"})
+                self.assertEqual(result["request_params"], params)
+                self.assertEqual(offline["client"].fetch_page.call_count, 1)
+                sent = offline["client"].fetch_page.call_args.kwargs["body"]
+                self.assertEqual({key: sent[key] for key in params}, params)
+                for key in ("failure_type", "provider_return_code", "no_data_declared"):
+                    self.assertNotIn(key, result)
+
+    def test_other_messages_stay_errors(self):
+        # The open-items text (no space before the noun) is not the daily-fills declaration, and no
+        # operation accepts another operation's text.
+        cases = (("account_daily_fills_read", OPEN_MESSAGE), ("account_daily_fills_read", DAY_TRADES_MESSAGE),
+                 ("account_daily_fills_read", HISTORY_MESSAGE), ("account_day_trades_read", DAILY_FILLS_MESSAGE),
+                 ("account_day_trades_read", OPEN_MESSAGE),
+                 ("account_day_trades_read", DAY_TRADES_MESSAGE.replace("571758", "571757")))
+        for operation, message in cases:
+            with self.subTest(operation=operation, message=message):
+                worker, result, _ = self.dated_end_to_end(operation, self.REQUESTS[operation][0], message)
+                self.assert_error(worker, result, (20, True))
 
 
 class SanitizerTests(PlanBCase):

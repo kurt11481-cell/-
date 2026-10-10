@@ -25,6 +25,10 @@ ACCOUNT_APIS = {
     "account_open_items": ("ust21050", "/api/us/acnt"),
     "account_fills_read": ("ust21510", "/api/us/acnt"),
     "account_realized_pnl_read": ("ust21630", "/api/us/acnt"),
+    # Redesign T1 F2: dated reads for the auto-core (transaction history, daily order fills, day trades).
+    "account_transaction_history_read": ("ust21100", "/api/us/acnt"),
+    "account_daily_fills_read": ("ust21150", "/api/us/acnt"),
+    "account_day_trades_read": ("ust21610", "/api/us/acnt"),
 }
 ACCOUNT_BODIES = {
     "account_deposit_read": {},
@@ -33,13 +37,29 @@ ACCOUNT_BODIES = {
     "account_open_items": {"ord_dt": "", "slby_tp": "0", "stex_tp": "", "stk_cd": ""},
     "account_fills_read": {"stex_tp": "", "stk_cd": ""},
     "account_realized_pnl_read": {"fc_krw_tp": "0", "stex_tp": "", "stk_cd": ""},
+    # Templates: the date fields named in DATED_PARAMETERS are filled from the validated request only.
+    "account_transaction_history_read": {"strt_dt": "", "end_dt": "", "tp": "0", "stex_tp": "", "stk_cd": "",
+                                         "krw_repl_skip_yn": ""},
+    "account_daily_fills_read": {"ord_dt": "", "query_tp": "1", "slby_tp": "0", "stex_tp": "", "stk_cd": "",
+                                 "oppo_trde_tp": "%", "fr_ord_no": ""},
+    "account_day_trades_read": {"base_dt": "", "qry_tp": "1", "fc_krw_tp": "0"},
 }
+# The only request parameters any operation accepts: YYYYMMDD dates for these body fields.
+DATED_PARAMETERS = {
+    "account_transaction_history_read": ("strt_dt", "end_dt"),
+    "account_daily_fills_read": ("ord_dt",),
+    "account_day_trades_read": ("base_dt",),
+}
+DATE_PARAMETER = re.compile(r"20\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])")
 SAFE_FIELDS = {
     "account_deposit_read": ("crnc_code", "crnc_nm", "fc_entra", "fc_pymn_alowa", "fc_ord_alowa"),
     "account_deposit_detail_read": (
         "d0_setl_dt", "d0_usd_fx_entr", "d1_setl_dt", "d1_usd_fx_entr", "d1_usd_exct_amt",
         "d1_usd_buy_excta", "d1_usd_sell_excta", "d2_setl_dt", "d2_usd_fx_entr",
         "d2_usd_exct_amt", "d2_usd_buy_excta", "d2_usd_sell_excta",
+        # T1 r2: later settlement dates (holidays), for the auto-core's settlement amounts by date.
+        "d3_setl_dt", "d3_usd_buy_excta", "d3_usd_sell_excta",
+        "d4_setl_dt", "d4_usd_buy_excta", "d4_usd_sell_excta",
     ),
     "account_holdings_read": (
         "stex_nm", "crnc_code", "stk_cd", "frgn_stk_nm", "qty", "poss_qty", "sell_alowq",
@@ -55,6 +75,19 @@ SAFE_FIELDS = {
     ),
     "account_realized_pnl_read": (
         "crnc_code", "stk_cd", "frgn_stk_nm", "cntr_sellq", "cntr_sella", "tdy_pl_amt", "pl_rt",
+    ),
+    # Row fields only; the top-level account label (acnt_print) is never read.
+    "account_transaction_history_read": (
+        "deal_dt", "deal_no", "deal_kind_nm", "rmrk_nm", "crnc_code", "stk_cd", "deal_qty", "uv_exrt",
+        "fc_deal_amt", "fc_cmsn", "fc_deal_tax", "frgn_pay_txam", "fc_exct_amt", "proc_time",
+    ),
+    "account_daily_fills_read": (
+        "ord_no", "crnc_code", "stk_cd", "slby_tp_nm", "frgn_trde_tp", "ord_qty", "cntr_qty", "cncl_qty",
+        "ord_remnq", "ord_uv", "cntr_uv", "ord_time", "cntr_time", "ord_stat_nm", "rsrv_tp",
+    ),
+    "account_day_trades_read": (
+        "stk_cd", "tdy_buyq", "tdy_buy_amt", "tdy_avg_buy_uv", "tdy_sellq", "tdy_sell_amt", "tdy_avg_sell_uv",
+        "cmsn_altx",
     ),
 }
 
@@ -78,12 +111,26 @@ NO_DATA_MESSAGE_PREFIX = "[2000]"
 NO_DATA_PASS_MESSAGE_CODES = {
     "account_open_items": frozenset({"571758"}),
     "account_realized_pnl_read": frozenset({"571758"}),
+    # T1 F2: ust21100 "no rows in the period" (S7 U3 measurement 2026-10-02, 501724). cash_flow_evidence
+    # already treats this declaration as evidence with zero rows.
+    "account_transaction_history_read": frozenset({"501724"}),
+    # T1 r2 (Cowork measurement 2026-10-10, real account): ust21150 on a day without orders (M5) and
+    # ust21610 on a day without trades (M4). The daily-fills message differs from the open-items one.
+    "account_daily_fills_read": frozenset({"571758"}),
+    "account_day_trades_read": frozenset({"571758"}),
 }
 NO_DATA_PASS_MESSAGES = {
     "account_open_items": frozenset({
         "[2000](571758:\ud574\ub2f9 \uacc4\uc88c\uc758\ubbf8\uccb4\uacb0\ub0b4\uc5ed\uc774 "
         "\uc5c6\uc2b5\ub2c8\ub2e4.)"}),
     "account_realized_pnl_read": frozenset({
+        "[2000](571758:\uc870\ud68c\ub0b4\uc5ed\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.)"}),
+    "account_transaction_history_read": frozenset({
+        "[2000](501724:\uad00\ub828\uc790\ub8cc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4)"}),
+    "account_daily_fills_read": frozenset({
+        "[2000](571758:\ud574\ub2f9 \uacc4\uc88c\uc758 \uccb4\uacb0\ub0b4\uc5ed\uc774 "
+        "\uc5c6\uc2b5\ub2c8\ub2e4.)"}),
+    "account_day_trades_read": frozenset({
         "[2000](571758:\uc870\ud68c\ub0b4\uc5ed\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.)"}),
 }
 NO_DATA_MESSAGE_CODE = re.compile(r"\[2000\]\(([0-9]{6}):")
@@ -159,10 +206,27 @@ def _no_data_terminal(operation: str, payload: dict[str, Any], response: Any) ->
         return False
 
 
-def validate_request(value: Any) -> dict[str, str]:
+def validate_request(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or value.get("operation") not in ACCOUNT_APIS:
         raise BridgeError("OPERATION_NOT_ALLOWLISTED")
-    return {"operation": str(value["operation"])}
+    operation = str(value["operation"])
+    names = DATED_PARAMETERS.get(operation)
+    if names is None:
+        return {"operation": operation}
+    # A dated read takes exactly its own date fields, each an YYYYMMDD string; nothing else reaches the body.
+    params = value.get("params")
+    if (not isinstance(params, dict) or set(params) != set(names)
+            or any(not isinstance(params[name], str) or DATE_PARAMETER.fullmatch(params[name]) is None
+                   for name in names)):
+        raise BridgeError("REQUEST_PARAMETERS_INVALID")
+    return {"operation": operation, "params": {name: params[name] for name in names}}
+
+
+def request_body(request: dict[str, Any]) -> dict[str, Any]:
+    """The fixed body template of a validated request with its validated dates filled in."""
+    body = dict(ACCOUNT_BODIES[request["operation"]])
+    body.update(request.get("params") or {})
+    return body
 
 
 def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str, Any],
@@ -198,8 +262,10 @@ def _fetch_account_page(session: dict[str, Any], operation: str, body: dict[str,
     raise last_error
 
 
-def _read_pages(session: dict[str, Any], operation: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _read_pages(session: dict[str, Any], operation: str,
+                body: dict[str, Any] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     api_id, path = ACCOUNT_APIS[operation]
+    body = ACCOUNT_BODIES[operation] if body is None else body
     rows: list[dict[str, Any]] = []
     cont_yn: str | None = None
     next_key: str | None = None
@@ -208,7 +274,7 @@ def _read_pages(session: dict[str, Any], operation: str) -> tuple[list[dict[str,
     for page_index in range(1, int(session["maximum_history_pages"]) + 1):
         try:
             response = _fetch_account_page(
-                session, operation, ACCOUNT_BODIES[operation], cont_yn=cont_yn, next_key=next_key,
+                session, operation, body, cont_yn=cont_yn, next_key=next_key,
             )
         except BridgeError as exc:
             # A first-page no-data declaration ends here, before the row and continuation checks.
@@ -280,7 +346,7 @@ def external_worker(stdin_text: str, runtime: Path, minimum_interval_seconds: fl
         results = []
         for request in requests:
             try:
-                rows, pagination = _read_pages(session, request["operation"])
+                rows, pagination = _read_pages(session, request["operation"], request_body(request))
                 results.append({
                     "bridge_status": "PASS" if pagination["complete"] else "PARTIAL",
                     "operation": request["operation"], "data": rows, "pagination": pagination,
@@ -361,6 +427,16 @@ def _sanitize(value: dict[str, Any], operation: str) -> dict[str, Any]:
 def invoke_account_bridge_batch(requests: list[dict[str, Any]], *, runtime: Path, policy: dict[str, Any],
                                 runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run) -> list[dict[str, Any]]:
     sanitized = [validate_request(item) for item in requests]
+    results = _invoke_validated_batch(sanitized, runtime=runtime, policy=policy, runner=runner)
+    for result, request in zip(results, sanitized):
+        if "params" in request:
+            # Parent-side echo of the validated dates so a caller can bind each result to its request.
+            result["request_params"] = dict(request["params"])
+    return results
+
+
+def _invoke_validated_batch(sanitized: list[dict[str, Any]], *, runtime: Path, policy: dict[str, Any],
+                            runner: Callable[..., subprocess.CompletedProcess[str]]) -> list[dict[str, Any]]:
     python_path = runtime / str(policy["external_python_relative_path"])
     if not python_path.is_file():
         return [{"bridge_status": "RUNTIME_PYTHON_UNAVAILABLE", "failure_type": "LOCAL_RUNTIME_UNAVAILABLE",

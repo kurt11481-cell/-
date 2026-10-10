@@ -60,8 +60,9 @@ def account_results(retrieved_at, *, holdings=None, deposit=None, statuses=None)
     """Synthetic sanitized bridge output in the exact order the reader returns it."""
     holdings = [holding_row(), holding_row("BBB", "3", "33.333", evaluation="120", pnl="20")] \
         if holdings is None else holdings
+    # T1 F1: order-available equals withdrawable (no unsettled sale proceeds); fc_entra is never compared.
     deposit = [{"crnc_code": "USD", "crnc_nm": "TEST", "fc_entra": "1200", "fc_pymn_alowa": "1000.50",
-                "fc_ord_alowa": "1200"}] if deposit is None else deposit
+                "fc_ord_alowa": "1000.50"}] if deposit is None else deposit
     statuses = {"account_open_items": "KIWOOM_API_RESPONSE_ERROR", **(statuses or {})}
     data = {"account_deposit_read": deposit, "account_deposit_detail_read": [{"d1_usd_sell_excta": "0"}],
             "account_holdings_read": holdings, "account_open_items": [], "account_fills_read": [],
@@ -174,8 +175,10 @@ class AccountReturnCodeTests(unittest.TestCase):
         self.assertEqual(caught.exception.status, "KIWOOM_API_RESPONSE_ERROR")
 
     def test_account_routes_are_read_only(self):
+        # T1 F2 adds three read-only account inquiries: ust21100, ust21150, ust21610.
         self.assertEqual({api for api, _ in bridge.ACCOUNT_APIS.values()},
-                         {"ust21110", "ust21160", "ust21070", "ust21050", "ust21510", "ust21630"})
+                         {"ust21110", "ust21160", "ust21070", "ust21050", "ust21510", "ust21630",
+                          "ust21100", "ust21150", "ust21610"})
         for api_id, path in bridge.ACCOUNT_APIS.values():
             self.assertEqual(path, "/api/us/acnt")
             self.assertFalse(any(term in f"{api_id} {path}".lower() for term in BLOCKED_TERMS))
@@ -627,7 +630,7 @@ class LibraryApplyTests(TempStateCase):
         ledger = self.directory / "reconciliation_ledger.jsonl"
         second_proposal = make_proposal(first, ledger_last_hash_after=ledger_status(ledger)["last_portfolio_hash_after"],
                                         results=account_results(utc(datetime.now(timezone.utc)), deposit=[{
-                                            "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "20"}]))
+                                            "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "10"}]))
         self.assertEqual(second_proposal["status"], "USER_CONFIRMATION_REQUIRED")
         self.apply(second_proposal)
         status = ledger_status(ledger)
@@ -725,7 +728,7 @@ class LibraryApplyTests(TempStateCase):
         second = make_proposal(updated, ledger_last_hash_after=after_status["last_portfolio_hash_after"],
                                ledger_last_hash_before=after_status["last_portfolio_hash_before"],
                                results=account_results(utc(datetime.now(timezone.utc)), deposit=[{
-                                   "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "20"}]))
+                                   "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "10"}]))
         self.assertNotIn("STATE_CHANGED_OUTSIDE_LEDGER", second["warnings"])
         self.apply(second)
         self.assertFalse(json.loads(ledger.read_bytes().splitlines()[-1])["state_changed_outside_ledger"])
@@ -954,12 +957,15 @@ class RepositoryRuleTests(unittest.TestCase):
         self.assertEqual(sorted(result.stdout.split()), sorted(samples))
 
     def test_agent_rules_require_snapshot_and_user_confirmation(self):
-        required = "a verified read-only broker snapshot AND the user's explicit confirmation of that proposal"
+        # 2026-10-10 wording (redesign T1): portfolio facts change only from a verified read-only broker snapshot,
+        # written through the user-confirmed apply path or by the auto-core only when its invariants pass;
+        # fills come from broker records, never from prices.
         for name in ("CLAUDE.md", "AGENTS.md"):
             text = " ".join((ROOT / name).read_text(encoding="utf-8").split())
-            self.assertIn(required, text, name)
+            self.assertIn("only from a verified read-only broker snapshot", text, name)
             self.assertNotIn("explicit user confirmation or a verified read-only broker snapshot", text, name)
-            self.assertIn("reconcile_broker_state.py apply", text, name)
+            self.assertRegex(text, r"reconcile_broker_state\.py apply|auto-core[^.;]*invariant", name)
+            self.assertRegex(text, r"Never infer (?:a fill|fills) from price mov", name)
 
     def test_claude_code_denies_apply_and_direct_state_edits(self):
         deny = set(load_json(ROOT / ".claude/settings.json")["permissions"]["deny"])

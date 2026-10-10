@@ -48,6 +48,8 @@ E >= 1.85 = B, peak review = B, fail-closed = B with the UNVERIFIED label, add =
 | `workspace/outputs/exposure-review/<session>/portfolio-exposure-review.<time>.json` | Review result | runner |
 | `workspace/private_inputs/cash_flow_evidence/` | Sanitized transaction histories | Cowork |
 | `stock-strategy-system/decision_journal.json` | Confirmation journal (hash chain) | journal `apply` only |
+| `scripts/auto_core.py`, `scripts/auto_core_reconcile.py` | Daily auto-core and its reconciliation under I1-I5 (redesign T1) | Windows task `InvestmentV2-AutoCore` |
+| `workspace/outputs/auto-core/<date>/result.json`, `LATEST.json` | Auto-core result read by the 06:40 integrated check | `auto_core.py daily` |
 
 All of these outputs hold holdings, equity or account activity and are
 Git-ignored. Never commit or paste them elsewhere.
@@ -203,6 +205,56 @@ official sources; nothing generates it automatically.
 - Accepted remaining risk: a date announced after the check, with the announcement within two
   sessions of the next session, can leave a recommendation inside the window. Read the integrated
   check's earnings-announcement alert before any buy.
+
+## Auto-core daily run (redesign T1)
+
+The Windows task `InvestmentV2-AutoCore` runs `scripts/run_auto_core.ps1` ->
+`scripts/auto_core.py daily` on Tuesday-Saturday at 06:15 KST (after the U.S.
+regular close in summer and winter time). Registration, once:
+`powershell -ExecutionPolicy Bypass -File manage-us-stock-strategy\scripts\register_auto_core_task.ps1`
+(`-PlanOnly` prints the plan). It needs no human input and has no order path.
+
+1. Configuration `workspace/policies/auto_core.json` and the kill switch
+   (`kill_switch: true` = HOLD before any read). Every run records the git commit
+   SHA and the dirty paths; in apply mode an uncommitted change to a guarded file
+   (the retired acceptance pin list plus the auto-core's own files) is a FAIL.
+2. Account reads, cash-flow evidence and the reconciliation under invariants
+   I1-I5 ([broker-snapshot-reconciliation.md](broker-snapshot-reconciliation.md)
+   section 5). compare mode writes nothing to the state, ledger or journal and
+   records `would_apply`; apply mode writes only when every invariant passes.
+   This step runs first so the snapshot is judged while fresh (15-minute proposal
+   expiry); a first collection of a new symbol can take minutes.
+3. 30-minute bars for held symbols (this run's broker read) + `docs/claude/watchlist-registry.json`
+   members + `symbols_extra` (SOXX): `scripts/collect_30m.ps1` (tracked copy of
+   the local collector, read-only `kiwoomcli overseas candles stock-minute`, profile
+   alias from `kiwoom-readonly-policy.json` with `--mode real`, output in the same
+   `pages/<SYMBOL>/` folder). The newest fetch starts at today's KST date and steps
+   back to the history's last session (2026-04-01 for a symbol seen the first
+   time; its exchange comes from the Kiwoom identity lookup, never a guess). A
+   saved page must be a `return_code` 0 response with rows, else it is removed
+   and the run stops. Then the close history is built with `--update`
+   semantics in-process (the active production calendar; an earlier close never
+   changes).
+4. `run_portfolio_exposure_review.py` with the production defaults.
+5. `workspace/outputs/auto-core/<YYYY-MM-DD>/result.json` and `workspace/outputs/auto-core/LATEST.json`
+   (schema `auto-core-result.schema.json`): `status` OK|HOLD|FAIL, `reasons`,
+   `commit_sha`, `dirty_paths`, `mode`, `invariants` I1-I5, `would_apply` or
+   `applied`, `holdings_change`, `exposure` {E, N, lines, holds}, `compare`
+   {streak, last_mismatch}, `next_action_for_user`. Exit code 0 for OK or HOLD, 1
+   for FAIL. Logs: `workspace/outputs/auto-core/logs/`.
+
+- No retry inside a run: the first failure stops it and the next run is the retry.
+  A second run on the same day gives the same result (an already written snapshot
+  is NO_CHANGE, saved pages are reused, the streak counts against the previous day).
+- Compare streak: the previous day's `would_apply` is right when the first
+  human-path ledger entry after it holds the same holdings and cash (within 1.00
+  USD), or, without one, when today's read is explained from it by broker fills
+  and classified flows (I2/I3). Otherwise the streak is 0 and the difference is
+  recorded. At `compare_days_required` (3) `next_action_for_user` is
+  "기록 모드 켤 준비됨"; switching to apply is the user's decision.
+- Not in T1: the Kiwoom adjusted daily split check (`usa06012`, step 2 of the
+  routine below) stays a manual step; the label basis after 2026-11-02 (winter
+  time) stays unverified until measured.
 
 ## Routine (Cowork, after the U.S. close, read-only Kiwoom CLI)
 

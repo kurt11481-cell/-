@@ -259,7 +259,7 @@ class ReconciliationIntegrationTests(TempStateCase):
         self.assertEqual(cfe.read_ledger_blocks(ledger), [block])
         # The next reconciliation without a declaration keeps the old entry shape.
         follow = make_proposal(written, results=account_results(utc(datetime.now(timezone.utc)), deposit=[{
-            "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "20"}]))
+            "crnc_code": "USD", "fc_pymn_alowa": "10", "fc_ord_alowa": "10"}]))
         self.audit_path = self.directory / "apply_audit_2.json"
         self.apply(follow)
         self.assertNotIn("cash_flow_declaration", json.loads(ledger.read_bytes().splitlines()[-1]))

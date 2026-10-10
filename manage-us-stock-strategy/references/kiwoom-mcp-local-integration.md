@@ -157,8 +157,12 @@ orderable-cash verification. Keep `--named` off for field-code mapping.
 
 Existing `kiwoom_broker_shadow.py` derives its local `settled_cash` as
 `min(withdrawable, order_available)` and reads settlement detail separately.
-That is an existing normalization rule, not a direct API definition. This
-note neither changes that rule nor maps arbitrary MCP cash to settled cash.
+That is an existing normalization rule, not a direct API definition. Since
+redesign T1 F1 the reconciled state cash (`available_cash_usd`) is the
+order-available amount (`fc_ord_alowa`) under one same-read check
+(broker-snapshot-reconciliation.md I0); `settled_cash` keeps its minimum meaning
+for display and the dashboard funding cap. This note does not map arbitrary MCP
+cash to settled cash.
 Fills and realized P&L are additional inputs of the full Manual account path;
 these are not covered by the five-capability comparison or the proposed test.
 

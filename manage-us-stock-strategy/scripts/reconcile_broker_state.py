@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I0 broker reconciliation: propose (read-only), show, and user-confirmed apply.
+"""I0 broker reconciliation: propose (read-only), show, user-confirmed apply, and the auto-core path.
 
 propose  Read the Kiwoom account (read-only), build one proposal, never write state.
 show     Render the proposal difference table for the user (deterministic).
@@ -7,16 +7,24 @@ apply    Write the proposal to portfolio state only with the user's confirmation
          Run apply only in Cowork after the user typed "confirm <code>" in that conversation,
          or from the user's own terminal (--confirmed-via USER_TERMINAL). Agents, scheduled
          tasks, Claude Code, Codex and Judge sessions never run it.
+auto     Redesign T1 F4 (run by the auto-core Windows task): the same read plus transaction history,
+         daily fills and day trades, judged by invariants I1-I5 (auto_core_reconcile.py). In mode
+         "compare" (workspace/policies/auto_core.json) it never writes and records would_apply; in mode
+         "apply" it writes only when I1-I5 pass and the kill switch is off. No human code is involved.
+         Result: workspace/outputs/auto-core/<YYYY-MM-DD>/reconcile.json.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+import auto_core_reconcile as auto_core_reconcile
 from apply_user_confirmed_broker_snapshot import (
     CONFIRMATION_METHODS, apply_confirmed, default_backup_directory, default_ledger_path, ledger_status,
     preview_updated_state,
@@ -34,6 +42,9 @@ LOCALE_PATH = SKILL_ROOT / "assets/locales/reconcile-broker-state-ko-KR.json"
 PROPOSAL_FILE = "reconciliation_proposal.json"
 SNAPSHOT_FILE = "kiwoom_broker_snapshot.shadow.json"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "workspace/outputs/reconciliation"
+AUTO_OUTPUT_ROOT = REPO_ROOT / "workspace/outputs/auto-core"
+AUTO_RESULT_FILE = "reconcile.json"
+DAY_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}")
 LEVERAGED_SCOPE = "leveraged_holding_risk_and_watchlist"
 ALERT_CHECK_NAME = "evaluate_alerts.leveraged_state_integrity_errors"
 KST = timezone(timedelta(hours=9))
@@ -304,6 +315,128 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 0
 
 
+def kst_day(now: datetime | None = None) -> str:
+    return (now or datetime.now(timezone.utc)).astimezone(KST).date().isoformat()
+
+
+def previous_reconcile(output_root: Path, day: str) -> dict[str, Any] | None:
+    """The latest reconcile.json of an earlier day folder (a rerun on the same day never sees itself)."""
+    folders = sorted(path for path in Path(output_root).glob(f"*/{AUTO_RESULT_FILE}")
+                     if DAY_FOLDER.fullmatch(path.parent.name) and path.parent.name < day)
+    if not folders:
+        return None
+    try:
+        value = load_json(folders[-1])
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def compare_reference(output_root: Path, day: str) -> dict[str, Any] | None:
+    """The earlier run whose would_apply (or applied) block the compare check starts from.
+
+    It is the latest earlier run, looking back past runs that held only because a settlement due on their own
+    day was not shown yet (T1 r3 C4 b): those keep the streak, so the next day continues from the run before.
+    """
+    folders = sorted((path for path in Path(output_root).glob(f"*/{AUTO_RESULT_FILE}")
+                      if DAY_FOLDER.fullmatch(path.parent.name) and path.parent.name < day), reverse=True)
+    for path in folders:
+        try:
+            value = load_json(path)
+        except (OSError, ValueError):
+            return None
+        if not isinstance(value, dict):
+            return None
+        if value.get("applied") or value.get("would_apply") or not (
+                value.get("status") == "HOLD" and auto_core_reconcile.d0_only(value.get("reasons"))):
+            return value
+    return None
+
+
+def _auto_stop(mode: str, status: str, reasons: list[str], provenance: dict[str, Any] | None) -> dict[str, Any]:
+    return {"schema_version": auto_core_reconcile.RESULT_SCHEMA_VERSION,
+            "generated_at": datetime.now(timezone.utc).isoformat(), "mode": mode, "status": status,
+            "reasons": reasons, "kill_switch": "KILL_SWITCH_ON" in reasons, "warnings": [], "invariants": None,
+            "cash_flow_evidence": None, "proposal": None, "would_apply": None, "applied": None,
+            "holdings_change": [], "fills": [], "compare_check": None, "state_revision": None,
+            "provenance": provenance, "account_identifier_stored": False, "inferred_fills": False,
+            "order_authority": False, "quantity_authority": "none", "execution_quantity": None}
+
+
+def reconcile_auto(*, config: dict[str, Any] | None, config_reasons: list[str], provenance: dict[str, Any],
+                   output_directory: Path, compare_baseline: dict[str, Any] | None,
+                   readonly_policy_path: Path, rate_policy_path: Path, broker_policy_path: Path,
+                   alert_policy_path: Path, state_path: Path, journal_path: Path, runtime: Path | None = None,
+                   reader: Callable[..., list[dict[str, Any]]] | None = None,
+                   now: Callable[[], datetime] | None = None, evidence_root: Path | None = None,
+                   previous_run: dict[str, Any] | None = None, config_path: Path | None = None,
+                   provenance_source: Callable[[], dict[str, Any]] | None = None) -> dict[str, Any]:
+    """F4 entry used by `auto` and by auto_core.py daily. Never raises; failures become FAIL results.
+
+    previous_run: the latest earlier reconcile.json (today's settlement read while pending, T1 r3 C4 a).
+    config_path, provenance_source: read again by apply_auto_core just before a write (T1 r3 C1).
+    """
+    if config is None and any(reason != "AUTO_CORE_CONFIG_MISSING" for reason in config_reasons):
+        return _auto_stop("compare", "FAIL", list(config_reasons), provenance)
+    # Without the approved configuration the run compares only (it never writes) and says why.
+    mode = config["mode"] if config else "compare"
+    if config and config["kill_switch"] is True:
+        return _auto_stop(mode, "HOLD", ["KILL_SWITCH_ON"], provenance)
+    guard = auto_core_reconcile.apply_guard_reasons(mode, provenance)
+    if guard:
+        return _auto_stop(mode, "FAIL", guard, provenance)
+    try:
+        readonly_policy = load_json(readonly_policy_path)
+        official_runtime = Path(str(readonly_policy["official_runtime_path"])).resolve()
+        if (runtime or official_runtime).resolve() != official_runtime:
+            raise auto_core_reconcile.AutoReconcileError("KIWOOM_RUNTIME_PATH_MISMATCH")
+        from portfolio_exposure import journal_view
+        from portfolio_review_journal import load_journal
+
+        activation = journal_view(load_journal(journal_path)).get("activation") or {}
+        extra: dict[str, Any] = {"evidence_root": evidence_root, "previous_run": previous_run,
+                                 "config_path": config_path, "provenance_source": provenance_source}
+        if reader is not None:
+            extra["reader"] = reader
+        if now is not None:
+            extra["now"] = now
+        result = auto_core_reconcile.run_auto(
+            mode=mode, kill_switch=False, state_path=state_path,
+            journal_activation_date=activation.get("activation_date"), runtime=official_runtime,
+            rate_policy=load_json(rate_policy_path), broker_policy=load_json(broker_policy_path),
+            post_apply_check=alert_engine_check(load_json(alert_policy_path)),
+            output_directory=output_directory, provenance=provenance, compare_baseline=compare_baseline, **extra)
+    except (auto_core_reconcile.AutoReconcileError, CashFlowError, OSError, ValueError, KeyError, TypeError,
+            RuntimeError) as exc:
+        # RuntimeError covers a sanitized BridgeError (its message is only a status code).
+        return _auto_stop(mode, "FAIL", [str(exc) or type(exc).__name__], provenance)
+    result["provenance"] = provenance
+    if config_reasons:
+        result["reasons"] = list(config_reasons) + result["reasons"]
+        result["status"] = "HOLD" if result["status"] == "OK" else result["status"]
+    return result
+
+
+def cmd_auto(args: argparse.Namespace, reader: Callable[..., list[dict[str, Any]]] | None) -> int:
+    day = args.date or kst_day()
+    output_directory = Path(args.output_root) / day
+    config, config_reasons = auto_core_reconcile.load_config(args.config)
+    provenance = auto_core_reconcile.git_provenance()
+    reference = compare_reference(Path(args.output_root), day)
+    baseline = (reference or {}).get("applied") or (reference or {}).get("would_apply")
+    result = reconcile_auto(
+        config=config, config_reasons=config_reasons, provenance=provenance, output_directory=output_directory,
+        compare_baseline=baseline, readonly_policy_path=args.readonly_policy, rate_policy_path=args.rate_policy,
+        broker_policy_path=args.broker_policy, alert_policy_path=args.alert_policy,
+        state_path=Path(args.portfolio_state), journal_path=args.journal, runtime=args.runtime, reader=reader,
+        previous_run=previous_reconcile(Path(args.output_root), day), config_path=args.config)
+    output_directory.mkdir(parents=True, exist_ok=True)
+    write_json(output_directory / AUTO_RESULT_FILE, result)
+    print(json.dumps({"status": result["status"], "mode": result["mode"], "reasons": result["reasons"][:5],
+                      "path": repo_relative(output_directory / AUTO_RESULT_FILE)}, ensure_ascii=True))
+    return 1 if result["status"] == "FAIL" else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="I0 broker reconciliation (read-only propose, confirmed apply)")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -332,6 +465,18 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument("--proposal", default="latest")
     apply.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     apply.add_argument("--portfolio-state", type=Path)
+    auto = commands.add_parser("auto", help="auto-core reconciliation under invariants I1-I5 (compare or apply)")
+    auto.add_argument("--config", type=Path, default=auto_core_reconcile.CONFIG_PATH)
+    auto.add_argument("--date", help="result folder date YYYY-MM-DD (default: today in Korea)")
+    auto.add_argument("--runtime", type=Path)
+    auto.add_argument("--readonly-policy", type=Path, default=REPO_ROOT / "workspace/policies/kiwoom-readonly-policy.json")
+    auto.add_argument("--rate-policy", type=Path, default=REPO_ROOT / "workspace/policies/kiwoom-rate-limit-policy.json")
+    auto.add_argument("--broker-policy", type=Path,
+                      default=REPO_ROOT / "workspace/policies/kiwoom-broker-readonly-policy.json")
+    auto.add_argument("--alert-policy", type=Path, default=REPO_ROOT / "stock-strategy-system/alert_policy.json")
+    auto.add_argument("--portfolio-state", type=Path, default=REPO_ROOT / DEFAULT_PORTFOLIO_STATE_PATH)
+    auto.add_argument("--journal", type=Path, default=REPO_ROOT / "stock-strategy-system/decision_journal.json")
+    auto.add_argument("--output-root", type=Path, default=AUTO_OUTPUT_ROOT)
     return parser
 
 
@@ -343,6 +488,8 @@ def main(argv: list[str] | None = None, *, reader: Callable[..., list[dict[str, 
         return cmd_propose(args, reader)
     if args.command == "show":
         return cmd_show(args)
+    if args.command == "auto":
+        return cmd_auto(args, reader)
     return cmd_apply(args)
 
 

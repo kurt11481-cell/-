@@ -11,10 +11,11 @@ from __future__ import annotations
 import math
 import re
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Callable
 
 from kiwoom_account_readonly_bridge import _sanitize
-from kiwoom_broker_shadow import normalize_snapshot
+from kiwoom_broker_shadow import normalize_snapshot, order_available_cash_errors
 
 
 BROKER_NORMALIZATION_FAILED = "BROKER_SNAPSHOT_NORMALIZATION_FAILED"
@@ -198,6 +199,24 @@ def _maps_match(left: dict[str, Any], right: dict[str, Any]) -> bool:
     return True
 
 
+def _order_available_cash(broker_state: dict[str, Any]) -> float | None:
+    """Order-available cash of the observed read, or None when the F1 cash check does not pass."""
+    cash = broker_state.get("cash") or {}
+    order_available = _number(cash.get("order_available_cash"))
+    withdrawable = _number(cash.get("withdrawable_cash"))
+    if order_available is None or withdrawable is None:
+        return None
+    quantities = []
+    for item in broker_state.get("holdings") or []:
+        if isinstance(item, dict):
+            settled, held = _number(item.get("settled_quantity")), _number(item.get("held_quantity"))
+            quantities.append((None if settled is None else Decimal(str(settled)),
+                               None if held is None else Decimal(str(held))))
+    if order_available_cash_errors(Decimal(str(order_available)), Decimal(str(withdrawable)), quantities):
+        return None
+    return order_available
+
+
 def compare_broker_and_system(
     broker_state: dict[str, Any], system_state: dict[str, Any],
 ) -> tuple[str, list[str]]:
@@ -223,7 +242,9 @@ def compare_broker_and_system(
     system_costs = system_state.get("average_cost_usd") or {}
     if broker_costs and not _maps_match(broker_costs, system_costs):
         differences.append("AVERAGE_COST_DIFFERS")
-    broker_cash = _number((broker_state.get("cash") or {}).get("settled_available_cash"))
+    # Redesign T1 F1: system cash is the Kiwoom order-available amount, trusted only when the one cash
+    # check passes on the same read (unsettled proceeds must show as a sold, unsettled quantity).
+    broker_cash = _order_available_cash(broker_state)
     system_cash = _number(system_state.get("available_cash_usd"))
     cash_unknown = broker_cash is None or system_cash is None
     if not cash_unknown and not math.isclose(broker_cash, system_cash, rel_tol=1e-9, abs_tol=1e-8):

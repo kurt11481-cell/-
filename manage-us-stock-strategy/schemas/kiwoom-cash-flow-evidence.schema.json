@@ -19,9 +19,9 @@
       "properties": {
         "provider": {"const": "KIWOOM"},
         "api_id": {"const": "ust21100"},
-        "collection": {"const": "COWORK_READ_ONLY_CLI_EVIDENCE_FILE"},
+        "collection": {"enum": ["COWORK_READ_ONLY_CLI_EVIDENCE_FILE", "AUTO_CORE_BRIDGE_READ"]},
         "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "pagination_complete": {"const": "ASSERTED_BY_COLLECTOR"}
+        "pagination_complete": {"enum": ["ASSERTED_BY_COLLECTOR", "VERIFIED_BY_BRIDGE"]}
       }
     },
     "period_from": {"type": "string", "format": "date"},

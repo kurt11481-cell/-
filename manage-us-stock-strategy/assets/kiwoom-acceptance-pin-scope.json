@@ -33,12 +33,23 @@
     "manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json",
     "manage-us-stock-strategy/schemas/kiwoom-acceptance-pin-scope.schema.json"
   ],
-  "allowed_drift_predecessor_sha256": "45cf188892601d61c117519b4d34fc9e6b2ee82074489b8dd9cc0b661ca8bc80",
+  "allowed_drift_predecessor_sha256": "835d4f46bb9e3532a79e32aca9a408f59861640b31dc04718cdb507f5f8e429c",
   "allowed_predecessor_drift": [
-    "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py",
-    "manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json"
+    "manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json",
+    "manage-us-stock-strategy/schemas/kiwoom-acceptance-pin-scope.schema.json",
+    "manage-us-stock-strategy/schemas/kiwoom-cash-flow-evidence.schema.json",
+    "manage-us-stock-strategy/schemas/kiwoom-reconciliation-proposal.schema.json",
+    "manage-us-stock-strategy/scripts/apply_user_confirmed_broker_snapshot.py",
+    "manage-us-stock-strategy/scripts/cash_flow_evidence.py",
+    "manage-us-stock-strategy/scripts/kiwoom_account_readonly_bridge.py",
+    "manage-us-stock-strategy/scripts/kiwoom_broker_shadow.py",
+    "manage-us-stock-strategy/scripts/manual_data_guards.py",
+    "manage-us-stock-strategy/scripts/reconcile_broker_state.py"
   ],
   "order_authority": false,
   "quantity_authority": "none",
-  "execution_quantity": null
+  "execution_quantity": null,
+  "status": "RETIRED",
+  "retired_at": "2026-10-10",
+  "retirement_note": "Redesign T1 F6 (user decision A5, 2026-10-10): no acceptance re-pin is required after a change to these files. Every auto-core run records the git commit SHA and dirty paths (auto_core_reconcile.git_provenance); in apply mode an uncommitted change to any file listed here, to the auto-core's own files, or (T1 r3 C2) to any tracked file under manage-us-stock-strategy/scripts, schemas or assets fails the run before any read, and apply_auto_core checks it again just before the write. The list is kept as that guarded set. allowed_predecessor_drift names exactly the pinned files the T1 change edited against the last active acceptance (835d4f46, re-pinned 2026-10-07), so the historical candidate tools stay self-consistent; no new acceptance is materialized."
 }

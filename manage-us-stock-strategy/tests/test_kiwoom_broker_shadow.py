@@ -105,19 +105,27 @@ class AccountBridgeErrorPreservationTests(unittest.TestCase):
         for guard in self.network_guards:
             guard.assert_not_called()
 
+    @staticmethod
+    def request_for(operation):
+        # T1 F2 dated reads carry exactly their YYYYMMDD date fields.
+        names = bridge.DATED_PARAMETERS.get(operation)
+        if names is None:
+            return {"operation": operation}
+        return {"operation": operation, "params": {name: "20261009" for name in names}}
+
     def invoke(self, stdout, *, exit_code=2, operations=("account_deposit_read",)):
         runner = Mock(return_value=subprocess.CompletedProcess(
             ["offline-worker"], exit_code, stdout, "synthetic-secret-in-stderr",
         ))
         with patch.object(Path, "is_file", return_value=True):
             result = bridge.invoke_account_bridge_batch(
-                [{"operation": op} for op in operations], runtime=Path("offline-runtime"),
+                [self.request_for(op) for op in operations], runtime=Path("offline-runtime"),
                 policy={"external_python_relative_path": "python.exe", "request_timeout_seconds": 1},
                 runner=runner,
             )
         runner.assert_called_once()
         self.assertEqual(json.loads(runner.call_args.kwargs["input"]),
-                         [{"operation": op} for op in operations])
+                         [self.request_for(op) for op in operations])
         return result
 
     def test_worker_initialization_exception_is_safe(self):

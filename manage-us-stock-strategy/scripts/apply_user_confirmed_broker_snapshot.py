@@ -10,9 +10,9 @@ import tempfile
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from cash_flow_evidence import declaration_block_errors
+from cash_flow_evidence import SETTLED_STATUSES, declaration_block_errors
 from kiwoom_broker_shadow import PATCH_FIELDS, PROPOSAL_SCHEMA_VERSION, proposal_content_hash
 from validation_common import canonical_hash, load_json, validate_instance
 
@@ -28,6 +28,9 @@ PINNED_PROPOSAL_SCHEMAS = {
     PROPOSAL_SCHEMA_VERSION: SCHEMA_DIRECTORY / "kiwoom-reconciliation-proposal.schema.json",
 }
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
+# Redesign T1 F4: the auto-core writes only through apply_auto_core, never through apply_confirmed.
+AUTO_CORE_METHOD = "AUTO_CORE_INVARIANTS"
+AUTO_CORE_INVARIANTS = ("I1", "I2", "I3", "I4", "I5")
 LEDGER_FILE_NAME = "reconciliation_ledger.jsonl"
 BACKUP_DIRECTORY_NAME = "backups"
 GENESIS_LEDGER_HASH = "0" * 64
@@ -121,8 +124,11 @@ def _kiwoom_snapshot_record(proposal: dict[str, Any], confirmation: dict[str, An
     # as_of, holdings_complete and cash scope come from the proposal, never from the caller.
     record = proposal["confirmed_snapshot_record"]
     cash_verified = record.get("cash_verified") is True
+    automatic = confirmation.get("confirmation_method") == AUTO_CORE_METHOD
     return {
-        "verified": True, "authority_state": "VERIFIED_USER_CONFIRMED_BROKER_SNAPSHOT",
+        "verified": True,
+        "authority_state": ("VERIFIED_AUTO_CORE_INVARIANTS_BROKER_SNAPSHOT" if automatic
+                            else "VERIFIED_USER_CONFIRMED_BROKER_SNAPSHOT"),
         "source": record["source"], "scope": proposal["scope"],
         "account_id_masked": None, "account_identifier_stored": False,
         "evidence_bundle_id": proposal["bundle_id"], "evidence_sha256": record["evidence_sha256"],
@@ -165,7 +171,10 @@ def _updated_state(state: dict[str, Any], proposal: dict[str, Any], confirmation
                                                      else []) + [{
             "reconciliation_id": proposal["proposal_id"],
             "status": "BROKER_SNAPSHOT_RECONCILED_NO_FILL_RECORDED",
-            "method": "KIWOOM_READONLY_SNAPSHOT_USER_CONFIRMED", "change_kind": proposal.get("change_kind"),
+            "method": ("KIWOOM_READONLY_SNAPSHOT_AUTO_CORE_INVARIANTS"
+                       if confirmation.get("confirmation_method") == AUTO_CORE_METHOD
+                       else "KIWOOM_READONLY_SNAPSHOT_USER_CONFIRMED"),
+            "change_kind": proposal.get("change_kind"),
             "reconciled_at": confirmed_at,
             "reconciled_at_kst": confirmed.astimezone(KST).isoformat() if confirmed else None,
             "share_changes": share_changes, "trade_id": None,
@@ -292,6 +301,19 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
     # Any other outside change is applied only when the confirmed proposal showed it; the entry records it.
     if outside_ledger and "STATE_CHANGED_OUTSIDE_LEDGER" not in (proposal.get("warnings") or []):
         raise ValueError("OUTSIDE_LEDGER_WARNING_NOT_IN_PROPOSAL")
+    return _write_applied(
+        state_path=state_path, proposal=proposal, state=state, original_bytes=original_bytes,
+        before_hash=before_hash, confirmation=confirmation, current_time=current_time, ledger=ledger,
+        outside_ledger=outside_ledger, kiwoom=kiwoom, audit_path=audit_path)
+
+
+def _write_applied(*, state_path: Path, proposal: dict[str, Any], state: dict[str, Any], original_bytes: bytes,
+                   before_hash: str, confirmation: dict[str, Any], current_time: datetime, ledger: dict[str, Any],
+                   outside_ledger: bool, kiwoom: bool, audit_path: Path,
+                   entry_overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Shared write sequence of every apply path: backup, then ledger, then the atomic state replacement."""
+    backup_directory = default_backup_directory(state_path)
+    ledger_path = default_ledger_path(state_path)
     confirmed_at = current_time.astimezone(timezone.utc).isoformat()
     updated = _updated_state(state, proposal, confirmation, confirmed_at)
     _assert_untouched(state, updated)
@@ -322,6 +344,7 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
     if kiwoom and "cash_flow_declaration" in proposal:
         # Recorded in the ledger only; no state field is written for it (NEVER_TOUCHED is unchanged).
         entry["cash_flow_declaration"] = proposal["cash_flow_declaration"]
+    entry.update(entry_overrides or {})
     _append_ledger(ledger_path, entry)
     _atomic_write_json(state_path, updated, newline=newline)
     if canonical_hash(load_json(state_path)) != after_hash:
@@ -333,3 +356,135 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
              "inferred_fills": False, "order_authority": False}
     _atomic_write_json(audit_path, audit)
     return audit
+
+
+def _auto_core_write_recheck(*, proposal: dict[str, Any], provenance: dict[str, Any], config_path: Path | None,
+                             provenance_source: Callable[[], dict[str, Any]] | None) -> str | None:
+    """T1 r3 C1: what allowed the write, read again just before it; the refusal code, or None.
+
+    1 the configuration file again: mode apply and kill switch off
+    2 the code provenance computed again: no uncommitted guarded file and still the commit the run recorded
+    3 the proposal's cash-flow declaration: present and declared in full (NO_EXTERNAL_FLOW or DECLARED_IN_FULL)
+    """
+    import auto_core_reconcile  # here, not at the top: that module imports this one
+
+    config, reasons = auto_core_reconcile.load_config(
+        auto_core_reconcile.CONFIG_PATH if config_path is None else config_path)
+    if config is None:
+        return "AUTO_CORE_RECHECK_CONFIG_UNAVAILABLE:" + ",".join(reasons)
+    if config["kill_switch"] is not False:
+        return "AUTO_CORE_RECHECK_KILL_SWITCH_ON"
+    if config["mode"] != "apply":
+        return "AUTO_CORE_RECHECK_MODE_NOT_APPLY"
+    fresh = (provenance_source or auto_core_reconcile.git_provenance)()
+    fresh = fresh if isinstance(fresh, dict) else {}
+    guard = auto_core_reconcile.apply_guard_reasons("apply", fresh)
+    if guard:
+        return "AUTO_CORE_RECHECK_" + guard[0]
+    if fresh.get("commit_sha") != provenance.get("commit_sha"):
+        return "AUTO_CORE_RECHECK_COMMIT_CHANGED"
+    declaration = proposal.get("cash_flow_declaration")
+    if not isinstance(declaration, dict):
+        return "AUTO_CORE_RECHECK_CASH_FLOW_DECLARATION_MISSING"
+    if declaration.get("declaration_status") not in SETTLED_STATUSES:
+        return "AUTO_CORE_RECHECK_CASH_FLOW_NOT_DECLARED_IN_FULL:" + str(declaration.get("declaration_status"))
+    return None
+
+
+def apply_auto_core(*, state_path: Path, proposal: dict[str, Any], invariants: dict[str, Any],
+                    provenance: dict[str, Any], audit_path: Path, now: datetime | None = None,
+                    config_path: Path | None = None,
+                    provenance_source: Callable[[], dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Redesign T1 F4: write one Kiwoom proposal because every invariant I1-I5 passed (no human code).
+
+    The caller (reconcile_broker_state.py auto) judges I1-I5 on the same read; this library refuses unless
+    every one of them is PASS, I3 names the snapshot it was judged against (r2), the run records a git commit
+    SHA, and the proposal, state hash, revision, expiry and ledger chain are exactly what apply_confirmed
+    checks. Just before the write it reads again the configuration (config_path, default
+    workspace/policies/auto_core.json), the code provenance (provenance_source, default git) and the
+    cash-flow declaration (r3 C1). The entry names that baseline snapshot and this record's own snapshot (the
+    next run's baseline). An outside change to the state is never applied here (I4). No confirmation code is
+    made, copied or recorded.
+    """
+    state_path = Path(state_path)
+    audit_path = Path(audit_path)
+    ledger_path = default_ledger_path(state_path)
+    if state_path.name in PROTECTED_NON_PORTFOLIO_NAMES:
+        raise ValueError("PORTFOLIO_STATE_PATH_REQUIRED")
+    resolved_state = state_path.resolve()
+    if resolved_state in {audit_path.resolve(), ledger_path.resolve()} or (
+            resolved_state.parent == default_backup_directory(state_path).resolve()):
+        raise ValueError("BROKER_APPLY_PATH_ALIAS_REJECTED")
+    if proposal.get("schema_version") != PROPOSAL_SCHEMA_VERSION:
+        raise ValueError("BROKER_PROPOSAL_TYPE_UNSUPPORTED")
+    schema_errors = validate_instance(proposal, PINNED_PROPOSAL_SCHEMAS[PROPOSAL_SCHEMA_VERSION])
+    if schema_errors:
+        raise ValueError("BROKER_PROPOSAL_SCHEMA_INVALID: " + "; ".join(schema_errors))
+    failed = [name for name in AUTO_CORE_INVARIANTS
+              if not isinstance(invariants.get(name), dict) or invariants[name].get("status") != "PASS"]
+    if failed or set(invariants) != set(AUTO_CORE_INVARIANTS):
+        raise ValueError("AUTO_CORE_INVARIANTS_NOT_PASSED: " + ", ".join(failed or sorted(invariants)))
+    # R2-2: I3 was judged against the snapshot of the last record; the entry names it and this record's own.
+    baseline = invariants["I3"].get("baseline")
+    if not isinstance(baseline, dict) or baseline.get("status") != "OK" or not isinstance(
+            baseline.get("snapshot_path"), str) or not isinstance(baseline.get("snapshot_hash"), str):
+        raise ValueError("AUTO_CORE_BASELINE_SNAPSHOT_REQUIRED")
+    commit = provenance.get("commit_sha")
+    if not isinstance(commit, str) or len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit):
+        raise ValueError("AUTO_CORE_COMMIT_SHA_REQUIRED")
+    if provenance.get("mode") != "apply":
+        raise ValueError("AUTO_CORE_MODE_NOT_APPLY")
+    original_bytes = state_path.read_bytes()
+    try:
+        state = json.loads(original_bytes.decode("utf-8"))
+    except ValueError as exc:
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER: STATE_FILE_NOT_JSON") from exc
+    if not isinstance(state, dict):
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER: STATE_FILE_NOT_JSON_OBJECT")
+    before_hash = canonical_hash(state)
+    if int(state.get("state_revision", -1)) != int(proposal.get("expected_state_revision", -2)):
+        raise ValueError("CONCURRENT_STATE_REVISION_MISMATCH")
+    if before_hash != proposal.get("expected_portfolio_hash_before"):
+        raise ValueError("CONCURRENT_STATE_HASH_MISMATCH")
+    if proposal.get("status") != "USER_CONFIRMATION_REQUIRED":
+        raise ValueError("PROPOSAL_NOT_APPLYABLE")
+    if proposal.get("unresolved_fields"):
+        raise ValueError("BROKER_PROPOSAL_UNRESOLVED_FIELDS: " + ", ".join(map(str, proposal["unresolved_fields"])))
+    if proposal_content_hash(proposal) != proposal["proposal_id"]:
+        raise ValueError("BROKER_PROPOSAL_INTEGRITY_MISMATCH")
+    real_now = datetime.now(timezone.utc)
+    current_time = real_now if now is None else max(now, real_now)
+    expires_at = _parse_utc(proposal.get("expires_at"))
+    if expires_at is None or current_time > expires_at:
+        raise ValueError("BROKER_PROPOSAL_EXPIRED")
+    missing = [key for key in PATCH_FIELDS if key not in (proposal.get("proposed_patch") or {})]
+    if missing:
+        raise ValueError("BROKER_PROPOSAL_PATCH_INCOMPLETE: " + ", ".join(missing))
+    declaration_errors = (declaration_block_errors(proposal["cash_flow_declaration"])
+                          if "cash_flow_declaration" in proposal else [])
+    if declaration_errors:
+        raise ValueError("CASH_FLOW_DECLARATION_INVALID: " + ", ".join(declaration_errors))
+    ledger = ledger_status(ledger_path)
+    if not ledger["chain_ok"]:
+        raise ValueError("LEDGER_INTEGRITY_FAILED")
+    if ledger["last_portfolio_hash_after"] is None or ledger["last_portfolio_hash_after"] != before_hash:
+        # I4: the state must be exactly what the ledger last wrote.
+        raise ValueError("STATE_CHANGED_OUTSIDE_LEDGER")
+    refusal = _auto_core_write_recheck(proposal=proposal, provenance=provenance, config_path=config_path,
+                                       provenance_source=provenance_source)
+    if refusal:
+        raise ValueError(refusal)
+    confirmation = {"confirmation_method": AUTO_CORE_METHOD}
+    auto_core = {"invariants": {name: invariants[name] for name in AUTO_CORE_INVARIANTS},
+                 "commit_sha": commit, "dirty_paths": sorted(str(path) for path in provenance.get("dirty_paths") or []),
+                 "mode": "apply", "run_id": provenance.get("run_id"),
+                 "baseline_snapshot": {"path": baseline["snapshot_path"], "snapshot_hash": baseline["snapshot_hash"]},
+                 # The next run's I3 baseline: this record's snapshot (a create-once file).
+                 "snapshot": {"path": (proposal.get("source") or {}).get("snapshot_path"),
+                              "snapshot_hash": (proposal.get("source") or {}).get("snapshot_hash")}}
+    return _write_applied(
+        state_path=state_path, proposal=proposal, state=state, original_bytes=original_bytes,
+        before_hash=before_hash, confirmation=confirmation, current_time=current_time, ledger=ledger,
+        outside_ledger=False, kiwoom=True, audit_path=audit_path,
+        # No human code exists on this path: none is made, copied or recorded.
+        entry_overrides={"confirm_code": None, "user_message": None, "auto_core": auto_core})

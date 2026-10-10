@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-result.schema.json",
+  "title": "Auto-core daily result (workspace/outputs/auto-core/<YYYY-MM-DD>/result.json and LATEST.json)",
+  "description": "Redesign T1 F5. Read by the 06:40 integrated check: a status other than OK is pushed in one line, with next_action_for_user when present; a record (applied not null) with warnings is pushed in one line too (T1 r3 C3). No order authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_day_kst", "generated_at", "status", "reasons", "mode", "kill_switch", "commit_sha",
+    "dirty_paths", "guarded_dirty_paths", "steps", "invariants", "would_apply", "applied", "holdings_change",
+    "warnings", "exposure", "compare", "next_action_for_user", "order_authority", "quantity_authority",
+    "execution_quantity", "account_identifier_stored"
+  ],
+  "properties": {
+    "schema_version": {"const": "auto-core-result-1.0"},
+    "run_day_kst": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["OK", "HOLD", "FAIL"]},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "mode": {"enum": ["compare", "apply"]},
+    "kill_switch": {"type": "boolean"},
+    "commit_sha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "dirty_paths": {"type": "array", "items": {"type": "string"}},
+    "guarded_dirty_paths": {"type": "array", "items": {"type": "string"}},
+    "steps": {"type": "object"},
+    "invariants": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "I1": {"type": "object", "required": ["status", "reasons"], "properties": {"status": {"enum": ["PASS", "FAIL"]}, "reasons": {"type": "array", "items": {"type": "string"}}}},
+        "I2": {"type": "object", "required": ["status", "reasons"], "properties": {"status": {"enum": ["PASS", "FAIL"]}, "reasons": {"type": "array", "items": {"type": "string"}}}},
+        "I3": {"type": "object", "required": ["status", "reasons"], "properties": {"status": {"enum": ["PASS", "FAIL"]}, "reasons": {"type": "array", "items": {"type": "string"}}}},
+        "I4": {"type": "object", "required": ["status", "reasons"], "properties": {"status": {"enum": ["PASS", "FAIL"]}, "reasons": {"type": "array", "items": {"type": "string"}}}},
+        "I5": {"type": "object", "required": ["status", "reasons"], "properties": {"status": {"enum": ["PASS", "FAIL"]}, "reasons": {"type": "array", "items": {"type": "string"}}}}
+      }
+    },
+    "would_apply": {"type": ["object", "null"]},
+    "applied": {"type": ["object", "null"]},
+    "holdings_change": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "recorded", "broker", "fills_net"],
+        "properties": {
+          "ticker": {"type": "string"},
+          "recorded": {"type": "integer"},
+          "broker": {"type": "integer"},
+          "fills_net": {"type": "integer"}
+        }
+      }
+    },
+    "warnings": {
+      "description": "Proposal warnings (PROPOSAL_WARNING:<code>) and post-apply alert check errors (POST_APPLY_CHECK_ERROR:<text>). Never a reason to hold.",
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "exposure": {"type": ["object", "null"]},
+    "compare": {
+      "type": "object",
+      "required": ["streak", "last_mismatch"],
+      "properties": {
+        "streak": {"type": "integer", "minimum": 0},
+        "last_mismatch": {"type": ["object", "null"]},
+        "basis": {"enum": ["HUMAN_LEDGER_ENTRY", "EXPLAINED_BY_FILLS", "KEPT_D0_SETTLEMENT_NOT_SHOWN"]},
+        "kept_reasons": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "next_action_for_user": {"type": ["string", "null"], "minLength": 1},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"},
+    "account_identifier_stored": {"const": false}
+  }
+}

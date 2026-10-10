@@ -36,6 +36,11 @@ SNAPSHOT_RECORD_COMPARED_FIELDS = ("source", "scope", "as_of", "holdings_complet
 COST_BASIS_DERIVATION = "QUANTITY_X_AVERAGE_COST_DECIMAL_ROUND_HALF_UP_CENTS"
 FUTURE_TIMESTAMP_TOLERANCE_SECONDS = 60
 US_EASTERN = "America/New_York"
+# Redesign T1 F1 (user 2026-10-09/10-10): cash is the Kiwoom order-available amount, which includes
+# the proceeds of a filled sale before settlement. The foreign-currency deposit (fc_entra) shows settled
+# money only and is never compared with it.
+CASH_BASIS = "KIWOOM_ORDER_AVAILABLE_USD"
+CASH_COMPONENT_TOLERANCE_USD = Decimal("1.00")
 
 
 def _number(value: Any) -> float | None:
@@ -227,13 +232,50 @@ def validate_reconciliation_inputs(results: list[dict[str, Any]], snapshot: dict
         elif len(usd_rows) > 1:
             errors.append("CASH_USD_ROW_DUPLICATE")
         else:
+            values = {}
             for field in ("fc_pymn_alowa", "fc_ord_alowa"):
                 value = _decimal(usd_rows[0].get(field))
                 if value is None:
                     errors.append(f"CASH_VALUE_INVALID:{field}")
                 elif value < 0:
                     errors.append(f"CASH_VALUE_NEGATIVE:{field}")
+                else:
+                    values[field] = value
+            if len(values) == 2:
+                errors.extend(order_available_cash_errors(
+                    values["fc_ord_alowa"], values["fc_pymn_alowa"],
+                    [(_decimal(row.get("qty")), _decimal(row.get("poss_qty")))
+                     for row in _passed_rows(results, "account_holdings_read")]))
     return list(dict.fromkeys(errors))
+
+
+def order_available_cash_errors(order_available: Decimal, withdrawable: Decimal,
+                                quantities: list[tuple[Decimal | None, Decimal | None]]) -> list[str]:
+    """F1, the one cash check, on rows of the same read only.
+
+    Order-available above withdrawable by more than $1 is unsettled sale proceeds; it is accepted only
+    when the same holdings read shows a filled, unsettled sale (qty > poss_qty for at least one row).
+    Order-available below withdrawable by more than $1 is an unknown state. Both block the proposal.
+    quantities is [(qty, poss_qty)] per holdings row; an unreadable pair never counts as a sale.
+    """
+    unsettled = order_available - withdrawable
+    if unsettled < -CASH_COMPONENT_TOLERANCE_USD:
+        return ["CASH_ORDER_AVAILABLE_BELOW_WITHDRAWABLE"]
+    if unsettled > CASH_COMPONENT_TOLERANCE_USD and not any(
+            settled is not None and held is not None and settled > held for settled, held in quantities):
+        return ["CASH_UNSETTLED_NOT_RECONCILED_WITH_HOLDINGS"]
+    return []
+
+
+def cash_components(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """The cash fields of one read, recorded in the proposal (hashed) for review; display only."""
+    cash = snapshot.get("cash") or {}
+    order_available, withdrawable = cash.get("order_available_cash"), cash.get("withdrawable_cash")
+    unsettled = None
+    if order_available is not None and withdrawable is not None:
+        unsettled = float(Decimal(str(order_available)) - Decimal(str(withdrawable)))
+    return {"deposit": cash.get("foreign_currency_deposit"), "withdrawable": withdrawable,
+            "order_available": order_available, "unsettled_component": unsettled}
 
 
 def derived_cost_basis(quantity: int, average_cost: float) -> Decimal:
@@ -336,7 +378,7 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
             "holdings": holdings, "average_cost_usd": costs,
             "position_cost_basis_usd": {ticker: float(value) for ticker, value in basis.items()},
             "aggregate_cost_basis_usd": float(sum(basis.values(), Decimal("0"))),
-            "available_cash_usd": float(snapshot["cash"]["settled_available_cash"]),
+            "available_cash_usd": float(snapshot["cash"]["order_available_cash"]),
         }
         changes = (_map_changes("holdings", portfolio.get("holdings"), patch["holdings"])
                    + _map_changes("average_cost_usd", portfolio.get("average_cost_usd"), patch["average_cost_usd"])
@@ -394,10 +436,11 @@ def reconciliation_proposal(snapshot: dict[str, Any], portfolio: dict[str, Any],
         "cost_basis_derivation": COST_BASIS_DERIVATION,
         "cost_basis_crosscheck": _cost_basis_crosscheck(results, patch) if patch else [],
         "cash_semantics": {
-            "available_cash_usd_basis": "MIN_WITHDRAWABLE_AND_ORDER_AVAILABLE_USD",
+            "available_cash_usd_basis": CASH_BASIS,
             "cash_verified_scope": "available_cash_only", "settled_cash": False,
-            "unsettled_funds_included": False, "margin_or_credit_included": False,
+            "unsettled_funds_included": True, "margin_or_credit_included": False,
         },
+        "cash_components": cash_components(snapshot),
         "confirmed_snapshot_record": record,
         "never_touched": list(NEVER_TOUCHED_FIELDS),
         "post_apply_checks": {"check": None, "session_date": None, "status": "NOT_APPLICABLE",

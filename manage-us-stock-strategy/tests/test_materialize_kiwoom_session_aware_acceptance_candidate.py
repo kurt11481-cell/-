@@ -450,19 +450,29 @@ class SyntheticPredecessorDriftTest(unittest.TestCase):
 
 
 class PinScopeAllowanceTest(unittest.TestCase):
-    """The committed allowance for the token-reuse re-pin (2026-10-06, K3).
+    """The committed allowance of the retired pin scope (redesign T1 F6, 2026-10-10, K3).
 
-    Only a K3 pin-scope edit may change these values; widening the list or
-    rebinding the predecessor must fail here first.
+    It names exactly the pinned files the T1 change edited against the last active
+    acceptance 835d4f46 (the token-reuse re-pin of 2026-10-06/07 replaced 45cf).
+    Only an authority/limit (K3) pin-scope edit may change these values; widening
+    the list or rebinding the predecessor must fail here first.
     """
 
-    PREDECESSOR = "45cf188892601d61c117519b4d34fc9e6b2ee82074489b8dd9cc0b661ca8bc80"
+    PREDECESSOR = "835d4f46bb9e3532a79e32aca9a408f59861640b31dc04718cdb507f5f8e429c"
     ALLOWED = [
-        "manage-us-stock-strategy/scripts/kiwoom_runtime_bridge.py",
         PIN_SCOPE_RELATIVE_PATH,
+        "manage-us-stock-strategy/schemas/kiwoom-acceptance-pin-scope.schema.json",
+        "manage-us-stock-strategy/schemas/kiwoom-cash-flow-evidence.schema.json",
+        "manage-us-stock-strategy/schemas/kiwoom-reconciliation-proposal.schema.json",
+        "manage-us-stock-strategy/scripts/apply_user_confirmed_broker_snapshot.py",
+        "manage-us-stock-strategy/scripts/cash_flow_evidence.py",
+        "manage-us-stock-strategy/scripts/kiwoom_account_readonly_bridge.py",
+        "manage-us-stock-strategy/scripts/kiwoom_broker_shadow.py",
+        "manage-us-stock-strategy/scripts/manual_data_guards.py",
+        "manage-us-stock-strategy/scripts/reconcile_broker_state.py",
     ]
 
-    def test_21_allowance_is_exactly_bridge_and_pin_scope_for_45cf(self):
+    def test_21_allowance_is_exactly_the_t1_change_for_835d(self):
         pin = load_json(PIN_SCOPE)
         self.assertEqual(self.PREDECESSOR, pin["allowed_drift_predecessor_sha256"])
         self.assertEqual(self.ALLOWED, pin["allowed_predecessor_drift"])

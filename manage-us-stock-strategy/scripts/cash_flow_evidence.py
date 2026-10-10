@@ -41,6 +41,9 @@ NON_EXTERNAL_CLASSES = ("DIVIDEND", "FEE_TAX_INTEREST", "TRADE", "CORPORATE_ACTI
 NO_DATA_RETURN_CODE = 20
 NO_DATA_MESSAGE_MARKER = "501724:"
 LIMIT_RULE = "DECLARED_WITHIN_UNEXPLAINED_CASH_CHANGE"
+# Evidence collection -> how its pagination completeness is known.
+COLLECTIONS = {"COWORK_READ_ONLY_CLI_EVIDENCE_FILE": "ASSERTED_BY_COLLECTOR",
+               "AUTO_CORE_BRIDGE_READ": "VERIFIED_BY_BRIDGE"}
 SETTLED_STATUSES = ("NO_EXTERNAL_FLOW", "DECLARED_IN_FULL")
 
 
@@ -126,8 +129,15 @@ def _is_no_data_response(body: Any) -> bool:
 
 
 def normalize_transaction_history(raw: Any, *, period_from: str, period_to: str, raw_sha256: str,
-                                  table: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Sanitize one saved ust21100 response. The account label is never copied into the result."""
+                                  table: dict[str, Any] | None = None,
+                                  collection: str = "COWORK_READ_ONLY_CLI_EVIDENCE_FILE") -> dict[str, Any]:
+    """Sanitize one saved ust21100 response. The account label is never copied into the result.
+
+    collection AUTO_CORE_BRIDGE_READ (redesign T1 F3) is the auto-core's own read-only bridge read, whose
+    pagination the bridge verified; raw_sha256 is then the hash of the sanitized rows (no raw file is kept).
+    """
+    if collection not in COLLECTIONS:
+        raise CashFlowError("CASH_FLOW_EVIDENCE_COLLECTION_INVALID")
     table = table or load_classification()
     start, end = _iso_date(period_from), _iso_date(period_to)
     if start is None or end is None or start > end:
@@ -202,8 +212,8 @@ def normalize_transaction_history(raw: Any, *, period_from: str, period_to: str,
     usd_rows = [row for row in rows if row["currency"] == "USD"]
     evidence: dict[str, Any] = {
         "schema_version": EVIDENCE_SCHEMA_VERSION, "artifact_type": "KIWOOM_CASH_FLOW_EVIDENCE",
-        "source": {"provider": "KIWOOM", "api_id": API_ID, "collection": "COWORK_READ_ONLY_CLI_EVIDENCE_FILE",
-                   "raw_sha256": raw_sha256, "pagination_complete": "ASSERTED_BY_COLLECTOR"},
+        "source": {"provider": "KIWOOM", "api_id": API_ID, "collection": collection,
+                   "raw_sha256": raw_sha256, "pagination_complete": COLLECTIONS[collection]},
         "period_from": start.isoformat(), "period_to": end.isoformat(),
         "account_identifier_stored": False, "row_count": len(rows), "rows": rows,
         "totals": {
@@ -233,6 +243,9 @@ def evidence_errors(evidence: Any) -> list[str]:
         return errors
     if evidence_content_hash(evidence) != evidence["evidence_hash"]:
         errors.append("CASH_FLOW_EVIDENCE_HASH_MISMATCH")
+    source = evidence["source"]
+    if COLLECTIONS.get(source["collection"]) != source["pagination_complete"]:
+        errors.append("CASH_FLOW_EVIDENCE_COLLECTION_INCONSISTENT")
     return errors
 
 
