@@ -216,6 +216,7 @@ supersedes_if_adopted: ops-dev-touch-reduction-2026-10-09.md(점진 개선안) �
 - **커널(프로젝트 지침)**: 사용자가 붙여 넣음(09:53~09:57, 3회 편집), Cowork가 project_info로 확인(09:58): 0절 AUTOMATED_OPERATION_FIRST, 2절 "holdings·현금·평단은 브로커 체결로 설명될 때만 자동 코어가 기록", 3절 자동 운영 1순위.
 
 - **T1 진행(2026-10-10)**: Builder(10:45) → Cowork 실측으로 결함 3건 발견(추정 수수료로 $1 검사, 상태 현금 옛 정의, 자료 없음 문구 미등록) → r2(13:02) → 1차 Judge PASS-WITH-CONDITIONS(C1~C6) → r3(조건 + settings deny·안전 문구 테스트) → 2차 Judge PASS-WITH-CONDITIONS(남은 R1 = 경고 푸시) → 병합 510961a(사용자, Windows 작업 InvestmentV2-AutoCore 등록 포함) → 배포(14:2x, 사용자 "병합 완료, 배포 승인"): workspace/policies/auto_core.json = compare(스키마 통과), .gitignore `workspace/outputs/auto-core/`, 새 예약 작업 "자동 운영 코어 결과 알림"(화~토 06:55, R1을 통합 점검 로더 대신 별도 작업으로), CLAUDE.md 테스트 명령 메모 1줄. 첫 실행 2026-10-13 06:15. 비교 3거래일 일치 → 알림 "기록 모드 켤 준비됨" → 사용자 "켜" → mode=apply.
+- **T3 착수(2026-10-10 15:0x KST)**: Builder 지시문 `docs/claude/redesign-t3-builder-prompt-2026-10-10.md`(일반 변경, T3 자체는 기존 방식 worktree Builder → 별도 Judge). 설계: dev-run(헤드리스 Builder → 스크립트 판정 → 헤드리스 Judge → 1회 최소 수정) · dev-merge(정본 기록·해시 재검사, 권한 변경은 -ApproveAuthority) · 보호 경로(파이프라인 자기 규칙)와 권한 경로 분리 · 큐 작업 InvestmentV2-DevQueue(15분, dev-run을 사람이 시작하지 않도록 — 4-1절 D1에 없던 추가) · 문서 자동 커밋 InvestmentV2-DocsCommit(매일 23:30).
 
 ### 10-1. 헌법 v1.2.1 → 1.3.0 교체 문안
 1. 머리말 `Constitution-Revision: 1.2.1` → `1.3.0 (2026-10-10, 사용자 결정 "재설계: A1 a … A7 a")`, `Change-Type` → `OPERATIONAL PRIORITY REDESIGN — 자동 운영 1순위`.
