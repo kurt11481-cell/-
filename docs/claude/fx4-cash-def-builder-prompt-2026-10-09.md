@@ -5,7 +5,7 @@ date: 2026-10-09
 class: K3 (키움 acceptance 고정 파일 변경 → 활성 acceptance 무효 → 병합 뒤 재고정)
 plan: docs/claude/fx1009-fix-plan-2026-10-09.md 5-4절 · 부록 A-4 · 관제판 cash-def-k3
 record: docs/claude/fx1009-fx4-record.md (위원회 판정 · 측정 V1 · 사용자 승인)
-status: 초안 — 사용자 검토·승인 전, Builder 미실행
+status: **대체됨 2026-10-10 — 쓰지 않는다.** 측정 V1에서 검사 ⓐ(외화예수금 비교)가 체결 직후 대조를 막는 결함으로 확인(fx1009-fx4-record.md 4-1). 현금 = 주문 가능액은 재설계 T1 Builder 지시문(docs/claude/redesign-t1-auto-core-builder-prompt-2026-10-10.md)에 흡수. 이전: r2 — 2026-10-09 15:17 KST 승인, 15:29 KST 수정 3건 승인(수동 분석 경로 포함, 대시보드 자금 상한 제외, worktree 맞추기). Builder 미실행
 authority: order_authority=false · quantity_authority=none · execution_quantity=null
 consumers: fx-4 Builder 세션(worktree fx-cash) · fx-4 Judge 지시문(Builder 보고 뒤 Cowork 작성) · 재고정 단계(10/7 절차) · 관제판 cash-def-k3
 ---
@@ -26,6 +26,7 @@ consumers: fx-4 Builder 세션(worktree fx-cash) · fx-4 Judge 지시문(Builder
 | manage-us-stock-strategy/tests/test_manual_data_guards.py | 예 | 1c73fa7ce2234c93bf594ccb2314b4d344545aab |
 | manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json | 예 | 5be053e310ecc79d16ee20798c491f36b96e383e |
 | manage-us-stock-strategy/schemas/kiwoom-broker-shadow.schema.json | 아니오 | 4eac4e4e8c210b11c248d9a3fb8de5b501f668b7 |
+| manage-us-stock-strategy/scripts/run_manual_portfolio_analysis.py | 아니오 | 6b022f1fb0c66fe9576d45bf490c585e77aacc3a |
 | manage-us-stock-strategy/scripts/portfolio_exposure.py (바꾸지 않음, 확인만) | 아니오 | 9e8d03401d70a3de7bd376d0204b13a8654c09cd |
 
 # 1. 사용자 조작 (Windows PowerShell, 한 줄씩 — 시작 조건 충족 뒤)
@@ -33,9 +34,21 @@ consumers: fx-4 Builder 세션(worktree fx-cash) · fx-4 Judge 지시문(Builder
 ```
 cd "E:\사업\##금동한\코덱스저장소"
 git add docs/claude/fx4-cash-def-builder-prompt-2026-10-09.md docs/claude/fx1009-fx4-record.md
-git commit -m "docs: FX-1009 fx-4 cash definition Builder prompt and record"
-claude --worktree fx-cash
+git commit -m "docs: FX-1009 fx-4 V1 result and Builder prompt r2"
 ```
+
+worktree `fx-cash`는 2026-10-09에 이미 만들어졌다(52b3cda, Judge를 먼저 실행했을 때). 다음 둘 중 하나를 한다.
+
+- `E:\사업\##금동한\코덱스저장소\.claude\worktrees\fx-cash` 폴더가 있으면, 최신 커밋으로 맞춘 뒤 그 폴더에서 연다. `git merge`가 실패하면 멈추고 Cowork에 출력을 보낸다.
+  ```
+  cd ".claude\worktrees\fx-cash"
+  git merge --ff-only codex/master-recovery-expansion
+  claude
+  ```
+- 폴더가 없으면 새로 만든다.
+  ```
+  claude --worktree fx-cash
+  ```
 
 Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh`를 입력하고, 아래 2절 상자 안의 내용만 붙여 넣는다.
 권한 창에서 허용할 것: 파일 읽기, worktree 안 대상 파일 수정, 테스트 실행.
@@ -54,6 +67,7 @@ Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh
 - 키움 실제 접속(테스트는 가짜 결과만), kiwoomcli 실행, 주문 도구, .env*·토큰·키링·계좌번호 읽기·출력
 - 정책·상태·원장·결정 일지 파일 수정(stock-strategy-system/*.json, workspace/policies/*, workspace/state/*)
 - S7 코드 변경(portfolio_exposure.py, run_portfolio_exposure_review.py — 매도 뒤 매수 멈춤 등 규칙은 그대로, FX-1009 동결)
+- 대시보드 매수 자금 상한 변경: portfolio_decision_dashboard.py 1466~1474행 funding_cash = min(orderable_cash, settled_available_cash)와 1713행 비교는 그대로 둔다. 넓히지 않는다.
 - 통합 점검 규칙 파일·예약 작업 변경
 - 필수 조회 목록(REQUIRED_RECONCILIATION_OPERATIONS)과 브리지 조회 허용 목록 변경, 새 API 추가
 - materialize·후보 생성·repin_apply·migrate 실행
@@ -63,11 +77,11 @@ Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh
 
 0. 기준 확인
    - git diff --stat c7b8f6d HEAD -- manage-us-stock-strategy workspace stock-strategy-system 결과가 0줄인가.
-   - fx4 지시문 0절 표의 blob 7개가 git rev-parse HEAD:<path>와 같은가. 다르면 차이를 보고하고 멈춘다.
+   - fx4 지시문 0절 표의 blob 8개가 git rev-parse HEAD:<path>와 같은가. 다르면 차이를 보고하고 멈춘다.
    - 테스트 기준선: docs/claude/test-baseline-*.md(fx-3이 만든 것)가 있으면 그 실패 id를 쓴다. 없으면 고치기 전에 test-runner 서브에이전트(Haiku)로 전체 스위트를 돌린다. 실패 id는 worktree 밖 임시 폴더에만 저장하고, 저장소에 기준선 파일을 만들지 않는다(fx-3 몫). 서브에이전트 출력은 위치 정보일 뿐이니 개수를 직접 세어 맞춘다.
 
 1. 사실 확인(읽기만, 보고에 적는다)
-   a. git grep으로 settled_available_cash, available_cash_usd, cash_status, MIN_WITHDRAWABLE_AND_ORDER_AVAILABLE_USD, unsettled_funds_included의 소비처를 모두 찾고, 바꿀 곳과 그대로 둘 곳을 나눈다.
+   a. git grep으로 settled_available_cash, available_cash_usd, cash_status, order_available_cash, verified_orderable_cash_usd, orderable_cash_status, MIN_WITHDRAWABLE_AND_ORDER_AVAILABLE_USD, unsettled_funds_included의 소비처를 모두 찾고, 바꿀 곳과 그대로 둘 곳을 나눈다.
    b. account_open_items의 slby_tp 값 뜻(매수·매도 코드)을 references/kiwoom-*.md, 테스트 fixture, 저장소 안 명세 문서에서 찾는다. 확인하지 못한 코드는 매수로 본다.
    c. account_deposit_detail_read의 d1/d2 *_sell_excta·*_buy_excta·*_setl_dt 뜻을 찾고, record 4절 V1 측정값과 맞는지 본다.
    d. 원장 항목(apply_user_confirmed_broker_snapshot.py)에 proposal_id와 evidence 해시가 들어가는지 본다. 들어가면 원장 코드는 고치지 않는다(제안 파일에 현금 구성이 남으므로).
@@ -114,12 +128,16 @@ Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh
    - python manage-us-stock-strategy/scripts/validate_schema_contracts.py → PASS.
 
 5. 고정 아닌 소비처·문구(K0/K1)
-   - broker_visibility_audit.py 80행, portfolio_decision_dashboard.py 1468행, render_beginner_portfolio_report.py 470행: verified_orderable_cash를 읽게 한다. null은 "확인 필요"로 표시하고 0으로 바꾸지 않는다.
+   - run_manual_portfolio_analysis.py(고정 아님) 361·1585·865행: verified_orderable_cash_usd를 broker_state.cash.verified_orderable_cash(검사 ⓐⓑⓒ 통과 값)에서 읽는다.
+     · null이면 orderable_cash_status = NOT_VERIFIED, 값 None으로 둔다(주문 의도 매수는 VERIFIED_ORDERABLE_CASH_REQUIRED로 막힘).
+     · 865행 무결성 비교도 같은 칸과 비교한다.
+     · manual_data_guards.normalize_broker_state의 실패 대체 dict(129~138행 근처)에도 새 필드를 None·NEEDS_CONFIRMATION으로 넣는다.
+     · 조이는 방향만 허용한다. 값이 원값보다 커지거나 VERIFIED가 늘어나는 경로가 있으면 고치지 말고 보고한다.
    - assets/locales/reconcile-broker-state-ko-KR.json
      · row_available_cash_usd → "가용 현금(USD, 키움 주문 가능액 — 정산 전 매도대금 포함, 같은 조회 검사 3개 통과 때만. 정산 현금 아님)"
      · 새 막힘 코드의 한국어 메시지(show가 쓰는 방식을 확인해 맞춘다)
    - references/broker-snapshot-reconciliation.md의 available_cash_usd 문단, references/kiwoom-mcp-local-integration.md 159행: 새 정의와 검사 3개로 고친다. 다른 문장은 그대로 둔다.
-   - 바꾸지 않는 것: portfolio_exposure.py, run_portfolio_exposure_review.py, portfolio_policy_gates.py, run_manual_portfolio_analysis.py(이미 주문 가능액 사용). 바꿔야 할 이유가 보이면 고치지 말고 보고한다.
+   - 바꾸지 않는 것: portfolio_exposure.py, run_portfolio_exposure_review.py, portfolio_policy_gates.py, portfolio_decision_dashboard.py(자금 상한 1466~1474·1713행과 표시), broker_visibility_audit.py, render_beginner_portfolio_report.py, build_holding_fact_pack.py. settled_available_cash는 뜻(min)이 그대로라 이들은 고칠 필요가 없다. 바꿔야 할 이유가 보이면 고치지 말고 보고한다.
 
 6. pin scope 정리(O6) — kiwoom-acceptance-pin-scope.json (고정)
    - 1e 결과에 따라 고친다.
@@ -141,7 +159,10 @@ Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh
      T9 cash_components 값이 바뀌면 proposal_id·confirm_code가 바뀜
      T10 (b2 구현 때만) 정산 내역 조회 실패 또는 금액 불일치 → BLOCKED
    - test_manual_data_guards.py: 3절 경우.
-   - 대상 테스트를 먼저 돌린다(-p로 파일별): test_kiwoom_broker_shadow, test_reconcile_broker_state, test_manual_data_guards, test_state_write_boundary, test_cash_flow_evidence, test_cash_flow_evidence_u3, test_broker_visibility_audit, test_portfolio_decision_dashboard, test_v2_5_beginner_renderer, test_v2_5_broker_snapshot, test_v2_6_broker_beginner, test_manual_portfolio_analysis, test_portfolio_exposure, test_portfolio_exposure_fail_closed, test_run_portfolio_exposure_review, test_scheduled_input_gate, test_materialize_kiwoom_session_aware_acceptance_candidate, test_v2_6_7_session_aware_kiwoom_priority
+   - test_manual_portfolio_analysis.py: 검사 실패 스냅샷 → verified_orderable_cash_usd None, orderable_cash_status NOT_VERIFIED. 검사 통과 → 원값과 같음.
+   - test_portfolio_decision_order_intent.py: 검사 실패 보고서의 매수 의도 → VERIFIED_ORDERABLE_CASH_REQUIRED 막힘.
+   - test_portfolio_decision_dashboard.py: 자금 상한이 min(주문 가능, settled_available_cash) 그대로인지(정산 전 대금이 있는 경우 포함).
+   - 대상 테스트를 먼저 돌린다(-p로 파일별): test_kiwoom_broker_shadow, test_reconcile_broker_state, test_manual_data_guards, test_state_write_boundary, test_cash_flow_evidence, test_cash_flow_evidence_u3, test_broker_visibility_audit, test_portfolio_decision_dashboard, test_v2_5_beginner_renderer, test_v2_5_broker_snapshot, test_v2_6_broker_beginner, test_manual_portfolio_analysis, test_portfolio_decision_order_intent, test_build_holding_fact_pack, test_portfolio_exposure, test_portfolio_exposure_fail_closed, test_run_portfolio_exposure_review, test_scheduled_input_gate, test_materialize_kiwoom_session_aware_acceptance_candidate, test_v2_6_7_session_aware_kiwoom_priority
      명령 예: python -m unittest discover -s manage-us-stock-strategy/tests -p "test_kiwoom_broker_shadow.py"
    - 이어서 validate_schema_contracts.py를 돌린다. 마지막으로 test-runner(Haiku)로 전체 스위트를 돌리고 실패만 받는다.
    - 기준선 대비 새 실패는 0이어야 한다. 예외는 고정 파일 drift 때문에 생기는 acceptance 검사 실패다(예: test_v2_6_7 활성 manifest 검사). 이런 실패는 id와 이유를 따로 적는다. 재고정으로 풀리는 것만 예외로 인정한다.
@@ -163,6 +184,8 @@ Claude Code가 열리면 `/model`로 Opus를 고른다. 이어서 `/effort xhigh
      · PASS가 조건 전부 충족(허용 목록)인가?
      · 새 API·필수 조회·주문 경로·권한 필드 변경이 없는가?
      · S7 코드·매도 뒤 매수 멈춤·통합 점검 규칙이 그대로인가?
+     · 매수 자금 상한(대시보드 funding_cash)이나 주문 의도 금액 한도가 넓어지는 경로가 없는가?
+     · 예상 매도대금 칸 verified_orderable_cash_from_expected_proceeds_usd가 여전히 상수 0이고, 새 현금 필드에서 계산되지 않는가?
 ```
 
 # 3. 다음 단계

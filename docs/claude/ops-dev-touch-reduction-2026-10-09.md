@@ -1,7 +1,7 @@
 ---
 id: ops-dev-touch-reduction-2026-10-09
 type: design-review (proposal, 아이디어)
-status: 결정됨 2026-10-09 18:41 KST(Q1~Q6 모두 a, 9절 결정 기록). 10절 확인 3건 반영(2026-10-09 18:4x KST, R9 축소·D1 전달 방식 수정). 정책·상태·원장·예약 지시문·코드 변경 없음
+status: **대체됨 2026-10-10 — docs/claude/automation-redesign-2026-10-10.md(전면 재설계, 사용자 A1~A7 a). R1·D1·D2는 재설계 T1·T3로 흡수.** 이전: 결정됨 2026-10-09 18:41 KST(Q1~Q6 모두 a, 9절 결정 기록). 10절 확인 3건 반영(2026-10-09 18:4x KST, R9 축소·D1 전달 방식 수정). 정책·상태·원장·예약 지시문·코드 변경 없음
 as_of: 2026-10-09 18:xx KST (Cowork)
 authority: order_authority=false · quantity_authority=none · execution_quantity=null
 consumers: [관제판 ops-touch-reduce(결정 대기) · fx-6 마감 점검(동결 해제 때 순서 결정) · gap-s7-daily(R1) · oi-k3(R6 = 수령 검토 2-4) · 다음 K2 Builder 작업(D1 시험)]
