@@ -1,7 +1,7 @@
 ---
 id: automation-redesign-2026-10-10
 type: redesign-proposal (K3 계획 — 코드·정책·상태·예약 작업·CLAUDE.md 변경 없음)
-status: 결정됨 2026-10-10 09:27 KST(A1~A7 모두 a, 10절) — T0 반영 완료(헌법 1.3.0 적용 09:5x, 커널 문안만 사용자 붙여 넣기 대기), 다음 T1
+status: 결정됨 2026-10-10 09:27 KST(A1~A7 모두 a, 10절) — T0 반영 완료(헌법 1.3.0 Cowork 적용 · 커널 0·2·3절 사용자 교체, 09:58 확인), 다음 T1
 as_of: 2026-10-10 09:24 KST (Cowork)
 trigger: 사용자 지시(2026-10-10 09:07~09:14 KST) — "사용자가 직접 개입하는 프로세스가 너무 많다. 사용자는 처리 결과만 받아야 한다. 외부 사례는 이렇게 복잡하지 않고도 완전 자동으로 돈다. 근본 목표인 자동화 운영 설계가 막히면 심각한 오류로 보고 시스템을 전면 재설계하라."
 authority: order_authority=false · quantity_authority=none · execution_quantity=null (이 문서는 아무 권한도 바꾸지 않는다)
@@ -213,7 +213,9 @@ supersedes_if_adopted: ops-dev-touch-reduction-2026-10-09.md(점진 개선안) �
   - T1 Builder 지시문: docs/claude/redesign-t1-auto-core-builder-prompt-2026-10-10.md.
   - 관제판: 새 작업 redesign-t1~t5·redesign-const. 흡수·폐기(done + doneNote): gap-s7-daily·r-auto-apply-k3·cash-def-k3·p-92·p-92-b1a·r-cost → T1 / fx-2·oi-pilot-2(봉인 시범 폐지)·oi-k3·r-ne1·s-split-adj → T2 / touch-d1-pipeline → T3 / p-s7-p2·s-s8-fix·r-ss → T4 / p-u2 → fx-3 / p-deploy·r-sched-b 폐기. 유지·갱신: p-s7-routine(T1 기록 켜짐 때 은퇴), fx-3(11/3 측정은 Cowork 읽기 조회로, 사용자 PowerShell 없음), fx-6(fx-3·T1 뒤), c-watch-rotation·c-nextsndk-r21(A6 자동 모드 + 보호 규칙을 지시문 교체 1회로, 10/17 실행 전 목표). 연구·외부자료·발굴 작업은 그대로.
 - **헌법 개정**: 처음 시도는 실행 환경의 권한 검사(자기 규칙 수정 차단)에서 거절돼 멈췄다. 사용자 원문 "헌법 Cowork 적용 허용"(2026-10-10 09:48 KST) 뒤 10-1 문안 그대로 프로젝트 지식 knowledge/fund_manager_system_constitution_v1_2_1.md를 1.3.0으로 교체했다(경로는 커널 참조 유지를 위해 그대로). ChatGPT 폴더의 사본(chatgpt md_주식)은 바꾸지 않았다.
-- **커널(프로젝트 지침)**: claude.ai 프로젝트 설정의 지침은 도구로 바꿀 수 없어 사용자가 붙여 넣어야 한다.
+- **커널(프로젝트 지침)**: 사용자가 붙여 넣음(09:53~09:57, 3회 편집), Cowork가 project_info로 확인(09:58): 0절 AUTOMATED_OPERATION_FIRST, 2절 "holdings·현금·평단은 브로커 체결로 설명될 때만 자동 코어가 기록", 3절 자동 운영 1순위.
+
+- **T1 진행(2026-10-10)**: Builder(10:45) → Cowork 실측으로 결함 3건 발견(추정 수수료로 $1 검사, 상태 현금 옛 정의, 자료 없음 문구 미등록) → r2(13:02) → 1차 Judge PASS-WITH-CONDITIONS(C1~C6) → r3(조건 + settings deny·안전 문구 테스트) → 2차 Judge PASS-WITH-CONDITIONS(남은 R1 = 경고 푸시) → 병합 510961a(사용자, Windows 작업 InvestmentV2-AutoCore 등록 포함) → 배포(14:2x, 사용자 "병합 완료, 배포 승인"): workspace/policies/auto_core.json = compare(스키마 통과), .gitignore `workspace/outputs/auto-core/`, 새 예약 작업 "자동 운영 코어 결과 알림"(화~토 06:55, R1을 통합 점검 로더 대신 별도 작업으로), CLAUDE.md 테스트 명령 메모 1줄. 첫 실행 2026-10-13 06:15. 비교 3거래일 일치 → 알림 "기록 모드 켤 준비됨" → 사용자 "켜" → mode=apply.
 
 ### 10-1. 헌법 v1.2.1 → 1.3.0 교체 문안
 1. 머리말 `Constitution-Revision: 1.2.1` → `1.3.0 (2026-10-10, 사용자 결정 "재설계: A1 a … A7 a")`, `Change-Type` → `OPERATIONAL PRIORITY REDESIGN — 자동 운영 1순위`.
