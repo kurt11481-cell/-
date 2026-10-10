@@ -1,0 +1,9 @@
+{
+  "mode": "compare",
+  "kill_switch": false,
+  "compare_days_required": 3,
+  "schedule_kst": "06:15",
+  "symbols_extra": [
+    "SOXX"
+  ]
+}

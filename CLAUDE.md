@@ -63,6 +63,7 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
 - Files are CRLF on Windows and some evidence hashes raw bytes: never bulk-convert line endings.
 - Tests: python -m unittest discover -s manage-us-stock-strategy/tests -p "test_<name>.py"
   Run targeted files first; run the full suite with the `test-runner` subagent (Haiku) and report failures only.
+  Claude Code denies any command containing "auto_core.py" (settings.json, 2026-10-10): run those tests with -p "test_auto_core*".
 - Haiku subagents (user approval 2026-10-08, docs/claude/haiku-5-5-review-2026-10-08.md): `test-runner` and
   `summarizer` (in Cowork: Agent model "haiku") only for mechanical work: test runs, log/JSON/file summaries,
   locating files. Never for investment judgment, cards, order prices/quantities, K2/K3 review or Judge.
