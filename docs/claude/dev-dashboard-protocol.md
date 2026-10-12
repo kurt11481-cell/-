@@ -44,6 +44,8 @@ status: active(진행 중) · waiting(조건 대기) · decision(결정 대기) 
 "재개 가능"은 저장하지 않는다 — waiting이고 resume 조건(날짜 도래, 선행 작업 모두 done)이 풀리면 화면이 계산한다.
 resume.type: date(날짜) · after(선행 작업 id 목록) · event(이벤트, text에 조건) · manual(사용자 판단).
 
+재설계 맞춤(2026-10-12, board-redesign-alignment-2026-10-12.md): k는 변경 2등급으로 쓴다 — 일반(옛 K0~K2) · 권한·한도(옛 K3). 일반 코드 변경 작업의 surface는 "개발 파이프라인"(Cowork 지시문+큐 → 사용자 dev-merge 1번)이고 worktree 칸을 쓰지 않는다. 권한·한도·보호 경로만 수동 경로(worktree Builder + 별도 Judge). 새 작업은 사람 일상 단계를 넣지 않는다(읽기 전용 확인은 Cowork가 한다), 사전 등록 기본 처분(미달·무응답 = 현행 유지)을 next에 적는다, 주문별 위원회를 넣지 않는다(정책·한도·권한 변경에만).
+
 ## 4. 쓰는 규칙
 
 - 확인한 사실만 쓴다. 모르는 값은 필드를 비우거나 verify에 "확인 필요" 내용을 적는다.
