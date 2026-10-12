@@ -4,6 +4,12 @@
   "compare_days_required": 3,
   "schedule_kst": "06:15",
   "symbols_extra": [
-    "SOXX"
-  ]
+    "SOXX",
+    "GRID"
+  ],
+  "decision_mode": "compare",
+  "decision_compare_days_required": 5,
+  "decide_schedule_kst": "07:45",
+  "reissue_buy_cap_not_above_first": false,
+  "research_only_strong_r_cap": "1/2"
 }

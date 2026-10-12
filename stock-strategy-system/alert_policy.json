@@ -695,7 +695,7 @@
     "hard_ceiling_breach": "block_all_new_buys_and_flag_urgent_reduce",
     "hard_ceiling_change_requires": "separate_user_approval_and_judge",
     "exposure_measure": "max(nominal, sox_equivalent_volatility_ratio)",
-    "nominal_multipliers": {"SOXL": 3, "TQQQ": 3, "MVLL": 2, "BE": 1, "MU": 1, "NBIS": 1, "DELL": 1, "AMD": 1, "DRAM": 1, "cash": 0},
+    "nominal_multipliers": {"SOXL": 3, "TQQQ": 3, "MVLL": 2, "BE": 1, "MU": 1, "NBIS": 1, "DELL": 1, "AMD": 1, "DRAM": 1, "PWR": 1, "LITE": 1, "cash": 0},
     "unregistered_instrument": "block_new_buy_recommendation_and_exposure_unavailable_if_held",
     "sox_equivalent": {
       "benchmark": "SOXX",
@@ -743,7 +743,7 @@
     },
     "composition": "card_stock_core_with_soxl_supplement",
     "composition_evidence": "outside_s4_3_i1_scope_c6_is_index_1x_plus_3x_model",
-    "card_stock_core": ["BE", "MU", "NBIS", "DELL", "AMD"],
+    "card_stock_core": ["BE", "MU", "NBIS", "DELL", "AMD", "PWR", "LITE"],
     "allowed_index_etfs": ["SOXL", "TQQQ", "DRAM"],
     "excluded_instruments": ["SOXX", "SMH", "USD"],
     "sell_only_holdings": ["MVLL"],
