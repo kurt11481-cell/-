@@ -104,6 +104,7 @@ summary: "Alex Jane Street" 명의 메일의 Claude Code 24시간 리서치 데�
 - 2026-10-12 20:04 KST 사용자 "결정 ext-desk-score-fix: a" — P1+P2 함께 개발 파이프라인으로 진행.
 - 반영: Builder 지시문 `docs/claude/score-fix-builder-prompt.md`(dev-run id `score-fix`, general, Builder opus·high), 큐 `docs/claude/_dev-queue/score-fix.txt`. 파이프라인 결과는 `workspace/outputs/dev-runs/LATEST.json` → READY_TO_MERGE면 사용자 `.\tools\dev-merge.ps1 score-fix` 1번.
 - 병합 뒤 Cowork 확인: 실제 일지로 채점기를 읽기 전용 실행해 4절 표의 '첫 실행 가능 종가 기준' 값(시작 10/2, 5세션 +1.49%/−8.93%/−14.64%)과 대조.
+- 2026-10-12 결과: dev-run score-fix READY_TO_MERGE(Judge PASS, 새 실패 0, Ran 2910→2927) → 병합 d70aac2(20:57 KST). 병합 뒤 실제 일지로 채점기 실행(출력은 저장소 밖 임시 폴더, 실행 뒤 삭제): ANALYSIS 3건 시작 2026-10-02, pre_action_move +3.10%/+4.44%/+6.45%, 5세션 vs_cash +1.4909%/−8.9295%/−14.6371% — 4절 표와 일치. 주문표 채점은 아직 0건(코어 첫 decide 전). 남은 확인 필요: 키움 LOC 접수 마감 시각(시작가 경계).
 
 ## 7. 외부 주장 원장
 
