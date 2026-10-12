@@ -154,4 +154,4 @@ summary: 외부자료 9건(The trader's handbook 소개 1~7편, FTD 마인드셋
 | 9 | (1차 누락) 수익 보호(FTD 지침 13 "수익이 손실로 바뀌지 않게", 삼화콘덴서 3배 수익 반납 사례) | — | **NO_CHANGE.** 고점 대비 되돌림 매도는 정책상 return_seeking_rules_blocked("peak drawdown exits")이고 고점 −30%는 카드 재작성 검토만. 바꾸면 매도 규칙 = 검증·권한 경로 | alert_policy.json 623행, S5/S7 결정 |
 
 - 결론: 1R 외에 지금 바꿀 것 없음. 2번은 risk1r에 흡수, 5번은 수치로 기각 근거 보강, 8·9번은 f-evo-loop·fx-6 뒤 입력. 사용자 결정 추가 없음(기본 처분 NO_CHANGE, 알림만).
-
+- 반영 완료(2026-10-12 23:1x KST): 1차 risk1r은 PC 재부팅으로 중단 → 재실행 risk1r2 Judge PASS(새 실패 0, 테스트 2927→2944) → 사용자 병합 8ed2107(`-ApproveAuthority`, 의미상 권한·한도 불변). 통합점검 대시보드(artifact DuS4d8Fa9qZWceBJWjTU6d) v17: "자동 운영 코어 판정" 칸 주문표 줄 아래에 runCore.tickets[].risk1r 문장을 그대로 표시(가짜 자료 렌더 확인, 매도 줄에는 없음). 결과 알림 작업은 runCore를 통째로 옮기므로(auto-core-alert.txt 54행) 지시문 변경 없음. 첫 실제 표시는 매수 주문표가 나오는 날
