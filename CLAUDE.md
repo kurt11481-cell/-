@@ -56,9 +56,10 @@ are labeled 비교 중 and are not entered.
 - Authority/limit change (old K3: order stage, order tools, budget/ceiling/caps, approved products, reconciliation
   invariants, kill switch): stop, user approval, independent Judge (manual route). If the pipeline escalates a run to authority,
   dev-merge needs -ApproveAuthority, used only after the user's decision.
-- Transition: the Kiwoom acceptance pin (manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json) is retired
-  by redesign T1 and replaced by recording the git commit SHA in every run. Until that change is merged, editing a
-  pinned file still invalidates the active acceptance: bundle such edits into the T1 Builder change.
+- Kiwoom acceptance pin: retired by redesign T1 (merged 510961a). manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json
+  has status RETIRED and is kept as the list of formerly pinned files. Editing one of them no longer invalidates an
+  acceptance; instead every auto-core run records the git commit SHA and dirty paths, and in apply mode an uncommitted edit to a guarded
+  file (former pin list, the core's own files, tracked files under manage-us-stock-strategy/scripts, schemas, assets) fails before any read (docs/claude/redesign-t1-builder-report-2026-10-10.md F6).
 
 ## Repo map
 - Skill source: manage-us-stock-strategy/ (SKILL.md, scripts/, schemas/, tests/, references/)

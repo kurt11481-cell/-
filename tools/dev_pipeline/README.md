@@ -54,7 +54,9 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 
 ## 권한 경로 (P7 — `authority-paths.txt`)
 
-여기 있는 경로를 바꾸거나, 추가된 줄에 주문 표지(`/api/us/ordr`, `ust2000`, `ust2001`, `kiwoom_order`, `order_submit`, `overseas orders`, `order_authority … true`)가 있거나, 추가된 줄에 `kill_switch`가 있거나, 추가된 줄에서 `:`·`=` 바로 뒤 값(스키마 `{"const": X}`·`{"type": X}`는 X)이 `watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved` = true, `quantity_authority` ≠ none/null, `execution_quantity` ≠ null/None이거나, 지운(또는 바꾼) 줄에 `order_authority`·`kill_switch`·`quantity_authority`·`execution_quantity`·`watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved`가 있거나, Judge가 `class_ok=false`를 쓰면 class = authority(내려가지 않음) → `NEEDS_APPROVAL`.
+여기 있는 경로를 바꾸거나, 추가된 줄에 주문 표지(`/api/us/ordr`, `ust2000`, `ust2001`, `kiwoom_order`, `order_submit`, `overseas orders`, `order_authority … true`)가 있거나, 추가된 줄에 `kill_switch`가 있거나, 추가된 줄에서 `:`·`=` 바로 뒤 값(스키마 `{"const": X}`·`{"type": X}`는 X)이 `watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved` = true, `quantity_authority` ≠ none/null/false, `execution_quantity` ≠ null/None이거나, 지운(또는 바꾼) 줄에 `order_authority`·`kill_switch`·`quantity_authority`·`execution_quantity`·`watchlist_approved`·`active_universe_approved`·`new_buy_instrument_approved`가 있거나, Judge가 `class_ok=false`를 쓰면 class = authority(내려가지 않음) → `NEEDS_APPROVAL`.
+
+`ORDER_TICKET_HUMAN_ENTRY`(주문 1단계 표지)는 `quantity_authority` 값이 none이 아니므로 새 줄에 쓰이면 authority다 — 의도된 동작이며, 주문표 모듈은 이미 권한 경로다.
 
 ## 결과 읽기
 
