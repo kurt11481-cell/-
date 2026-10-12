@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-decision.schema.json",
+  "title": "Auto-core decide record (workspace/outputs/auto-core/<YYYY-MM-DD>/decision.json and LATEST_DECISION.json)",
+  "description": "Redesign T2 F8. One decide run (07:45 KST): judgments (F1), buy requirements and gates (F4), tickets (F5), outcome classification (F6), journal (F7), compare (F9), alert candidates and the dashboard bundle (values only; the alert task copies them). Status OK|HOLD|FAIL; a HOLD or FAIL day has no ticket. order_authority false and execution_quantity null; only tickets carry ORDER_TICKET_HUMAN_ENTRY. Never carries an account identifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_day_kst", "generated_at", "evaluation_session", "buy_session", "status", "reasons", "mode",
+    "decision_mode", "commit_sha", "dirty_paths", "inputs", "symbols", "evidence", "buy_requirements", "exposure",
+    "shock", "account", "earnings_calendar", "tickets", "no_action", "outcomes", "open_tickets", "keys", "attributed_orders", "f6_ran", "carried_from", "no_new_session", "facts_seen",
+    "journal", "compare", "alerts", "alert_states", "dashboard", "candidates", "blocked", "next_action_for_user",
+    "next_action_for_cowork", "order_authority", "execution_quantity"
+  ],
+  "properties": {
+    "schema_version": {"const": "auto-core-decision-1.0"},
+    "run_day_kst": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "evaluation_session": {"type": ["string", "null"], "format": "date"},
+    "buy_session": {"type": ["string", "null"], "format": "date"},
+    "status": {"enum": ["OK", "HOLD", "FAIL"]},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "mode": {"enum": ["compare", "apply"]},
+    "decision_mode": {"enum": ["compare", "apply"]},
+    "commit_sha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "dirty_paths": {"type": "array", "items": {"type": "string"}},
+    "inputs": {"type": "object"},
+    "symbols": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["symbol", "role", "status", "reasons", "indicators", "triggers", "groups"],
+        "properties": {
+          "role": {"enum": ["held", "member"]},
+          "status": {"enum": ["OK", "UNK"]},
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "side", "state"],
+              "properties": {"state": {"enum": ["hit", "near", "pending", "none", "unk", "review", "info"]}}
+            }
+          }
+        }
+      }
+    },
+    "evidence": {"type": "object"},
+    "buy_requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "add", "c"],
+        "properties": {
+          "code": {"type": "string"},
+          "add": {"type": "boolean"},
+          "c": {
+            "type": "array",
+            "minItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["s", "t"],
+              "properties": {"s": {"enum": ["ok", "no", "unk", "wait", "info"]}, "t": {"type": "string"}}
+            }
+          }
+        }
+      }
+    },
+    "exposure": {"type": "object"},
+    "shock": {"type": "object"},
+    "account": {"type": "object"},
+    "earnings_calendar": {"type": "object"},
+    "tickets": {"type": "array", "items": {"$ref": "auto-core-ticket.schema.json"}},
+    "no_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "reasons"],
+      "properties": {"value": {"type": "boolean"}, "reasons": {"type": "array", "items": {"type": "string"}}}
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticket_id", "ticker", "side", "state", "filled_qty"],
+        "properties": {
+          "state": {"enum": ["filled", "partial", "unfilled", "not_entered", "changed"]},
+          "filled_qty": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "open_tickets": {"type": "array", "items": {"type": "object"}},
+    "keys": {"type": "object"},
+    "attributed_orders": {
+      "description": "r4 R4-1: the re-issue ledger's broker order rows (KST order day ord_dt + ord_no) already counted for a ticket (outcome filled, partial, unfilled or changed); the next classification leaves them out, so an order row counts for one ticket only. Updated only in recording mode by a run whose F6 stood (an outcome that disagrees with T1's fills adds nothing); otherwise the ledger source's list is carried (a record before F6 or failed, a no-new-session record, compare mode). Only order days of the last 30 calendar days (run day included) are kept.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ord_dt", "ord_no", "ticket_id"],
+        "properties": {
+          "ord_dt": {"type": "string", "format": "date"},
+          "ord_no": {"type": "string", "minLength": 1},
+          "ticket_id": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "f6_ran": {
+      "description": "True when this run's F6 classification ran and stood (status OK or HOLD after F6; also a no-new-session record, which keeps its source's ledger). The next run takes keys, open_tickets and the unclassified tickets from the latest record with f6_ran true. A ticket is classified only after its session ended, from its issue KST day to the KST day of its session's close (r3 R3-1, R3-2).",
+      "type": "boolean"
+    },
+    "carried_from": {
+      "description": "Run day of the ledger source whose keys and unclassified tickets this record copies: a record that ended before F6 or failed (f6_ran false), or a no-new-session record (no_new_session true, f6_ran true); null otherwise.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "no_new_session": {
+      "description": "r3 R3-3: true when this run's evaluation session is the ledger source's (no U.S. session closed since, e.g. a holiday): status OK, no ticket, no journal entry, no push, no broker read; the source's keys and unclassified tickets are carried (carried_from, f6_ran true) and the compare streak is kept (compare status NO_NEW_SESSION).",
+      "type": "boolean"
+    },
+    "facts_seen": {"type": "array", "items": {"type": "string"}},
+    "journal": {
+      "type": "object",
+      "required": ["would_append", "appended"],
+      "properties": {
+        "would_append": {"type": "array", "items": {"enum": ["core_decision", "order_ticket", "ticket_outcome"]}},
+        "appended": {"type": "array", "items": {"enum": ["core_decision", "order_ticket", "ticket_outcome"]}}
+      }
+    },
+    "compare": {"type": "object", "required": ["status"]},
+    "alerts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "line", "push"],
+        "properties": {"code": {"type": "string"}, "line": {"type": "string"}, "push": {"type": "boolean"}}
+      }
+    },
+    "alert_states": {"type": "object"},
+    "dashboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runCore", "orders"],
+      "properties": {"runCore": {"type": "object"}, "orders": {"type": "array", "items": {"type": "object"}}}
+    },
+    "candidates": {"type": "array", "items": {"type": "object"}},
+    "blocked": {"type": "array", "items": {"type": "object"}},
+    "registry_flags": {"type": "array", "items": {"type": "string"}},
+    "t1_mismatch": {"type": "string"},
+    "next_action_for_user": {"type": ["string", "null"]},
+    "next_action_for_cowork": {"type": ["string", "null"]},
+    "order_authority": {"const": false},
+    "execution_quantity": {"type": "null"}
+  }
+}

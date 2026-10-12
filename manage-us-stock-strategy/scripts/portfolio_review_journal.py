@@ -18,6 +18,10 @@ apply   append the entry. Run apply only in Cowork after the user typed "confirm
         sessions never run it, and never type or guess the code.
 verify  check the journal hash chain
 
+Redesign T2 F7: in recording mode the auto-core appends core_decision, order_ticket and ticket_outcome
+entries through append_auto_core_entries (confirmation_method AUTO_CORE, no code, no user message). The
+human propose/apply path above never accepts AUTO_CORE.
+
 The journal has no order or quantity authority and never touches portfolio state, policy or the
 reconciliation ledger.
 """
@@ -61,6 +65,14 @@ JOURNAL_CARD_USER_DECISION = "card_user_decision"
 S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
 CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
+# Redesign T2 F7: entries the auto-core appends in recording mode (never through propose/apply above).
+JOURNAL_CORE_DECISION = "core_decision"
+JOURNAL_ORDER_TICKET = "order_ticket"
+JOURNAL_TICKET_OUTCOME = "ticket_outcome"
+AUTO_CORE_ENTRY_TYPES = (JOURNAL_CORE_DECISION, JOURNAL_ORDER_TICKET, JOURNAL_TICKET_OUTCOME)
+AUTO_CORE_METHOD = "AUTO_CORE"
+TICKET_AUTHORITY = {"order_authority": False, "quantity_authority": "ORDER_TICKET_HUMAN_ENTRY",
+                    "execution_quantity": None}
 GENESIS_HASH = "0" * 64
 PROPOSAL_MAX_AGE_SECONDS = 3600
 CONCLUSIONS = ("continue", "other")
@@ -77,6 +89,12 @@ PAYLOAD_FIELDS = {
     JOURNAL_PEAK_REVIEW: ("symbol", "peak", "peak_date", "breach_date", "review_status"),
     JOURNAL_CARD_DECISION: CARD_DECISION_FIELDS,
     JOURNAL_CARD_USER_DECISION: USER_DECISION_FIELDS,
+    JOURNAL_CORE_DECISION: ("run_day_kst", "buy_session", "decision_mode", "no_action", "blocked_reasons",
+                            "ticket_ids", "commit_sha", "decision_sha256"),
+    JOURNAL_ORDER_TICKET: ("ticket_id", "ticker", "side", "order_type", "price", "qty", "amount", "buy_session",
+                           "decision_key", "price_rule", "evidence_r", "authority"),
+    JOURNAL_TICKET_OUTCOME: ("ticket_id", "ticker", "side", "outcome_state", "filled_qty", "average_fill_price",
+                             "decision_key", "classified_on"),
 }
 # Card action -> the sidecar DECISION_ACTIONS name it is scored under (G3 decision 4, 2026-09-30).
 # A card's TRIM/EXIT reason_tag is already a sidecar name; HOLD depends on review_required.
@@ -141,7 +159,13 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
     it writes the entry, recomputed from the entry's own fields. Rules that need another source
     (card file, price history) are not checked here."""
     entry_type, payload = entry["entry_type"], entry["payload"]
+    # Redesign T2 F7: an auto-core entry has no confirmation code or user message; it is checked here, before
+    # the code checks below (which would otherwise fail on the null message).
+    if entry["confirmation_method"] == AUTO_CORE_METHOD or entry_type in AUTO_CORE_ENTRY_TYPES:
+        return _auto_core_inconsistency(entry)
     code = entry["confirm_code"]
+    if not isinstance(code, str) or not isinstance(entry["user_message"], str):
+        return "CONFIRMATION_FIELDS_INVALID"
     if code not in entry["user_message"].upper():
         return "CONFIRM_CODE_NOT_IN_USER_MESSAGE"
     expected_fields = CARD_DECISION_FIELDS if entry_type == JOURNAL_CARD_DECISION else PAYLOAD_FIELDS[entry_type]
@@ -187,6 +211,22 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
         if entry["evaluation_session"] != payload["effective_session"] or (
                 payload["effective_session"] < decision["decision_session"]):
             return "USER_DECISION_SESSION_INCONSISTENT"
+    return None
+
+
+def _auto_core_inconsistency(entry: dict[str, Any]) -> str | None:
+    """Self-consistency of one auto-core entry (F7): method, null code and message, exact payload fields."""
+    if entry["confirmation_method"] != AUTO_CORE_METHOD or entry["entry_type"] not in AUTO_CORE_ENTRY_TYPES:
+        return "AUTO_CORE_ENTRY_TYPE_OR_METHOD_INVALID"
+    if entry["confirm_code"] is not None or entry["user_message"] is not None:
+        return "AUTO_CORE_CONFIRMATION_FIELDS_NOT_NULL"
+    payload = entry["payload"]
+    if sorted(payload) != sorted(PAYLOAD_FIELDS[entry["entry_type"]]):
+        return "PAYLOAD_FIELDS_INVALID"
+    if entry["entry_type"] == JOURNAL_ORDER_TICKET and payload["authority"] != TICKET_AUTHORITY:
+        return "ORDER_TICKET_AUTHORITY_INVALID"
+    if entry["entry_type"] == JOURNAL_CORE_DECISION and entry["review_id"] != payload["decision_sha256"]:
+        return "CORE_DECISION_REVIEW_ID_MISMATCH"
     return None
 
 
@@ -401,11 +441,11 @@ def build_user_decision_proposal(*, journal: dict[str, Any], decision_id: str, u
                               journal_path=journal_path, now=now)
 
 
-def _atomic_write(path: Path, document: dict[str, Any]) -> None:
+def _atomic_write(path: Path, document: dict[str, Any], newline: str = "\n") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     handle, temporary_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
     try:
-        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as output:
+        with os.fdopen(handle, "w", encoding="utf-8", newline=newline) as output:
             json.dump(document, output, ensure_ascii=False, indent=2)
             output.write("\n")
             output.flush()
@@ -521,6 +561,87 @@ def apply_proposal_entries(*, journal_path: Path, proposal: dict[str, Any], conf
     written = load_journal(journal_path)
     if written["status"] != "OK" or written["head_sha256"] != previous or (
             len(written["entries"]) != len(journal["entries"]) + len(entries)):
+        raise JournalError("JOURNAL_WRITE_VERIFICATION_FAILED")
+    return entries
+
+
+def auto_core_payloads(decision: dict[str, Any], decision_sha256: str) -> list[tuple[str, dict[str, Any]]]:
+    """(entry_type, payload) for one decide record: one core_decision (no action included), one order_ticket per
+    ticket and one ticket_outcome per classified outcome."""
+    items: list[tuple[str, dict[str, Any]]] = [(JOURNAL_CORE_DECISION, {
+        "run_day_kst": decision["run_day_kst"], "buy_session": decision["buy_session"],
+        "decision_mode": decision["decision_mode"], "no_action": decision["no_action"]["value"],
+        "blocked_reasons": list(decision["no_action"]["reasons"])[:5],
+        "ticket_ids": [ticket["ticket_id"] for ticket in decision["tickets"]],
+        "commit_sha": decision["commit_sha"], "decision_sha256": decision_sha256})]
+    for ticket in decision["tickets"]:
+        items.append((JOURNAL_ORDER_TICKET, {
+            "ticket_id": ticket["ticket_id"], "ticker": ticket["ticker"], "side": ticket["side"],
+            "order_type": ticket["type"], "price": format(Decimal(str(ticket["price"])), "f"), "qty": ticket["qty"],
+            "amount": format(Decimal(str(ticket["amount"])), "f"), "buy_session": ticket["session"],
+            "decision_key": ticket["decision_key"], "price_rule": ticket["priceRule"],
+            "evidence_r": ticket["evidence"]["r"], "authority": dict(TICKET_AUTHORITY)}))
+    for outcome in decision["outcomes"]:
+        if outcome.get("state") not in ("filled", "partial", "unfilled", "not_entered", "changed") or \
+                outcome.get("mode") != "apply" or outcome.get("reconcile_mismatch"):
+            continue
+        average = outcome.get("average_fill_price")
+        items.append((JOURNAL_TICKET_OUTCOME, {
+            "ticket_id": outcome["ticket_id"], "ticker": outcome["ticker"], "side": outcome["side"],
+            "outcome_state": outcome["state"], "filled_qty": int(outcome.get("filled_qty") or 0),
+            "average_fill_price": None if average is None else format(Decimal(str(average)), "f"),
+            "decision_key": outcome.get("decision_key"), "classified_on": decision["run_day_kst"]}))
+    return items
+
+
+def append_auto_core_entries(*, journal_path: Path, decision: dict[str, Any], decision_sha256: str,
+                             expected_head: str, recheck: Any, now: datetime | None = None) -> list[dict[str, Any]]:
+    """Redesign T2 F7: append the decide record's entries (recording mode only; the caller decides that).
+
+    Fails closed (JournalError, nothing written) when: recheck() (re-reads the configuration, kill switch and
+    git provenance just before the write) returns any reason, the journal is not OK, its head differs from the
+    head read at decide start, or a core_decision of the same evaluation session already exists (idempotent).
+    The hash chain, schema and atomic replace are those of apply_proposal_entries; the file keeps its line
+    endings. The human propose/apply path does not accept AUTO_CORE.
+    """
+    reasons = list(recheck() or [])
+    if reasons:
+        raise JournalError("AUTO_CORE_RECHECK_FAILED:" + ",".join(reasons))
+    journal = load_journal(journal_path)
+    if journal["status"] != "OK":
+        raise JournalError(f"JOURNAL_{journal['status']}")
+    if journal["head_sha256"] != expected_head:
+        raise JournalError("JOURNAL_CHANGED_SINCE_DECIDE_START")
+    if any(entry.get("entry_type") == JOURNAL_CORE_DECISION
+           and entry.get("evaluation_session") == decision["evaluation_session"] for entry in journal["entries"]):
+        raise JournalError("CORE_DECISION_ALREADY_RECORDED")
+    recorded_at = _utc_iso(now or datetime.now(timezone.utc))
+    previous = journal["head_sha256"]
+    entries: list[dict[str, Any]] = []
+    for offset, (entry_type, payload) in enumerate(auto_core_payloads(decision, decision_sha256)):
+        if validate_instance(payload, PAYLOAD_SCHEMA):
+            raise JournalError("JOURNAL_PAYLOAD_FIELDS_INVALID")
+        entry = {
+            "entry_type": entry_type, "entry_id": canonical_hash({"entry_type": entry_type, "payload": payload}),
+            "sequence": len(journal["entries"]) + 1 + offset, "previous_entry_sha256": previous,
+            "confirm_code": None, "confirmation_method": AUTO_CORE_METHOD, "user_message": None,
+            "user_confirmed_at": recorded_at, "review_id": decision_sha256,
+            "evaluation_session": decision["evaluation_session"], "payload": payload,
+            "order_authority": False, "quantity_authority": "none",
+        }
+        previous = canonical_hash(entry)
+        entries.append(entry)
+    document = {"schema_version": JOURNAL_SCHEMA_VERSION, "journal_type": JOURNAL_TYPE,
+                "order_authority": False, "quantity_authority": "none", "entries": journal["entries"] + entries}
+    errors = validate_instance(document, JOURNAL_SCHEMA) or entry_inconsistencies(document["entries"])
+    if errors:
+        raise JournalError("JOURNAL_ENTRY_SCHEMA_INVALID: " + "; ".join(errors[:5]))
+    newline = "\r\n" if b"\r\n" in Path(journal_path).read_bytes() else "\n"
+    if load_journal(journal_path)["head_sha256"] != expected_head:
+        raise JournalError("JOURNAL_CHANGED_SINCE_DECIDE_START")
+    _atomic_write(Path(journal_path), document, newline=newline)
+    written = load_journal(journal_path)
+    if written["status"] != "OK" or written["head_sha256"] != previous:
         raise JournalError("JOURNAL_WRITE_VERIFICATION_FAILED")
     return entries
 

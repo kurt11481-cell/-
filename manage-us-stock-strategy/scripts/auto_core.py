@@ -20,6 +20,10 @@ A run that fails at any step never counts toward the compare streak (it is reset
 because a settlement due that day is not shown yet keeps it (no +1, no reset). Kiwoom is read only with the
 policy's token profile alias: without one the run fails before any read.
 Exit code: 0 for OK or HOLD, 1 for FAIL.
+
+decide  redesign T2 (auto_core_decide.py): judgments, buy requirements and gates, LOC order tickets for the
+        user to enter (order stage 1), outcome classification, decision journal, compare with the integrated
+        check. It reads that day's daily result and never repeats the broker reconciliation.
 """
 
 from __future__ import annotations
@@ -397,7 +401,20 @@ def main(argv: list[str] | None = None) -> int:
     run = commands.add_parser("daily", help="collect, reconcile (compare/apply), close histories, exposure")
     run.add_argument("--output-root", type=Path, default=AUTO_OUTPUT_ROOT)
     run.add_argument("--config", type=Path, default=core.CONFIG_PATH)
+    # Redesign T2 F8: judgments, requirements and gates, order tickets (stage 1), outcomes, journal, compare.
+    decide_parser = commands.add_parser("decide", help="judge, gate and size LOC tickets for the user (no orders)")
+    decide_parser.add_argument("--output-root", type=Path, default=AUTO_OUTPUT_ROOT)
+    decide_parser.add_argument("--config", type=Path, default=core.CONFIG_PATH)
     args = parser.parse_args(argv)
+    if args.command == "decide":
+        from auto_core_decide import decide
+
+        decision = decide(output_root=args.output_root, config_path=args.config)
+        print(json.dumps({"status": decision["status"], "decision_mode": decision["decision_mode"],
+                          "reasons": decision["reasons"][:5], "tickets": len(decision["tickets"]),
+                          "no_action": decision["no_action"]["value"],
+                          "next_action_for_user": decision["next_action_for_user"]}, ensure_ascii=True))
+        return 1 if decision["status"] == "FAIL" else 0
     result = daily(output_root=args.output_root, config_path=args.config)
     print(json.dumps({"status": result["status"], "mode": result["mode"], "reasons": result["reasons"][:5],
                       "streak": result["compare"]["streak"], "next_action_for_user": result["next_action_for_user"]},

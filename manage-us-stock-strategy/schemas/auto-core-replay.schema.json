@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-replay.schema.json",
+  "title": "Auto-core replay (workspace/outputs/auto-core/replay/<run id>/replay.json)",
+  "description": "Redesign T2 F10. Read-only replay of the decide path (auto_core_decide.evaluate_session) over saved sessions with fixed portfolios P-R1 and P-R2, judged by the pre-registered prompt appendix C criteria: R-A real order anchors, R-B gate leak against an oracle on a different code path (and an optional external oracle), R-C frequency (P-R2 without a buy ticket = not met). Replay assumptions are listed in the file. No authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "period", "assumptions", "registry_sha256", "portfolios", "R_A", "R_B", "R_C", "exceptions", "order_authority", "quantity_authority", "execution_quantity"],
+  "properties": {
+    "schema_version": {"const": "auto-core-replay-1.0"},
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {"start": {"type": "string", "format": "date"}, "end": {"type": "string", "format": "date"}}
+    },
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "registry_sha256": {"type": ["string", "null"]},
+    "portfolios": {"type": "object"},
+    "R_A": {
+      "type": "object",
+      "required": ["anchors", "unexplained_or_exception", "no_data", "verdict"],
+      "properties": {"verdict": {"enum": ["PASS", "NOT_PASSED"]}}
+    },
+    "R_B": {
+      "type": "object",
+      "required": ["by_portfolio", "verdict"],
+      "properties": {"verdict": {"enum": ["PASS", "FAIL"]}}
+    },
+    "R_C": {
+      "type": "object",
+      "required": ["by_portfolio", "verdict", "default_disposition"],
+      "properties": {"verdict": {"enum": ["MET", "NOT_MET"]}}
+    },
+    "exceptions": {"type": "integer", "minimum": 0},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "execution_quantity": {"type": "null"}
+  }
+}

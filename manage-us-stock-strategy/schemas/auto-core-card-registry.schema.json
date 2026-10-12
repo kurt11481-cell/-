@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-card-registry.schema.json",
+  "title": "Card machine-readable fields (docs/claude/card-evidence-registry.json)",
+  "description": "Redesign T2 F2 (prompt D3). The auto-core reads cards only through this file. Each entry is transcribed from an accepted card and the rule file (no new judgment; every item cites file:line). section_sha256 = sha256 of the UTF-8 text of the card section: the heading line card_section and every following line up to (not including) the next heading of the same or a higher level (end of file for a level-1 heading), lines joined with LF (CRLF normalized). A ticket (buy or sell) needs the entry, a valid acceptance, a matching section hash and a committed registry file. Cowork updates it in the same session that changes or accepts a card. No order authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_type", "updated_at", "updated_by", "rule", "symbols", "order_authority", "quantity_authority"],
+  "properties": {
+    "schema_version": {"const": "card-evidence-registry-1.0"},
+    "registry_type": {"const": "AUTO_CORE_CARD_REGISTRY"},
+    "updated_at": {"type": "string", "format": "date"},
+    "updated_by": {"type": "string", "minLength": 1},
+    "rule": {"type": "string", "minLength": 1},
+    "order_authority": {"const": false},
+    "quantity_authority": {"const": "none"},
+    "symbols": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "card_doc", "card_section", "section_sha256", "accepted", "card_action", "trim_target_weight", "trigger_set", "sector", "rg2_benchmark", "official_domains", "c8", "card_triggers", "static_evidence", "kill_refs", "known_events"],
+        "properties": {
+          "role": {"enum": ["holding", "watch"]},
+          "card_doc": {"type": "string", "pattern": "^docs/claude/[A-Za-z0-9._-]+\\.md$"},
+          "card_section": {"type": "string", "pattern": "^#{1,4} .+"},
+          "section_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "accepted": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "date", "source"],
+            "properties": {
+              "text": {"type": "string", "minLength": 1},
+              "date": {"type": "string", "format": "date"},
+              "source": {"type": "string", "pattern": "^docs/claude/[A-Za-z0-9._-]+\\.(md|json):[0-9]+(-[0-9]+)?$"}
+            }
+          },
+          "card_action": {"enum": ["HOLD", "WATCH", "ADD", "TRIM", "EXIT"]},
+          "trim_target_weight": {"type": ["number", "null"], "minimum": 0},
+          "trigger_set": {"type": "string", "minLength": 1},
+          "sector": {"type": ["string", "null"]},
+          "rg2_benchmark": {"enum": ["SOXX", "GRID"]},
+          "official_domains": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"}},
+          "c8": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["one_day", "five_day"],
+            "properties": {
+              "one_day": {"type": "number", "minimum": 0},
+              "five_day": {"type": ["number", "null"], "minimum": 0},
+              "source": {"type": "string", "minLength": 1}
+            }
+          },
+          "card_triggers": {
+            "description": "kind and side go together (r2 R2-9): drop_alert, close_at_or_below, log_only, earnings_notice and display_only need side alert or info (never evidence); the evidence kinds ema_below, ema20_below_twice, ema_below_unrecovered, new_high_hold, pullback_rebound and good_news_drop need side + or -. The schema dialect has no conditional keyword, so the loader (auto_core_inputs.KIND_SIDES) enforces it: a mismatch makes that symbol ineligible (REGISTRY_KIND_SIDE_INVALID, no ticket).",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "side", "strength", "params", "active_when", "source"],
+              "properties": {
+                "id": {"type": "string", "pattern": "^[A-Z]{1,3}[0-9]{1,2}$"},
+                "kind": {"enum": ["ema_below", "ema20_below_twice", "ema_below_unrecovered", "new_high_hold", "pullback_rebound", "good_news_drop", "drop_alert", "close_at_or_below", "earnings_notice", "log_only", "display_only"]},
+                "side": {"enum": ["+", "-", "alert", "info"]},
+                "strength": {"enum": ["weak", "review", "info"]},
+                "params": {"type": "object"},
+                "active_when": {"enum": ["held", "member", "held_or_member"]},
+                "source": {"type": "string", "pattern": "^docs/claude/[A-Za-z0-9._-]+\\.(md|txt):[0-9]+(-[0-9]+)?$"}
+              }
+            }
+          },
+          "static_evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "e1_kind", "strength", "direction", "as_of", "source", "quote"],
+              "properties": {
+                "id": {"type": "string", "pattern": "^[A-Z0-9]+-SE[0-9]+$"},
+                "e1_kind": {"enum": ["thesis", "valuation", "event_reaction", "relative"]},
+                "strength": {"enum": ["strong", "weak", "neutral"]},
+                "direction": {"enum": ["+", "-"]},
+                "as_of": {"type": "string", "format": "date"},
+                "source": {"type": "string", "pattern": "^docs/claude/[A-Za-z0-9._-]+\\.md:[0-9]+(-[0-9]+)?$"},
+                "quote": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "kill_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "source"],
+              "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "source": {"type": "string", "pattern": "^docs/claude/[A-Za-z0-9._-]+\\.(md|txt):[0-9]+(-[0-9]+)?$"}
+              }
+            }
+          },
+          "known_events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["date", "label"],
+              "properties": {
+                "date": {"type": "string", "format": "date"},
+                "label": {"type": "string", "minLength": 1},
+                "source": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
