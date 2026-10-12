@@ -7,7 +7,8 @@ Current execution authority is `NONE`.
 - ORDER_INTENT_ONLY: `TESTED_ONLY`, proposed quantity remains null.
 - Independent Risk Kernel: `TESTED_ONLY`, current incomplete broker state is rejected.
 - Execution Gateway Dry-Run: `TESTED_ONLY`, write endpoints are identified but never called.
-- Kiwoom open orders: `API_RESPONSE_ERROR`.
+- Kiwoom open orders: `PASS` when the broker declares no open orders (empty PASS since redesign T1);
+  a populated open-orders response has not been observed live and stays `TESTED_ONLY`.
 - Kiwoom current-day fills: query available; empty output is not interpreted as none.
 - Kiwoom realized P/L: `API_RESPONSE_ERROR` for current adapter route.
 - Daily/period order and realized-P/L coverage: `OFFICIAL_API_SUPPORTED_ADAPTER_MISSING`.
