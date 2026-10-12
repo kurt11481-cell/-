@@ -2,6 +2,10 @@
 
 U.S. stock portfolio system moving to automated operation (redesign 2026-10-10). Broker access is read-only;
 no order execution authority until order stage 2 is approved (redesign 3-6).
+Order stage 1 (user decision A7 a; redesign T2 merged 2026-10-12): the auto-core decide run issues LOC order tickets
+(quantity_authority "ORDER_TICKET_HUMAN_ENTRY", tickets only) that the user enters in Kiwoom; everything else keeps
+quantity_authority "none" and execution_quantity null. While decision_mode is compare (until the user's "켜"), tickets
+are labeled 비교 중 and are not entered.
 
 ## Goal (user decision 2026-10-10, docs/claude/automation-redesign-2026-10-10.md)
 - Automated operation is the top priority: a deterministic daily auto-core (collect -> reconcile -> compute ->
@@ -23,7 +27,8 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
   the code or reuse one. Claude Code, Codex, scheduled LLM tasks and Judge sessions never run apply. Before applying,
   read manage-us-stock-strategy/references/broker-snapshot-reconciliation.md.
 - Review-journal entries (stock-strategy-system/decision_journal.json) are append-only and written only through
-  `portfolio_review_journal.py` (later the auto-core). In Cowork the user's explicit decision message in the current
+  `portfolio_review_journal.py`, or by the auto-core decide run in recording mode only (decision_mode apply; entries
+  core_decision, order_ticket, ticket_outcome with AUTO_CORE). In Cowork the user's explicit decision message in the current
   conversation is the confirmation: propose, then apply in the same session with that proposal's own code,
   `--confirmed-via COWORK_CHAT_USER_MESSAGE` and the user's decision text verbatim (redesign A3, 2026-10-10). Never
   apply for a decision the user did not state. Claude Code, Codex and Judge sessions never apply or edit the journal.
@@ -32,6 +37,10 @@ no order execution authority until order stage 2 is approved (redesign 3-6).
   redesign 3-5 invariants (after T1) is the approved exception for holdings, cash and cost basis only.
 - Never read or print secrets (.env*, tokens, account numbers).
 - Missing or stale data stays visible and fails closed. Deterministic rules outrank LLM output.
+- The only LLM input to the auto-core is the research record written by the 06:40 integrated check
+  (workspace/outputs/research-records/<KST date>/research-record.json, schema auto-core-research-record). A missing or
+  invalid record blocks every buy ticket, never sells. A Cowork session that changes or accepts a card updates
+  docs/claude/card-evidence-registry.json in the same session (otherwise that symbol gets no ticket).
 
 ## Kiwoom query rules (standing user rule 2026-10-07)
 - Every read-only `kiwoom_query` call (Cowork, Claude Code, Codex, scheduled tasks, Manual runs) must pass options `"profile": "실전계좌"` and `"mode": "real"`. Without the profile the call uses an old token and fails with 8005. Bridge code reads the same alias from policy key `token_profile_alias` in workspace/policies/kiwoom-readonly-policy.json.
