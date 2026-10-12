@@ -59,3 +59,7 @@ manage-us-stock-strategy/scripts/build_new_buy_strategy_draft.py
 manage-us-stock-strategy/scripts/build_new_buy_approval_proposal.py
 manage-us-stock-strategy/scripts/build_candidate_discovery_proposal.py
 manage-us-stock-strategy/schemas/candidate-discovery-proposal.schema.json
+
+# Auto-core order-ticket evidence and contracts (T2, 2026-10-12; evidence: docs/claude/redesign-t2-builder-report-2026-10-10.md)
+docs/claude/card-evidence-registry.json
+manage-us-stock-strategy/schemas/auto-core-*.schema.json

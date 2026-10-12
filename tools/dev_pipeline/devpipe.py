@@ -133,7 +133,8 @@ ADDED_VALUE_RE = re.compile(
     r"(?P<key>(?:watchlist|active_universe|new_buy_instrument)_approved|quantity_authority|execution_quantity)"
     r"[\"'`]?\s*[:=](?!=)\s*(?:\{\s*[\"']?(?:const|type)[\"']?\s*:\s*)?"
     r"(?P<value>\"[^\"]*\"|'[^']*'|[A-Za-z0-9_.$+-]+|\S)", re.I)
-ADDED_NONE_VALUES = {"quantity_authority": ("none", "null", "$null"),
+# quantity_authority false = no authority (repository meaning; evidence docs/claude/redesign-t3b-judge-report-2026-10-10.md K6).
+ADDED_NONE_VALUES = {"quantity_authority": ("none", "null", "$null", "false", "$false"),
                      "execution_quantity": ("null", "none", "$null")}
 SECRET_NAME_RE = re.compile(
     r"^(\.env.*|.*\.(pem|key|p12|pfx|ppk)|credentials.*\.json|secrets.*\.json|tokens?\.json"

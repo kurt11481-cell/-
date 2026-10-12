@@ -1055,8 +1055,8 @@ class AddedLineMarkerTests(unittest.TestCase):
         for line in ('"watchlist_approved": true,', "active_universe_approved = True",
                      '"new_buy_instrument_approved": {"const": true}', 'quantity_authority = "full"',
                      '"quantity_authority": "deterministic_existing_holdings"', "quantity_authority: 5",
-                     '"quantity_authority": {"enum": ["none", "full"]}', '"quantity_authority": {"const": false}',
-                     "execution_quantity = 5", '"execution_quantity": 12,', '"execution_quantity": {"type": ["integer", "null"]}',
+                     '"quantity_authority": {"enum": ["none", "full"]}', "quantity_authority: true",
+                     "execution_quantity: false", "execution_quantity = 5", '"execution_quantity": 12,', '"execution_quantity": {"type": ["integer", "null"]}',
                      "EXECUTION_QUANTITY: qty"):
             with self.subTest(line=line):
                 self.assertTrue(devpipe.added_value_reasons(line), line)
@@ -1066,6 +1066,8 @@ class AddedLineMarkerTests(unittest.TestCase):
         for line in ('"watchlist_approved": false,', "active_universe_approved = False",
                      '"new_buy_instrument_approved": {"const": false}', '"quantity_authority": "none"',
                      "quantity_authority = None", '"quantity_authority": null', '"quantity_authority": {"const": "none"}',
+                     '"quantity_authority": {"const": false}', "quantity_authority: false", "quantity_authority = $false",
+                     '"quantity_authority": false',
                      "order_authority=false · quantity_authority=none · execution_quantity=null",
                      "execution_quantity = None", '"execution_quantity": null', '"execution_quantity": "null"',
                      '"execution_quantity": {"type": "null"}', "$execution_quantity = $null",
@@ -1073,6 +1075,16 @@ class AddedLineMarkerTests(unittest.TestCase):
                      "| execution_quantity | 5 |"):
             with self.subTest(line=line):
                 self.assertEqual(devpipe.added_value_reasons(line), [], line)
+
+    def test_order_ticket_marker_stays_authority(self):
+        # T3c C: the order stage 1 marker is a quantity_authority other than none, so a new line raises the class.
+        for line in ('"quantity_authority": "ORDER_TICKET_HUMAN_ENTRY"', 'quantity_authority = "ORDER_TICKET_HUMAN_ENTRY"',
+                     '"quantity_authority": {"const": "ORDER_TICKET_HUMAN_ENTRY"}'):
+            with self.subTest(line=line):
+                self.assertEqual(devpipe.added_value_reasons(line), ["ADDED_LINE:quantity_authority"], line)
+        # Prose without `:` or `=` (CLAUDE.md wording) is not a value assignment.
+        self.assertEqual(devpipe.added_value_reasons(
+            'auto-core decide run issues LOC order tickets (quantity_authority "ORDER_TICKET_HUMAN_ENTRY", tickets only)'), [])
 
     def test_in_tree_raise_only(self):
         fx = RepoFixture(self)
@@ -1412,6 +1424,25 @@ class StaticScriptTests(unittest.TestCase):
             with self.subTest(pattern=pattern):
                 self.assertTrue(any(devpipe.glob_to_regex(pattern).match(p.relative_to(ROOT).as_posix())
                                     for p in ROOT.glob(pattern)), pattern)
+
+    def test_authority_paths_cover_auto_core_contracts(self):
+        # T3c A: the card evidence registry and every auto-core contract schema are authority paths.
+        patterns = devpipe.parse_authority_patterns((PIPELINE / "authority-paths.txt").read_text(encoding="utf-8"))
+        self.assertIn("docs/claude/card-evidence-registry.json", patterns)
+        self.assertIn("manage-us-stock-strategy/schemas/auto-core-*.schema.json", patterns)
+        regexes = [devpipe.glob_to_regex(p) for p in patterns]
+        covered = ["docs/claude/card-evidence-registry.json"] + [
+            "manage-us-stock-strategy/schemas/auto-core-%s.schema.json" % name
+            for name in ("card-registry", "compare", "config", "decision", "replay", "research-record", "result", "ticket")]
+        for path in covered:
+            with self.subTest(path=path):
+                self.assertTrue((ROOT / path).is_file(), path)
+                self.assertTrue(any(rx.match(path) for rx in regexes), path)
+        for path in ("manage-us-stock-strategy/schemas/holding-card.schema.json",
+                     "manage-us-stock-strategy/schemas/automation-delivery-runtime.schema.json",
+                     "docs/claude/watchlist-registry.json"):
+            with self.subTest(path=path):
+                self.assertFalse(any(rx.match(path) for rx in regexes), path)
 
     def test_settings_json_p9(self):
         raw = (ROOT / ".claude" / "settings.json").read_bytes()
