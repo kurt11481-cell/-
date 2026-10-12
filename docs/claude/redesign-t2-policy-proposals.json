@@ -1,0 +1,58 @@
+{
+  "schema_version": "redesign-t2-policy-proposals-1.0",
+  "id": "redesign-t2-policy-proposals",
+  "created": "2026-10-10",
+  "author": "redesign-t2 Builder (worktree t2-core)",
+  "status": "PROPOSED - not applied. The Builder never writes these files. Cowork applies an item only after the user's '적용' for that item (each item can be chosen separately).",
+  "authority": {"order_authority": false, "quantity_authority": "none", "execution_quantity": null},
+  "consumers": ["Cowork deployment step 3 (prompt section 8)", "T2 Judge (J5 values unchanged, J16 no new routine user step)"],
+  "proposals": [
+    {
+      "id": "P-1",
+      "path": "workspace/policies/auto_core.json",
+      "kind": "full_content",
+      "new_content": {
+        "mode": "compare",
+        "kill_switch": false,
+        "compare_days_required": 3,
+        "schedule_kst": "06:15",
+        "symbols_extra": ["SOXX", "GRID"],
+        "decision_mode": "compare",
+        "decision_compare_days_required": 5,
+        "decide_schedule_kst": "07:45"
+      },
+      "existing_keys_note": "mode, kill_switch, compare_days_required and schedule_kst keep the values the file has when this is applied (2026-10-10: compare, false, 3, 06:15). If T1 recording was switched on by then, keep mode \"apply\". Only symbols_extra changes (GRID added) and the three decide keys are new.",
+      "optional_keys_filled_by_cowork_from_answers": {
+        "reissue_buy_cap_not_above_first": "Q2 a -> true (re-issue after not-entered, buy cap <= first cap); Q2 b -> false (re-issue, formula cap); Q2 c or no answer -> leave the key out: a decision that was not entered is not issued again (it lapses; a new decision key starts afresh). The key's presence is what turns re-issue after not-entered on (auto_core_tickets.reissue_block).",
+        "max_buy_ticket_pct_of_equity": "Q3 a -> 0.10; Q3 b -> the value given; Q3 c or no answer -> leave out (no size gate, current behaviour)",
+        "max_tickets_per_day": "Q3 a -> 3; Q3 b -> the value given; Q3 c or no answer -> leave out (no count gate)",
+        "research_only_strong_r_cap": "Q4 a -> \"1/2\" (a string: one of \"0\", \"1/3\", \"1/2\", \"1\"); Q4 b or no answer -> leave out (design G3 ceiling 1)"
+      },
+      "reason": "Redesign T2 D10/F12: decide reads decision_mode (compare first, 5 trading days of judgment compare, then the user's '켜' sets apply), its schedule and the R-REC1 power-sector benchmark GRID, which is not collected yet (measurements: GRID not collected). The optional keys can only lower or hold what decide issues (prompt D17, D18, D8).",
+      "checks_after_apply": [
+        "python manage-us-stock-strategy/scripts/validate_schema_contracts.py",
+        "python -c \"import sys; sys.path.insert(0, 'manage-us-stock-strategy/scripts'); import auto_core_reconcile as c; print(c.load_config())\"  (expect the config and [] reasons)",
+        "python manage-us-stock-strategy/scripts/run_portfolio_exposure_review.py  (one S7 review, read-only)"
+      ]
+    },
+    {
+      "id": "P-2",
+      "path": "stock-strategy-system/alert_policy.json",
+      "kind": "key_changes",
+      "changes": [
+        {"key": "portfolio_exposure_policy.nominal_multipliers.PWR", "old_value": "(absent)", "new_value": 1},
+        {"key": "portfolio_exposure_policy.nominal_multipliers.LITE", "old_value": "(absent)", "new_value": 1},
+        {"key": "portfolio_exposure_policy.card_stock_core", "old_value": ["BE", "MU", "NBIS", "DELL", "AMD"],
+         "new_value": ["BE", "MU", "NBIS", "DELL", "AMD", "PWR", "LITE"]}
+      ],
+      "unchanged": "Every other key, including thresholds 1.55 / 1.85 / 1.9 / 1.25, the single-stock cap 0.4, allowed_index_etfs, sell_only_holdings and reduce_order.",
+      "reason": "docs/claude/product-approval-PWR-LITE-2026-10-08.md item (4) (user decision A, 2026-10-08 13:10 KST: both approved; item 4 = policy multipliers PWR 1, LITE 1 and card_stock_core, K3). Until it is applied decide marks PWR and LITE buy tickets POLICY_UNREGISTERED_INSTRUMENT (prompt D14) while the buy requirement (2) follows the rule file. The canonical instrument_registry.json entry named in the same item is a separate step and is not part of this proposal.",
+      "class": "authority/limit change (approved product list): the user's '적용' for this item is required; the T2 Judge checks that only these keys change.",
+      "checks_after_apply": [
+        "python manage-us-stock-strategy/scripts/validate_schema_contracts.py",
+        "python -m unittest discover -s manage-us-stock-strategy/tests -p \"test_portfolio_exposure*\"",
+        "python manage-us-stock-strategy/scripts/run_portfolio_exposure_review.py  (one S7 review: PWR and LITE no longer UNREGISTERED when held)"
+      ]
+    }
+  ]
+}

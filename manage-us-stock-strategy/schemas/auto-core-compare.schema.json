@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-core-compare.schema.json",
+  "title": "Auto-core judgment compare (workspace/outputs/auto-core/<YYYY-MM-DD>/compare.json)",
+  "description": "Redesign T2 F9. The decide run's judgments against the integrated check's run record copy (research record integrated_check_run). Categories are the pre-registered prompt appendix B codes B1 SAME, B2 DATA_DEFINITION, B3 LLM_ONLY, B4 RESEARCH_RECORD, B5 RULE_CODE_PRECEDENCE, B6 TIMING, B7 UNEXPLAINED. properties.explained_file is the schema of docs/claude/redesign-t2-compare-explained.json (written by Cowork: LLM_ERROR with the rule sentence quoted, or CORE_BUG); it never appears in compare.json itself. Display and completion evidence only; no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_day_kst", "evaluation_session", "status", "items", "categories", "unexplained", "llm_run", "streak", "required", "explained_errors", "b2_wide", "b2_wide_count"],
+  "properties": {
+    "schema_version": {"const": "auto-core-compare-1.0"},
+    "run_day_kst": {"type": "string", "format": "date"},
+    "evaluation_session": {"type": ["string", "null"], "format": "date"},
+    "status": {"enum": ["COMPARED", "NO_RECORD"]},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_key", "unit", "core", "llm", "category", "detail"],
+        "properties": {
+          "item_key": {"type": "string", "minLength": 1},
+          "unit": {"enum": ["trigger", "buy_requirement", "exposure", "r5", "rrec1"]},
+          "core": {},
+          "llm": {},
+          "category": {"enum": ["B1", "B2", "B3", "B4", "B5", "B6", "B7"]},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "categories": {"type": "object"},
+    "unexplained": {"type": "array", "items": {"type": "string"}},
+    "b2_wide": {
+      "description": "B2 trigger items whose margin is above the 1% price margin (the 3% allowance of appendix B 2 was used); for Cowork's R2 review.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_key", "margin", "limit"],
+        "properties": {"item_key": {"type": "string", "minLength": 1}, "margin": {"type": "number", "minimum": 0}, "limit": {"type": "number", "minimum": 0}}
+      }
+    },
+    "b2_wide_count": {"type": "integer", "minimum": 0},
+    "llm_run": {"type": ["object", "null"]},
+    "streak": {"type": "integer", "minimum": 0},
+    "required": {"type": "integer", "minimum": 1},
+    "explained_errors": {"type": "array", "items": {"type": "string"}},
+    "explained_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "items"],
+      "properties": {
+        "schema_version": {"const": "redesign-t2-compare-explained-1.0"},
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["date", "item_key", "verdict", "rule_quote", "note"],
+            "properties": {
+              "date": {"type": "string", "format": "date"},
+              "item_key": {"type": "string", "minLength": 1},
+              "verdict": {"enum": ["LLM_ERROR", "CORE_BUG"]},
+              "rule_quote": {"type": "string", "minLength": 1},
+              "note": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}
