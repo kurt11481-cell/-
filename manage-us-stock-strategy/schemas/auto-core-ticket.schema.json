@@ -98,6 +98,25 @@
     },
     "gap": {"type": "object", "required": ["source", "target_weight", "delta"]},
     "after_sale": {"type": "object"},
+    "risk_1r": {
+      "description": "risk1r (user decision ext-1012-setup B, 2026-10-12): buy tickets only. 1R = loss down to the invalidation line EMA20 - 0.75 ATR14 of the evaluation session (cent down). Grade D, display and record only: never an input to a gate, quantity, price or sell. status unk = an indicator is missing or invalid; below_band = the reference is at or below the line.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "invalidation", "r_pct", "r_sigma", "loss_usd", "loss_pct_equity", "basis", "grade", "display_only", "line"],
+      "properties": {
+        "status": {"enum": ["ok", "below_band", "unk"]},
+        "reason": {"type": ["string", "null"]},
+        "invalidation": {"type": ["string", "null"], "pattern": "^-?[0-9]+\\.[0-9]{2}$"},
+        "r_pct": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{6}$"},
+        "r_sigma": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{2}$"},
+        "loss_usd": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{2}$"},
+        "loss_pct_equity": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{6}$"},
+        "basis": {"const": "EMA20-0.75xATR14@evaluation_session"},
+        "grade": {"const": "D"},
+        "display_only": {"const": true},
+        "line": {"type": "string", "minLength": 1}
+      }
+    },
     "note": {"type": "string"}
   }
 }

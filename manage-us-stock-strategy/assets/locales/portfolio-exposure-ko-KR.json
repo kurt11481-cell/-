@@ -54,6 +54,7 @@
     "score_ticket_row": "- {ticker} {side} {mode} (주문표 세션 {session} 종가 기준, 가상 체결 {fill}): {horizons} · 사용자 {user}",
     "score_ticket_h_scored": "{horizon}세션 무행동 대비 {value} · {spy}",
     "score_ticket_reference_only": "가상 체결·비교 모드 결과는 등급 D 참고용이며 판단 근거가 아닙니다.",
+    "score_ticket_r_multiple": " · R 배수(계획 1R {r_pct} 대비, 등급 D) {values}",
     "journal_apply_rejected": "기록하지 않았습니다: {reason}",
     "journal_propose_path": "제안 파일: {path}"
   }

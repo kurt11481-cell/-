@@ -19,7 +19,7 @@ import hashlib
 import math
 import re
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
+from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from fractions import Fraction
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
@@ -51,6 +51,7 @@ SIZING: dict[str, tuple[Any, str]] = {
     "MULT_PLACES": (Decimal("0.0001"), "design 9-1 2-2: multiplier to 4 decimals (10/9 SOXL-2 0.9165)"),
     "TICKET_FEE_RATE": (Decimal("0.0025"), "dashboard-order-panel 3 feeRate default 0.0025"),
     "MEASURED_FEE_RATE": (Decimal("0.000699"), "redesign-t2-measurements fees_measured (check line display only)"),
+    "R1_ATR_MULT": (Decimal("0.75"), "trade-timing-validation.md Stop and invalidation: 20EMA - 0.75 ATR14; display-only 1R (user decision ext-1012-setup B, 2026-10-12)"),
 }
 S = {name: value for name, (value, _source) in SIZING.items()}
 # Policy values the code relies on; checked against alert_policy through the S7 review on every run.
@@ -381,6 +382,69 @@ def loc_price(side: str, reference: Decimal, sigma: float) -> dict[str, Any]:
 def decision_key(symbol: str, side: str, evidence_ids: list[str], section_hash: str | None, gap_source: str) -> str:
     text = "|".join([symbol, side, ",".join(sorted(evidence_ids)), section_hash or "", gap_source])
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------------------------
+# 1R (display and record only; user decision ext-1012-setup B, 2026-10-12)
+# ---------------------------------------------------------------------------------------------
+
+R1_BASIS = "EMA20-0.75xATR14@evaluation_session"
+R1_PLACES = Decimal("0.000001")
+R1_UNK_LINE = "1R \ud655\uc778 \ud544\uc694(\uc9c0\ud45c \uc5c6\uc74c)"
+
+
+def _r1_number(value: Any) -> Decimal | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = Decimal(str(value))
+    except Exception:  # noqa: BLE001 - an unreadable input counts as missing
+        return None
+    return number if number.is_finite() else None
+
+
+def risk_1r(reference: Any, ema20: Any, atr14: Any, sigma: Any, qty: Any, equity: Any) -> dict[str, Any]:
+    """1R of a buy ticket: the invalidation line EMA20 - 0.75 ATR14 of the evaluation session (cent down) and
+    the loss down to it per share (r_pct of the reference, r_sigma = r_pct / sigma60) and for the ticket's
+    quantity (loss_usd, loss_pct_equity). Grade D, display and record only: nothing here feeds a gate, a
+    quantity, a price or a sell. A missing or invalid input gives status unk (never an exception); a reference
+    at or below the line gives below_band."""
+    out: dict[str, Any] = {"status": "unk", "reason": None, "invalidation": None, "r_pct": None, "r_sigma": None,
+                           "loss_usd": None, "loss_pct_equity": None, "basis": R1_BASIS, "grade": "D",
+                           "display_only": True, "line": R1_UNK_LINE}
+    values = [_r1_number(item) for item in (reference, ema20, atr14, sigma, qty, equity)]
+    if any(item is None for item in values):
+        return {**out, "reason": "INDICATOR_MISSING"}
+    ref, ema, atr, sig, count, total = values
+    if ref <= 0 or atr < 0 or sig <= 0 or count < 1 or total <= 0:
+        return {**out, "reason": "INDICATOR_INVALID"}
+    invalidation = (ema - S["R1_ATR_MULT"] * atr).quantize(CENT, rounding=ROUND_FLOOR)
+    per_share = ref - invalidation
+    if per_share <= 0:
+        return {**out, "status": "below_band", "invalidation": format(invalidation, "f"),
+                "line": "1R(\ud45c\uc2dc\ub9cc) \uae30\uc900\uac00\uac00 \ubb34\ud6a8\uc120 "
+                        f"${invalidation} \uc544\ub798 \u2014 \uc14b\uc5c5 \uc5c6\uc74c"}
+    r_pct = (per_share / ref).quantize(R1_PLACES, rounding=ROUND_HALF_UP)
+    r_sigma = (r_pct / sig).quantize(CENT, rounding=ROUND_HALF_UP)
+    loss = (count * per_share).quantize(CENT, rounding=ROUND_HALF_UP)
+    share = (loss / total).quantize(R1_PLACES, rounding=ROUND_HALF_UP)
+    # The line is written from the recorded values, so the screen and the record agree.
+    line = ("1R(\ud45c\uc2dc\ub9cc) \ubb34\ud6a8\uc120 "
+            f"${invalidation} \u00b7 \uae30\uc900\uac00 \ub300\ube44 "
+            f"-{(r_pct * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}% "
+            f"({r_sigma.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}\u03c3) \u00b7 \uc57d "
+            f"${loss.quantize(Decimal('1'), rounding=ROUND_HALF_UP)} = \uc790\uc0b0 "
+            f"{(share * 100).quantize(CENT, rounding=ROUND_HALF_UP)}% \u00b7 \uc790\ub3d9 \ub9e4\ub3c4 \uc5c6\uc74c")
+    return {**out, "status": "ok", "invalidation": format(invalidation, "f"), "r_pct": format(r_pct, "f"),
+            "r_sigma": format(r_sigma, "f"), "loss_usd": format(loss, "f"), "loss_pct_equity": format(share, "f"),
+            "line": line}
+
+
+def risk_1r_share_text(item: dict[str, Any] | None) -> str | None:
+    """'W' of the line (loss as % of equity, 2 decimals) for the alert line; None unless status ok."""
+    if not item or item.get("status") != "ok" or item.get("loss_pct_equity") is None:
+        return None
+    return format((Decimal(item["loss_pct_equity"]) * 100).quantize(CENT, rounding=ROUND_HALF_UP), "f")
 
 
 # ---------------------------------------------------------------------------------------------
@@ -868,7 +932,17 @@ def _buy_ticket(ctx: dict[str, Any], symbol: str, row: dict[str, Any], evidence:
                             r_text=fraction_text(step))
     ticket["gap"] = {"source": "S7_TARGET", "target_weight": float(goal), "whole_target": float(target),
                      "current_weight": float(current), "delta": delta, "first_entry": not held}
+    # 1R after the ticket is complete: display and record only, it changes nothing above.
+    ticket["risk_1r"] = _ticket_risk_1r(ctx, symbol, reference, sigma, qty)
     return ticket
+
+
+def _ticket_risk_1r(ctx: dict[str, Any], symbol: str, reference: Decimal, sigma: float, qty: int) -> dict[str, Any]:
+    marks = (ctx.get("indicators") or {}).get(symbol) or {}
+    try:
+        return risk_1r(reference, marks.get("ema20"), marks.get("atr14"), sigma, qty, ctx["equity"])
+    except Exception:  # noqa: BLE001 - a 1R failure is shown as unk and never blocks the ticket
+        return {**risk_1r(None, None, None, None, None, None), "reason": "CALC_FAILED"}
 
 
 def _limit_daily(tickets: list[dict[str, Any]], config: dict[str, Any], blocked: list[dict[str, Any]]

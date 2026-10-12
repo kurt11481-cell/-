@@ -428,6 +428,9 @@ class BuyTicketTests(unittest.TestCase):
         passing = [item["target_weight"] for item in result["proposal_results"]
                    if item["symbol"] == "MU" and item["status"] == "DISPLAY"]
         self.assertEqual(ticket["gap"]["whole_target"], max(passing))
+        # risk1r: a display-only 1R from the evaluation session's EMA20 and ATR14 (grade D).
+        self.assertEqual((ticket["risk_1r"]["grade"], ticket["risk_1r"]["display_only"]), ("D", True))
+        self.assertIn(ticket["risk_1r"]["status"], ("ok", "below_band"))
 
     def test_no_research_fact_means_no_new_basis(self):
         result = Scenario(facts=False).run()
@@ -595,6 +598,7 @@ class SellTicketTests(unittest.TestCase):
             self.assertEqual(ticket["gates"]["G5"], "not_applicable_sell")
             self.assertTrue(ticket["after_sale"]["display_only"])
             self.assertIn("e", ticket["after_sale"])
+            self.assertNotIn("risk_1r", ticket)  # risk1r: buy tickets only
 
     def test_nocard_holding_gets_no_sell_ticket(self):
         scenario = Scenario(holdings={"SOXL": 120}, cash="300")

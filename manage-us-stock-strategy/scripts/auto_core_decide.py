@@ -310,8 +310,10 @@ def alert_candidates(*, decision: dict[str, Any], previous: dict[str, Any] | Non
     if mode == "apply":
         for ticket in decision["tickets"]:
             price_text = "\ub9e4\ub3c4 \ud558\ud55c" if ticket["side"] == "sell" else "\ub9e4\uc218 \uc0c1\ud55c"
+            share = tickets_module.risk_1r_share_text(ticket.get("risk_1r")) if ticket["side"] == "buy" else None
             alerts.append({"code": f"TICKET:{ticket['ticket_id']}", "push": True,
-                           "line": f"\uc8fc\ubb38\ud45c {ticket['ticker']} {ticket['qty']}\uc8fc LOC {price_text} ${ticket['price']}"})
+                           "line": f"\uc8fc\ubb38\ud45c {ticket['ticker']} {ticket['qty']}\uc8fc LOC {price_text} ${ticket['price']}"
+                           + ("" if share is None else f" \u00b7 1R \uc790\uc0b0 {share}%")})
     return alerts, states
 
 
@@ -920,6 +922,9 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
         "scenarios": scenario, "keys": keys, "model_for": model_for, "redeploy_candidate": redeploy,
         "input_hashes": {**input_hashes, "s7_review_id": review.get("review_id")},
         "research_block": research["block"],
+        # risk1r: evaluation-session EMA20 and ATR14 for the display-only 1R of a buy ticket.
+        "indicators": {symbol: {key: (item.get("indicators") or {}).get(key) for key in ("ema20", "atr14")}
+                       for symbol, item in symbols_out.items()},
     }
     planned = tickets_module.plan(ctx)
     for ticket in planned["tickets"]:
@@ -965,10 +970,12 @@ def _dashboard(decision: dict[str, Any], mode: str) -> dict[str, Any]:
         triggers.append({"code": symbol, "role": "\ubcf4\uc720" if result["role"] == "held" else "\uad00\uc2ec",
                          "items": items, "quiet": quiet})
     tickets = [{"id": ticket["ticket_id"], "ticker": ticket["ticker"], "side": ticket["side"], "qty": ticket["qty"],
-                "price": ticket["price"], "note": ticket.get("note")} for ticket in decision["tickets"]]
+                "price": ticket["price"], "note": ticket.get("note"), "risk1r": _risk1r_line(ticket)}
+               for ticket in decision["tickets"]]
     orders = []
     if mode == "apply":
         for ticket in decision["tickets"]:
+            risk1r = _risk1r_line(ticket)
             orders.append({"id": ticket["ticket_id"], "status": "official", "source": "auto-core",
                            "issuedAt": ticket["issuedAt"], "session": ticket["session"],
                            "enterWindow": ticket["enterWindow"], "fillAt": ticket["fillAt"], "ref": ticket["ref"],
@@ -976,7 +983,8 @@ def _dashboard(decision: dict[str, Any], mode: str) -> dict[str, Any]:
                            "type": "LOC", "price": ticket["price"], "priceRule": ticket["priceRule"],
                            "priceCalc": ticket["priceCalc"], "qty": ticket["qty"], "amount": ticket["amount"],
                            "feeRate": ticket["feeRate"], "reason": ticket["reason"],
-                           "evidence": ticket["evidence"]["composition"] + f" \u00b7 r {ticket['evidence']['r']}",
+                           "evidence": ticket["evidence"]["composition"] + f" \u00b7 r {ticket['evidence']['r']}"
+                           + ("" if risk1r is None else " \u00b7 " + risk1r),
                            "afterSale": _after_sale_line(ticket.get("after_sale")), "outcome": {"state": "pending"}})
     return {"runCore": {"triggers": triggers, "buyReq": {"rows": decision["buy_requirements"]},
                         "exposure": decision["exposure"], "shock": {key: decision["shock"].get(key) for key in
@@ -984,6 +992,13 @@ def _dashboard(decision: dict[str, Any], mode: str) -> dict[str, Any]:
                         "peakReviews": decision["exposure"].get("peaks"), "tickets": tickets,
                         "account": {key: decision["account"].get(key) for key in ("state", "total", "first_cushion_pct")}},
             "orders": orders}
+
+
+def _risk1r_line(ticket: dict[str, Any]) -> str | None:
+    """risk1r: the display-only 1R line of a buy ticket (None for a sell or a ticket without one)."""
+    if ticket.get("side") != "buy":
+        return None
+    return (ticket.get("risk_1r") or {}).get("line")
 
 
 def _after_sale_line(after: dict[str, Any] | None) -> str | None:

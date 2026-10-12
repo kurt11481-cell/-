@@ -96,6 +96,10 @@ PAYLOAD_FIELDS = {
     JOURNAL_TICKET_OUTCOME: ("ticket_id", "ticker", "side", "outcome_state", "filled_qty", "average_fill_price",
                              "decision_key", "classified_on"),
 }
+# risk1r (user decision ext-1012-setup B, 2026-10-12): order_ticket fields that may be present (entries written
+# before it have neither). risk_1r is the buy ticket's display-only 1R; evidence_weak_kinds its evidence.weak.
+OPTIONAL_PAYLOAD_FIELDS = {JOURNAL_ORDER_TICKET: ("risk_1r", "evidence_weak_kinds")}
+RISK_1R_PAYLOAD_FIELDS = ("status", "invalidation", "r_pct", "r_sigma", "loss_pct_equity", "grade")
 # Card action -> the sidecar DECISION_ACTIONS name it is scored under (G3 decision 4, 2026-09-30).
 # A card's TRIM/EXIT reason_tag is already a sidecar name; HOLD depends on review_required.
 ALLOWED_SIDECAR_ACTIONS = {
@@ -221,7 +225,8 @@ def _auto_core_inconsistency(entry: dict[str, Any]) -> str | None:
     if entry["confirm_code"] is not None or entry["user_message"] is not None:
         return "AUTO_CORE_CONFIRMATION_FIELDS_NOT_NULL"
     payload = entry["payload"]
-    if sorted(payload) != sorted(PAYLOAD_FIELDS[entry["entry_type"]]):
+    required = set(PAYLOAD_FIELDS[entry["entry_type"]])
+    if not required <= set(payload) <= required | set(OPTIONAL_PAYLOAD_FIELDS.get(entry["entry_type"], ())):
         return "PAYLOAD_FIELDS_INVALID"
     if entry["entry_type"] == JOURNAL_ORDER_TICKET and payload["authority"] != TICKET_AUTHORITY:
         return "ORDER_TICKET_AUTHORITY_INVALID"
@@ -575,12 +580,18 @@ def auto_core_payloads(decision: dict[str, Any], decision_sha256: str) -> list[t
         "ticket_ids": [ticket["ticket_id"] for ticket in decision["tickets"]],
         "commit_sha": decision["commit_sha"], "decision_sha256": decision_sha256})]
     for ticket in decision["tickets"]:
-        items.append((JOURNAL_ORDER_TICKET, {
+        payload = {
             "ticket_id": ticket["ticket_id"], "ticker": ticket["ticker"], "side": ticket["side"],
             "order_type": ticket["type"], "price": format(Decimal(str(ticket["price"])), "f"), "qty": ticket["qty"],
             "amount": format(Decimal(str(ticket["amount"])), "f"), "buy_session": ticket["session"],
             "decision_key": ticket["decision_key"], "price_rule": ticket["priceRule"],
-            "evidence_r": ticket["evidence"]["r"], "authority": dict(TICKET_AUTHORITY)}))
+            "evidence_r": ticket["evidence"]["r"], "authority": dict(TICKET_AUTHORITY)}
+        # risk1r: the planned 1R (buy only) and the evidence kinds, copied as they are on the ticket.
+        if ticket["side"] == "buy" and isinstance(ticket.get("risk_1r"), dict):
+            payload["risk_1r"] = {key: ticket["risk_1r"].get(key) for key in RISK_1R_PAYLOAD_FIELDS}
+        if isinstance(ticket["evidence"].get("weak"), list):
+            payload["evidence_weak_kinds"] = list(ticket["evidence"]["weak"])
+        items.append((JOURNAL_ORDER_TICKET, payload))
     for outcome in decision["outcomes"]:
         if outcome.get("state") not in ("filled", "partial", "unfilled", "not_entered", "changed") or \
                 outcome.get("mode") != "apply" or outcome.get("reconcile_mismatch"):

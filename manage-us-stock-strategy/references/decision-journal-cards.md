@@ -72,6 +72,12 @@ python scripts/score_decision_journal.py [--journal ...] [--closes-root ...] [--
   From the ticket session close, hypothetical LOC fill = buy close <= cap, sell close >= cap, else `vs_no_action` 0; the user's
   latest `ticket_outcome` is scored apart (average fill price; changed = `USER_CHANGED_ORDER`). Grade D (`COUNTERFACTUAL_D`),
   no cap, size or order type in the output, no conclusion before 30 scored.
+- 1R (risk1r, user decision ext-1012-setup B, 2026-10-12): a buy ticket carries `risk_1r` = loss down to the invalidation
+  line EMA20 - 0.75 ATR14 of the evaluation session (cent down): `r_pct` of the reference, `r_sigma`, share of equity;
+  status `ok` | `below_band` (reference at or below the line) | `unk` (indicator missing). Grade D, display and record only:
+  no sell, gate, size, price or evidence input. The `order_ticket` payload copies it (buy only) with `evidence_weak_kinds`.
+- `r_multiple` per horizon = `vs_no_action` / recorded `r_pct`, only for a buy with 1R `ok` that filled (hypothetical
+  `would_fill` true, or the user's filled/partial outcome) and a scored horizon; otherwise null. `ticket_summary.risk_1r_ok` = tickets with 1R `ok`.
 
 `portfolio_status.py` shows the scoring-pending count from the newest score report only when that report was made
 from the journal's current last entry (`score_report=CURRENT`); otherwise every card decision counts as waiting

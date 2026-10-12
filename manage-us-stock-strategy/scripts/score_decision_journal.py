@@ -312,7 +312,8 @@ def _journal_tickets(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]
         if entry.get("entry_type") == JOURNAL_ORDER_TICKET:
             tickets.append({"ticket_id": payload.get("ticket_id"), "ticker": payload.get("ticker"),
                             "side": payload.get("side"), "mode": "apply", "session": payload.get("buy_session"),
-                            "cap": payload.get("price"), "size": payload.get("qty")})
+                            "cap": payload.get("price"), "size": payload.get("qty"),
+                            "risk_1r": payload.get("risk_1r"), "weak": payload.get("evidence_weak_kinds")})
         elif entry.get("entry_type") == JOURNAL_TICKET_OUTCOME:
             outcomes[payload.get("ticket_id")] = payload  # a later classification of the same ticket wins
     return tickets, outcomes
@@ -329,10 +330,43 @@ def _compare_tickets(records: list[dict[str, Any]], seen: set[Any]) -> tuple[lis
             skipped += 1
             continue
         seen.add(record.get("ticket_id"))
+        evidence = record.get("evidence") if isinstance(record.get("evidence"), dict) else {}
         tickets.append({"ticket_id": record.get("ticket_id"), "ticker": record.get("ticker"),
                         "side": record.get("side"), "mode": "compare", "session": record.get("session"),
-                        "cap": record.get("price"), "size": record.get("qty")})
+                        "cap": record.get("price"), "size": record.get("qty"),
+                        "risk_1r": record.get("risk_1r"), "weak": evidence.get("weak")})
     return tickets, skipped
+
+
+def _ticket_risk_1r(value: Any) -> dict[str, Any] | None:
+    """risk1r: the planned 1R recorded with the ticket (status, r_pct, r_sigma only), or None."""
+    if not isinstance(value, dict):
+        return None
+    return {key: value.get(key) for key in ("status", "r_pct", "r_sigma")}
+
+
+def _weak_kinds(value: Any) -> list[str] | None:
+    return list(value) if isinstance(value, list) and all(isinstance(item, str) for item in value) else None
+
+
+def _with_r_multiple(item: dict[str, Any], r_pct: Decimal | None, filled: bool) -> dict[str, Any]:
+    """risk1r: r_multiple = vs_no_action / planned r_pct of a filled buy (hypothetical or the user's) with a 1R of
+    status ok; null otherwise. vs_no_action is already a finished-session value, so nothing later is read."""
+    value = item.get("vs_no_action") if item.get("status") == "SCORED" else None
+    multiple = None
+    if filled and r_pct is not None and value is not None:
+        try:
+            multiple = _text(Decimal(str(value)) / r_pct)
+        except InvalidOperation:
+            multiple = None
+    return {**item, "r_multiple": multiple}
+
+
+def _planned_r_pct(ticket: dict[str, Any]) -> Decimal | None:
+    risk = ticket.get("risk_1r")
+    if ticket.get("side") != "buy" or not isinstance(risk, dict) or risk.get("status") != "ok":
+        return None
+    return _decimal(risk.get("r_pct"))
 
 
 def _ticket_horizon(item: dict[str, Any], would_fill: bool | None) -> dict[str, Any]:
@@ -447,6 +481,15 @@ def _score_ticket(ticket: dict[str, Any], outcome: dict[str, Any] | None, *, cal
     row["horizons"] = [_ticket_horizon(item, row["would_fill"]) for item in base]
     row["user"] = _user_result(ticket, outcome, base, sign=sign, raw_start=raw_start, per_symbol=per_symbol,
                                benchmark=benchmark)
+    # risk1r: the planned 1R and evidence kinds as recorded, and the R multiple of each horizon.
+    row["risk_1r"] = _ticket_risk_1r(ticket.get("risk_1r"))
+    row["evidence_weak_kinds"] = _weak_kinds(ticket.get("weak"))
+    r_pct = _planned_r_pct(ticket)
+    row["horizons"] = [_with_r_multiple(item, r_pct, row["would_fill"] is True) for item in row["horizons"]]
+    if "horizons" in row["user"]:
+        user_filled = row["user"]["state"] in ("filled", "partial")
+        row["user"] = {**row["user"], "horizons": [_with_r_multiple(item, r_pct, user_filled)
+                                                   for item in row["user"]["horizons"]]}
     return row
 
 
@@ -463,6 +506,7 @@ def _ticket_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "min_scored_for_conclusion": MIN_SCORED_FOR_CONCLUSION,
         "conclusion_allowed": best >= MIN_SCORED_FOR_CONCLUSION,
         "label": COUNTERFACTUAL_LABEL,
+        "risk_1r_ok": sum(1 for row in rows if (row.get("risk_1r") or {}).get("status") == "ok"),
     }
 
 
@@ -625,10 +669,15 @@ def _ticket_lines(report: dict[str, Any], messages: dict[str, str]) -> list[str]
         scored=" / ".join(f"{horizon}:{count}" for horizon, count in summary["scored_by_horizon"].items()),
         minimum=summary["min_scored_for_conclusion"], errors=len(report["ticket_sources"]["errors"]))]
     for row in report["ticket_results"]:
-        lines.append(messages["score_ticket_row"].format(
+        line = messages["score_ticket_row"].format(
             ticker=row["ticker"], side=row["side"], mode=row["mode"], session=row["session"],
             fill="-" if row["would_fill"] is None else str(row["would_fill"]).lower(), user=row["user"]["state"],
-            horizons=" / ".join(_ticket_horizon_text(item, messages) for item in row["horizons"])))
+            horizons=" / ".join(_ticket_horizon_text(item, messages) for item in row["horizons"]))
+        risk = row.get("risk_1r") or {}
+        if row["side"] == "buy" and risk.get("status") == "ok":
+            line += messages["score_ticket_r_multiple"].format(r_pct=risk.get("r_pct"), values=" / ".join(
+                f"{item['horizon_sessions']}:{item.get('r_multiple') or '-'}" for item in row["horizons"]))
+        lines.append(line)
     if report["ticket_results"]:
         lines.append(messages["score_ticket_reference_only"])
     return lines

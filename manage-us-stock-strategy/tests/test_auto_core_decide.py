@@ -398,6 +398,7 @@ class TicketFlowTests(unittest.TestCase):
         self.assertEqual(ticket["note"], decide_module.NOT_FOR_ENTRY)
         self.assertEqual(decision["dashboard"]["orders"], [])
         self.assertEqual(decision["dashboard"]["runCore"]["tickets"][0]["note"], decide_module.NOT_FOR_ENTRY)
+        self.assertEqual(decision["dashboard"]["runCore"]["tickets"][0]["risk1r"], ticket["risk_1r"]["line"])  # risk1r
         self.assertFalse(any(alert["push"] for alert in decision["alerts"]))
 
     def test_apply_ticket_reaches_journal_and_dashboard(self):

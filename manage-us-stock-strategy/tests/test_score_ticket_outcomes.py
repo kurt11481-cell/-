@@ -312,7 +312,11 @@ class OutputSafetyTests(unittest.TestCase):  # T11, T12
         walk(report["ticket_summary"])
         self.assertEqual(set(report["ticket_results"][0]), {"ticket_id", "ticker", "side", "mode", "session",
                                                             "start_basis", "evidence_grade", "would_fill",
-                                                            "horizons", "user"})
+                                                            "horizons", "user", "risk_1r", "evidence_weak_kinds"})
+        # risk1r: without a recorded 1R both are null and every horizon's R multiple is null.
+        self.assertEqual((report["ticket_results"][0]["risk_1r"], report["ticket_results"][0]["evidence_weak_kinds"]),
+                         (None, None))
+        self.assertEqual({item["r_multiple"] for item in report["ticket_results"][0]["horizons"]}, {None})
 
     def test_the_call_without_ticket_records_still_works(self) -> None:
         plain = scorer.score_journal(
