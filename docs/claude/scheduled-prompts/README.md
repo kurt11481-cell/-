@@ -8,7 +8,7 @@
 
 | 파일 | 이름 | trigger id | 모델 | sha256 (LF 정규화) | 저장소의 다른 사본 · 대조 |
 |---|---|---|---|---|---|
-| `integrated-check-daily.txt` | 보유·관심 종목 통합 점검 (화~토 06:40) | trig_01YWzNq847nJfNgDUnnukBqP | Sonnet 5.5 | 80fa07756482d7466a607d9fd8640d4d8f19e2a2db2fbb7d4be1964a35cab930 | `integrated-check-prompt-v3.12.2-L-loader-2026-10-09.txt` — 10/9 22:27 SCN-27H1 '3단계' 추가로 불일치(로더 파일에는 블록 없음, 아래 변경 기록). 저장소 로더 v3.12.2-L = 현행. 규칙 본문은 integrated-check-prompt-v3.12.2-2026-10-09.txt(로더가 해시로 고정) |
+| `integrated-check-daily.txt` | 보유·관심 종목 통합 점검 (화~토 06:40), 로더 v3.12.2-L+R1(2026-10-12 4단계 연구 기록 추가) | trig_01YWzNq847nJfNgDUnnukBqP | Sonnet 5.5 | ded151f3f2d243634195577c9852e438275e94756dd1557ef4292d158c1e8e1d | 이 폴더 파일이 원문. `integrated-check-prompt-v3.12.2-L-loader-2026-10-09.txt`에는 3단계(SCN-27H1)·4단계(연구 기록)가 없다. 규칙 본문은 integrated-check-prompt-v3.12.2-2026-10-09.txt(로더가 해시로 고정, 변경 없음) |
 | `monday-pre-open-check.txt` | 월요일 개장 전 점검 (월 21:20) | trig_01M1DYJ28pstoumsEV6ZSWhf | Sonnet 5.5 | d05cbe6e5c9c77413cffa5fc3d8b9e8e29edf42b28bbd885b6ff57b56b945bd0 | `monday-preopen-prompt-v2.1-2026-10-09.txt` — 일치(해시 동일) |
 | `save-market-memo.txt` | SAVE 시장환경 메모 갱신 (매일 06:15) | trig_01VrX6zRZ8XYGeycXBXo1J3D | Sonnet 5.5 | 5e4838171ab3fcbb0a2e940bf43a687e0842ee86f2ade3d0b9b4818aca66aa05 | `save-memo-prompt-v2.1-2026-10-09.txt` — 일치(해시 동일) |
 | `dev-board-weekly-review.txt` | 관제판 주간 점검 v1.1 (토 10:50) | trig_01XvqwKG2gt7EKLEVMHGYR6Y | Haiku 5.5 | 1ca1d45c6f0f386dbf960aee832f8ec348be9696997b28f7ca66ee717163b88d | `dev-board-review-prompt-v1.1-draft-2026-10-03.txt` — 끝 개행 1개만 다름(내용 동일). 해시는 불일치 |
@@ -16,7 +16,7 @@
 | `next-sandisk-discovery.txt` | Next 샌디스크 발굴 v3.1, 제안 모드 (토 07:32) | trig_01GqUwXK9KLqTRUJPVefHhq3 | Opus 5.5 | 9ad146f548bb3916f0e49e6192c4c9728f779b9120c463ca78d0cabfd80c0319 | 저장소 사본 없었음. 이 폴더 파일이 첫 사본 |
 | `us-stock-board-close.txt` | 미국주식 현황판 마감 정리 (화~토 09:10) | trig_017qqjiQdpUbHxHXsLDPrL8Z | Sonnet 5.5 | 8fe2281ebb72956423700ac8bd66bd5d4af1a391bda173a03225bf6cd3e28918 | 저장소 사본 없었음. 이 폴더 파일이 첫 사본 |
 | `event-pre-open-1014-cpi.txt` | 개장 전 이벤트 10/14 CPI(9월분), 1회 (형식 표본) | trig_01YXzuwKvTKTU6tvNrbYqg6N | Sonnet 5.5 | b91ec3a3fafe93858d8c91986b0d93dde26ec13ea032563b432c67f9b892e42f | 저장소 사본 없었음. 같은 형식의 이벤트 예약 5개(10/14·10/15·11/6·11/10·11/13) 중 표본 1개 |
-| `auto-core-alert.txt` | 자동 운영 코어 결과 알림 (화~토 06:55, 2026-10-10 신설) | trig_01D5KxMSJgbeRG1ZL5ox3Fna | Opus 5.5(기본값) | 1035ad518450599363950f51bba78e04ab3d9f3c317f2dcdad5f790b4417f968 | 생성 때 원문 = 이 파일(재설계 T1 Judge 조건 R1, 통합 점검 로더 대신 별도 작업) |
+| `auto-core-alert.txt` | 자동 운영 코어 결과 알림 v2 (화~토 08:50, 2026-10-12 재설계 T2로 06:55에서 이동) | trig_01D5KxMSJgbeRG1ZL5ox3Fna | Opus 5.5(기본값) | 1113744f09d7a8207404508724813ed6d610e257aadd4dd6551f074cd2b8d4c2 | 이 폴더 파일이 원문. v1(1035ad51…)은 git 이력 |
 
 ## 확인한 것
 - 반복 7개(통합 점검·월요일·SAVE·관제판 주간·관심 명단·Next 샌디스크·현황판)와 이벤트 표본 1개의 원문을 저장했다. 저장 후 파일 해시가 조회 때 계산한 해시와 같음을 확인했다.
@@ -28,3 +28,4 @@
 - 통합 점검을 v3.12.3-L로 교체할 때(fx-2) 이 폴더 `integrated-check-daily.txt` 끝의 '3단계' 블록을 새 로더에 그대로 옮긴다. 저장소 v3.12.3-L 로더 파일에는 이 블록이 없다.
 - 2026-10-10 14:2x KST — 사용자 "병합 완료, 배포 승인": 재설계 T1 배포. 새 예약 작업 '자동 운영 코어 결과 알림'(06:55) 생성 — Judge 조건 R1(경고·실패 푸시)을 통합 점검 로더 수정 대신 별도 작업으로 처리(통합 점검 지시문·규칙 파일 해시 변경 없음). 첫 생성은 폴더 미첨부로 지우고 저장소 폴더를 붙여 다시 만듦(실행 기록 없음).
 - 2026-10-10 20:16~20:17 KST — 사용자 결정 A6 a(재설계 7절, 09:27) + 관제판 c-nextsndk-r21: 관심 명단 주간 지시문을 v3(자동 모드 + 유지 보호 ⑧)로 교체하고 이름을 "관심 명단 주간 재채점 (자동 모드)"로 바꿈. 교체 응답의 지시문 sha256이 위 표 값과 일치. 회귀 50/50·SNDK 리플레이·독립 검토 반영은 `watchlist-auto-mode-a6-2026-10-10.md`. SCN-27H1 '추가 단계' 블록은 그대로 옮김. 일정·모델·자동 승인 불변.
+- 2026-10-12 13:24~13:25 KST — 사용자 "결정 redesign-t2: 예약 작업 변경 승인"(재설계 T2 배포 8절 4): ① 통합 점검 로더 v3.12.2-L+R1 — 4단계 연구 기록 쓰기(workspace/outputs/research-records/<날짜>/research-record.json, 쓰기 예외 1개 추가, 규칙 파일·해시 불변) ② 자동 운영 코어 결과 알림 v2 — 06:55→08:50, 이름 변경, decide 결과 알림·통합점검 대시보드 runs.core 옮기기·기록 모드 orders 새 문서. 두 지시문 모두 교체 응답에서 "prompt re-signed" 확인. 초안·해시 = pending-t2/ 같은 파일(교체본과 같음). 결정 기록 docs/claude/redesign-t2-merge-decision-2026-10-12.md.

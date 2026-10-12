@@ -2,7 +2,7 @@
 id: analysis-linkage-map
 type: design
 status: current
-as_of: 2026-10-05
+as_of: 2026-10-05 (2026-10-12 재설계 T2 행 추가)
 tickers: [ALL]
 evidence_grade: n/a (운영 규칙)
 summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는지의 지도와, 새 작업을 만들 때 지켜야 할 연결 규칙(사용자 상시 지시 2026-10-05).
@@ -45,9 +45,13 @@ summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는�
 | 주문가 옵션 층(가격 결정 때마다, 10/7 사용자 승인) | 주문 지시서 본문 4줄 · 수시 가격 제안 문서(chatgpt_종목분석결과/…) 4줄 · 설계 order-instruction-design-2026-10-06.md 7-5 | 같은 지시서의 가격 칸 대조·경고 → 다음 날 Cowork 대조·채점(원장 30건 뒤 가격 산식 반영 검증, K3) | 연결(10/7 첫 적용 MVLL ②) |
 | 관심 명단 주간 재평가(예정, 미생성) | docs/claude/watchlist-registry.json history | 통합 점검(관심 명단) | 예정 |
 | 시장 시나리오 지침 SCN-27H1(사용자 지정 10/9, 2027-06-30까지) | docs/claude/market-scenario-27h1-2026-10-09.md (3절 트리거 표는 판단 때 부록 A로 갱신) | Cowork 수시: 카드·M6·주문 지시서 위원회·발굴 수락(CLAUDE.md 1줄) · Next 샌디스크 수시(INDEX) · 통합 점검(로더 3단계)·Next 샌디스크 월간(10))·관심 명단 재채점(추가 단계) | 연결(10/9 22:27, 사용자 FX 동결 예외) |
+| 연구 기록(통합 점검 로더 4단계, 화~토 06:40 실행 끝, 재설계 T2) | workspace/outputs/research-records/<날짜>/research-record.json(실적일 p-earn 형식·회사 공식 사실·뿌리 테제 훼손·그날 점검 기록 사본, 스키마 auto-core-research-record) | 자동 운영 코어 decide(07:45, 08:30까지 기다림 — 없으면 매수 막힘) · 다음 날 연구 기록(실적일 VERIFIED 이어받기) | 연결(10/12 13:24 로더 교체, 첫 실행 10/13) |
+| 자동 운영 코어 decide(화~토 07:45, Windows 작업 InvestmentV2-AutoCoreDecide, 재설계 T2) | workspace/outputs/auto-core/<날짜>/decision.json·compare.json·s7/, LATEST_DECISION.json | 결과 알림(08:50: 푸시 · 통합점검 대시보드 runs.core · 기록 모드 orders 새 문서) · 다음 decide(원장·미분류 주문표) · Cowork 비교 모드 B7 설명(redesign-t2-compare-explained.json) · 일지 decision_journal(기록 모드만) | 연결(10/12 병합, 비교 모드) |
+| 카드 근거 등록부(Cowork, 카드 수락·재작성 때) | docs/claude/card-evidence-registry.json(스키마 auto-core-card-registry: 카드 표 근거·트리거·절 해시·수락 줄) | 자동 운영 코어 decide(주문표 자격·정적 근거) | 연결 — **카드를 고치거나 수락하는 Cowork 세션은 같은 세션에서 등록부 항목·절 해시를 갱신하고 커밋 목록에 넣는다**(안 하면 그 종목 주문표가 CARD_SECTION_CHANGED·REGISTRY_UNCOMMITTED로 막힘) |
 
 ## 3. 미연결·남은 일
 - SEC 수집기 → 통합 점검: 연결 완료(10/5 v3.11 적용). 10/6 첫 실행 확인과 5회 대조(onlyInSearch)는 관제판 e-filing-k1·e-filing-k4.
 - 종목 분석 폴더(chatgpt_종목분석결과)는 새 분석이 생길 때마다 INDEX "문서 밖 최신본"에 1줄 추가(수동, 체크리스트 5).
 - 관제판 주간 점검에 "연결 지도에 없는 예약 작업" 탐지 규칙 추가는 미적용(필요 시 별도 승인).
+- 재설계 T2(10/12): 연구 기록 → decide → 결과 알림·대시보드 연결 완료. 카드 등록부 갱신은 Cowork 수동 절차(위 표). 판정 대조 5거래일 뒤 사용자 "켜"로 기록 모드.
 - SCN-27H1 → 예약 작업 3개 연결 완료(10/9 22:27, 사용자 FX 동결 예외). 통합 점검을 v3.12.3-L로 바꿀 때 로더 '3단계' 블록을 옮길 것(fx-2, scheduled-prompts/README.md 변경 기록).

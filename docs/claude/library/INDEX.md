@@ -27,6 +27,7 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | ledger | ALL | 2026-10-03 | — | external-claims-ledger.md | 외부 주장 원장(강도 0, 추가 전용) |
 | external-review | ALL | 2026-10-03 | — | external-batch-review-2026-10-03.md | 외부자료 10건 검토, 판단 변화 없음 |
 | 명단(머리말 없음) | 관심 5 | 2026-10-03 | — | watchlist-registry.json · watchlist-rubric-r2-scores-2026-10-03.json | 관심 명단 단일 출처(R2.1). 파일 자체가 원본. 2026-10-10부터 주간 예약이 자동 적용(A6 a) + 유지 보호 ⑧ — 변경 기록 watchlist-auto-mode-a6-2026-10-10.md |
+| 등록부(머리말 없음) | 보유·관심 9 | 2026-10-12 | 카드 수락·재작성 때 | card-evidence-registry.json | 자동 운영 코어 주문표 자격·정적 근거(재설계 T2). 카드를 고치거나 수락한 Cowork 세션이 같은 세션에서 항목·절 해시를 갱신(analysis-linkage-map 2절) |
 | design | — | 2026-10-03 | draft | analysis-library-design-2026-10-03.md | 이 라이브러리 설계(사용자 승인 전 초안) |
 | design | ALL | 2026-10-04 | 확인 필요 | next-sandisk-discovery-design-2026-10-04.md | Next 샌디스크 발굴: 결과 문서 next-sandisk-scan-*.md(병목 씨앗)·N-렌즈 v1.1, 예약(매월 첫 토요일 전체 + 나머지 토요일 주간 점검, 제안 모드)+수시(17절)·다른 작업 연결(19절), 사용자 결정(10/4~5, 15·16절). 유지 보호(다음 실적까지·최대 13주)·F5는 자동 모드 전, 씨앗 칸 1개(관심 5+1)는 첫 점화 씨앗 전. 사이클 시계 → 10/8 M6 카드 입력 |
 | research | ALL | 2026-10-04 | — | library/research/next-sandisk-2026-10-04/ | Next 샌디스크 조사 3건 정리 기록(D급) + 원 보고서 출처 193개, 리플레이 스크립트·SNDK/SOXX 일봉(참고값), 수시 발굴 1회차 원 보고서 6건(scan-*.md), 어닝콜 공급 제약 지도(10/5, 연결 L4). 설계 부록 E-4·19절 |
