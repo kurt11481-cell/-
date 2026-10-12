@@ -7,9 +7,17 @@ journal holds what a person confirmed, a score is a recomputable view of it.
 
 For every card_decision entry (the card's analysis action) and for the latest card_user_decision of that
 decision (what the user actually did) the scorer reports, at 5, 20 and 60 U.S. sessions after the
-decision session:
+start session:
   vs cash : ADD/HOLD  = stock return - 0 ; TRIM/EXIT = 0 - stock return
   vs SPY  : ADD/HOLD  = stock return - SPY return ; TRIM/EXIT = SPY return - stock return
+Start session (score-fix 2026-10-12): the first session whose core close is strictly after the decision's
+decision_as_of (the earliest close a LOC order could have used). A user decision starts at its effective
+session when that session closes after decision_as_of, otherwise at the same first session. The move from
+the decision session close to the start close is shown as pre_action_move and is not part of the score.
+Auto-core order tickets (journal order_ticket entries and compare-mode tickets of the daily decision.json
+files) are scored in ticket_results only, from the ticket session close: a hypothetical LOC fill (buy when
+the close is at or below the ticket's cap, sell when at or above), vs no action, and the user's recorded
+outcome. Hypothetical fills are evidence grade D (COUNTERFACTUAL_D), never a judgment basis.
 Rules (same point-in-time rule as the sidecar forward outcomes, which are not touched):
   - only finished sessions count: the target session's core close must be <= evaluation_as_of;
   - closes are the verified Kiwoom 30-minute-bar approximate closes of regular_session_close_history.
@@ -26,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
@@ -35,7 +44,8 @@ from typing import Any
 from corporate_actions import STATUS_INVALID, STATUS_OK, adjust_closes, applicable_actions
 from portfolio_exposure import SPLIT_GUARD_HIGH, SPLIT_GUARD_LOW
 from portfolio_review_journal import (
-    DEFAULT_JOURNAL_PATH, JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION, load_journal,
+    DEFAULT_JOURNAL_PATH, JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION, JOURNAL_ORDER_TICKET,
+    JOURNAL_TICKET_OUTCOME, load_journal,
 )
 from validation_common import load_json, write_json
 
@@ -57,6 +67,18 @@ LONG_ACTIONS = ("ADD", "HOLD")
 REDUCE_ACTIONS = ("TRIM", "EXIT")
 PRICE_SOURCE = "KIWOOM_30M_APPROX_CLOSE"
 PLACES = Decimal("0.000001")
+ZERO_TEXT = "0.000000"
+START_FIRST_CLOSE = "FIRST_CLOSE_AFTER_DECISION"
+START_EFFECTIVE = "EFFECTIVE_SESSION"
+START_TICKET = "TICKET_SESSION_CLOSE"
+# Auto-core decide output (kept here: this scorer imports no auto-core module).
+DEFAULT_DECISIONS_ROOT = REPO_ROOT / "workspace/outputs/auto-core"
+DECISION_FILE = "decision.json"
+DAY_FOLDER = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+TICKET_SIGNS = {"buy": 1, "sell": -1}
+TICKET_MODES = ("apply", "compare")
+COUNTERFACTUAL_GRADE = "D"
+COUNTERFACTUAL_LABEL = "COUNTERFACTUAL_D"
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -216,23 +238,242 @@ def _subjects(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         subjects.append({
             "decision_id": payload["decision_id"], "kind": "ANALYSIS", "ticker": payload["ticker"],
             "action": payload["analysis_action"], "sidecar_action": payload["sidecar_action"],
-            "conviction": payload["conviction"], "start_session": payload["decision_session"],
+            "conviction": payload["conviction"], "decision_session": payload["decision_session"],
+            "decision_as_of": payload.get("decision_as_of"), "effective_session": None,
             "recorded_reference_close": payload["reference_close"], "sequence": entry["sequence"]})
         user = latest_user.get(payload["decision_id"])
         if user is not None:
             subjects.append({
                 "decision_id": payload["decision_id"], "kind": "USER", "ticker": payload["ticker"],
                 "action": user["payload"]["user_action"], "sidecar_action": None, "conviction": None,
-                "start_session": user["payload"]["effective_session"], "recorded_reference_close": None,
+                "decision_session": payload["decision_session"], "decision_as_of": payload.get("decision_as_of"),
+                "effective_session": user["payload"]["effective_session"], "recorded_reference_close": None,
                 "sequence": user["sequence"]})
     return subjects
+
+
+def _first_close_after(moment: datetime, sessions: list[str],
+                       calendar_rows: dict[str, Any]) -> tuple[str | None, str | None]:
+    """(first session whose core close is strictly after moment, failure reason)."""
+    for session in sessions:
+        closed = _moment(calendar_rows[session].get("core_close_at"))
+        if closed is None:
+            return None, "CALENDAR_CLOSE_TIME_INVALID"
+        if closed > moment:
+            return session, None
+    return None, "CALENDAR_DOES_NOT_COVER_START"
+
+
+def _start(subject: dict[str, Any], sessions: list[str],
+           calendar_rows: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
+    """(start session, start basis, failure reason) of one card subject.
+
+    ANALYSIS: the first session closing after decision_as_of. USER: its effective session when that session
+    closes after decision_as_of, otherwise the same first session. The decision session must be in the calendar
+    so a calendar that starts after the decision cannot move the start later."""
+    decided = _moment(subject["decision_as_of"])
+    if decided is None:
+        return None, None, "DECISION_AS_OF_INVALID"
+    if subject["decision_session"] not in calendar_rows:
+        return None, None, "DECISION_SESSION_NOT_IN_CALENDAR"
+    effective = subject["effective_session"]
+    if effective is not None:
+        if effective not in calendar_rows:
+            return None, None, "DECISION_SESSION_NOT_IN_CALENDAR"
+        closed = _moment(calendar_rows[effective].get("core_close_at"))
+        if closed is None:
+            return None, None, "CALENDAR_CLOSE_TIME_INVALID"
+        if closed > decided:
+            return effective, START_EFFECTIVE, None
+    session, failure = _first_close_after(decided, sessions, calendar_rows)
+    return session, (START_FIRST_CLOSE if session is not None else None), failure
+
+
+def _pre_action_move(per_symbol: dict[str, str], sessions: list[str], completed: set[str],
+                     decision_session: str, start_session: str) -> str | None:
+    """Decision session close -> start close return; None when a close is missing, not yet final or split-like."""
+    if decision_session not in completed or start_session not in completed:
+        return None
+    first, last = sessions.index(decision_session), sessions.index(start_session)
+    if last < first:
+        return None
+    begin, end = _decimal(per_symbol.get(decision_session)), _decimal(per_symbol.get(start_session))
+    if begin is None or end is None or _split_suspect(per_symbol, sessions[first:last + 1]):
+        return None
+    return _text(end / begin - 1)
+
+
+def _journal_tickets(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    """(recorded tickets, latest outcome payload by ticket id). Cap and size stay internal to the scorer."""
+    tickets: list[dict[str, Any]] = []
+    outcomes: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        payload = entry.get("payload") or {}
+        if entry.get("entry_type") == JOURNAL_ORDER_TICKET:
+            tickets.append({"ticket_id": payload.get("ticket_id"), "ticker": payload.get("ticker"),
+                            "side": payload.get("side"), "mode": "apply", "session": payload.get("buy_session"),
+                            "cap": payload.get("price"), "size": payload.get("qty")})
+        elif entry.get("entry_type") == JOURNAL_TICKET_OUTCOME:
+            outcomes[payload.get("ticket_id")] = payload  # a later classification of the same ticket wins
+    return tickets, outcomes
+
+
+def _compare_tickets(records: list[dict[str, Any]], seen: set[Any]) -> tuple[list[dict[str, Any]], int]:
+    """(compare-mode tickets not already recorded in the journal, duplicates skipped)."""
+    tickets: list[dict[str, Any]] = []
+    skipped = 0
+    for record in records:
+        if not isinstance(record, dict) or record.get("mode") != "compare":
+            continue
+        if record.get("ticket_id") in seen:
+            skipped += 1
+            continue
+        seen.add(record.get("ticket_id"))
+        tickets.append({"ticket_id": record.get("ticket_id"), "ticker": record.get("ticker"),
+                        "side": record.get("side"), "mode": "compare", "session": record.get("session"),
+                        "cap": record.get("price"), "size": record.get("qty")})
+    return tickets, skipped
+
+
+def _ticket_horizon(item: dict[str, Any], would_fill: bool | None) -> dict[str, Any]:
+    """A hypothetical LOC fill: filled = the side-signed return; not filled = no position change, 0."""
+    if item["status"] != "SCORED" or would_fill is None:
+        return item
+    result = {key: value for key, value in item.items() if key != "vs_cash"}
+    if would_fill:
+        result["vs_no_action"] = item["vs_cash"]
+    else:
+        result.update({"vs_no_action": ZERO_TEXT, "reason": "NOT_FILLED_AT_CAP",
+                       "vs_benchmark": {"symbol": BENCHMARK_SYMBOL, "status": "NOT_APPLICABLE",
+                                        "reason": "NOT_FILLED_AT_CAP"}})
+    return result
+
+
+def _user_zero(item: dict[str, Any]) -> dict[str, Any]:
+    if item["status"] != "SCORED":
+        return item
+    return {key: item[key] for key in ("horizon_sessions", "status", "target_session", "observed_at")} | {
+        "vs_no_action": ZERO_TEXT}
+
+
+def _user_filled(item: dict[str, Any], *, start: Decimal | None, sign: int, per_symbol: dict[str, str],
+                 benchmark: dict[str, Any], session: str) -> dict[str, Any]:
+    if item["status"] != "SCORED":
+        return item
+    target_close = _decimal(per_symbol.get(item["target_session"]))
+    if start is None or target_close is None:
+        return _not_scorable(item["horizon_sessions"], "START_CLOSE_MISSING", target_session=item["target_session"])
+    stock_return = target_close / start - 1
+    result = {key: item[key] for key in ("horizon_sessions", "status", "target_session", "observed_at",
+                                         "price_source", "price_grade", "unverified_reasons")}
+    result.update({"stock_return": _text(stock_return), "vs_no_action": _text(sign * stock_return)})
+    if item["vs_benchmark"]["status"] == "OK":
+        spy_return = (_decimal(benchmark["closes"].get(item["target_session"]))
+                      / _decimal(benchmark["closes"].get(session)) - 1)
+        result["vs_benchmark"] = {"symbol": BENCHMARK_SYMBOL, "status": "OK", "label": "REFERENCE_ONLY",
+                                  "benchmark_return": _text(spy_return),
+                                  "value": _text(sign * (stock_return - spy_return))}
+    else:
+        result["vs_benchmark"] = item["vs_benchmark"]
+    return result
+
+
+def _filled_fraction(outcome: dict[str, Any], size: Any) -> str | None:
+    filled, total = outcome.get("filled_qty"), _decimal(size)
+    if isinstance(filled, bool) or not isinstance(filled, int) or filled < 0 or total is None:
+        return None
+    return _text(Decimal(filled) / total)
+
+
+def _user_result(ticket: dict[str, Any], outcome: dict[str, Any] | None, base: list[dict[str, Any]], *,
+                 sign: int | None, raw_start: Decimal | None, per_symbol: dict[str, str],
+                 benchmark: dict[str, Any]) -> dict[str, Any]:
+    """What the user actually did with the ticket, from the journal's latest ticket_outcome only."""
+    if ticket["mode"] == "compare":
+        return {"state": "NOT_ENTERED_COMPARE_MODE"}
+    if outcome is None:
+        return {"state": "PENDING_OUTCOME"}
+    state = outcome.get("outcome_state")
+    if state == "changed":
+        return {"state": state, "horizons": [_not_scorable(horizon, "USER_CHANGED_ORDER") for horizon in HORIZONS]}
+    if state in ("unfilled", "not_entered"):
+        return {"state": state, "horizons": [_user_zero(item) for item in base]}
+    if state not in ("filled", "partial") or sign is None:
+        return {"state": "NOT_SCORABLE",
+                "horizons": [_not_scorable(horizon, "USER_OUTCOME_INVALID") for horizon in HORIZONS]}
+    adjusted_start = _decimal(per_symbol.get(ticket["session"]))
+    fill = _decimal(outcome.get("average_fill_price"))
+    if fill is not None and adjusted_start is not None and raw_start is not None:
+        start = fill * adjusted_start / raw_start  # the fill price on the same split basis as the later closes
+    else:
+        start = adjusted_start
+    return {"state": state, "start_price_basis": "SESSION_CLOSE" if fill is None else "AVERAGE_FILL_PRICE",
+            "filled_fraction": _filled_fraction(outcome, ticket["size"]),
+            "horizons": [_user_filled(item, start=start, sign=sign, per_symbol=per_symbol, benchmark=benchmark,
+                                      session=ticket["session"]) for item in base]}
+
+
+def _score_ticket(ticket: dict[str, Any], outcome: dict[str, Any] | None, *, calendar: dict[str, Any] | None,
+                  sessions: list[str], completed: list[str], raw: dict[str, dict[str, str]],
+                  adjusted: dict[str, dict[str, str]], unverified: dict[str, dict[str, list[str]]],
+                  benchmark: dict[str, Any], corporate_status: str, evaluation_as_of: datetime) -> dict[str, Any]:
+    sign = TICKET_SIGNS.get(ticket["side"])
+    session = ticket["session"]
+    row: dict[str, Any] = {"ticket_id": ticket["ticket_id"], "ticker": ticket["ticker"], "side": ticket["side"],
+                           "mode": ticket["mode"], "session": session, "start_basis": START_TICKET,
+                           "evidence_grade": COUNTERFACTUAL_GRADE, "would_fill": None}
+    failure = ("TICKET_SIDE_INVALID" if sign is None else
+               "SESSION_CALENDAR_UNAVAILABLE" if calendar is None else
+               "CORPORATE_ACTIONS_INVALID" if corporate_status == STATUS_INVALID else
+               "TICKET_SESSION_NOT_IN_CALENDAR" if session not in calendar["sessions"] else
+               "CALENDAR_CLOSE_TIME_INVALID" if _moment(calendar["sessions"][session].get("core_close_at")) is None
+               else None)
+    raw_start = _decimal((raw.get(ticket["ticker"]) or {}).get(session))
+    per_symbol = adjusted.get(ticket["ticker"]) or {}
+    if failure is not None:
+        base = [_not_scorable(horizon, failure) for horizon in HORIZONS]
+    else:
+        base = [_score_horizon(horizon=horizon, symbol=ticket["ticker"], direction="LONG" if sign > 0 else "REDUCE",
+                               start_session=session, sessions=sessions, calendar_rows=calendar["sessions"],
+                               completed=completed, closes=adjusted, unverified=unverified, benchmark=benchmark,
+                               evaluation_as_of=evaluation_as_of) for horizon in HORIZONS]
+        cap = _decimal(ticket["cap"])
+        if session in completed and raw_start is not None:
+            if cap is None:
+                base = [_not_scorable(horizon, "TICKET_CAP_INVALID") for horizon in HORIZONS]
+            else:
+                # The cap was set on the ticket session's own price basis, so the raw close is compared.
+                row["would_fill"] = raw_start <= cap if sign > 0 else raw_start >= cap
+    row["horizons"] = [_ticket_horizon(item, row["would_fill"]) for item in base]
+    row["user"] = _user_result(ticket, outcome, base, sign=sign, raw_start=raw_start, per_symbol=per_symbol,
+                               benchmark=benchmark)
+    return row
+
+
+def _ticket_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    scored_by_horizon = {str(horizon): sum(1 for row in rows for item in row["horizons"]
+                                           if item["horizon_sessions"] == horizon and item["status"] == "SCORED")
+                         for horizon in HORIZONS}
+    best = max(scored_by_horizon.values(), default=0)
+    return {
+        "ticket_total": len(rows),
+        "by_mode": {mode: sum(1 for row in rows if row["mode"] == mode) for mode in TICKET_MODES},
+        "pending_tickets": sum(1 for row in rows if any(item["status"] == "PENDING" for item in row["horizons"])),
+        "scored_by_horizon": scored_by_horizon,
+        "min_scored_for_conclusion": MIN_SCORED_FOR_CONCLUSION,
+        "conclusion_allowed": best >= MIN_SCORED_FOR_CONCLUSION,
+        "label": COUNTERFACTUAL_LABEL,
+    }
 
 
 def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, calendar_failure: str | None = None,
                   closes: dict[str, dict[str, str]], unverified: dict[str, dict[str, list[str]]],
                   benchmark: dict[str, Any], corporate_actions: dict[str, Any],
-                  evaluation_as_of: datetime) -> dict[str, Any]:
-    """The score report. Pure: no file is read or written here."""
+                  evaluation_as_of: datetime, ticket_records: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """The score report. Pure: no file is read or written here.
+
+    ticket_records: compare-mode tickets read by the caller from the daily decision.json files; a ticket id
+    already recorded in the journal is scored once, from the journal."""
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION, "report_type": REPORT_TYPE,
         "evaluation_as_of": evaluation_as_of.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -245,13 +486,17 @@ def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, c
         "benchmark": {"symbol": BENCHMARK_SYMBOL, "label": "REFERENCE_ONLY", "status": benchmark["status"],
                       "errors": list(benchmark.get("errors") or [])},
         "horizons": list(HORIZONS), "results": [],
+        "ticket_results": [],
+        "ticket_sources": {"journal_tickets": 0, "compare_tickets": 0, "duplicates_skipped": 0, "errors": []},
         "writes_journal": False, "order_authority": False, "quantity_authority": "none",
     }
     if journal["status"] == "CORRUPT":
         report["summary"] = _summary([])
+        report["ticket_summary"] = _ticket_summary([])
         return report
     sessions = sorted(calendar["sessions"]) if calendar is not None else []
     completed = _completed_sessions(calendar, evaluation_as_of) if calendar is not None else []
+    done = set(completed)
     adjusted = closes
     if calendar is not None and corporate_actions["status"] == STATUS_OK and completed:
         actions = applicable_actions(corporate_actions["actions"], completed[-1])
@@ -261,29 +506,46 @@ def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, c
         direction = ("LONG" if subject["action"] in LONG_ACTIONS else
                      "REDUCE" if subject["action"] in REDUCE_ACTIONS else None)
         row = {key: subject[key] for key in ("decision_id", "kind", "ticker", "action", "sidecar_action",
-                                             "conviction", "start_session", "sequence")}
+                                             "conviction", "decision_session", "sequence")}
         row["recorded_reference_close"] = subject["recorded_reference_close"]
+        start, basis, failure = (_start(subject, sessions, calendar["sessions"]) if calendar is not None
+                                 else (None, None, "SESSION_CALENDAR_UNAVAILABLE"))
+        row.update({"start_session": start, "start_basis": basis, "pre_action_move": None})
         if direction is None:
             row["horizons"] = [_not_scorable(horizon, "USER_ACTION_NOT_SCORABLE") for horizon in HORIZONS]
         elif calendar is None:
             row["horizons"] = [_not_scorable(horizon, "SESSION_CALENDAR_UNAVAILABLE") for horizon in HORIZONS]
         elif corporate_actions["status"] == STATUS_INVALID:
             row["horizons"] = [_not_scorable(horizon, "CORPORATE_ACTIONS_INVALID") for horizon in HORIZONS]
-        elif subject["start_session"] not in sessions:
-            row["horizons"] = [_not_scorable(horizon, "DECISION_SESSION_NOT_IN_CALENDAR") for horizon in HORIZONS]
+        elif failure is not None:
+            row["horizons"] = [_not_scorable(horizon, failure) for horizon in HORIZONS]
         else:
             row["horizons"] = [
                 _score_horizon(horizon=horizon, symbol=subject["ticker"], direction=direction,
-                               start_session=subject["start_session"], sessions=sessions,
+                               start_session=start, sessions=sessions,
                                calendar_rows=calendar["sessions"], completed=completed, closes=adjusted,
                                unverified=unverified, benchmark=benchmark, evaluation_as_of=evaluation_as_of)
                 for horizon in HORIZONS]
-            start_close = _decimal((adjusted.get(subject["ticker"]) or {}).get(subject["start_session"]))
+            per_symbol = adjusted.get(subject["ticker"]) or {}
+            row["pre_action_move"] = _pre_action_move(per_symbol, sessions, done, subject["decision_session"], start)
+            # Same-session data check: the decision session close against the close recorded with the decision.
+            decision_close = (_decimal(per_symbol.get(subject["decision_session"]))
+                              if subject["decision_session"] in done else None)
             recorded = _decimal(subject["recorded_reference_close"])
-            if start_close is not None and recorded is not None:
-                row["start_close_vs_recorded_reference"] = _text(start_close - recorded)
+            if decision_close is not None and recorded is not None:
+                row["start_close_vs_recorded_reference"] = _text(decision_close - recorded)
         report["results"].append(row)
     report["summary"] = _summary(report["results"])
+    tickets, outcomes = _journal_tickets(journal["entries"])
+    compare, skipped = _compare_tickets(list(ticket_records or []), {ticket["ticket_id"] for ticket in tickets})
+    report["ticket_sources"].update({"journal_tickets": len(tickets), "compare_tickets": len(compare),
+                                     "duplicates_skipped": skipped})
+    for ticket in tickets + compare:
+        report["ticket_results"].append(_score_ticket(
+            ticket, outcomes.get(ticket["ticket_id"]) if ticket["mode"] == "apply" else None, calendar=calendar,
+            sessions=sessions, completed=completed, raw=closes, adjusted=adjusted, unverified=unverified,
+            benchmark=benchmark, corporate_status=corporate_actions["status"], evaluation_as_of=evaluation_as_of))
+    report["ticket_summary"] = _ticket_summary(report["ticket_results"])
     return report
 
 
@@ -335,12 +597,40 @@ def render_report(report: dict[str, Any]) -> list[str]:
         done=summary["fully_scored_decisions"], unscorable=summary["unscorable_decisions"])]
     for row in report["results"]:
         lines.append(messages["score_row"].format(
-            ticker=row["ticker"], kind=row["kind"], action=row["action"], session=row["start_session"],
+            ticker=row["ticker"], kind=row["kind"], action=row["action"],
+            session=row["start_session"] or row["decision_session"],
             horizons=" / ".join(_horizon_text(item, messages) for item in row["horizons"])))
     if not summary["conclusion_allowed"]:
         lines.append(messages["score_no_conclusion"].format(
             minimum=summary["min_scored_for_conclusion"], best=max(summary["scored_by_horizon"].values())))
+    lines.extend(_ticket_lines(report, messages))
     lines.append(messages["summary_no_order"])
+    return lines
+
+
+def _ticket_horizon_text(item: dict[str, Any], messages: dict[str, str]) -> str:
+    if item["status"] != "SCORED":
+        return _horizon_text(item, messages)
+    benchmark = item["vs_benchmark"]
+    spy = messages["score_vs_spy"].format(value=benchmark["value"]) if benchmark["status"] == "OK" \
+        else messages["score_vs_spy_unavailable"]
+    return messages["score_ticket_h_scored"].format(horizon=item["horizon_sessions"], value=item["vs_no_action"],
+                                                    spy=spy)
+
+
+def _ticket_lines(report: dict[str, Any], messages: dict[str, str]) -> list[str]:
+    summary = report["ticket_summary"]
+    lines = [messages["score_ticket_summary"].format(
+        total=summary["ticket_total"], recorded=summary["by_mode"]["apply"], compare=summary["by_mode"]["compare"],
+        scored=" / ".join(f"{horizon}:{count}" for horizon, count in summary["scored_by_horizon"].items()),
+        minimum=summary["min_scored_for_conclusion"], errors=len(report["ticket_sources"]["errors"]))]
+    for row in report["ticket_results"]:
+        lines.append(messages["score_ticket_row"].format(
+            ticker=row["ticker"], side=row["side"], mode=row["mode"], session=row["session"],
+            fill="-" if row["would_fill"] is None else str(row["would_fill"]).lower(), user=row["user"]["state"],
+            horizons=" / ".join(_ticket_horizon_text(item, messages) for item in row["horizons"])))
+    if report["ticket_results"]:
+        lines.append(messages["score_ticket_reference_only"])
     return lines
 
 
@@ -392,6 +682,40 @@ def load_inputs(*, tickers: list[str], closes_root: Path, calendar_path: Path | 
             "benchmark": load_reference_closes(closes_root)}
 
 
+def load_compare_tickets(decisions_root: Path) -> dict[str, Any]:
+    """Compare-mode tickets of every <YYYY-MM-DD>/decision.json under the auto-core output folder.
+
+    decision.rerun-*.json files are not read. An unreadable file is skipped and named in errors (file name and
+    reason only); it never stops the other files."""
+    root = Path(decisions_root)
+    if not root.is_dir():
+        return {"status": "MISSING", "records": [], "errors": []}
+    records: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+    for path in sorted(root.glob(f"*/{DECISION_FILE}")):
+        if not DAY_FOLDER.fullmatch(path.parent.name):
+            continue
+        name = f"{path.parent.name}/{DECISION_FILE}"
+        try:
+            document = json.loads(path.read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError):
+            errors.append({"file": name, "reason": "DECISION_NOT_JSON"})
+            continue
+        tickets = document.get("tickets") if isinstance(document, dict) else None
+        if not isinstance(tickets, list):
+            errors.append({"file": name, "reason": "DECISION_TICKETS_INVALID"})
+            continue
+        for ticket in tickets:
+            if not isinstance(ticket, dict) or ticket.get("mode") != "compare":
+                continue
+            if not all(isinstance(ticket.get(key), str) and ticket.get(key)
+                       for key in ("ticket_id", "ticker", "side", "session")):
+                errors.append({"file": name, "reason": "TICKET_FIELDS_INVALID"})
+                continue
+            records.append(ticket)
+    return {"status": "OK", "records": records, "errors": errors}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Score the card decisions in the decision journal (read only)")
     parser.add_argument("--journal", type=Path, default=REPO_ROOT / DEFAULT_JOURNAL_PATH)
@@ -399,6 +723,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--calendar", type=Path, default=None, help="explicit session calendar artifact (labelled if not active)")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--evaluation-as-of", default=None, help="ISO time with offset; default now")
+    parser.add_argument("--decisions-root", type=Path, default=DEFAULT_DECISIONS_ROOT,
+                        help="auto-core output folder holding <YYYY-MM-DD>/decision.json (compare-mode tickets)")
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
@@ -414,16 +740,21 @@ def main(argv: list[str] | None = None) -> int:
         print(messages["score_journal_unreadable"].format(reason=str(exc)))
         return 2
     journal = load_journal(args.journal)
+    compare = load_compare_tickets(args.decisions_root) if journal["status"] != "CORRUPT" else {
+        "status": "NOT_READ", "records": [], "errors": []}
     tickers = [entry["payload"]["ticker"] for entry in journal["entries"]
-               if entry.get("entry_type") == JOURNAL_CARD_DECISION]
+               if entry.get("entry_type") in (JOURNAL_CARD_DECISION, JOURNAL_ORDER_TICKET)]
+    tickers += [record["ticker"] for record in compare["records"]]
     inputs = load_inputs(tickers=tickers, closes_root=args.closes_root, calendar_path=args.calendar,
-                         now=evaluation_as_of) if journal["status"] == "OK" else {
+                         now=evaluation_as_of) if journal["status"] == "OK" or (
+        journal["status"] == "MISSING" and compare["records"]) else {
         "calendar": None, "calendar_failure": None, "closes": {}, "unverified": {}, "close_histories": {},
         "corporate_actions": {"status": "MISSING", "sha256": None, "errors": [], "actions": []},
         "benchmark": {"status": "MISSING", "closes": {}, "errors": []}}
-    report = score_journal(journal, evaluation_as_of=evaluation_as_of, **{
+    report = score_journal(journal, evaluation_as_of=evaluation_as_of, ticket_records=compare["records"], **{
         key: inputs[key] for key in ("calendar", "calendar_failure", "closes", "unverified", "benchmark",
                                      "corporate_actions")})
+    report["ticket_sources"].update({"decisions_root_status": compare["status"], "errors": compare["errors"]})
     report["close_histories"] = inputs["close_histories"]
     path = write_report(report, args.output_root, args.journal, now)
     print("\n".join(render_report(report)))

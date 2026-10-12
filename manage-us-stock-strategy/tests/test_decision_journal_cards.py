@@ -353,7 +353,9 @@ SESSIONS = weekdays(CARD_SESSION, 70)
 CALENDAR = {"sessions": {day: {"core_close_at": f"{day}T20:00:00+00:00"} for day in SESSIONS},
             "identity": {"calendar_version": "test", "calendar_sha256": "0" * 64,
                          "coverage_start": SESSIONS[0], "coverage_end": SESSIONS[-1], "authority_status": "ACTIVE"}}
-S5, S20, S60 = SESSIONS[5], SESSIONS[20], SESSIONS[60]
+# The fixture card's decision_as_of (2026-09-30T11:21Z) is before the 2026-09-30 close: the score starts there.
+START = SESSIONS[1]
+S5, S20, S60 = SESSIONS[6], SESSIONS[21], SESSIONS[61]
 NO_ACTIONS = {"status": "MISSING", "sha256": None, "errors": [], "actions": []}
 
 
@@ -394,10 +396,10 @@ class ScorerTestCase(JournalCardTestCase):
 class ScoreRuleTests(ScorerTestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.record_card()  # AAA TRIM, BBB HOLD, decision session 2026-09-29
+        self.record_card()  # AAA TRIM, BBB HOLD, decision session 2026-09-29, start session 2026-09-30
 
     def test_pending_shows_the_sessions_left_and_a_future_close_is_never_used(self) -> None:
-        report = self.scored(evaluation_as_of=after(SESSIONS[3]))
+        report = self.scored(evaluation_as_of=after(SESSIONS[4]))
         item = self.horizon(report, "BBB", "ANALYSIS", 5)
         self.assertEqual((item["status"], item["remaining_sessions"], item["target_session"]), ("PENDING", 2, S5))
         self.assertEqual(self.horizon(report, "BBB", "ANALYSIS", 60)["remaining_sessions"], 57)
@@ -483,8 +485,8 @@ class ScoreRuleTests(ScorerTestCase):
             journal_module.apply_proposal(journal_path=self.path, proposal=proposal, confirmation=confirmation(proposal))
         report = self.scored(evaluation_as_of=after(S20))
         kinds = sorted((row["ticker"], row["kind"], row["action"], row["start_session"]) for row in report["results"])
-        self.assertEqual(kinds, [("AAA", "ANALYSIS", "TRIM", CARD_SESSION), ("AAA", "USER", "TRIM", SESSIONS[1]),
-                                 ("BBB", "ANALYSIS", "HOLD", CARD_SESSION)])
+        self.assertEqual(kinds, [("AAA", "ANALYSIS", "TRIM", START), ("AAA", "USER", "TRIM", SESSIONS[1]),
+                                 ("BBB", "ANALYSIS", "HOLD", START)])
         self.assertEqual(report["summary"]["decision_count"], 2)  # the user rows do not add decisions
         other = journal_module.build_user_decision_proposal(
             journal=self.journal(), decision_id=decision_id, user_action="OTHER", effective_session=None, note="", now=NOW)
@@ -509,6 +511,120 @@ class ScoreRuleTests(ScorerTestCase):
         self.assertIn("JOURNAL_NOT_JSON", "\n".join(scorer.render_report(corrupt)))
 
 
+MEASURED_SESSIONS = ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]
+MEASURED_CALENDAR = {"sessions": {day: {"core_close_at": f"{day}T20:00:00Z"} for day in MEASURED_SESSIONS},
+                     "identity": CALENDAR["identity"]}
+MEASURED_CLOSES = {
+    "MVLL": ["36.7900", "37.9300", "37.6500", "42.0300", "41.3800", "38.3600", "38.4955"],
+    "NBIS": ["232.4600", "242.7900", "232.5800", "249.8900", "237.1500", "219.8100", "221.1100"],
+    "SOXL": ["153.7500", "163.6600", "164.2200", "164.2100", "158.8700", "142.4700", "139.7050"],
+}
+MEASURED_DECISION_AS_OF = "2026-10-02T08:17:30.605734+00:00"
+
+
+def measured_closes(**overrides: dict[str, str]) -> dict[str, dict[str, str]]:
+    closes = {symbol: dict(zip(MEASURED_SESSIONS, values)) for symbol, values in MEASURED_CLOSES.items()}
+    for symbol, values in overrides.items():
+        closes[symbol].update(values)
+    return closes
+
+
+def card_entry(sequence: int, ticker: str, *, decision_as_of: str = MEASURED_DECISION_AS_OF,
+               decision_session: str = "2026-10-01", reference_close: str | None = None) -> dict:
+    return {"entry_type": "card_decision", "sequence": sequence, "payload": {
+        "decision_id": f"{ticker.lower()}-decision", "ticker": ticker, "analysis_action": "HOLD",
+        "sidecar_action": "HOLD_CORE", "conviction": "LOW", "decision_session": decision_session,
+        "decision_as_of": decision_as_of, "reference_close": reference_close}}
+
+
+def user_entry(sequence: int, ticker: str, effective_session: str) -> dict:
+    return {"entry_type": "card_user_decision", "sequence": sequence, "payload": {
+        "decision_id": f"{ticker.lower()}-decision", "ticker": ticker, "user_action": "HOLD",
+        "effective_session": effective_session, "user_note": ""}}
+
+
+class StartSessionTests(unittest.TestCase):
+    """score-fix 2026-10-12: a card score starts at the first close after decision_as_of."""
+
+    @staticmethod
+    def scored(entries: list[dict], *, closes: dict | None = None,
+               evaluation_as_of: datetime = datetime(2026, 10, 10, tzinfo=timezone.utc)) -> dict:
+        return scorer.score_journal(
+            {"status": "OK", "entries": entries, "errors": [], "head_sha256": "0" * 64}, calendar=MEASURED_CALENDAR,
+            closes=closes if closes is not None else measured_closes(), unverified={},
+            benchmark={"status": "MISSING", "closes": {}, "errors": []}, corporate_actions=NO_ACTIONS,
+            evaluation_as_of=evaluation_as_of)
+
+    @staticmethod
+    def row(report: dict, ticker: str, kind: str = "ANALYSIS") -> dict:
+        return next(item for item in report["results"] if item["ticker"] == ticker and item["kind"] == kind)
+
+    def test_measured_hold_decisions_start_at_the_next_close(self) -> None:  # T1
+        report = self.scored([card_entry(1, "MVLL", reference_close="36.7900"), card_entry(2, "NBIS"),
+                              card_entry(3, "SOXL")])
+        expected = {"MVLL": ("0.030987", "0.014909"), "NBIS": ("0.044438", "-0.089295"),
+                    "SOXL": ("0.064455", "-0.146371")}
+        for ticker, (pre_move, vs_cash) in expected.items():
+            with self.subTest(ticker=ticker):
+                row = self.row(report, ticker)
+                self.assertEqual((row["decision_session"], row["start_session"], row["start_basis"]),
+                                 ("2026-10-01", "2026-10-02", "FIRST_CLOSE_AFTER_DECISION"))
+                self.assertEqual(row["pre_action_move"], pre_move)
+                five = row["horizons"][0]
+                self.assertEqual((five["status"], five["target_session"], five["vs_cash"]),
+                                 ("SCORED", "2026-10-09", vs_cash))
+                self.assertEqual([(item["status"], item["reason"]) for item in row["horizons"][1:]],
+                                 [("NOT_SCORABLE", "CALENDAR_DOES_NOT_COVER_HORIZON")] * 2)
+        # The recorded reference close is still compared with the decision session close (same-session check).
+        self.assertEqual(self.row(report, "MVLL")["start_close_vs_recorded_reference"], "0.000000")
+
+    def test_before_the_close_starts_the_same_day_and_at_the_close_the_next_day(self) -> None:  # T2, T3
+        before = self.row(self.scored([card_entry(1, "MVLL", decision_as_of="2026-10-02T15:00:00Z")]), "MVLL")
+        self.assertEqual(before["start_session"], "2026-10-02")
+        at_close = self.row(self.scored([card_entry(1, "MVLL", decision_as_of="2026-10-02T20:00:00+00:00")]), "MVLL")
+        self.assertEqual((at_close["start_session"], at_close["pre_action_move"]), ("2026-10-05", "0.023376"))
+        self.assertEqual(at_close["horizons"][0]["reason"], "CALENDAR_DOES_NOT_COVER_HORIZON")
+
+    def test_unreadable_time_or_no_later_session_is_not_scorable(self) -> None:
+        for as_of, reason in (("not-a-time", "DECISION_AS_OF_INVALID"), ("2026-10-02T08:17:30", "DECISION_AS_OF_INVALID"),
+                              ("2026-10-09T20:00:00Z", "CALENDAR_DOES_NOT_COVER_START")):
+            with self.subTest(as_of=as_of):
+                row = self.row(self.scored([card_entry(1, "MVLL", decision_as_of=as_of)]), "MVLL")
+                self.assertEqual({(item["status"], item["reason"]) for item in row["horizons"]},
+                                 {("NOT_SCORABLE", reason)})
+                self.assertIsNone(row["start_session"])
+        outside = self.row(self.scored([card_entry(1, "MVLL", decision_session="2026-09-30")]), "MVLL")
+        self.assertEqual(outside["horizons"][0]["reason"], "DECISION_SESSION_NOT_IN_CALENDAR")
+
+    def test_user_effective_session_rule(self) -> None:  # T4
+        report = self.scored([card_entry(1, "MVLL"), user_entry(2, "MVLL", "2026-10-01"), card_entry(3, "NBIS"),
+                              user_entry(4, "NBIS", "2026-10-06")])
+        same = self.row(report, "MVLL", "USER")
+        self.assertEqual((same["start_session"], same["start_basis"]), ("2026-10-02", "FIRST_CLOSE_AFTER_DECISION"))
+        later = self.row(report, "NBIS", "USER")
+        self.assertEqual((later["start_session"], later["start_basis"], later["decision_session"]),
+                         ("2026-10-06", "EFFECTIVE_SESSION", "2026-10-01"))
+        self.assertEqual(later["pre_action_move"], "0.074981")  # 249.89 / 232.46 - 1, before the user acted
+
+    def test_a_split_like_jump_before_the_start_hides_only_the_pre_action_move(self) -> None:  # T5
+        row = self.row(self.scored([card_entry(1, "MVLL")], closes=measured_closes(MVLL={"2026-10-01": "10"})), "MVLL")
+        self.assertIsNone(row["pre_action_move"])
+        self.assertEqual((row["horizons"][0]["status"], row["horizons"][0]["vs_cash"]), ("SCORED", "0.014909"))
+        inside = measured_closes(MVLL={day: "15" for day in MEASURED_SESSIONS[3:]})
+        row = self.row(self.scored([card_entry(1, "MVLL")], closes=inside), "MVLL")
+        self.assertEqual(row["horizons"][0]["reason"], "POSSIBLE_UNADJUSTED_SPLIT")
+        self.assertEqual(row["pre_action_move"], "0.030987")
+
+    def test_no_close_after_the_evaluation_time_is_used(self) -> None:
+        early = self.scored([card_entry(1, "MVLL", reference_close="36.7900")],
+                            evaluation_as_of=datetime.fromisoformat("2026-10-02T19:59:59+00:00"))
+        row = self.row(early, "MVLL")
+        self.assertEqual(row["start_session"], "2026-10-02")
+        self.assertIsNone(row["pre_action_move"])  # the start close is not final yet
+        self.assertEqual(row["horizons"][0]["status"], "PENDING")
+        self.assertEqual(row["start_close_vs_recorded_reference"], "0.000000")  # the 2026-10-01 close is final
+
+
 class ScoreLocationTests(ScorerTestCase):
     """The journal is read only; scores go to workspace/outputs/journal-scores/ style folders only."""
 
@@ -524,7 +640,8 @@ class ScoreLocationTests(ScorerTestCase):
         buffer = io.StringIO()
         with mock.patch.object(scorer, "load_inputs", return_value=self.inputs), contextlib.redirect_stdout(buffer):
             code = scorer.main(["--journal", str(self.path), "--output-root", str(self.output_root),
-                                "--evaluation-as-of", after(S5).isoformat(), *extra])
+                                "--evaluation-as-of", after(S5).isoformat(),
+                                "--decisions-root", str(self.tmp / "auto-core"), *extra])
         return code, buffer.getvalue()
 
     def journal_digest(self) -> str:
@@ -581,7 +698,7 @@ class ScoreLocationTests(ScorerTestCase):
         imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
                     and node.module == "portfolio_review_journal" for alias in node.names}
         self.assertEqual(imported, {"DEFAULT_JOURNAL_PATH", "JOURNAL_CARD_DECISION", "JOURNAL_CARD_USER_DECISION",
-                                    "load_journal"})
+                                    "JOURNAL_ORDER_TICKET", "JOURNAL_TICKET_OUTCOME", "load_journal"})
         for name in ("apply_proposal", "apply_proposal_entries", "_atomic_write", "build_card_proposal",
                      "build_user_decision_proposal", "build_proposal"):
             self.assertNotIn(name, source)

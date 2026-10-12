@@ -50,6 +50,10 @@
     "score_no_conclusion": "판단 품질 결론은 한 구간에서 {minimum}건 이상 쌓인 뒤에만 냅니다(현재 가장 많은 구간 {best}건).",
     "score_path": "채점 결과 파일: {path}",
     "score_journal_unreadable": "채점하지 않았습니다: {reason}",
+    "score_ticket_summary": "[주문표 채점] 주문표 {total}건(기록 {recorded}건 · 비교 {compare}건) · 구간별 채점 {scored} · 결론은 한 구간 {minimum}건 이상부터 · 읽지 못한 결정 파일 {errors}건",
+    "score_ticket_row": "- {ticker} {side} {mode} (주문표 세션 {session} 종가 기준, 가상 체결 {fill}): {horizons} · 사용자 {user}",
+    "score_ticket_h_scored": "{horizon}세션 무행동 대비 {value} · {spy}",
+    "score_ticket_reference_only": "가상 체결·비교 모드 결과는 등급 D 참고용이며 판단 근거가 아닙니다.",
     "journal_apply_rejected": "기록하지 않았습니다: {reason}",
     "journal_propose_path": "제안 파일: {path}"
   }
