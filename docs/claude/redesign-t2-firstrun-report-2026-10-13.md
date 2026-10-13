@@ -165,3 +165,9 @@ status: 수정 진행 중(runner-fix 큐 대기, 알림 v2.1 적용)
 - **rrec-rg1-bootstrap 권장 정정: A 철회 → D(cmp-fix3).** 대조 모듈에 이 경우를 위한 사전 등록 범주가 이미 있다 — B4 RESEARCH_RECORD, detail `RG1_NEEDS_RESEARCH_RECORD`(auto_core_compare.py RREC 게이트·매수 요건 ⑤). 그런데 조건이 오늘 연구 기록 상태(`research_ok`)만 보고 r2 R2-4의 지난 세션 공백(`rg1_coverage.missing_sessions`)은 보지 않아 B7로 떨어졌다. cmp-fix2와 같은 분류 결함이다. 고칠 곳은 대조 분류 조건 하나(cold path)이고, 코어 판정·매수 관문 의미(B)나 통합점검 규칙 문구(A)를 바꿀 이유가 없다. 코어 RG1의 보수적 판정(이 사건 동안 unk)은 그대로 둔다(NO_CHANGE) — 지금은 RG2·RG3도 미충족이라 실제 차이가 없고, 새 사건이 생기면 풀린다. '켜' 시점에 RG1 공백이 유일한 매수 막힘이면 그때 다시 본다.
 - 지시문 docs/claude/cmp-fix3-builder-prompt.md 작성(큐에는 사용자 승인 뒤 넣음). 10/14 07:45 decide 전에 병합되면 10/14부터 대조 연속을 셀 수 있다. 연속 일수는 각 날 저장된 대조 블록으로 다시 세므로, 병합 전 날의 RG1 B7은 소급해서 바뀌지 않는다.
 - **주문 지시 칸 정정**: OI-20261009-SOXL-2(매도 22주 LOC)는 10/10 대조(r24, SOXL 75→53)로 체결이 확인됐는데 대시보드 주문 문서 결과가 '대기'로 남아 맨 위에 계속 보였다. 원인: 주문 문서 결과를 바꾸는 자동 단계가 없다(Cowork 대조 때 손으로 바꾸는 설계, 10/10에 빠짐). 결과 알림 작업(08:50)도 "이미 있는 문서는 바꾸지 않는다"라서 '켜' 뒤 코어 주문표 결과(decision.outcomes)도 대시보드에 옮겨지지 않는다 → '켜' 전 회차 항목 후보. 조치: 그 문서 결과를 filled로 기록(체결가 확인 필요), 통합점검 v19 — 미국 세션일 다음 날 07:00 KST가 지난 주문은 '넣을 주문'에서 빼고 지난 주문 표에 "결과 대조 필요"로 표시.
+
+## 18. cmp-fix3 병합 (16:1x KST)
+
+- 사용자 승인 15:01(다른 Cowork 세션이 큐에 넣음 — 이 세션이 15:05에 넣은 같은 큐 파일은 중복 실행을 막으려고 docs/claude/_to_delete로 옮김). dev-run 15:05~15:24: Judge PASS, new_failures 0, ran 2979→2995, 바뀐 파일 3개(auto_core_compare.py·test_auto_core_compare_fix3.py·cmp-fix3-report.md). 사용자 dev-merge → da5d85e(ff).
+- 실데이터 확인(14:33 결정 기록을 새 compare()로 다시 분류, 읽기 전용): RREC:RG1 → B4 RG1_NEEDS_RESEARCH_RECORD, B7 5 → 4(DELL·PWR trend_recover, MU rebound_fail·pullback_rebound — 10/13 LLM_ERROR 설명 있음). 저장된 10/13 대조 블록은 소급해 바뀌지 않으며, 10/13은 CORE_BUG 기록이 있어 어차피 통과하지 않는다.
+- 다음: 10/14 07:45 decide부터 새 분류. 그날 B7이 LLM 오류뿐이면 LLM_ERROR 설명 뒤 연속 1.
