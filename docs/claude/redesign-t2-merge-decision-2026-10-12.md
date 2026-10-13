@@ -90,3 +90,6 @@ r5 → Cowork 확인 → 병합 스크립트 → 4 예약 작업 변경(★ 승�
 - `결정 t2-equity-cash: 나` (09:21) — 총자산·노출·EV4·V6의 USD 현금을 T1 F1 승인 정의(주문가능 fc_ord_alowa + T1 가드, 실패 시 fc_entra로 물러나 "확인 필요")로. 근거 docs/claude/redesign-t2-compare-b7-2026-10-13.md "재검토". 매수 관문 입력이라 권한·한도 변경(K3) → **"켜" 전 수정 회차(수동 경로: worktree Builder + 별도 Judge)에 10번째 항목으로 넣는다**(새 사람 단계 없음, CLAUDE.md 권한·한도 변경 1건 한도 = T2 안에서 처리). 같은 결정에 대조 모듈 분류 결함 2건 큐 승인 포함 → dev 파이프라인 cmp-fix(표시·분류 전용, 경로 때문에 authority).
 - "켜" 전 수정 회차 목록: Judge 2차 G절 9건 + ⑩ 총자산 현금 정의(위) + ⑪ 통합 점검 규칙 1-1 ② 문구 "(정산 중 매도대금 포함)" 정정(예약 작업 변경 승인 필요).
 - `결정 ust21100-fix: 승인` (10:33) — 계좌 읽기 브리지 ust21100 본문 수정(파이프라인 ust21100-fix). 보고 redesign-t2-firstrun-report-2026-10-13.md 10절.
+- `결정 t2-equity-cash: 지금 진행` (13:00) — '켜' 전 회차 ⑩을 앞당겨 수동 경로로 진행(지시문 docs/claude/t2-equity-cash-builder-prompt.md, Builder worktree t2-equity-cash → 별도 Judge → 사용자 병합). ⑪ 규칙 문구 정정은 그대로 '켜' 전 회차.
+- t2-equity-cash 병합 73e18b4(2026-10-13 14:1x, Judge PASS) — '켜' 전 회차 ⑩ 완료. ⑪ 남음.
+- 2026-10-13 15:01 KST 사용자 "결정 cmp-fix3: 승인" — 대조 분류: 코어 RG1 unk + 연구 기록 공백(rg1_coverage) → 사전 등록 B4. 지시문 docs/claude/cmp-fix3-builder-prompt.md, dev 파이프라인 큐 등록(Cowork). 앞선 rrec-rg1-bootstrap 선택지 A·B·C는 철회(firstrun 보고 17-1절).
