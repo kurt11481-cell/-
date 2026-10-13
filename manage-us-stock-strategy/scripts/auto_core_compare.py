@@ -132,6 +132,31 @@ def _caps_category(core_caps: list[Any], llm_caps: list[Any], timing: bool) -> t
     return ("B6", "CAP_SET") if timing else ("B7", "CAP_SET")
 
 
+def _rg1_record_gap(core_shock: Any) -> bool:
+    """cmp-fix3: the core's R-REC1 result names sessions after the event without a valid research record (r2 R2-4,
+    rg1_coverage.missing_sessions), so its RG1 is unknown even when today's record is OK."""
+    coverage = core_shock.get("rg1_coverage") if isinstance(core_shock, dict) else None
+    if not isinstance(coverage, dict):
+        return False
+    missing = coverage.get("missing_sessions")
+    return isinstance(missing, list) and len(missing) > 0
+
+
+def _rg1_gap_only(decision: dict[str, Any], code: str) -> bool:
+    """cmp-fix3: buy requirement (5) of one symbol is held only by an unknown RG1 under a research-record gap: an
+    open event (an EV3 (b) record gap sets open None) with RG1 unk and RG2-RG4 ok. A cell held for any other reason
+    (benchmark data, event low, EV3 (b) gap, a gate that is no) is left as it was."""
+    shock = decision.get("shock")
+    if not isinstance(shock, dict):
+        return False
+    entry = (shock.get("by_symbol") or {}).get(code)
+    if not isinstance(entry, dict) or entry.get("open") is not True or entry.get("status") != "unk":
+        return False
+    rg = entry.get("rg") or {}
+    return (rg.get("RG1") == "unk" and all(rg.get(gate) == "ok" for gate in ("RG2", "RG3", "RG4"))
+            and _rg1_record_gap(shock))
+
+
 def compare(decision: dict[str, Any], run: dict[str, Any] | None, registry_entries: dict[str, Any],
             research_ok: bool) -> dict[str, Any]:
     """Items and categories for one decide record against the integrated check run copy."""
@@ -212,7 +237,7 @@ def compare(decision: dict[str, Any], run: dict[str, Any] | None, registry_entri
                 add(key, "buy_requirement", core_cell["s"], llm_cell.get("s"), "B5", "POLICY_UNREGISTERED_PRODUCT")
             elif index == 2 and llm_cell.get("s") == "info":
                 add(key, "buy_requirement", core_cell["s"], llm_cell.get("s"), "B5", "LLM_INFO_STATE")
-            elif index == 4 and not research_ok:
+            elif index == 4 and (not research_ok or (core_cell["s"] == "unk" and _rg1_gap_only(decision, row["code"]))):
                 add(key, "buy_requirement", core_cell["s"], llm_cell.get("s"), "B4", "RG1_NEEDS_RESEARCH_RECORD")
             else:
                 add(key, "buy_requirement", core_cell["s"], llm_cell.get("s"), "B7", "UNEXPLAINED")
@@ -259,7 +284,7 @@ def compare(decision: dict[str, Any], run: dict[str, Any] | None, registry_entri
                 add(f"RREC:{gate}", "rrec1", core_value, llm_value, "B1", "SAME")
             elif timing:
                 add(f"RREC:{gate}", "rrec1", core_value, llm_value, "B6", "LLM_RUN_SESSION_OR_INCOMPLETE")
-            elif gate == "RG1" and not research_ok:
+            elif gate == "RG1" and (not research_ok or (core_value == "unk" and _rg1_record_gap(core_shock))):
                 add(f"RREC:{gate}", "rrec1", core_value, llm_value, "B4", "RG1_NEEDS_RESEARCH_RECORD")
             elif gate == "RG3":
                 add(f"RREC:{gate}", "rrec1", core_value, llm_value, "B2", "L0_REGULAR_LOW_DEFINITION")
