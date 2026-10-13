@@ -149,9 +149,12 @@ def evidence_summary(*, side: str, result: dict[str, Any], check: dict[str, Any]
 # Exposure block (rule file N, S7 values) and buy requirements 1-6
 # ---------------------------------------------------------------------------------------------
 
-def rule_file_nominal(holdings: dict[str, int], closes: dict[str, Decimal | None], deposit: Decimal | None,
+def rule_file_nominal(holdings: dict[str, int], closes: dict[str, Decimal | None], cash: Decimal | None,
                       multipliers: dict[str, Any]) -> dict[str, Any]:
-    """N = sum(multiplier x weight), weight = value / (sum(poss_qty x close) + fc_entra) (rule file 1) and 2-3)(1)).
+    """N = sum(multiplier x weight), weight = value / (sum(poss_qty x close) + cash) (rule file 1) and 2-3)(1)).
+    cash = the USD cash of the total equity, auto_core_decide.equity_cash's choice (t2-equity-cash 2026-10-13:
+    Kiwoom order-available behind T1's cash check, else the smallest known snapshot cash value; the fc_entra the
+    rule file names holds settled money only, T1 F1). The total also feeds V6 and EV4.
     PWR, LITE, MRVL count as 1x (labelled); any other unregistered holding makes N unknown."""
     values: dict[str, Decimal] = {}
     for symbol, quantity in holdings.items():
@@ -159,9 +162,9 @@ def rule_file_nominal(holdings: dict[str, int], closes: dict[str, Decimal | None
         if close is None:
             return {"n": None, "status": f"CLOSE_MISSING:{symbol}", "total": None, "assumed_one_x": []}
         values[symbol] = Decimal(quantity) * close
-    if deposit is None:
-        return {"n": None, "status": "DEPOSIT_UNAVAILABLE", "total": None, "assumed_one_x": []}
-    total = sum(values.values(), Decimal(0)) + deposit
+    if cash is None:
+        return {"n": None, "status": "CASH_UNAVAILABLE", "total": None, "assumed_one_x": []}
+    total = sum(values.values(), Decimal(0)) + cash
     assumed = sorted(symbol for symbol in values if symbol not in multipliers and symbol in ONE_X_UNREGISTERED)
     unknown = sorted(symbol for symbol in values if symbol not in multipliers and symbol not in ONE_X_UNREGISTERED)
     if unknown:
