@@ -66,10 +66,11 @@ class RgGapHelperTests(unittest.TestCase):
 
     def test_rrec1_output_carries_the_gap_the_helper_reads(self):
         # The real R-REC1 function: EV3a three sessions back, no research record on the session after it.
+        # The first record is before the event (rrec-rg1 bootstrap B leaves out sessions before the first record).
         days = helpers.sessions("2026-06-01", 75)
         bench = rules.build_series(helpers.bars("SOXX", days, helpers.zigzag(75, 100, 0.5))["adjusted"], days, days[-1])
         result = rules.rrec1(benchmark=bench, candidate=None, evaluation_session=days[-1], ev3_user_dates=[days[-4]],
-                             thesis_damage=[], ev4_sessions=[], research_sessions=days[-2:])
+                             thesis_damage=[], ev4_sessions=[], research_sessions=[days[-5]] + days[-2:])
         self.assertEqual(result["event"]["date"], days[-4])
         self.assertEqual(result["rg1_coverage"]["missing_sessions"], [days[-3]])
         self.assertEqual(result["rg"]["RG1"], "unk")
