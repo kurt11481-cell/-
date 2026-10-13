@@ -1,15 +1,17 @@
 {
  "schema": "event-calendar/1",
  "id": "event-calendar",
- "updated_at": "2026-10-13T23:10:00+09:00",
+ "updated_at": "2026-10-13T23:55:00+09:00",
  "decision": "결정 ev-calendar-auto: a (사용자 2026-10-13 22:30 KST)",
  "authority": "CONTEXT_ONLY (workspace/policies/event_risk_policy.json). 표시·기록 전용, 근거 강도 0, 주문·관문·예산·노출 연결 없음",
  "consumers": [
   "예약 작업 '개장 전 이벤트 점검(일정표)' — 매 평일 읽기",
   "통합 점검 2-1(workspace/outputs/pre-open 기록 경유)",
-  "이벤트 대비 전략(docs/claude/event-strategy-2026-10-13.md)"
+  "이벤트 대비 전략(docs/claude/event-strategy-2026-10-13.md)",
+  "event-ctx2(병합 뒤): 채점기 score_decision_journal.py가 주문표마다 이벤트 노출을 사후 계산, 개장 전 점검이 manage-us-stock-strategy/scripts/event_calendar.py로 오늘 주문표 노출 줄 표시 — 코어(결정)는 읽지 않음"
  ],
  "horizon_end": "2026-12-31",
+ "coverage_start": "2026-10-14",
  "refresh_rule": "오늘 + 30일 > horizon_end 이면 예약 작업 월요일 실행이 다음 분기 공식 일정을 추가(허용 출처 도메인만, 검증 뒤 쓰기)",
  "allowed_source_domains": [
   "bls.gov",
