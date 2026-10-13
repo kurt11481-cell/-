@@ -44,4 +44,10 @@
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-10-13T02:18:36Z
+- 병합 커밋: `9f554fcecc3aa92031aa94995d892050741a03a3` · 방식: rebase
+- 사용자 승인(-ApproveAuthority): 2026-10-13T02:09:54Z
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/cmp-fix2/ 의 원본 기록입니다.)
