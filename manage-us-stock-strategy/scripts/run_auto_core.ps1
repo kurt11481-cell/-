@@ -44,9 +44,10 @@ if ([string]::IsNullOrWhiteSpace($PythonPath)) {
     )
     $PythonPath = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
     if ([string]::IsNullOrWhiteSpace($PythonPath)) {
-        $command = Get-Command python.exe -ErrorAction SilentlyContinue
-        if ($null -eq $command) { $command = Get-Command python -ErrorAction SilentlyContinue }
-        if ($null -ne $command) { $PythonPath = $command.Source }
+        # PowerShell variable names ignore case: a name equal to a parameter ($Command) would overwrite it.
+        $pythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
+        if ($null -eq $pythonCommand) { $pythonCommand = Get-Command python -ErrorAction SilentlyContinue }
+        if ($null -ne $pythonCommand) { $PythonPath = $pythonCommand.Source }
     }
 }
 if ([string]::IsNullOrWhiteSpace($PythonPath) -or -not (Test-Path -LiteralPath $PythonPath -PathType Leaf)) {
