@@ -38,8 +38,10 @@ ACCOUNT_BODIES = {
     "account_fills_read": {"stex_tp": "", "stk_cd": ""},
     "account_realized_pnl_read": {"fc_krw_tp": "0", "stex_tp": "", "stk_cd": ""},
     # Templates: the date fields named in DATED_PARAMETERS are filled from the validated request only.
+    # ust21100 live 2026-10-13: the server treats tp and krw_repl_skip_yn as required (empty -> 1511);
+    # "N" = KRW substitute in/out not excluded (all included), the kiwoomcli default.
     "account_transaction_history_read": {"strt_dt": "", "end_dt": "", "tp": "0", "stex_tp": "", "stk_cd": "",
-                                         "krw_repl_skip_yn": ""},
+                                         "krw_repl_skip_yn": "N"},
     "account_daily_fills_read": {"ord_dt": "", "query_tp": "1", "slby_tp": "0", "stex_tp": "", "stk_cd": "",
                                  "oppo_trde_tp": "%", "fr_ord_no": ""},
     "account_day_trades_read": {"base_dt": "", "qry_tp": "1", "fc_krw_tp": "0"},
