@@ -108,6 +108,10 @@ GROUP_NAMES = {
 OFFICIAL_MINUS_KINDS = ("kill", "dilution", "customer_change", "guidance")
 C7_PLUS_KINDS = ("guidance", "dilution", "contract", "customer_change")
 EVIDENCE_STATES = ("hit",)
+# Event groups whose margin is measured on the firing session when hit (C2 C4 C6; C7 groups come from the research
+# record). Display only (compare appendix B2), never a judgment input.
+EVENT_MARGIN_GROUPS = ("overheat_fade", "oversold_rebound", "false_breakout", "false_breakdown", "rebound_fail",
+                       "pullback_rebound")
 
 
 # ---------------------------------------------------------------------------------------------
@@ -391,6 +395,15 @@ def _event_state(raw: list[bool | None], opposite: list[bool | None] | None, ind
     return "none"
 
 
+def _event_day(raw: list[bool | None], opposite: list[bool | None] | None, index: int) -> int | None:
+    """The session index that makes an event rule hit at `index` (the last firing in the same window, not
+    resolved by the opposite side, as in _event_state); None when the rule is not hit there."""
+    if index < 0 or _event_state(raw, opposite, index) != "hit":
+        return None
+    window = C["EVENT_WINDOW_SESSIONS"]
+    return [i for i in range(max(0, index - window + 1), index + 1) if raw[i] is True][-1]
+
+
 def _state(value: Any) -> str:
     if value is None:
         return "unk"
@@ -532,7 +545,6 @@ def evaluate_symbol(*, symbol: str, role: str, bars: dict[str, Any] | None, cale
     c8 = c8_thresholds(registry_entry, multiplier)
     if series is not None:
         result["indicators"] = indicator_row(series, t)
-        result["margins"] = group_margins(series, c8)
     common = raw_common(series, c8) if series is not None else {key: [] for key in COMMON_RULES}
     if series is not None:
         minus, plus, notes = raw_c7(series, calendar, facts)
@@ -553,6 +565,15 @@ def evaluate_symbol(*, symbol: str, role: str, bars: dict[str, Any] | None, cale
                 card_active.append(trigger)
     replaced = {CARD_KINDS[trigger["kind"]][1] for trigger in card_active if trigger["kind"] in CARD_KINDS}
     groups: dict[str, dict[str, Any]] = {}
+    event_days: dict[str, int] = {}
+
+    def note_event_day(group: str | None, today: str, values: list[Any], opposite_values: list[Any] | None) -> None:
+        # Margin display only (cmp-fix): an event group that is hit is measured on the session that fired it.
+        if series is None or group not in EVENT_MARGIN_GROUPS or today != "hit":
+            return
+        day = _event_day(values, opposite_values, t)
+        if day is not None:
+            event_days[group] = max(day, event_days.get(group, day))
 
     def add(rule_id: str, group: str | None, side: str, today: str, yesterday: str, source: str,
             card_defined: bool, strength: str) -> None:
@@ -586,6 +607,9 @@ def evaluate_symbol(*, symbol: str, role: str, bars: dict[str, Any] | None, cale
         today, yesterday = status_pair(rule_kind, common.get(rule_id, []),
                                        common.get(opposite[rule_id]) if rule_id in opposite else None)
         add(rule_id, group, side, today, yesterday, "common", False, "weak" if side in "+-" else "review")
+        if rule_kind == "event":
+            note_event_day(group, today, common.get(rule_id, []),
+                           common.get(opposite[rule_id]) if rule_id in opposite else None)
     for trigger in card_active:
         group, replaces = CARD_KINDS.get(trigger["kind"], (None, None))
         side = trigger.get("side")
@@ -599,7 +623,11 @@ def evaluate_symbol(*, symbol: str, role: str, bars: dict[str, Any] | None, cale
                                            common.get(opposite[replaces]) if replaces in opposite else None)
         add(trigger["id"], group, "alert" if side == "alert" else side, today, yesterday, "card", True,
             trigger.get("strength", "weak"))
+        if rule_kind == "event":
+            note_event_day(group, today, values, common.get(opposite[replaces]) if replaces in opposite else None)
     result["groups"] = groups
+    if series is not None:
+        result["margins"] = group_margins(series, c8, event_days)
     if result["nocard"]:
         result["triggers"].append({"id": "NOCARD", "group": None, "name": "\uce74\ub4dc \uc5c6\uc74c",
                                    "side": "alert", "state": "review", "previous_state": None, "new": False,
@@ -607,10 +635,19 @@ def evaluate_symbol(*, symbol: str, role: str, bars: dict[str, Any] | None, cale
     return result
 
 
-def group_margins(series: dict[str, Any], c8: dict[str, float | None]) -> dict[str, float | None]:
+def group_margins(series: dict[str, Any], c8: dict[str, float | None],
+                  event_days: dict[str, int] | None = None) -> dict[str, float | None]:
     """Relative distance (share of the close) of each group's deciding quantity to its line at the last session;
-    used only to label a judgment difference DATA_DEFINITION (F9, prompt appendix B). Display only."""
-    t = len(series["close"]) - 1
+    used only to label a judgment difference DATA_DEFINITION (F9, prompt appendix B). Display only.
+    An event group in `event_days` (hit today) is measured on the session that fired it, on that day's close."""
+    margins = _margins_at(series, c8, len(series["close"]) - 1)
+    for group, day in (event_days or {}).items():
+        if group in EVENT_MARGIN_GROUPS:
+            margins[group] = _margins_at(series, c8, day)[group]
+    return margins
+
+
+def _margins_at(series: dict[str, Any], c8: dict[str, float | None], t: int) -> dict[str, float | None]:
     close = series["close"][t]
     p_e20, p_atr = _at(series["ema20"], t - 1), _at(series["atr14"], t - 1)
 

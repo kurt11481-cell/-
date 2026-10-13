@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -57,6 +58,7 @@ EMA_GROUPS = {"overheat", "oversold", "trend_break", "trend_recover", "new_low",
               "pullback_rebound", "overheat_fade", "oversold_rebound"}
 RESEARCH_GROUPS = {"good_news_drop", "bad_news_rise"}
 B5_PRODUCTS = ("PWR", "LITE")
+CAP_TICKER = re.compile(r"^\s*([A-Z][A-Z0-9.]{0,9})\b")  # leading ticker of an LLM capBreaches[] item
 
 
 def _llm_hit(state: Any) -> bool:
@@ -114,6 +116,20 @@ def _r5_distance(item: dict[str, Any]) -> float | None:
     except (TypeError, ValueError, ZeroDivisionError):
         return None
     return min(abs(ratio - float(rules.C["R5_REVIEW_FRACTION"])), abs(ratio - float(rules.C["R5_NEAR_FRACTION"])))
+
+
+def _caps_category(core_caps: list[Any], llm_caps: list[Any], timing: bool) -> tuple[str, str]:
+    """Single-stock cap breaches compared by ticker: each LLM item may carry text after its leading ticker
+    ("MVLL <notional label> 0.4111 > 0.4"); an item without a leading ticker keeps the difference B7
+    (CAP_SET_UNPARSED), also when the LLM run is of another session."""
+    if core_caps == llm_caps:
+        return "B1", "SAME"
+    codes = [CAP_TICKER.match(item) if isinstance(item, str) else None for item in llm_caps]
+    if any(match is None for match in codes):
+        return "B7", "CAP_SET_UNPARSED"
+    if set(core_caps) == {match.group(1) for match in codes}:
+        return "B1", "SAME"
+    return ("B6", "CAP_SET") if timing else ("B7", "CAP_SET")
 
 
 def compare(decision: dict[str, Any], run: dict[str, Any] | None, registry_entries: dict[str, Any],
@@ -213,8 +229,8 @@ def compare(decision: dict[str, Any], run: dict[str, Any] | None, registry_entri
     llm_caps = sorted(exposure.get("capBreaches") or [])
     core_caps = sorted((decision.get("exposure") or {}).get("caps") or [])
     if exposure:
-        add("exposure:caps", "exposure", core_caps, llm_caps,
-            "B1" if core_caps == llm_caps else "B6" if timing else "B7", "SAME" if core_caps == llm_caps else "CAP_SET")
+        category, detail = _caps_category(core_caps, llm_caps, timing)
+        add("exposure:caps", "exposure", core_caps, llm_caps, category, detail)
     llm_peaks = {item.get("code"): item.get("state") for item in run.get("peakReviews") or [] if isinstance(item, dict)}
     for item in (decision.get("exposure") or {}).get("peaks") or []:
         if item["symbol"] not in llm_peaks:
