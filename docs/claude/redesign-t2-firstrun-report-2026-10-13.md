@@ -62,3 +62,36 @@ status: 수정 진행 중(runner-fix 큐 대기, 알림 v2.1 적용)
 - 조치: 이번에는 코드 변경 없음(NO_CHANGE). 내일 06:15 실행이 재시도다. 같은 코드 2가 다시 나오면 재시도 대상 분류(retryable_failure_types) 검토를 별도 작업으로 올린다.
 - 참고: 거래내역(10/10~10/13)에 행이 없으므로, 브로커의 SOXL 보유 53주·결제 기준 75주 차이는 거래내역(결제 기준)에 아직 잡히지 않은 상태로 보인다(확인 필요). 체결은 브로커 체결 기록으로만 판단한다.
 - runner-fix: 큐 09:02 → dev-run 시작 09:05(Builder attempt 1).
+
+## 8. runner-fix 병합 실패와 기준선 오염 (09:30 KST)
+
+- 사용자 `.\tools\dev-merge.ps1 runner-fix -ApproveAuthority` → `DEV-MERGE STOP_INTERNAL_ERROR type=PermissionError`. merge.err: main이 docs 커밋으로 6012f2f → 1e0b511로 움직여 dev-merge가 rebase 경로로 감 → rebase 성공(worktree-runner-fix 1066005, 부모 1e0b511) → 재시험용 기준선 준비 중 임시 worktree `_base-1e0b511c` 삭제에서 WinError 32. 그 worktree는 같은 시각 dev-run cmp-fix가 기준선 전체 시험을 돌리던 곳이다(같은 base라 이름이 같음).
+- 영향: cmp-fix 기준선이 오염됨(ran 2547, errors 1034, schema MISSING — 정상은 ran 2944, 실패 28, schema PASS)이고 캐시 `_baseline/1e0b511…-py3.13.15-b2.json`으로 저장됨. 이 캐시를 쓰면 새 실패가 가려진다 → Cowork가 `_baseline/_invalid-20261013/`로 옮김(삭제 아님, README 동봉). cmp-fix 결과는 쓰지 않는다(병합 금지), runner-fix 병합 뒤 새 id로 다시 큐.
+- runner-fix worktree는 rebase된 상태로 남음 → `docs/claude/runner-fix-merge-retry-2026-10-13.ps1`: 잠금 해제 대기 → devpipe undo와 같은 복구(reset --keep 8fee428, reset --soft 6012f2f, unstage) → dev-merge 재실행 → 병합되면 예약 작업 daily·decide 1회 실행(수정 검증, 사용자 질문 09:26).
+- 파이프라인 결함(보호 경로 tools/** — 수동 경로): dev-merge의 rebase 경로가 dev-run 잠금을 잡지 않고, 기준선 임시 worktree 이름을 base로만 정해 실행 중인 dev-run과 겹칠 수 있다. 그때까지 운영 규칙: **dev-run이 돌고 있으면(_lock 있음) dev-merge를 하지 않는다.** 09:2x Cowork 안내("cmp-fix와 겹치지 않아 지금 병합해도 됨")가 틀렸다.
+- 재시도 1(09:40, 복구 스크립트): 잠금 해제(cmp-fix는 00:39Z STOP_RUN_RECORD_CHANGED — 격리한 캐시 때문, 의도대로) → 복구 OK → dev-merge `STOP_DIFF_CHANGED reason=diff_hash`. 원인: rebase·reset 때 git(core.autocrlf)이 Builder가 LF로 쓴 새 파일 2개(runner-fix-report.md, test_auto_core_runner.py)를 CRLF로 다시 써서 바이트가 바뀜. 검증: LF·CRLF 조합 8개 중 (보고서 LF, ps1 CRLF, 시험 LF)만 result.json diff_hash와 일치. Cowork가 두 파일을 LF로 되돌림(내용 동일, diff_hash 일치 확인). 파이프라인 결함 추가: 복구·rebase 경로가 줄 끝을 바꿔 재시도를 막는다.
+- 재시도 2(10:00~10:14): 병합 성공 `DEV-MERGE runner-fix MERGED sha=6d5ca15d mode=rebase`. 이어서 실제 예약 작업 1회: InvestmentV2-AutoCore 10:13:51 KST `RUNNER_START … command=daily` → `RUNNER_END exit=0`, InvestmentV2-AutoCoreDecide 10:14:18 → `RUNNER_END exit=0`. **실행 스크립트 수정이 실제 예약 경로에서 확인됨**(Python 자동 탐색).
+- 결과는 그대로: daily HOLD(I1 ust21100 코드 2 — 다시 발생), decide HOLD, 주문표 0.
+- cmp-fix는 새 id cmp-fix2로 다시 큐(10:2x).
+
+## 9. ust21100 코드 2 — 일시 오류가 아님 (10:20 KST)
+
+- 08:46과 10:13 두 번 모두 코어 브리지(kiwoom_account_readonly_bridge 외부 워커)의 ust21100(10/10~10/13)이 return_code 2. 같은 기간을 kiwoomcli(MCP, 09:06)로 조회하면 return_code 20 "[2000](501724:관련자료가 없습니다)"(정상 "내역 없음").
+- 차이 후보(확인 필요): ① 본문 krw_repl_skip_yn — 브리지 ""(빈 값), CLI 기본 "N" ② 브리지 런타임(.env)과 CLI 프로필의 토큰·계좌 차이 ③ 앞선 일별 체결 조회 직후 호출 간격. 키움 명세 예시는 빈 값을 쓰므로 ①도 단정 못 함. 브리지는 return_msg를 저장하지 않는다(계좌번호가 섞일 수 있어 설계상).
+- 영향: 매일 daily I1 FAIL → HOLD → 비교 연속 일수가 쌓이지 않고 T1 "켜"도 불가. 자동 운영 막힘 = 심각 결함.
+- 브리지 본문 첫 실측: 이 경로(브리지로 ust21100)가 실계좌에서 돈 것은 오늘이 처음이다(10/02·10/10 실측은 MCP CLI).
+- 다음: 읽기 전용 진단 1회 — 같은 런타임·같은 본문으로 ust21100을 부르고 return_code와 숫자를 가린 return_msg만 출력, krw_repl_skip_yn "" 대 "N" 비교.
+
+## 10. ust21100 원인 확정 (10:26 KST, 사용자 실행 진단)
+
+| 본문 | return_code | 메시지 |
+|---|---|---|
+| 브리지 그대로(tp "0", krw_repl_skip_yn "") | 2 | 입력 값 오류[1511: 필수입력 파라미터=krw_repl_skip_yn] |
+| krw_repl_skip_yn "N" | 20 | [2000](501724:관련자료가 없습니다) — 정상 "내역 없음" |
+| tp "", krw "N" | 2 | 입력 값 오류[1511: 필수입력 파라미터=tp] |
+
+- 원인: 브리지 본문 `krw_repl_skip_yn: ""`. 명세는 선택(required N)이지만 서버는 필수. tp도 필수(지금 "0"이라 문제없음).
+- 수정: 지시문 docs/claude/ust21100-fix-builder-prompt.md(본문 한 칸 "N", 회귀 테스트). 권한 경로라 사용자 결정 뒤 큐.
+- 같은 위험 점검: ust21150(일별 체결)·ust21610(당일 매매)을 브리지 본문 그대로 부르는 진단 docs/claude/bridge-dated-diag-2026-10-13.py(읽기 전용). ust21610은 체결이 있는 날에만 불려 아직 실계좌에서 돈 적이 없다.
+- 기록 실수(Cowork): 이미 커밋돼 비워진 _pending 파일에 경로만 덧붙여, 자동 커밋 5ccc6b7의 메시지가 경로(docs/claude/runner-fix-merge-retry-2026-10-13.ps1)가 됨(내용은 ust21100-diag-2026-10-13.py 1개). 이력은 고치지 않는다. 앞으로 _pending 파일은 매번 첫 줄(메시지)부터 통째로 쓴다.
+- `결정 ust21100-fix: 승인` (2026-10-13 10:33 KST, 사용자) — 브리지 ust21100 본문 krw_repl_skip_yn "N" + 회귀 테스트. dev 파이프라인 ust21100-fix(경로 때문에 authority) 큐 10:3x. cmp-fix2 뒤 순서.
