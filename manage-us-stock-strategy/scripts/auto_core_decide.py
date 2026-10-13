@@ -43,6 +43,7 @@ import auto_core_reconcile as core
 import auto_core_rules as rules
 import auto_core_tickets as tickets_module
 from auto_core_bars import load_symbol
+from kiwoom_broker_shadow import order_available_cash_errors
 from reconcile_broker_state import AUTO_OUTPUT_ROOT, AUTO_RESULT_FILE, DAY_FOLDER, kst_day
 from validation_common import canonical_hash, load_json, validate_instance, write_json
 
@@ -65,6 +66,11 @@ RESEARCH_POLL_SECONDS = 300
 T1_RESULT_FILE = "result.json"
 SNAPSHOT_FILE = "kiwoom_broker_snapshot.shadow.json"
 CASH_TOLERANCE = Decimal("1.00")
+# t2-equity-cash (user 2026-10-13): the snapshot cash values behind the total equity and its basis labels.
+EQUITY_CASH_FIELDS = ("order_available_cash", "withdrawable_cash", "foreign_currency_deposit")
+EQUITY_CASH_ORDER_AVAILABLE = "ORDER_AVAILABLE"
+EQUITY_CASH_FALLBACK = "MIN_FALLBACK"
+EQUITY_CASH_UNAVAILABLE = "CASH_UNAVAILABLE"
 POLICY_PATHS = {
     "readonly": REPO_ROOT / "workspace/policies/kiwoom-readonly-policy.json",
     "rate": REPO_ROOT / "workspace/policies/kiwoom-rate-limit-policy.json",
@@ -126,6 +132,35 @@ def ledger_carry(previous_all: list[tuple[str, dict[str, Any] | None]]) -> dict[
                     "source": item}
     return {"keys": {}, "open_tickets": [], "carried_from": None, "attributed_orders": [],
             "unreadable_after": unreadable_after, "evaluation_session": None, "source": None}
+
+
+# ---------------------------------------------------------------------------------------------
+# The cash of the total equity (t2-equity-cash)
+# ---------------------------------------------------------------------------------------------
+
+def equity_cash(cash: dict[str, Any] | None, holdings: list[dict[str, Any]] | None) -> tuple[Decimal | None, str]:
+    """(USD cash, basis) of the total equity behind the rule-file N, the V6 account line and EV4 (t2-equity-cash,
+    user 2026-10-13), from the broker snapshot's three cash values only (no amount is estimated from prices).
+
+    The approved cash, Kiwoom order-available (fc_ord_alowa, T1 F1), when T1's one cash check
+    (kiwoom_broker_shadow.order_available_cash_errors on the snapshot's (settled_quantity, held_quantity) rows)
+    passes: ORDER_AVAILABLE. A failed check, or a missing order-available or withdrawable value: the smallest known
+    of the three, MIN_FALLBACK:<reason> - the settled deposit before a sale settles, order-available before a buy
+    settles, so the total is never raised (cautious for buys). None of the three: (None, CASH_UNAVAILABLE) and the
+    rule-file N stays unknown. The buy cash and G1 keep order-available as they are."""
+    values = {field: _decimal((cash or {}).get(field)) for field in EQUITY_CASH_FIELDS}
+    known = [value for value in values.values() if value is not None]
+    if not known:
+        return None, EQUITY_CASH_UNAVAILABLE
+    missing = [field for field in EQUITY_CASH_FIELDS[:2] if values[field] is None]
+    if missing:
+        return min(known), f"{EQUITY_CASH_FALLBACK}:CASH_VALUE_MISSING:" + ",".join(missing)
+    quantities = [(_decimal(row.get("settled_quantity")), _decimal(row.get("held_quantity")))
+                  for row in holdings or [] if isinstance(row, dict)]
+    errors = order_available_cash_errors(values["order_available_cash"], values["withdrawable_cash"], quantities)
+    if errors:
+        return min(known), f"{EQUITY_CASH_FALLBACK}:{errors[0]}"
+    return values["order_available_cash"], EQUITY_CASH_ORDER_AVAILABLE
 
 
 # ---------------------------------------------------------------------------------------------
@@ -467,14 +502,15 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
     decision["inputs"].update(broker_snapshot=_file_record(snapshot_path if snapshot else None),
                               reconcile=_file_record(reconcile_path if reconcile else None))
     holdings: dict[str, int] = {}
-    cash = deposit = None
+    cash = None
     if snapshot is not None:
         for item in snapshot.get("holdings") or []:
             quantity = item.get("held_quantity")
             if isinstance(quantity, (int, float)) and not isinstance(quantity, bool) and quantity > 0:
                 holdings[str(item["ticker"]).upper()] = int(quantity)
         cash = _decimal((snapshot.get("cash") or {}).get("order_available_cash"))
-        deposit = _decimal((snapshot.get("cash") or {}).get("foreign_currency_deposit"))
+    # t2-equity-cash: the cash of the total equity (rule-file N, V6, EV4); `cash` stays the buy cash and G1's.
+    total_cash, cash_basis = equity_cash((snapshot or {}).get("cash"), (snapshot or {}).get("holdings"))
     gate1: list[str] = []
     if reconcile is None or reconcile.get("status") != "OK":
         gate1.append("G1_RECONCILE_NOT_OK")
@@ -592,7 +628,7 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
 
     session = evaluate_session(
         day=day, mode=mode, issued_at=now.astimezone(KST).strftime("%Y-%m-%d %H:%M KST"), calendar=calendar,
-        evaluation_session=evaluation_session, bars=bars, holdings=holdings, cash=cash, deposit=deposit,
+        evaluation_session=evaluation_session, bars=bars, holdings=holdings, cash=cash, deposit=total_cash,
         sectors=sectors, members=members, checks=checks, watchlist=watchlist, m6_docs=m6_docs, facts=facts,
         earnings=earnings, ev3=rules.ev3_dates(recovery_text), ev4_sessions=ev4_sessions, seen_fact_ids=seen,
         policy=policy, config=config, keys=keys, gate0=gate0, gate1=gate1, s7_runner=s7_runner,
@@ -607,6 +643,7 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
                     no_action=session["planned"]["no_action"], account=session["account"],
                     exposure=session["exposure"], shock=session["shock"], earnings_calendar=session["earnings_calendar"],
                     facts_seen=session["facts_seen"])
+    decision["exposure"]["cash_basis"] = cash_basis  # t2-equity-cash: display only (not in runCore)
     decision["reasons"] = sorted(set(gate0 + gate1))
     if decision["reasons"]:
         decision["status"] = "HOLD"
@@ -798,6 +835,8 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     recent research records (None = today's record is not OK). research: {block: why today's record is not OK
     or None, sessions: sessions with a valid record in the R-REC1 window, damage: root-thesis-damage facts of
     those records}. ev4_sessions: earlier EV4 sessions; this session's EV4 is added here before R-REC1.
+    cash: the buy cash (order-available). deposit: the USD cash of the total equity behind the rule-file N, V6 and
+    EV4 (t2-equity-cash: decide passes equity_cash's choice, the replay its one cash; the keyword name is kept).
     """
     sessions = sorted(calendar["sessions"])
     later = [item for item in sessions if item > evaluation_session]
@@ -987,8 +1026,8 @@ def _dashboard(decision: dict[str, Any], mode: str) -> dict[str, Any]:
                            + ("" if risk1r is None else " \u00b7 " + risk1r),
                            "afterSale": _after_sale_line(ticket.get("after_sale")), "outcome": {"state": "pending"}})
     return {"runCore": {"triggers": triggers, "buyReq": {"rows": decision["buy_requirements"]},
-                        "exposure": decision["exposure"], "shock": {key: decision["shock"].get(key) for key in
-                                                                     ("open", "events", "event", "rg", "ds1")},
+                        "exposure": {key: value for key, value in decision["exposure"].items() if key != "cash_basis"},
+                        "shock": {key: decision["shock"].get(key) for key in ("open", "events", "event", "rg", "ds1")},
                         "peakReviews": decision["exposure"].get("peaks"), "tickets": tickets,
                         "account": {key: decision["account"].get(key) for key in ("state", "total", "first_cushion_pct")}},
             "orders": orders}
