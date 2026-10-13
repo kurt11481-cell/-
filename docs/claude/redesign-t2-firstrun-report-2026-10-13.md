@@ -95,3 +95,10 @@ status: 수정 진행 중(runner-fix 큐 대기, 알림 v2.1 적용)
 - 같은 위험 점검: ust21150(일별 체결)·ust21610(당일 매매)을 브리지 본문 그대로 부르는 진단 docs/claude/bridge-dated-diag-2026-10-13.py(읽기 전용). ust21610은 체결이 있는 날에만 불려 아직 실계좌에서 돈 적이 없다.
 - 기록 실수(Cowork): 이미 커밋돼 비워진 _pending 파일에 경로만 덧붙여, 자동 커밋 5ccc6b7의 메시지가 경로(docs/claude/runner-fix-merge-retry-2026-10-13.ps1)가 됨(내용은 ust21100-diag-2026-10-13.py 1개). 이력은 고치지 않는다. 앞으로 _pending 파일은 매번 첫 줄(메시지)부터 통째로 쓴다.
 - `결정 ust21100-fix: 승인` (2026-10-13 10:33 KST, 사용자) — 브리지 ust21100 본문 krw_repl_skip_yn "N" + 회귀 테스트. dev 파이프라인 ust21100-fix(경로 때문에 authority) 큐 10:3x. cmp-fix2 뒤 순서.
+- 같은 위험 점검 결과(10:57 KST, 사용자 실행 bridge-dated-diag): 브리지 본문 그대로 ust21150 10/09 return_code 0(1행)·10/12 20 "[2000](571758:해당 계좌의 체결내역이 없습니다.)", ust21610 10/09 0(1행)·10/12 20 "[2000](571758:조회내역이 없습니다.)". 두 조회 모두 정상이고 no-data 문구는 브리지 등록 문구와 같다 → 추가 수정 없음(ust21100-fix 지시문 "추가 실측" = 해당 없음).
+
+## 11. 병합 2건 (11:21 KST)
+
+- `DEV-MERGE cmp-fix2 MERGED sha=9f554fce mode=rebase` — 대조 분류 수정 반영.
+- `DEV-MERGE ust21100-fix STOP_BASE_MOVED reason=non_docs_commits` — ust21100-fix(Judge PASS, 본문 한 칸 "N" + 테스트)는 base fcc294b에서 만들어졌는데 그 뒤 cmp-fix2 코드 커밋이 병합됨. 파이프라인은 docs 커밋만 넘어 rebase한다(설계). → 같은 내용으로 ust21100-fix2 큐(11:2x), 병합은 merge-ust21100-fix2-2026-10-13.ps1(끝나길 기다렸다가 병합 → 예약 작업 1회 검증).
+- 교훈: 코드를 바꾸는 dev-run 두 개를 연달아 큐에 넣으면 두 번째는 첫 번째 병합 뒤 다시 돌려야 한다. 앞으로는 앞 작업을 병합한 뒤 다음 작업을 큐에 넣는다(또는 파일이 겹치지 않으면 한 지시문으로 묶는다).
