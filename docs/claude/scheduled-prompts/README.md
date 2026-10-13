@@ -16,7 +16,7 @@
 | `next-sandisk-discovery.txt` | Next 샌디스크 발굴 v3.1, 제안 모드 (토 07:32) | trig_01GqUwXK9KLqTRUJPVefHhq3 | Opus 5.5 | 9ad146f548bb3916f0e49e6192c4c9728f779b9120c463ca78d0cabfd80c0319 | 저장소 사본 없었음. 이 폴더 파일이 첫 사본 |
 | `us-stock-board-close.txt` | 미국주식 현황판 마감 정리 (화~토 09:10) | trig_017qqjiQdpUbHxHXsLDPrL8Z | Sonnet 5.5 | 8fe2281ebb72956423700ac8bd66bd5d4af1a391bda173a03225bf6cd3e28918 | 저장소 사본 없었음. 이 폴더 파일이 첫 사본 |
 | `event-pre-open-1014-cpi.txt` | 개장 전 이벤트 10/14 CPI(9월분), 1회 (형식 표본) | trig_01YXzuwKvTKTU6tvNrbYqg6N | Sonnet 5.5 | b91ec3a3fafe93858d8c91986b0d93dde26ec13ea032563b432c67f9b892e42f | 저장소 사본 없었음. 같은 형식의 이벤트 예약 5개(10/14·10/15·11/6·11/10·11/13) 중 표본 1개 |
-| `auto-core-alert.txt` | 자동 운영 코어 결과 알림 v2 (화~토 08:50, 2026-10-12 재설계 T2로 06:55에서 이동) | trig_01D5KxMSJgbeRG1ZL5ox3Fna | Opus 5.5(기본값) | 1113744f09d7a8207404508724813ed6d610e257aadd4dd6551f074cd2b8d4c2 | 이 폴더 파일이 원문. v1(1035ad51…)은 git 이력 |
+| `auto-core-alert.txt` | 자동 운영 코어 결과 알림 v2.1 (화~토 08:50; 2026-10-13 첫 운영일 실패 수정 — device_bash 대신 device_list_dir·device_stage_files, 한국 날짜 계산값만) | trig_01D5KxMSJgbeRG1ZL5ox3Fna | Opus 5.5(기본값) | 66548192913d277d46d792bbcc25eebab86a8e53e85815e182a92b9b3b41ba68 | 이 폴더 파일이 원문. v2(1113744f…)·v1(1035ad51…)은 git 이력 |
 
 ## 확인한 것
 - 반복 7개(통합 점검·월요일·SAVE·관제판 주간·관심 명단·Next 샌디스크·현황판)와 이벤트 표본 1개의 원문을 저장했다. 저장 후 파일 해시가 조회 때 계산한 해시와 같음을 확인했다.
