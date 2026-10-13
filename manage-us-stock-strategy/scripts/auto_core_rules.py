@@ -741,9 +741,11 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     (None = no research record -> RG1 unknown). ev4_sessions: sessions on which the account line EV4 was open
     (earlier decide records and, r2 R2-3, the evaluation session itself). research_sessions (r2 R2-4): the
     sessions that have a valid research record; None = not tracked (every session is taken as recorded). With
-    it, RG1 needs a record for every session after the event (else unknown, rg1_coverage), and a session
-    without a record after the first recorded one (ev3b_coverage_start) on which the benchmark fell at least
-    1 sigma60 (EV3 (b) could have opened) makes the result unknown. Data missing = "unk": an
+    it, RG1 needs a record for every session after the event from the first recorded session in the window
+    (ev3b_coverage_start) on (else unknown, rg1_coverage); earlier sessions could not have one and EV3 (a)
+    covers them (rrec-rg1 bootstrap B: left out, listed in rg1_coverage.before_first_record), and with no record
+    in the window RG1 stays unknown. A session without a record after the first recorded one on which the
+    benchmark fell at least 1 sigma60 (EV3 (b) could have opened) makes the result unknown. Data missing = "unk": an
     exposure-increasing buy is blocked; a sell is never blocked by this gate.
     """
     out: dict[str, Any] = {"status": "unk", "open": None, "events": [], "event": None, "rg": {}, "ds1": None,
@@ -808,10 +810,20 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     c0 = s["close"][e]
     l0 = s["low"][e]
     out["event"] = {"date": event["date"], "kinds": event["kinds"], "c0": c0, "l0": l0, "bench": None}
+    # rrec-rg1 bootstrap B: RG1 needs no record before the first one in the window (the EV3 (b) boundary above);
+    # with no record in the window (first None) nothing is left out.
+    first = out["ev3b_coverage_start"]
+
+    def needs_record(day: str) -> bool:
+        return first is None or day >= first
+
     if coverage is not None:
         out["rg1_coverage"] = {"from": s["days"][e + 1] if e < t else None, "to": s["days"][t],
                                "missing_sessions": [s["days"][k] for k in range(e + 1, t + 1)
-                                                    if s["days"][k] not in coverage]}
+                                                    if s["days"][k] not in coverage and needs_record(s["days"][k])]}
+        before = [s["days"][k] for k in range(e + 1, t + 1) if not needs_record(s["days"][k])]
+        if before:
+            out["rg1_coverage"]["before_first_record"] = before
     if l0 is None:
         out["reasons"].append("EVENT_LOW_UNAVAILABLE")
         out.update(status="unk", open=True)
@@ -823,8 +835,10 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     def gates(i: int, last_ds1: int) -> dict[str, bool | None]:
         damage_after = None if thesis_damage is None else any(
             fact["event_session"] > s["days"][e] and fact["event_session"] <= s["days"][i] for fact in thesis_damage)
-        # RG1 needs a research record for every session after the event (r2 R2-4); a known damage fact is "no".
-        recorded = coverage is None or all(s["days"][k] in coverage for k in range(e + 1, i + 1))
+        # RG1 needs a research record for every session after the event from the first record on (r2 R2-4,
+        # rrec-rg1 bootstrap B); a known damage fact is "no".
+        recorded = coverage is None or all(s["days"][k] in coverage for k in range(e + 1, i + 1)
+                                           if needs_record(s["days"][k]))
         rg1 = None if damage_after is None else False if damage_after else _all(
             i - e >= C["RREC_RG1_SESSIONS"], True if recorded else None)
         bench_ok = _cmp(s["close"][i], "ge", s["ema50"][i])
