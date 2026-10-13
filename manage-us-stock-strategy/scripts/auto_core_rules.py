@@ -56,6 +56,9 @@ CONSTANTS: dict[str, tuple[Any, str]] = {
     "RREC_EV3_SIGMA": (1.0, "R-REC1 EV3 (b) same-day SOXX <= -1 sigma60"),
     "RREC_EV5_SIGMA": (2.0, "R-REC1 EV5 own 1-day return <= -2 sigma60"),
     "RREC_EV4_HWM_FRACTION": (Decimal("0.9"), "R-REC1 EV4 total <= S7 hwm_usd x 0.9 (or the V6 first line)"),
+    "RREC_EV4_NEIGHBOR_MARGIN": (Decimal("1.03"), "t1-safety (judge2 G 5): a past session whose EV4 cannot be "
+                                 "rebuilt counts as open when a nearest known total is within 3% of the EV4 line "
+                                 "(the V6 approach margin, rule file 3) first line + 3%)"),
     "RREC_RG1_SESSIONS": (2, "R-REC1 RG1 two sessions after the event"),
     "RREC_RG3_SESSIONS": (2, "R-REC1 RG3 two consecutive closes above C0"),
     "RREC_RG4_DAY_SIGMA": (2.0, "R-REC1 RG4 |1-day| <= 2 sigma60"),

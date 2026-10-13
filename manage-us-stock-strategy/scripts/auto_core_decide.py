@@ -163,6 +163,124 @@ def equity_cash(cash: dict[str, Any] | None, holdings: list[dict[str, Any]] | No
     return values["order_available_cash"], EQUITY_CASH_ORDER_AVAILABLE
 
 
+def snapshot_holdings(snapshot: dict[str, Any] | None) -> dict[str, int]:
+    """{ticker: held quantity > 0} of a broker snapshot (F1's holdings; the EV4 backfill reads the same)."""
+    holdings: dict[str, int] = {}
+    for item in (snapshot or {}).get("holdings") or []:
+        quantity = item.get("held_quantity")
+        if isinstance(quantity, (int, float)) and not isinstance(quantity, bool) and quantity > 0:
+            holdings[str(item["ticker"]).upper()] = int(quantity)
+    return holdings
+
+
+# ---------------------------------------------------------------------------------------------
+# EV4 of past sessions without a recorded account (t1-safety, judge2 G 5)
+# ---------------------------------------------------------------------------------------------
+
+EV4_REBUILT = "REBUILT"
+EV4_NEIGHBOR_NEAR = "NEIGHBOR_NEAR"
+EV4_NEIGHBOR_CLEAR = "NEIGHBOR_CLEAR"
+EV4_NEIGHBOR_NONE = "NEIGHBOR_NONE"
+
+
+def _first_decide_session(run_day: str, item: dict[str, Any] | None, sessions: list[str]) -> str | None:
+    """The evaluation session of the first decide record; a record without one (it ended before the calendar)
+    gets the session it would have evaluated: the last session before its KST run day."""
+    if item and item.get("evaluation_session"):
+        return item["evaluation_session"]
+    earlier = [session for session in sessions if session < run_day]
+    return earlier[-1] if earlier else None
+
+
+def _rebuilt_total(session: str, output_root: Path, bars: dict[str, dict[str, Any]],
+                   multipliers: dict[str, Any]) -> tuple[Decimal | None, str | None]:
+    """(total, None) of a past session through F1's own functions (snapshot_holdings, equity_cash,
+    tickets.rule_file_nominal) from the T1 broker snapshot of the run day that evaluates it (the KST day after the
+    session) and the raw closes of that session in the bars decide already read; (None, reason) otherwise."""
+    path = Path(output_root) / (date.fromisoformat(session) + timedelta(days=1)).isoformat() / SNAPSHOT_FILE
+    if not path.is_file():
+        return None, "SNAPSHOT_MISSING"
+    try:
+        snapshot = load_json(path)
+        held = snapshot_holdings(snapshot)
+        total_cash, _basis = equity_cash(snapshot.get("cash"), snapshot.get("holdings"))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, ArithmeticError):
+        return None, "SNAPSHOT_UNREADABLE"
+    closes = {symbol: bars[symbol]["raw"]["sessions"].get(session, {}).get("close")
+              for symbol in held if symbol in bars and bars[symbol]["status"] == "OK"}
+    nominal = tickets_module.rule_file_nominal(held, closes, total_cash, multipliers)
+    if nominal.get("total") is None:
+        return None, nominal.get("status")
+    return nominal["total"], None
+
+
+def ev4_backfill_plan(*, previous_all: list[tuple[str, dict[str, Any] | None]], window: list[str],
+                      evaluation_session: str, sessions: list[str], output_root: Path,
+                      bars: dict[str, dict[str, Any]], multipliers: dict[str, Any]) -> dict[str, Any]:
+    """t1-safety (judge2 G 5): the past sessions whose EV4 no record holds - in the R-REC1 window, from the first
+    decide record's evaluation session on, before this evaluation session, without a record whose account.ev4_open
+    is a bool (a record that ended before F1, or none at all) - with their totals rebuilt where the run day's
+    snapshot and the closes allow. known: the totals of the recorded sessions (neighbours for the rest). hwm: the
+    S7 hwm a record of that session carries. evaluate_session finishes it with this session's S7 hwm and total."""
+    plan: dict[str, Any] = {"targets": [], "rebuilt": {}, "known": {}, "hwm": {}}
+    if not previous_all:
+        return plan
+    recorded: set[str] = set()
+    for _day, item in previous_all:
+        account = (item or {}).get("account") or {}
+        session = (item or {}).get("evaluation_session")
+        if not session:
+            continue
+        if isinstance(account.get("ev4_open"), bool):
+            recorded.add(session)
+        if account.get("total") is not None:
+            plan["known"][session] = Decimal(str(account["total"]))
+        if account.get("s7_hwm_usd") is not None:
+            plan["hwm"][session] = account["s7_hwm_usd"]
+    first = _first_decide_session(previous_all[0][0], previous_all[0][1], sessions)
+    if first is None:
+        return plan
+    plan["targets"] = [session for session in window
+                       if first <= session < evaluation_session and session not in recorded]
+    for session in plan["targets"]:
+        plan["rebuilt"][session] = _rebuilt_total(session, output_root, bars, multipliers)
+    return plan
+
+
+def ev4_backfill_resolve(plan: dict[str, Any] | None, *, hwm: Any, total: Decimal | None,
+                         evaluation_session: str) -> list[dict[str, Any]]:
+    """The ev4_backfill entries of a plan, one per target session: REBUILT = rules.ev4_open on the rebuilt total
+    (F1's function); otherwise the nearest known total before and after the session (recorded, rebuilt, or this
+    evaluation session's) decides cautiously: any within RREC_EV4_NEIGHBOR_MARGIN of the EV4 line
+    (rules.ev4_open(total / margin, hwm)) = open (NEIGHBOR_NEAR), else not open (NEIGHBOR_CLEAR); no known total
+    at all = open (NEIGHBOR_NONE, fail closed for buys). hwm = the session record's S7 hwm, else this session's."""
+    if not plan:
+        return []
+    known = dict(plan["known"])
+    if total is not None:
+        known[evaluation_session] = total
+    for session, (rebuilt, _reason) in plan["rebuilt"].items():
+        if rebuilt is not None:
+            known[session] = rebuilt
+    margin = rules.C["RREC_EV4_NEIGHBOR_MARGIN"]
+    entries = []
+    for session in plan["targets"]:
+        session_hwm = plan["hwm"].get(session, hwm)
+        rebuilt, reason = plan["rebuilt"][session]
+        if rebuilt is not None:
+            entries.append({"session": session, "method": EV4_REBUILT, "ev4_open": rules.ev4_open(rebuilt, session_hwm),
+                            "total": float(rebuilt), "neighbors": [], "reason": None})
+            continue
+        before = max((item for item in known if item < session), default=None)
+        after = min((item for item in known if item > session), default=None)
+        neighbors = [item for item in (before, after) if item is not None]
+        near = [item for item in neighbors if rules.ev4_open(known[item] / margin, session_hwm)]
+        method = EV4_NEIGHBOR_NEAR if near else EV4_NEIGHBOR_CLEAR if neighbors else EV4_NEIGHBOR_NONE
+        entries.append({"session": session, "method": method, "ev4_open": method != EV4_NEIGHBOR_CLEAR,
+                        "total": None, "neighbors": neighbors, "reason": reason})
+    return entries
+
+
 # ---------------------------------------------------------------------------------------------
 # Broker reads (F6 only: daily order fills and open orders)
 # ---------------------------------------------------------------------------------------------
@@ -501,13 +619,9 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
     reconcile = load_json(reconcile_path) if reconcile_path.is_file() else None
     decision["inputs"].update(broker_snapshot=_file_record(snapshot_path if snapshot else None),
                               reconcile=_file_record(reconcile_path if reconcile else None))
-    holdings: dict[str, int] = {}
+    holdings = snapshot_holdings(snapshot)
     cash = None
     if snapshot is not None:
-        for item in snapshot.get("holdings") or []:
-            quantity = item.get("held_quantity")
-            if isinstance(quantity, (int, float)) and not isinstance(quantity, bool) and quantity > 0:
-                holdings[str(item["ticker"]).upper()] = int(quantity)
         cash = _decimal((snapshot.get("cash") or {}).get("order_available_cash"))
     # t2-equity-cash: the cash of the total equity (rule-file N, V6, EV4); `cash` stays the buy cash and G1's.
     total_cash, cash_basis = equity_cash((snapshot or {}).get("cash"), (snapshot or {}).get("holdings"))
@@ -609,6 +723,9 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         seen.update((item or {}).get("facts_seen") or [])
     ev4_sessions = [item.get("evaluation_session") for _day, item in previous_all
                     if item and (item.get("account") or {}).get("ev4_open")]
+    # t1-safety (judge2 G 5): sessions whose record ended before F1 (or that have none) get their EV4 back.
+    backfill_plan = ev4_backfill_plan(previous_all=previous_all, window=window, evaluation_session=evaluation_session,
+                                      sessions=sessions, output_root=output_root, bars=bars, multipliers=multipliers)
     checks = {symbol: inputs.card_check(symbol, registry, watchlist, repo=repo, held=symbol in holdings)
               for symbol in sorted(set(holdings) | set(members))}
     for check in checks.values():
@@ -635,7 +752,14 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         research={"block": research_block, "sessions": research["sessions"], "damage": research["damage"]},
         input_hashes={"registry": registry.get("sha256"),
                       "research_record": decision["inputs"]["research_record"]["sha256"],
-                      "t1_result": decision["inputs"]["t1_result"]["sha256"]})
+                      "t1_result": decision["inputs"]["t1_result"]["sha256"]},
+        ev4_backfill=backfill_plan)
+    decision["ev4_backfill"] = session["ev4_backfill"]
+    undetermined = [entry["session"] for entry in session["ev4_backfill"] if entry["method"] != EV4_REBUILT]
+    if undetermined:
+        exceptions.append(("EV4_UNDETERMINED", f"EV4_UNDETERMINED:{','.join(undetermined)} \u2014 "
+                           "EV4 \ubbf8\ud655\uc815(\uae30\ub85d\u00b7\uc2a4\ub0c5\uc0f7 \uc5c6\uc74c), "
+                           "\uc774\uc6c3 \ucd1d\uc790\uc0b0 3% \uaddc\uce59\uc73c\ub85c \ud310\uc815"))
     gate1 = session["gate1"]
     decision.update(symbols={symbol: _symbol_view(result) for symbol, result in session["symbols"].items()},
                     evidence=session["evidence"], buy_requirements=session["rows"], tickets=session["planned"]["tickets"],
@@ -826,7 +950,8 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                      ev4_sessions: list[str], seen_fact_ids: set[str], policy: dict[str, Any], config: dict[str, Any],
                      keys: dict[str, Any], gate0: list[str], gate1: list[str],
                      s7_runner: Callable[[list[dict[str, Any]]], dict[str, Any]],
-                     research: dict[str, Any], input_hashes: dict[str, Any]) -> dict[str, Any]:
+                     research: dict[str, Any], input_hashes: dict[str, Any],
+                     ev4_backfill: dict[str, Any] | None = None) -> dict[str, Any]:
     """F1 judgments, F4 requirements and gates, F5 tickets for one evaluation session.
 
     decide and auto_core_replay both call this (one implementation). bars are load_symbol outputs for every
@@ -837,6 +962,8 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     those records}. ev4_sessions: earlier EV4 sessions; this session's EV4 is added here before R-REC1.
     cash: the buy cash (order-available). deposit: the USD cash of the total equity behind the rule-file N, V6 and
     EV4 (t2-equity-cash: decide passes equity_cash's choice, the replay its one cash; the keyword name is kept).
+    ev4_backfill (t1-safety, decide only; the replay computes every session): ev4_backfill_plan's past sessions
+    without a recorded EV4, finished here with this session's S7 hwm and total; the open ones join ev4_sessions.
     """
     sessions = sorted(calendar["sessions"])
     later = [item for item in sessions if item > evaluation_session]
@@ -905,7 +1032,10 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     # r2 R2-3: this session's EV4 (one function, the replay goes through here too) enters R-REC1 at once.
     account["ev4_open"] = rules.ev4_open(nominal.get("total"), s7.get("hwm_usd"))
     account["s7_hwm_usd"] = s7.get("hwm_usd")
-    ev4_all = sorted(set(ev4_sessions) | ({evaluation_session} if account["ev4_open"] else set()))
+    backfill = ev4_backfill_resolve(ev4_backfill, hwm=s7.get("hwm_usd"), total=nominal.get("total"),
+                                    evaluation_session=evaluation_session)
+    ev4_all = sorted(set(ev4_sessions) | {entry["session"] for entry in backfill if entry["ev4_open"]}
+                     | ({evaluation_session} if account["ev4_open"] else set()))
     for symbol in sorted(symbols_out):
         shocks[symbol] = rules.rrec1(benchmark=series.get(rules.rg2_benchmark(sectors.get(symbol))),
                                      candidate=series.get(symbol), evaluation_session=evaluation_session,
@@ -974,7 +1104,7 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
             "nominal": nominal, "account": account, "exposure": exposure, "shock": shock, "shocks": shocks,
             "earnings_calendar": {symbol: record for symbol, record in (earnings or {}).items()},
             "facts_seen": facts_seen, "gate1": gate1, "proposal_results": proposal_results, "series": series,
-            "buy_session": buy_session}
+            "buy_session": buy_session, "ev4_backfill": backfill}
 
 
 

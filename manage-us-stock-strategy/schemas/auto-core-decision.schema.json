@@ -146,6 +146,23 @@
     },
     "candidates": {"type": "array", "items": {"type": "object"}},
     "blocked": {"type": "array", "items": {"type": "object"}},
+    "ev4_backfill": {
+      "description": "t1-safety (judge2 G 5): past sessions in the R-REC1 window, from the first decide record's evaluation session to before this one, that no record's account.ev4_open covers (the record ended before F1, or there is none). REBUILT = EV4 from the T1 broker snapshot of the run day after the session and that session's raw closes through F1's own functions; otherwise the nearest known totals before and after decide cautiously: NEIGHBOR_NEAR (one within 3% of the EV4 line, open), NEIGHBOR_CLEAR (not open), NEIGHBOR_NONE (no known total, open). Open sessions join R-REC1 as EV4; any session not REBUILT pushes EV4_UNDETERMINED. Absent on a record that ended before F1.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["session", "method", "ev4_open", "total", "neighbors", "reason"],
+        "properties": {
+          "session": {"type": "string", "format": "date"},
+          "method": {"enum": ["REBUILT", "NEIGHBOR_NEAR", "NEIGHBOR_CLEAR", "NEIGHBOR_NONE"]},
+          "ev4_open": {"type": "boolean"},
+          "total": {"type": ["number", "null"]},
+          "neighbors": {"type": "array", "items": {"type": "string", "format": "date"}},
+          "reason": {"type": ["string", "null"]}
+        }
+      }
+    },
     "registry_flags": {"type": "array", "items": {"type": "string"}},
     "t1_mismatch": {"type": "string"},
     "next_action_for_user": {"type": ["string", "null"]},

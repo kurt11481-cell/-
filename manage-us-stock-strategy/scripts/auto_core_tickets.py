@@ -534,11 +534,18 @@ def ticket_rows(ticket: dict[str, Any], dated_rows: list[tuple[str, dict[str, An
     days: its ticker and side, an (ord_dt, ord_no) not attributed to a ticket already, and on its issue KST day
     only ord_time >= the issue time (an order placed before the ticket was issued is not for it). orders = the
     (ord_dt, ord_no) of the rows kept. A candidate row without an order number, or an issue-day row whose order
-    time (or the ticket's issue time) cannot be read, makes the outcome unknown (note set, fail closed)."""
+    time (or the ticket's issue time) cannot be read, makes the outcome unknown (note set, fail closed).
+    t1-safety (judge2 G 2, T1's FILL_ROW_DUPLICATE_CONFLICT rule): an (ord_dt, ord_no) that comes twice as the
+    very same row counts once; a candidate row whose (ord_dt, ord_no) also comes as a different row makes the
+    outcome unknown (ORD_NO_DUPLICATE_CONFLICT)."""
     side_name = SIDE_NAMES[ticket["side"]]
     start = issue_time(ticket)
     rows: list[dict[str, Any]] = []
     orders: list[dict[str, str]] = []
+    by_order: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for day, row in dated_rows:
+        by_order.setdefault((day, str(row.get("ord_no") or "").strip()), []).append(row)
+    used: set[tuple[str, str]] = set()
     for day, row in dated_rows:
         if str(row.get("stk_cd") or "").strip().upper() != ticket["ticker"] \
                 or str(row.get("slby_tp_nm") or "").strip() != side_name:
@@ -546,6 +553,11 @@ def ticket_rows(ticket: dict[str, Any], dated_rows: list[tuple[str, dict[str, An
         number = str(row.get("ord_no") or "").strip()
         if not number:
             return {"rows": [], "orders": [], "note": "ORD_NO_UNREADABLE"}
+        if any(other != row for other in by_order[(day, number)]):
+            return {"rows": [], "orders": [], "note": "ORD_NO_DUPLICATE_CONFLICT"}
+        if (day, number) in used:  # the very same row again: counted once
+            continue
+        used.add((day, number))
         if (day, number) in attributed:
             continue
         if day == ticket["issued_day"]:
