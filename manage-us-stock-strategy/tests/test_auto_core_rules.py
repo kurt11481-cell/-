@@ -168,6 +168,40 @@ class CommonRuleBoundaryTests(unittest.TestCase):
         self.assertEqual(self.state("C6-", fail), "hit")
         self.assertEqual(self.state("C6-", series(close=[100.0] * 27 + [98.0, 98.49, 98.40], ema20=e20)), "none")
 
+    def test_c6_minus_needs_the_rebound_session_to_close_up(self):
+        # Rule line 110 "rebounded session" = c(t-1) > c(t-2), strict (prereg 79 (ii)).
+        e20 = [100.0] * 30
+        self.assertEqual(self.state("C6-", series(close=[100.0] * 27 + [98.0, 98.50, 98.40], ema20=e20)), "hit")
+        self.assertEqual(self.state("C6-", series(close=[100.0] * 27 + [98.60, 98.50, 98.40], ema20=e20)), "none")
+        self.assertEqual(self.state("C6-", series(close=[100.0] * 27 + [98.50, 98.50, 98.40], ema20=e20)), "none")
+
+    def test_c6_plus_needs_the_pullback_session_to_close_down(self):
+        # Rule line 110 "pulled-back session" = c(t-1) < c(t-2), strict (prereg 79 (ii)).
+        e20 = [100.0] * 30
+        self.assertEqual(self.state("C6+", series(close=[100.0] * 27 + [102.0, 101.50, 101.60], ema20=e20)), "hit")
+        self.assertEqual(self.state("C6+", series(close=[100.0] * 27 + [101.40, 101.50, 101.60], ema20=e20)), "none")
+        self.assertEqual(self.state("C6+", series(close=[100.0] * 27 + [101.50, 101.50, 101.60], ema20=e20)), "none")
+
+    def test_c6_missing_close_two_sessions_back_is_unknown(self):
+        e20 = [100.0] * 30
+        minus = rules.raw_common(series(close=[100.0] * 27 + [None, 98.50, 98.40], ema20=e20), C8)
+        self.assertIsNone(minus["C6-"][29])
+        plus = rules.raw_common(series(close=[100.0] * 27 + [None, 101.50, 101.60], ema20=e20), C8)
+        self.assertIsNone(plus["C6+"][29])
+
+    def test_c6_mu_shape_falling_session_is_not_a_rebound(self):
+        # MU 2026-10-05..10-13 closes and EMA20; 10-09 fell 0.72%, so 10-12 is not a C6- (it was before the fix).
+        closes = [1063.71, 1045.44, 1087.84, 1035.47, 1028.00, 988.96, 953.19]
+        e20 = [1035.27, 1036.24, 1041.15, 1040.61, 1039.41, 1034.60, 1026.85]
+        data = series(close=[1200.0] * 23 + closes, ema20=[1000.0] * 23 + e20)
+        raw = rules.raw_common(data, C8)
+        self.assertIs(raw["C6+"][25], True)    # 10-07: 10-06 pulled back to within 1.5% above EMA20
+        self.assertIs(raw["C6-"][28], False)   # 10-12: 10-09 closed below 10-08
+        self.assertEqual([index for index in range(30) if raw["C6+"][index]], [25])
+        self.assertEqual([index for index in range(30) if raw["C6-"][index]], [])
+        self.assertEqual(self.state("C6+", data, "C6-"), "hit")
+        self.assertEqual(self.state("C6-", data, "C6+"), "none")
+
     def test_c8_thresholds(self):
         self.assertEqual(self.state("C8-", series(ret1=at([0.0] * 30, 29, -0.10))), "hit")
         self.assertEqual(self.state("C8-", series(ret1=at([0.0] * 30, 29, -0.0999))), "none")

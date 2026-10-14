@@ -612,7 +612,7 @@ def soxl_two_new_cues():
     """SOXL closes whose last session newly hits two + kinds (new high held C5+, pullback rebound C6+)."""
     closes = [round(100 + (0.1 if index % 2 else -0.1), 4) for index in range(len(DAYS) - 3)]
     closes[-1] = 99.9
-    return closes + [100.05, 100.3, 100.5]
+    return closes + [99.85, 100.3, 100.5]
 
 
 def falling_soxl():
@@ -631,7 +631,7 @@ class ResearchRecordGateTests(unittest.TestCase):
 
     def test_no_research_record_blocks_the_index_etf_buy(self):
         result = self.soxl_case(ok=False)
-        self.assertEqual(result["evidence"]["SOXL"]["buy"]["new_kinds"], ["new_high", "pullback_rebound"])
+        self.assertEqual(result["evidence"]["SOXL"]["buy"]["new_kinds"], ["new_high", "trend_recover"])
         self.assertIn({"symbol": "SOXL", "side": "buy", "trigger": "NEW_EVIDENCE"}, result["planned"]["candidates"])
         self.assertEqual(tickets_of(result, "SOXL", "buy"), [])
         self.assertIn("RESEARCH_RECORD_NOT_OK:RESEARCH_RECORD_MISSING", blocked_reasons(result, "SOXL", "buy"))

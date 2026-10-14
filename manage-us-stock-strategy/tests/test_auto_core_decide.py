@@ -479,7 +479,7 @@ def _soxl_two_new_cues():
     """SOXL closes whose last session newly hits two + kinds (new high held C5+, pullback rebound C6+)."""
     closes = [round(100 + (0.1 if index % 2 else -0.1), 4) for index in range(len(DAYS) - 3)]
     closes[-1] = 99.9
-    return closes + [100.05, 100.3, 100.5]
+    return closes + [99.85, 100.3, 100.5]
 
 
 class ResearchRecordBuyGateTests(unittest.TestCase):

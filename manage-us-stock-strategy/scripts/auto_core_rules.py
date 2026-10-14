@@ -328,12 +328,15 @@ def raw_common(series: dict[str, Any], c8: dict[str, float | None]) -> dict[str,
         raw["C4-"][i] = _all(_cmp(_at(close, i - 1), "gt", line_high), _cmp(close[i], "lt", line_high))
         raw["C4+"][i] = _all(_cmp(_at(close, i - 1), "lt", line_low), _cmp(close[i], "gt", line_low))
         band = C["C6_BAND"]
+        # Rule line 110 "rebounded/pulled-back session" = s closes above/below its prior close (prereg 79 (ii)).
         p_close, pp_close, pp_e20 = _at(close, i - 1), _at(close, i - 2), _at(e20, i - 2)
         raw["C6-"][i] = _all(_cmp(pp_close, "lt", pp_e20), _cmp(p_close, "lt", p_e20),
                              _cmp(p_close, "ge", None if p_e20 is None else p_e20 * (1 - band)),
+                             _cmp(p_close, "gt", pp_close),
                              _cmp(close[i], "lt", p_close), _cmp(close[i], "lt", e20[i]))
         raw["C6+"][i] = _all(_cmp(pp_close, "gt", pp_e20), _cmp(p_close, "gt", p_e20),
                              _cmp(p_close, "le", None if p_e20 is None else p_e20 * (1 + band)),
+                             _cmp(p_close, "lt", pp_close),
                              _cmp(close[i], "gt", p_close), _cmp(close[i], "gt", e20[i]))
         one, five = c8.get("one_day"), c8.get("five_day")
         raw["C8-"][i] = _any(_cmp(s["ret1"][i], "le", None if one is None else -one),

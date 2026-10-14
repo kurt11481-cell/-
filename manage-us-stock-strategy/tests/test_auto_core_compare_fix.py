@@ -202,7 +202,7 @@ class EventDayMarginTests(unittest.TestCase):
         self.assertEqual(rules._event_day(both, resolved, 29), 28)         # the last firing, after the opposite
 
     def test_card_alias_of_an_event_rule_uses_its_firing_session(self):
-        closes = [100.0] * 60 + [100.5, 100.8, 101.0, 100.9, 100.85]  # C6+ fires at t-2 only
+        closes = [100.0] * 60 + [100.5, 100.3, 101.0, 100.9, 100.85]  # C6+ fires at t-2 only
         series = series_of(closes)
         t, event = len(closes) - 1, len(closes) - 3
         raw = rules.raw_common(series, rules.c8_thresholds(None, 1))
