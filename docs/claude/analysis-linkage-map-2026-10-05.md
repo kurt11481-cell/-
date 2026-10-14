@@ -30,12 +30,12 @@ summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는�
 
 | 작업(주기) | 쓰는 곳 | 읽는 작업 | 상태 |
 |---|---|---|---|
-| SAVE 시장환경 메모(매일 06:15) | workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md + web-feed/<날짜>/ | 통합 점검 4), Next 샌디스크 L1, 월요일 점검 2), 카드 작성(INDEX) | 연결 |
+| SAVE 시장환경 메모 v2.2(매일 06:15) | workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md + web-feed/<날짜>/ + LATEST_TICKER_LEADS.json(종목 단서, 2026-10-14 st-1014 B) | 통합 점검 4), 통합 점검 6)(단서 → 공식 확인 → 연구 기록), Next 샌디스크 L1, 월요일 점검 2), 카드 작성(INDEX) | 연결(단서 파일 첫 실행 10/15) |
 | 월요일 개장 전 점검(월 21:20) | SAVE 메모 + workspace/outputs/pre-open/<날짜>-monday.md | 통합 점검 2-1, Next 샌디스크 L1b, Cowork(예약 누락) | 연결(10/5, 첫 기록 확인) |
 | 개장 전 이벤트 일회성(10/14·10/15·11/6·11/10·11/13) | workspace/outputs/pre-open/<날짜>-<이벤트>.md | 통합 점검 2-1(공식 사실 재사용·TSMC→S2·S3·U2), Next 샌디스크 L1b, M6 v2·카드(INDEX) | 연결(10/5) |
 | 개장 전 이벤트 점검(일정표) v1.1(평일 09:20 ET, 2026-10-13 결정 ev-calendar-auto a, 10/14 v1.1) | workspace/outputs/pre-open/<날짜>-events.md — "## 공식 사실"·"## 다음 작업이 확인할 항목"(빅테크 실적 → SOXL S3 판정)·오늘 주문표 이벤트 노출(event_calendar.py, event-ctx2 병합 뒤). 일정 없는 날은 기록 없음. 입력: docs/claude/event-calendar.json, LATEST_DECISION.json(읽기만), 케이스 판정표 docs/claude/event-strategy-2026-10-13.md 4절 | 통합 점검 2-1(두 절·머리말만 읽음), Next 샌디스크 L1b, 카드·M6(INDEX), 이벤트 대비 전략 | 연결(v1.1 10/14 00:2x 교체, 첫 실행 10/14 09:20 ET) |
 | 주문표 이벤트 노출 event-ctx2(개발 중, 일반 등급 — 원안 event-ctx 폐기: 코어가 일정표를 읽지 않음) | 채점 보고서 ticket_results[].event_exposure(사후 분류, own_earnings 포함)·event_calendar, 요약 event_overnight / CLI event_calendar.py(읽기 전용) | 개장 전 이벤트 점검 v1.1 0-1, fx-6 뒤 r-rec1 사전 등록("이벤트 날 매수 보류" 판정 자료) | 예정(큐 등록 10/14) |
-| 보유·관심 통합 점검 v3.12.2(화~토 06:40) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
+| 보유·관심 통합 점검 v3.12.4(화~토 06:40, 2026-10-14 교체) | 통합점검 대시보드 Artifact 저장소 runs | 개장 전 일회성 3), 월요일 4b, Next 샌디스크 L2, MVLL 알림, Cowork 카드 | 연결 |
 | 외부자료 PDF 처리(수시, 스킬) | 외부자료 .md 캐시 + docs/claude/external-claims-ledger.md | 통합 점검 7), Next 샌디스크 L3·R4 | 연결 |
 | 카드·M6 비교(Cowork 수시) | docs/claude 카드 문서 + INDEX | 통합 점검(문서 읽기), Next 샌디스크, 관심 명단 | 연결 |
 | Next 샌디스크 발굴 v3.1(토 07:32) | docs/claude/next-sandisk-scan-*.md + library/research/ | INDEX → 관심 명단 재평가(예정)·M6 v2·카드 (사람 수락 뒤) | 연결 |

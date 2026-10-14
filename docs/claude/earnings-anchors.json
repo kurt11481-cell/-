@@ -1,0 +1,232 @@
+{
+ "schema": "earnings-anchors-1.0",
+ "updated_at": "2026-10-14T11:30:00+09:00",
+ "decision": "사용자 \"결정 earn-na: a\" (2026-10-14 11:04 KST) — docs/claude/earnings-not-announced-review-2026-10-14.md",
+ "rule": "통합 점검 4단계 finalize가 읽는다. 종목별 예상일 E = 기준일 + 364일 또는 + 728일(기준일과 지난 연구 기록의 VERIFIED 발표일 모두). 오늘이 E − 21일 ~ E + 21일 안이고 그 분기 발표(E ± 35일 안의 지난 VERIFIED 발표일)가 아직 없으면, 또는 E가 오늘 − 21일 ~ 오늘 + 130일 안에 하나도 없으면 NOT_ANNOUNCED를 뺀다(코어가 금지 구간으로 봄 — 매수만 막힘). MVLL은 MRVL 기준을 쓴다.",
+ "maintenance": "새 관심·보유 종목은 이 표에 직전 4개 분기 발표일을 더해야 NOT_ANNOUNCED가 쓰인다(없으면 매수만 막힘). 표는 + 728일 투영으로 2027-08까지 유효.",
+ "sources": "SEC data.sec.gov submissions(8-K item 2.02 filingDate), NBIS는 nebius.com 보도자료(6-K 제출자). 조회 2026-10-14 11:2x KST, Claude 내장 브라우저·WebFetch.",
+ "aliases": {
+  "MVLL": "MRVL"
+ },
+ "anchors": {
+  "PWR": [
+   {
+    "session": "2025-07-31",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312525169944/d28227d8k.htm"
+   },
+   {
+    "session": "2025-10-30",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312525257378/d851878d8k.htm"
+   },
+   {
+    "session": "2026-02-19",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312526058069/d101511d8k.htm"
+   },
+   {
+    "session": "2026-04-30",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312526193918/d107542d8k.htm"
+   },
+   {
+    "session": "2026-07-30",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1050915/000119312526324855/d56853d8k.htm"
+   }
+  ],
+  "BE": [
+   {
+    "session": "2025-07-31",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828025036998/be-20250731.htm"
+   },
+   {
+    "session": "2025-10-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828025046745/be-20251028.htm"
+   },
+   {
+    "session": "2026-02-05",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026005798/be-20260205.htm"
+   },
+   {
+    "session": "2026-04-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026027913/be-20260428.htm"
+   },
+   {
+    "session": "2026-07-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026050150/be-20260728.htm"
+   }
+  ],
+  "DELL": [
+   {
+    "session": "2025-08-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199625000096/dell-20250828.htm"
+   },
+   {
+    "session": "2025-11-25",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199625000118/dell-20251125.htm"
+   },
+   {
+    "session": "2026-02-26",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000003/dell-20260226.htm"
+   },
+   {
+    "session": "2026-05-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000021/dell-20260528.htm"
+   },
+   {
+    "session": "2026-09-01",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000039/dell-20260901.htm"
+   }
+  ],
+  "LITE": [
+   {
+    "session": "2025-08-12",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828025039896/lite-20250812.htm"
+   },
+   {
+    "session": "2025-11-04",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828025048860/lite-20251104.htm"
+   },
+   {
+    "session": "2026-02-03",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828026005005/lite-20260203.htm"
+   },
+   {
+    "session": "2026-05-05",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828026030530/lite-20260505.htm"
+   },
+   {
+    "session": "2026-08-11",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1633978/000162828026055726/lite-20260811.htm"
+   }
+  ],
+  "MRVL": [
+   {
+    "session": "2025-08-28",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563225000187/mrvl-20250828.htm"
+   },
+   {
+    "session": "2025-12-02",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563225000193/mrvl-20251202.htm"
+   },
+   {
+    "session": "2026-03-05",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000006/mrvl-20260305.htm"
+   },
+   {
+    "session": "2026-05-27",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000014/mrvl-20260527.htm"
+   },
+   {
+    "session": "2026-08-27",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000022/mrvl-20260827.htm"
+   }
+  ],
+  "MU": [
+   {
+    "session": "2025-09-23",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312525000024/mu-20250923.htm"
+   },
+   {
+    "session": "2025-12-17",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312525000044/mu-20251217.htm"
+   },
+   {
+    "session": "2026-03-18",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000004/mu-20260318.htm"
+   },
+   {
+    "session": "2026-06-24",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/mu-20260624.htm"
+   },
+   {
+    "session": "2026-09-30",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/mu-20260930.htm"
+   }
+  ],
+  "NBIS": [
+   {
+    "session": "2025-11-11",
+    "kind": "COMPANY_PRESS_RELEASE",
+    "note": "Q3 2025 results, before open (date notice 2025-10-22)",
+    "source_url": "https://nebius.com/newsroom/nebius-group-n-v-announces-date-of-third-quarter-2025-results-and-conference-call"
+   },
+   {
+    "session": "2026-02-12",
+    "kind": "COMPANY_PRESS_RELEASE",
+    "note": "Q4 and FY2025 results, before open (date notice 2026-01-30)",
+    "source_url": "https://nebius.com/newsroom/nebius-group-nv-announces-date-of-fourth-quarter-and-full-year-2025-results-and-conference-call"
+   },
+   {
+    "session": "2026-05-13",
+    "kind": "COMPANY_PRESS_RELEASE",
+    "note": "Q1 2026 results, before open (date notice 2026-05-01)",
+    "source_url": "https://nebius.com/newsroom/nebius-group-announces-date-of-first-quarter-2026-results-and-conference-call"
+   },
+   {
+    "session": "2026-08-12",
+    "kind": "COMPANY_PRESS_RELEASE",
+    "note": "Q2 2026 results, before open (date notice 2026-07-29)",
+    "source_url": "https://nebius.com/newsroom/nebius-group-announces-date-of-second-quarter-2026-results-and-conference-call"
+   }
+  ]
+ },
+ "order_authority": false
+}
