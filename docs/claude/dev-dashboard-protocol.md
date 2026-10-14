@@ -3,6 +3,7 @@
 - 관제판: https://claude.ai/artifact/PM54MdPfrgYt4LfFxQT9Tu (사용자 전용, 저장소 = artifact db)
 - 목적: 여러 세션에서 동시에 진행되는 개발 작업의 상태·재개 조건·결정 대기를 사용자 기억 대신 한곳에 둔다.
 - 권한: 표시·기록 전용. 주문·정책·상태 파일과 무관하다. order_authority=false.
+- 화면 디자인: 관제판 HTML을 재게시할 때 docs/claude/artifact-design-rules-2026-10-14.md의 색·글자·크기 규칙을 유지한다(2026-10-14 사용자 지시).
 
 ## 1. 언제 갱신하나 (CLAUDE.md Session hygiene 규칙, 2026-10-03 사용자 승인)
 
