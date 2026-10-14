@@ -2,7 +2,7 @@
 id: review-stability-2026-10-13
 title: 재검토 없이 끝나는 1차 검토 — 재검토에서 결과가 바뀐 원인과 규칙
 date: 2026-10-13
-status: 적용됨 r2 — r1 사용자 "적용 (권장)"(10/13 23:5x KST, V1~V4) · r2 사용자 지시 "재검토가 필요없도록 1차 검토에서 해결해야한다"·"재검토시 1차 검토의 오류가 발견되어 결과가 바뀜"(23:54~55 KST, V5 내장 재검토 추가, 이 문서에 V5 2회 적용). CLAUDE.md Working rules 95행 1줄(sha256 c4146cbb…). 커밋은 5-4 순서대로 사용자 한 줄. 프로젝트 지침 5-2는 사용자가 붙여 넣음
+status: 적용됨 r2 — r1 사용자 "적용 (권장)"(10/13 23:5x KST, V1~V4) · r2 사용자 지시 "재검토가 필요없도록 1차 검토에서 해결해야한다"·"재검토시 1차 검토의 오류가 발견되어 결과가 바뀜"(23:54~55 KST, V5 내장 재검토 추가, 이 문서에 V5 2회 적용). CLAUDE.md Working rules 95행 1줄(sha256 c4146cbb…). 커밋 755054d(사용자, 2026-10-14 08:56 KST, t1-safety 병합 뒤). 프로젝트 지침 5절 끝에 5-2 문단 반영(사용자, 2026-10-14 08:58 KST, project_info로 원문 일치 확인)
 consumers: CLAUDE.md Working rules(Cowork·대화형 Claude Code 검토 세션) · 프로젝트 지침 5절(Chat) · 내장 재검토 subagent(3-1 지시문) · 사용자 재검토를 받은 세션(2절에 덧붙임, 3절 렌즈 개정)
 weekly_user_touch: 0 (한 번만: CLAUDE.md 커밋 1줄 · 프로젝트 지침 붙여 넣기 1)
 model: Opus 5.5 · high
@@ -103,10 +103,10 @@ model: Opus 5.5 · high
 
 ### 5-4 CLAUDE.md 커밋 순서 (사용자 한 줄)
 - 개발 파이프라인 dev-merge는 run 기준 커밋 뒤에 docs/claude 밖 커밋이 있으면 멈춘다(STOP_BASE_MOVED non_docs_commits, tools/dev_pipeline/devpipe.py 1951~1953행). 2026-10-14 00시 기준 t1-safety가 NEEDS_APPROVAL로 병합 대기(workspace/outputs/dev-runs/LATEST.json, base 3edc19f).
-- 그래서 CLAUDE.md 커밋은 대기·실행 중인 run이 없을 때 한다: LATEST가 병합 안 된 READY_TO_MERGE·NEEDS_APPROVAL이 아니고(병합 뒤에도 status는 그대로, merged_at이 생김 — devpipe.py do_merge), docs/claude/_dev-queue가 비었고, 최신 _queue/<UTC 날짜>.log의 마지막 "DEV-RUN start" 뒤에 "DEV-RUN end"가 있을 때(LATEST는 run 끝에만 쓰이고 큐 파일은 시작 때 _taken으로 옮겨짐).
+- 그래서 CLAUDE.md 커밋은 대기·실행 중인 run이 없을 때 한다: LATEST가 병합 안 된 READY_TO_MERGE·NEEDS_APPROVAL이 아니고(병합 뒤에도 status는 그대로, merged_at이 생김 — devpipe.py do_merge), docs/claude/_dev-queue가 비었고, 최근 _queue 로그 2개(파일 이름은 KST 날짜 — 2026-10-14.log에 15:30:06Z 줄이 있음)를 이어서 본 마지막 "DEV-RUN start" 뒤에 "DEV-RUN end"가 있을 때(자정을 넘긴 실행도 잡도록 2개)(LATEST는 run 끝에만 쓰이고 큐 파일은 시작 때 _taken으로 옮겨짐).
 - 아래 한 줄이 그 조건을 스스로 확인하고, 안전할 때만 커밋한다(Windows에서 실행해 보지는 못함 — 오류가 나면 그대로 알려 주면 됨):
 ```
-$r="E:\사업\##금동한\코덱스저장소"; $l=Get-Content "$r\workspace\outputs\dev-runs\LATEST.json" -Raw | ConvertFrom-Json; $q=Get-ChildItem "$r\workspace\outputs\dev-runs\_queue\*.log" | Sort-Object Name | Select-Object -Last 1; $s=(Select-String -Path $q.FullName -Pattern 'DEV-RUN (start|end)' | Select-Object -Last 1).Line; if ((($l.status -in 'READY_TO_MERGE','NEEDS_APPROVAL') -and -not $l.merged_at) -or (Get-ChildItem "$r\docs\claude\_dev-queue" -File -ErrorAction SilentlyContinue) -or ($s -match 'DEV-RUN start')) { "WAIT: a dev run is pending or running - commit later" } else { git -C $r commit -m "docs: CLAUDE.md review stability rule (review-stability-2026-10-13)" -- CLAUDE.md }
+$r="E:\사업\##금동한\코덱스저장소"; $l=Get-Content "$r\workspace\outputs\dev-runs\LATEST.json" -Raw | ConvertFrom-Json; $q=Get-ChildItem "$r\workspace\outputs\dev-runs\_queue\*.log" | Sort-Object Name | Select-Object -Last 2; $s=(Select-String -Path $q.FullName -Pattern 'DEV-RUN (start|end)' | Select-Object -Last 1).Line; if ((($l.status -in 'READY_TO_MERGE','NEEDS_APPROVAL') -and -not $l.merged_at) -or (Get-ChildItem "$r\docs\claude\_dev-queue" -File -ErrorAction SilentlyContinue) -or ($s -match 'DEV-RUN start')) { "WAIT: a dev run is pending or running - commit later" } else { git -C $r commit -m "docs: CLAUDE.md review stability rule (review-stability-2026-10-13)" -- CLAUDE.md }
 ```
 - 적용 시점: 작업 폴더의 CLAUDE.md는 편집 뒤 새로 시작하는 Cowork·대화형 Claude Code 세션부터 적용된다(이미 열린 세션은 시작 때 사본). 커밋하지 않은 상태는 병합을 막지 않는다(병합은 staged 변경과 사이 커밋만 본다, 1918·1951행).
 - 변경 경로: 규칙 문구만 바꾸는 변경(런타임 변경 없음) — Cowork 편집 + 사용자 커밋. 선례 29ad21d(10/12, CLAUDE.md만 10줄 추가, redesign-t2-claude-md-proposal-2026-10-12.md).
@@ -127,3 +127,4 @@ $r="E:\사업\##금동한\코덱스저장소"; $l=Get-Content "$r\workspace\outp
 - 2회차(2026-10-14 00시, 반영분만, 172,787토큰): 15건, "바꿈" 4건(3-1 Claude Code 저장소 접근 · 5-4 실행 중 run 놓침 · 재검토 규칙 "바뀐 입력만"과 U/S 모순 · V1 영문 "chat turn" 범위). 안 바꿈 11건(제외 목록 모든 subagent · V3 개발·규칙 한정 · 코드 변경 경로 · 변경 경로 근거 · 5-2 매도 · 규칙·개발 fail-closed=NO_CHANGE · 적용 시점 · 바이트 · 10번 행 번호 · 사용자 9건 · 14번 미해결 표기).
 - 본 세션 원문 재확인: _queue/2026-10-13.log(DEV-RUN start 12:05:08Z → end 12:53:20Z) · B7 13·14·41행 · git show 29ad21d(CLAUDE.md만) · do_merge의 write_latest(status 유지, merged_at 추가). 나머지는 이 문서·CLAUDE.md 95행 문구로 확인. 15건 모두 반영.
 - 상한 2회 도달 → 3회차 없음. 미해결 1: 14번 문서 39·5행(범위 밖, 기본 처분·알림만).
+- 2026-10-14 00:30 KST 자기 점검(L3): 5-4 로그 파일 이름이 UTC가 아니라 KST 날짜였음 → 문구 정정, 한 줄 명령을 로그 2개로 고침(자정 넘긴 실행을 놓치지 않게).
