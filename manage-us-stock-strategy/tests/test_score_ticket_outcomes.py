@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -264,7 +265,8 @@ class CompareFileTests(unittest.TestCase):  # T9
         buffer = io.StringIO()
         with mock.patch.object(scorer, "load_inputs", side_effect=fake_inputs), contextlib.redirect_stdout(buffer):
             code = scorer.main(["--journal", str(self.journal_path), "--output-root", str(output_root),
-                                "--decisions-root", str(self.root), "--evaluation-as-of", after(S20).isoformat()])
+                                "--decisions-root", str(self.root), "--evaluation-as-of", after(S20).isoformat(),
+                                "--event-calendar", str(self.tmp / "no-event-calendar.json")])
         self.assertEqual(code, 0)
         self.assertEqual(set(seen[0]), {"AAA", "BBB"})
         report = json.loads(next(output_root.glob("*/" + scorer.REPORT_FILE)).read_text(encoding="utf-8"))
@@ -312,7 +314,8 @@ class OutputSafetyTests(unittest.TestCase):  # T11, T12
         walk(report["ticket_summary"])
         self.assertEqual(set(report["ticket_results"][0]), {"ticket_id", "ticker", "side", "mode", "session",
                                                             "start_basis", "evidence_grade", "would_fill",
-                                                            "horizons", "user", "risk_1r", "evidence_weak_kinds"})
+                                                            "horizons", "user", "risk_1r", "evidence_weak_kinds",
+                                                            "event_exposure"})
         # risk1r: without a recorded 1R both are null and every horizon's R multiple is null.
         self.assertEqual((report["ticket_results"][0]["risk_1r"], report["ticket_results"][0]["evidence_weak_kinds"]),
                          (None, None))
@@ -333,6 +336,129 @@ class OutputSafetyTests(unittest.TestCase):  # T11, T12
             calendar=CALENDAR, closes={}, unverified={}, benchmark=NO_SPY, corporate_actions=NO_ACTIONS,
             evaluation_as_of=after(S20), ticket_records=[compare_ticket("CMP-1")])
         self.assertEqual((corrupt["ticket_results"], corrupt["ticket_summary"]["ticket_total"]), ([], 0))
+
+
+EVENT_DOCUMENT = {"schema": "event-calendar/1", "coverage_start": SESSIONS[0], "horizon_end": "2026-12-31", "events": [
+    {"id": "ev-before", "kind": "macro_release", "tier": "A", "label": "BEFORE", "event_date": SESSION,
+     "time_et": "10:00", "report_date": SESSION, "status": "VERIFIED"},
+    {"id": "ev-night", "kind": "earnings", "tier": "A", "label": "NIGHT", "event_date": SESSION,
+     "time_et": "16:30", "report_date": SESSIONS[3], "status": "VERIFIED"},
+    {"id": "ev-later", "kind": "central_bank", "tier": "B", "label": "LATER", "event_date": SESSIONS[5],
+     "time_et": None, "report_date": SESSIONS[6], "status": "VERIFIED"},
+    {"id": "ev-maybe", "kind": "earnings", "tier": "A", "label": "MAYBE", "event_date": SESSIONS[4],
+     "time_et": None, "report_date": None, "status": "NOT_ANNOUNCED", "window": [SESSIONS[3], SESSIONS[5]]}]}
+NEW_PHRASES = re.compile(r" · (이벤트 밤새 \S+|밤새 이벤트 노출 \d+건"
+                         r"|이벤트 노출 확인 필요\([A-Z_]+\))")
+
+
+def without_event_fields(report: dict) -> dict:
+    """The report minus the event-ctx keys (event_calendar, event_exposure and the two summary counts)."""
+    copy = json.loads(json.dumps(report))
+    copy.pop("event_calendar")
+    for row in copy["ticket_results"]:
+        row.pop("event_exposure")
+    for key in ("event_exposure_ok", "event_overnight"):
+        copy["ticket_summary"].pop(key)
+    return copy
+
+
+class EventExposureTests(unittest.TestCase):  # T6 golden, own earnings in the scorer
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="score_events_"))
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.good = self.tmp / "event-calendar.json"
+        self.good.write_text(json.dumps(EVENT_DOCUMENT), encoding="utf-8")
+        self.broken = self.tmp / "broken.json"
+        self.broken.write_text("{broken", encoding="utf-8")
+        self.entries = [ticket_entry("T-UP", cap="101"), ticket_entry("T-LOW", cap="99"),
+                        ticket_entry("S-1", side="sell", cap="99"), ticket_entry("T-OUT", session="2026-09-30"),
+                        outcome_entry("T-UP", "filled", filled=10, average="95"), outcome_entry("T-LOW", "unfilled")]
+        self.records = [compare_ticket("CMP-1"), compare_ticket("CMP-2", side="sell", ticker="BBB")]
+
+    def report(self, event_calendar: object = "omit", **kwargs: object) -> dict:
+        extra = {} if event_calendar == "omit" else {"event_calendar": event_calendar}
+        spy = {"status": "OK", "closes": {**{day: "400" for day in SESSIONS}, S5: "404"}, "errors": []}
+        return scorer.score_journal(
+            synthetic_journal(self.entries), calendar=CALENDAR, closes=closes_with(), unverified={}, benchmark=spy,
+            corporate_actions=NO_ACTIONS, evaluation_as_of=after(S20), ticket_records=self.records, **extra, **kwargs)
+
+    def test_scores_are_identical_with_missing_present_and_broken_calendars(self) -> None:  # T6
+        baseline = self.report()  # the call as it was before event-ctx (no event calendar argument)
+        loaded = {name: scorer.load_event_calendar(path) for name, path in (
+            ("missing", self.tmp / "absent.json"), ("present", self.good), ("broken", self.broken))}
+        self.assertEqual({name: item["status"] for name, item in loaded.items()},
+                         {"missing": "MISSING", "present": "OK", "broken": "INVALID"})
+        reports = {name: self.report(item) for name, item in loaded.items()}
+        self.assertEqual(len(baseline["ticket_results"]), 6)
+        for name, report in reports.items():
+            with self.subTest(calendar=name):
+                self.assertEqual(without_event_fields(report), without_event_fields(baseline))
+                stripped = [NEW_PHRASES.sub("", line) for line in scorer.render_report(report)]
+                self.assertEqual(stripped, [NEW_PHRASES.sub("", line) for line in scorer.render_report(baseline)])
+                self.assertEqual(report["event_calendar"]["classification"], "EX_POST_CURRENT_CALENDAR")
+        self.assertEqual({row["event_exposure"]["status"] for row in reports["missing"]["ticket_results"]},
+                         {"EVENT_CALENDAR_MISSING"})
+        self.assertEqual({row["event_exposure"]["status"] for row in reports["broken"]["ticket_results"]},
+                         {"EVENT_CALENDAR_INVALID"})
+        present = reports["present"]
+        self.assertEqual(present["event_calendar"]["sha256"], loaded["present"]["sha256"])
+        exposure = row_of(present, "T-UP")["event_exposure"]
+        self.assertEqual(exposure, {"status": "OK", "before_fill": ["ev-before"], "overnight": ["ev-night"],
+                                    "within_5": ["ev-night", "ev-later"], "possible": ["ev-maybe"],
+                                    "own_earnings": None})
+        self.assertEqual(row_of(present, "T-OUT")["event_exposure"]["status"], "SESSION_UNKNOWN")
+        summary = present["ticket_summary"]
+        self.assertEqual((summary["event_exposure_ok"], summary["event_overnight"]), (5, 5))
+        for name in ("missing", "broken"):
+            self.assertEqual((reports[name]["ticket_summary"]["event_exposure_ok"],
+                              reports[name]["ticket_summary"]["event_overnight"]), (0, 0))
+        lines = scorer.render_report(present)
+        summary_line = next(line for line in lines if line.startswith("[주문표 채점]"))
+        self.assertTrue(summary_line.endswith(" · 밤새 이벤트 노출 5건"))
+        self.assertTrue(any(line.endswith(" · 이벤트 밤새 ev-night") for line in lines))
+        no_calendar = scorer.score_journal(
+            synthetic_journal(self.entries), calendar=None, calendar_failure="TEST", closes=closes_with(),
+            unverified={}, benchmark=NO_SPY, corporate_actions=NO_ACTIONS, evaluation_as_of=after(S20),
+            event_calendar=loaded["present"])
+        self.assertEqual({row["event_exposure"]["status"] for row in no_calendar["ticket_results"]},
+                         {"SESSION_CALENDAR_UNAVAILABLE"})
+
+    def test_own_earnings_from_the_decision_files(self) -> None:
+        night = {"status": "VERIFIED", "announcement_session": SESSION, "timing": "AFTER_CLOSE"}
+        early = {"status": "VERIFIED", "announcement_session": SESSIONS[3], "timing": "BEFORE_OPEN"}
+        earnings = {"by_ticket": {"CMP-1": {"AAA": early}}, "by_session": {SESSION: {"AAA": night}}}
+        report = self.report(scorer.load_event_calendar(self.good), decision_earnings=earnings)
+        self.assertEqual(row_of(report, "T-UP")["event_exposure"]["own_earnings"]["position"], "overnight")
+        self.assertEqual(row_of(report, "CMP-1")["event_exposure"]["own_earnings"]["position"], "overnight")
+        self.assertEqual(row_of(report, "CMP-1")["event_exposure"]["own_earnings"]["timing"], "BEFORE_OPEN")
+        self.assertIsNone(row_of(report, "CMP-2")["event_exposure"]["own_earnings"])  # BBB has no record
+        self.assertEqual(without_event_fields(report), without_event_fields(self.report()))
+
+    def test_cli_reads_the_event_calendar_and_earnings_and_a_broken_calendar_only_changes_the_status(self) -> None:
+        root = self.tmp / "auto-core"
+        (root / "2026-10-03").mkdir(parents=True)
+        (root / "2026-10-03" / "decision.json").write_text(json.dumps({
+            "buy_session": SESSION, "earnings_calendar": {"BBB": {"status": "VERIFIED", "announcement_session": SESSION,
+                                                                  "timing": "BEFORE_OPEN"}},
+            "tickets": [compare_ticket("CMP-9", ticker="BBB")]}), encoding="utf-8")
+        inputs = {"calendar": CALENDAR, "calendar_failure": None, "closes": closes_with(), "unverified": {},
+                  "close_histories": {}, "corporate_actions": NO_ACTIONS, "benchmark": NO_SPY}
+        reports = {}
+        for name, path in (("present", self.good), ("broken", self.broken)):
+            output_root = self.tmp / f"scores-{name}"
+            with mock.patch.object(scorer, "load_inputs", return_value=inputs), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                code = scorer.main(["--journal", str(self.tmp / "no-journal.json"), "--output-root", str(output_root),
+                                    "--decisions-root", str(root), "--evaluation-as-of", after(S20).isoformat(),
+                                    "--event-calendar", str(path)])
+            self.assertEqual(code, 0)
+            reports[name] = json.loads(next(output_root.glob("*/" + scorer.REPORT_FILE)).read_text(encoding="utf-8"))
+        row = reports["present"]["ticket_results"][0]
+        self.assertEqual((row["ticket_id"], row["event_exposure"]["status"]), ("CMP-9", "OK"))
+        self.assertEqual(row["event_exposure"]["own_earnings"]["position"], "before_fill")
+        self.assertEqual(reports["broken"]["event_calendar"]["status"], "INVALID")
+        self.assertEqual(without_event_fields(reports["broken"]), without_event_fields(reports["present"]))
+        self.assertEqual(forbidden_keys(reports["present"]), [])
 
 
 if __name__ == "__main__":

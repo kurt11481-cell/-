@@ -46,7 +46,7 @@ Recording a card moves the journal head, so an S5 proposal made before it expire
 ## Scoring (read only)
 
 ```
-python scripts/score_decision_journal.py [--journal ...] [--closes-root ...] [--calendar ...] [--output-root ...] [--evaluation-as-of ISO] [--decisions-root ...]
+python scripts/score_decision_journal.py [--journal ...] [--closes-root ...] [--calendar ...] [--output-root ...] [--evaluation-as-of ISO] [--decisions-root ...] [--event-calendar ...]
 ```
 
 - Reads the journal through `load_journal`; writes only `workspace/outputs/journal-scores/<time>/journal-scores.json`
@@ -78,6 +78,16 @@ python scripts/score_decision_journal.py [--journal ...] [--closes-root ...] [--
   no sell, gate, size, price or evidence input. The `order_ticket` payload copies it (buy only) with `evidence_weak_kinds`.
 - `r_multiple` per horizon = `vs_no_action` / recorded `r_pct`, only for a buy with 1R `ok` that filled (hypothetical
   `would_fill` true, or the user's filled/partial outcome) and a scored horizon; otherwise null. `ticket_summary.risk_1r_ok` = tickets with 1R `ok`.
+- Event exposure (event-ctx4, `--event-calendar`, default `docs/claude/event-calendar.json`; `scripts/event_calendar.py`):
+  each ticket row gets `event_exposure` = official event ids by landing time against the ticket session's `core_close_at`
+  (early closes included): `before_fill` (previous close < landing <= fill), `overnight` (fill < landing <= next close; a buy
+  carries it, a sell avoids it), `within_5` (fill < landing <= fifth next close), `possible` (date not announced), plus the
+  symbol's `own_earnings` from the decision.json `earnings_calendar`. The report's `event_calendar` keeps the file sha256 and
+  `classification=EX_POST_CURRENT_CALENDAR`: past tickets are classified with today's calendar (a corrected row changes the
+  class); the decision-time view stays in the pre-open record (`workspace/outputs/pre-open`, via `event_calendar.py --decision`).
+  Display and scoring only: no score value, core decision, gate, evidence, budget or price input; a missing or broken
+  calendar is a status (`EVENT_CALENDAR_MISSING` / `_INVALID`). `ticket_summary` adds `event_exposure_ok` and
+  `event_overnight` counts only; conclusions keep the 30-scored rule.
 
 `portfolio_status.py` shows the scoring-pending count from the newest score report only when that report was made
 from the journal's current last entry (`score_report=CURRENT`); otherwise every card decision counts as waiting

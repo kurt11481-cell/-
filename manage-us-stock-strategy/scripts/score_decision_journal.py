@@ -18,6 +18,10 @@ Auto-core order tickets (journal order_ticket entries and compare-mode tickets o
 files) are scored in ticket_results only, from the ticket session close: a hypothetical LOC fill (buy when
 the close is at or below the ticket's cap, sell when at or above), vs no action, and the user's recorded
 outcome. Hypothetical fills are evidence grade D (COUNTERFACTUAL_D), never a judgment basis.
+Each ticket row also carries event_exposure (event_calendar.py): the official events of
+docs/claude/event-calendar.json landing before the fill, overnight to the next close or within 5 sessions of the
+ticket session's core close. It is classified ex post with the current calendar, is display and scoring only and
+changes no score value; a missing or broken calendar is a status.
 Rules (same point-in-time rule as the sidecar forward outcomes, which are not touched):
   - only finished sessions count: the target session's core close must be <= evaluation_as_of;
   - closes are the verified Kiwoom 30-minute-bar approximate closes of regular_session_close_history.
@@ -42,6 +46,7 @@ from pathlib import Path
 from typing import Any
 
 from corporate_actions import STATUS_INVALID, STATUS_OK, adjust_closes, applicable_actions
+from event_calendar import DEFAULT_EVENT_CALENDAR, exposure, load_event_calendar
 from portfolio_exposure import SPLIT_GUARD_HIGH, SPLIT_GUARD_LOW
 from portfolio_review_journal import (
     DEFAULT_JOURNAL_PATH, JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION, JOURNAL_ORDER_TICKET,
@@ -79,6 +84,8 @@ TICKET_SIGNS = {"buy": 1, "sell": -1}
 TICKET_MODES = ("apply", "compare")
 COUNTERFACTUAL_GRADE = "D"
 COUNTERFACTUAL_LABEL = "COUNTERFACTUAL_D"
+EVENT_CLASSIFICATION = "EX_POST_CURRENT_CALENDAR"
+EVENT_LISTS = ("before_fill", "overnight", "within_5", "possible")
 
 
 def _decimal(value: Any) -> Decimal | None:
@@ -493,6 +500,41 @@ def _score_ticket(ticket: dict[str, Any], outcome: dict[str, Any] | None, *, cal
     return row
 
 
+def _ticket_earnings(ticket: dict[str, Any], decision_earnings: dict[str, Any] | None) -> Any:
+    """The ticket symbol's own earnings record: a compare ticket from the decision.json it came from, a journal
+    ticket from the decision.json holding the same ticket id, else the one with the same buy_session. None if absent."""
+    if not isinstance(decision_earnings, dict) or not isinstance(ticket["ticket_id"], str):
+        return None
+    calendar = (decision_earnings.get("by_ticket") or {}).get(ticket["ticket_id"])
+    if calendar is None and ticket["mode"] == "apply" and isinstance(ticket["session"], str):
+        calendar = (decision_earnings.get("by_session") or {}).get(ticket["session"])
+    return calendar.get(ticket["ticker"]) if isinstance(calendar, dict) and isinstance(ticket["ticker"], str) else None
+
+
+def _event_exposure(ticket: dict[str, Any], *, calendar: dict[str, Any] | None,
+                    event_calendar: dict[str, Any] | None, earnings: Any) -> dict[str, Any]:
+    """Event ids by position against the ticket session's core close (ex post, display and scoring only)."""
+    if calendar is None:
+        status = "SESSION_CALENDAR_UNAVAILABLE"
+    elif event_calendar is None or event_calendar.get("status") != "OK":
+        status = ("EVENT_CALENDAR_INVALID" if (event_calendar or {}).get("status") == "INVALID"
+                  else "EVENT_CALENDAR_MISSING")
+    else:
+        found = exposure(session=ticket["session"], sessions=calendar["sessions"], events=event_calendar["events"],
+                         coverage_start=event_calendar["coverage_start"], horizon_end=event_calendar["horizon_end"],
+                         earnings=earnings)
+        return {"status": found["status"], **{key: found[key] for key in EVENT_LISTS},
+                "own_earnings": found["own_earnings"]}
+    return {"status": status, **{key: [] for key in EVENT_LISTS}, "own_earnings": None}
+
+
+def _event_calendar_block(event_calendar: dict[str, Any] | None) -> dict[str, Any]:
+    loaded = event_calendar or {"status": "MISSING", "reasons": ["EVENT_CALENDAR_NOT_SUPPLIED"]}
+    return {"status": loaded.get("status"), "sha256": loaded.get("sha256"),
+            "coverage_start": loaded.get("coverage_start"), "horizon_end": loaded.get("horizon_end"),
+            "reasons": list(loaded.get("reasons") or []), "classification": EVENT_CLASSIFICATION}
+
+
 def _ticket_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     scored_by_horizon = {str(horizon): sum(1 for row in rows for item in row["horizons"]
                                            if item["horizon_sessions"] == horizon and item["status"] == "SCORED")
@@ -507,17 +549,23 @@ def _ticket_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "conclusion_allowed": best >= MIN_SCORED_FOR_CONCLUSION,
         "label": COUNTERFACTUAL_LABEL,
         "risk_1r_ok": sum(1 for row in rows if (row.get("risk_1r") or {}).get("status") == "ok"),
+        "event_exposure_ok": sum(1 for row in rows if row["event_exposure"]["status"] == "OK"),
+        "event_overnight": sum(1 for row in rows if row["event_exposure"]["overnight"]),
     }
 
 
 def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, calendar_failure: str | None = None,
                   closes: dict[str, dict[str, str]], unverified: dict[str, dict[str, list[str]]],
                   benchmark: dict[str, Any], corporate_actions: dict[str, Any],
-                  evaluation_as_of: datetime, ticket_records: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                  evaluation_as_of: datetime, ticket_records: list[dict[str, Any]] | None = None,
+                  event_calendar: dict[str, Any] | None = None,
+                  decision_earnings: dict[str, Any] | None = None) -> dict[str, Any]:
     """The score report. Pure: no file is read or written here.
 
     ticket_records: compare-mode tickets read by the caller from the daily decision.json files; a ticket id
-    already recorded in the journal is scored once, from the journal."""
+    already recorded in the journal is scored once, from the journal.
+    event_calendar: load_event_calendar output (None = not supplied); decision_earnings: the earnings_calendar of
+    those decision.json files by ticket id and by buy_session. Both only feed event_exposure, never a score value."""
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION, "report_type": REPORT_TYPE,
         "evaluation_as_of": evaluation_as_of.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -532,6 +580,7 @@ def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, c
         "horizons": list(HORIZONS), "results": [],
         "ticket_results": [],
         "ticket_sources": {"journal_tickets": 0, "compare_tickets": 0, "duplicates_skipped": 0, "errors": []},
+        "event_calendar": _event_calendar_block(event_calendar),
         "writes_journal": False, "order_authority": False, "quantity_authority": "none",
     }
     if journal["status"] == "CORRUPT":
@@ -585,10 +634,13 @@ def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, c
     report["ticket_sources"].update({"journal_tickets": len(tickets), "compare_tickets": len(compare),
                                      "duplicates_skipped": skipped})
     for ticket in tickets + compare:
-        report["ticket_results"].append(_score_ticket(
+        row = _score_ticket(
             ticket, outcomes.get(ticket["ticket_id"]) if ticket["mode"] == "apply" else None, calendar=calendar,
             sessions=sessions, completed=completed, raw=closes, adjusted=adjusted, unverified=unverified,
-            benchmark=benchmark, corporate_status=corporate_actions["status"], evaluation_as_of=evaluation_as_of))
+            benchmark=benchmark, corporate_status=corporate_actions["status"], evaluation_as_of=evaluation_as_of)
+        row["event_exposure"] = _event_exposure(ticket, calendar=calendar, event_calendar=event_calendar,
+                                                earnings=_ticket_earnings(ticket, decision_earnings))
+        report["ticket_results"].append(row)
     report["ticket_summary"] = _ticket_summary(report["ticket_results"])
     return report
 
@@ -668,6 +720,9 @@ def _ticket_lines(report: dict[str, Any], messages: dict[str, str]) -> list[str]
         total=summary["ticket_total"], recorded=summary["by_mode"]["apply"], compare=summary["by_mode"]["compare"],
         scored=" / ".join(f"{horizon}:{count}" for horizon, count in summary["scored_by_horizon"].items()),
         minimum=summary["min_scored_for_conclusion"], errors=len(report["ticket_sources"]["errors"]))]
+    event_status = (report.get("event_calendar") or {}).get("status")
+    lines[0] += (messages["score_ticket_event_summary"].format(count=summary.get("event_overnight", 0))
+                 if event_status == "OK" else messages["score_ticket_event_unavailable"].format(status=event_status))
     for row in report["ticket_results"]:
         line = messages["score_ticket_row"].format(
             ticker=row["ticker"], side=row["side"], mode=row["mode"], session=row["session"],
@@ -677,6 +732,9 @@ def _ticket_lines(report: dict[str, Any], messages: dict[str, str]) -> list[str]
         if row["side"] == "buy" and risk.get("status") == "ok":
             line += messages["score_ticket_r_multiple"].format(r_pct=risk.get("r_pct"), values=" / ".join(
                 f"{item['horizon_sessions']}:{item.get('r_multiple') or '-'}" for item in row["horizons"]))
+        overnight = (row.get("event_exposure") or {}).get("overnight")
+        if overnight:
+            line += messages["score_ticket_event_overnight"].format(ids=",".join(overnight))
         lines.append(line)
     if report["ticket_results"]:
         lines.append(messages["score_ticket_reference_only"])
@@ -735,10 +793,12 @@ def load_compare_tickets(decisions_root: Path) -> dict[str, Any]:
     """Compare-mode tickets of every <YYYY-MM-DD>/decision.json under the auto-core output folder.
 
     decision.rerun-*.json files are not read. An unreadable file is skipped and named in errors (file name and
-    reason only); it never stops the other files."""
+    reason only); it never stops the other files. earnings: the earnings_calendar of each file by ticket id (the
+    first file holding that id) and by buy_session (the latest folder), for event_exposure only."""
     root = Path(decisions_root)
+    earnings: dict[str, dict[str, Any]] = {"by_ticket": {}, "by_session": {}}
     if not root.is_dir():
-        return {"status": "MISSING", "records": [], "errors": []}
+        return {"status": "MISSING", "records": [], "errors": [], "earnings": earnings}
     records: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
     for path in sorted(root.glob(f"*/{DECISION_FILE}")):
@@ -754,6 +814,13 @@ def load_compare_tickets(decisions_root: Path) -> dict[str, Any]:
         if not isinstance(tickets, list):
             errors.append({"file": name, "reason": "DECISION_TICKETS_INVALID"})
             continue
+        calendar = document.get("earnings_calendar")
+        if isinstance(calendar, dict):
+            if isinstance(document.get("buy_session"), str):
+                earnings["by_session"][document["buy_session"]] = calendar
+            for ticket in tickets:
+                if isinstance(ticket, dict) and isinstance(ticket.get("ticket_id"), str):
+                    earnings["by_ticket"].setdefault(ticket["ticket_id"], calendar)
         for ticket in tickets:
             if not isinstance(ticket, dict) or ticket.get("mode") != "compare":
                 continue
@@ -762,7 +829,7 @@ def load_compare_tickets(decisions_root: Path) -> dict[str, Any]:
                 errors.append({"file": name, "reason": "TICKET_FIELDS_INVALID"})
                 continue
             records.append(ticket)
-    return {"status": "OK", "records": records, "errors": errors}
+    return {"status": "OK", "records": records, "errors": errors, "earnings": earnings}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -774,6 +841,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--evaluation-as-of", default=None, help="ISO time with offset; default now")
     parser.add_argument("--decisions-root", type=Path, default=DEFAULT_DECISIONS_ROOT,
                         help="auto-core output folder holding <YYYY-MM-DD>/decision.json (compare-mode tickets)")
+    parser.add_argument("--event-calendar", type=Path, default=DEFAULT_EVENT_CALENDAR,
+                        help="official event calendar (event exposure per ticket, display and scoring only)")
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
@@ -790,7 +859,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     journal = load_journal(args.journal)
     compare = load_compare_tickets(args.decisions_root) if journal["status"] != "CORRUPT" else {
-        "status": "NOT_READ", "records": [], "errors": []}
+        "status": "NOT_READ", "records": [], "errors": [], "earnings": None}
     tickers = [entry["payload"]["ticker"] for entry in journal["entries"]
                if entry.get("entry_type") in (JOURNAL_CARD_DECISION, JOURNAL_ORDER_TICKET)]
     tickers += [record["ticker"] for record in compare["records"]]
@@ -800,7 +869,9 @@ def main(argv: list[str] | None = None) -> int:
         "calendar": None, "calendar_failure": None, "closes": {}, "unverified": {}, "close_histories": {},
         "corporate_actions": {"status": "MISSING", "sha256": None, "errors": [], "actions": []},
         "benchmark": {"status": "MISSING", "closes": {}, "errors": []}}
-    report = score_journal(journal, evaluation_as_of=evaluation_as_of, ticket_records=compare["records"], **{
+    report = score_journal(journal, evaluation_as_of=evaluation_as_of, ticket_records=compare["records"],
+                           event_calendar=load_event_calendar(args.event_calendar),
+                           decision_earnings=compare.get("earnings"), **{
         key: inputs[key] for key in ("calendar", "calendar_failure", "closes", "unverified", "benchmark",
                                      "corporate_actions")})
     report["ticket_sources"].update({"decisions_root_status": compare["status"], "errors": compare["errors"]})
