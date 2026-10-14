@@ -68,6 +68,8 @@ authority: order_authority=false · 규칙 파일·정책·상태 변경 없음
 
 - 2026-10-14 13:48 KST c6-fix 1회차 BLOCKED(지시문 결함): 수정 뒤에는 C5+·C6+ 같은 날 새 충족이 불가능한데 지시문이 그 짝을 유지하라고 했다(Builder 판단 맞음, 수학적 모순 확인). 규칙 수정·새 테스트·compare_fix 자료는 통과. → c6-fix2로 재큐(tickets 634행 기대 짝 pullback_rebound → trend_recover, SOXL 고정 자료 t−2 = 99.85). Cowork 사본에서 test_auto_core*.py 새 실패 0 확인.
 
+- 2026-10-14 14:37 KST c6-fix2 병합(1a2b7d6, ff, Judge PASS 12/12, 새 실패 0, 3022→3026). 첫 적용은 10-15 06:15·07:45 자동 실행. 확인 항목: 10-15 대조에서 MU rebound_fail/pullback_rebound CORE_BUG 0.
+
 ## 미해결 2건 처리 (2026-10-14 13:3x KST)
 1. **고친 decide 경로 실행 → 해소.** auto_core_replay(decide와 같은 evaluate_session, 읽기 전용, 출력은 저장소 밖)를 2026-07-10~10-13 고정 포트폴리오 P-R1(MVLL·SOXL·NBIS 보유)·P-R2로 수정 전후 각각 실행(각 67세션, 예외 0, R_A·R_B PASS, R_C NOT_MET 동일).
    - 주문표·막힘·후보·no_action: 134개 세션 결과 모두 같다.
