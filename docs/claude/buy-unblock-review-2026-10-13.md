@@ -2,7 +2,7 @@
 id: buy-unblock-review-2026-10-13
 title: 매수 막힘(S7·R-REC1) 해소 방법 재검토
 date: 2026-10-13
-status: 사용자 결정 대기
+status: 결정·병합 완료 — 시장 조건(RG2·RG3) 대기
 consumers: 관제판 r-cashflow-hold · rrec-rg1-bootstrap · 다음 Cowork 대조 세션 · redesign-t2 "켜" 전 회차
 ---
 
@@ -36,7 +36,7 @@ consumers: 관제판 r-cashflow-hold · rrec-rg1-bootstrap · 다음 Cowork 대�
 - 순서: ⑤가 실제로 통과하는 날 결정한다(그 전 결정은 사용자 손만 늘림).
 
 ## 5. 사용자 손(이번 주)
-- 확인 코드 1회(2절 대조) · 결정 1회(rrec-rg1-bootstrap B) · 병합 1회 · (⑤ 통과 시) "켜" 결정 1회.
+- 처리 완료: 확인 코드 1회(6절) · 결정 1회(rrec-rg1-bootstrap B, 7절) · 병합 1회(8절). 남은 손: (⑤ 통과 시) "켜" 결정 1회.
 
 ## 6. 진행
 - 18:40 사용자 propose(--cash-flow-evidence workspace/private_inputs/cash_flow_evidence/evidence_20261008_20261013.json, ust21100 10/08~10/13 3행 모두 매매, 외부 0, unresolved 0) → Cowork show(경고 없음, 알림 엔진 통과, 입출금 신고 NO_EXTERNAL_FLOW) → 사용자 "확인 612A12A7"(18:41) → apply: revision 25 → 26.
@@ -51,5 +51,5 @@ consumers: 관제판 r-cashflow-hold · rrec-rg1-bootstrap · 다음 Cowork 대�
 ## 8. rrec-rg1 병합 (20:38)
 - Builder 1차 STOP(cmp-fix3 테스트 1건이 옛 동작 고정) → 추가 범위(그 테스트 입력 1줄·주석) → 대상 360 OK, 전체 새 실패 0 → 독립 Judge PASS(docs/claude/rrec-rg1-judge-report.md, 무작위 30,000건 신·구 비교) → 사용자 병합 스크립트 → main f8c0a8a(55803bf).
 - 병합 뒤 메인 확인: sha256 일치, 대상 테스트 OK, 실데이터 2026-10-12 SOXX·MU·PWR 모두 RG1 ok · RG2 no · RG3 no · RG4 ok (status no).
-- 남은 막힘: ⑤ RG2·RG3(시장 조건, 3절 종목별 조건). ② S7은 10/14 06:15 코어 실행으로 해제 확인.
+- 남은 막힘: ⑤ RG2·RG3(시장 조건, 3절 종목별 조건). ② S7 해제 확인됨(10/14 읽기 전용, workspace/outputs/auto-core/2026-10-14/s7/2026-10-13/portfolio-exposure-review.20261013T233743862668Z.json: cash_flow hold_active false·covered_through 2026-10-13, undeclared_cash_flow 비활성, pauses 없음; result.json OK). 단 06:15 실행(21:15Z)은 I3:CASH_CHANGE_NOT_EXPLAINED 3.05로 HOLD, 07:45 decide도 G1_RECONCILE_NOT_OK — 원인은 S7이 아니라 D+1 매도결제 3,072.51 반영 시차(주문가능 12,472.23 vs 기준 12,469.18). 08:37 실행(23:37Z)에서 결제 0·차이 0.01로 OK. 10/14 decide는 compare·티켓 0.
 - Judge 의견 3건 기본 NO_CHANGE(관제판 rrec-rg1 note). 문서 표류 references/auto-core-decision.md 88~89행은 후속 문서 수정.
