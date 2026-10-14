@@ -51,4 +51,10 @@
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-10-13T23:33:19Z
+- 병합 커밋: `40513919f4f5c4d40947501b9bad3e85a66ff3c3` · 방식: rebase
+- 사용자 승인(-ApproveAuthority): 2026-10-13T23:19:00Z
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/t1-safety/ 의 원본 기록입니다.)
