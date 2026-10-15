@@ -31,3 +31,12 @@ consumers: 관제판 redesign-t2 · T2 "켜" 판정(builder-prompt 46행 R1) · 
 - 기본 처분(builder-prompt 472행): NO_CHANGE — T2 비교 모드 유지.
 - 1회 알림: 2026-10-14 Cowork 대화에서 막힌 사유 순위와 함께 사용자에게 전달.
 - 해석(등급 D): 매수 회로는 새 공식 강한 근거 또는 같은 날 새 가격 단서 2종일 때만 열리고(auto_core_tickets.py 141행), 리플레이는 공식 사실 없음 가정이라 미달은 구조적으로 예상된다. 기준 대체는 K3(사용자 결정).
+
+## 보충(2026-10-15, '켜' 전 ⑦ — judge1 "켜" 전 6, judge2 G 7)
+- extra_tickets(오라클이 열지 않았는데 나온 주문표): P-R1 0, P-R2 0이다(replay.json R_B.by_portfolio.*.extra_tickets, sha bcdbedbb…). 두 포트폴리오 모두 주문표가 0이다.
+- 가정 24-①(HWM = 첫 세션): replay.json assumptions[4]에 "S7 activation at the first replay session with that equity as HWM"으로 있다.
+  - P-R1의 REQ5_RREC1:no는 08-13 NBIS, 08-20 MVLL 두 세션뿐이다.
+  - 두 세션 모두 HWM과 무관한 막힘이 따로 있다: NBIS는 REQ1_EARNINGS·G2:EARNINGS_DATE_UNVERIFIED, MVLL은 POLICY_UNREGISTERED_INSTRUMENT·G2:PROPOSAL_NOT_AN_INCREASE. 그래서 이 가정이 바꾼 주문표 결과는 없다.
+  - 확인 필요: 이 가정이 S7 add 항목을 줄여 회로를 덜 열었는지는 확인하지 않았다(R-C 대체로 판정 영향 없음).
+- 가정 24-②(P-R1 E 전제 1.73): 이번 리플레이의 P-R1 E는 1.1084~1.6317이다(P-R2 0.1326~0.2748). judge1의 1.11~1.47은 다른 실행 값이다(실행 시점 확인 필요).
+- 처분: 둘 다 R1 판정(위 표)을 바꾸지 않는다. R-C는 사전 등록 B+ C1·C2로 대체됐다(t2-rc-preregistration-2026-10-14.md:18-19). 기록: pre-on-roadmap-review-2026-10-15.md 5절.
