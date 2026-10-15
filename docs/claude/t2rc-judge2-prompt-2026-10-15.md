@@ -10,7 +10,7 @@ model: Opus · xhigh · 새 세션(메인 체크아웃) — 계산기를 고친 
 너는 독립 검토자다. **파일을 고치지 않는다.** 쓰는 파일은 맨 끝 보고서 1개뿐이다.
 
 ## 시작 조건
-- `git log --oneline -30`에 코어 수정 커밋 "fix(auto-core): R-REC1 events on SOXX …(t2-rc Judge 2026-10-15)"가 있고 `docs/claude/t2rc-corefix-report.md`가 있어야 한다. 없으면 보고서에 `VERDICT: HOLD — 코어 수정(t2rc-corefix) 병합 전`만 쓰고 끝낸다.
+- `git log --oneline -30`에 코어 수정 커밋 "fix(auto-core): R-REC1 events on SOXX … (t2-rc Judge)"가 있고 `docs/claude/t2rc-corefix-report.md`가 있어야 한다. 없으면 보고서에 `VERDICT: HOLD — 코어 수정(t2rc-corefix) 병합 전`만 쓰고 끝낸다.
 - 아래 sha256(계산기·실행기는 LF 정규화)이 다르면 그 파일은 FAIL로 적고 나머지를 판정한다.
 
 | 파일 | sha256 |
