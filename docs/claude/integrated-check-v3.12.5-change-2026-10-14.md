@@ -4,7 +4,7 @@ title: 통합 점검 규칙 파일 v3.12.5 변경 기록 (c3-rule)
 date: 2026-10-14
 class: K1 (규칙 문구 보완) — 트리거 기준·근거 강도·알림 조건·쓰기 범위·권한 불변. 코어(auto_core_rules.py) 동작과 같게 적는 것
 decision: 사용자 "결정 c3-state: a"(15:27) · "c3-rule: 1"(15:40, 2026-10-14 KST, Cowork 대화) — 근거 c3-state-decision-2026-10-14.md
-status: 초안 저장 + 독립 검토 PASS. 미적용 — 2026-10-15 07:35 earn-na R2 교체 세션에서 R2와 함께 한 번에 교체(사용자 승인·재서명 1회), 적용되면 10/16 06:40부터
+status: 적용됨 2026-10-15 07:4x KST — earn-na R2와 한 번에 교체(통합 점검 로더 206782f6…, 재서명 updated_at 2026-10-14T23:04:29Z). 07:20 첫 실행 확인 PASS. 첫 적용 실행 10/16 06:40
 authority: order_authority=false · quantity_authority=none · execution_quantity=null
 ---
 

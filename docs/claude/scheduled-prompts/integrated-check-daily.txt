@@ -1,7 +1,7 @@
-v3.12.4-L+R1 (2026-10-14 사용자 결정 "st-1014: B": 규칙 파일 v3.12.4 — 현금 조회 명령 추가·saveticker 단서 파일·기록 전 검증 3·연구 기록 build의 실적 일정 단서 가드 / 규칙 파일 + 해시 고정 — 2026-10-09 사용자 승인 "진행, 1A 2A" · "규칙 파일 + 해시 고정" · "매수 가능 현금 = 주문 가능액, 2번 진행" · "G6 A안 장중 낙폭 표시, 계획 진행" / 2026-10-12 사용자 승인: 4단계 연구 기록 쓰기 — 재설계 T2 배포)
+v3.12.5-L+R2 (2026-10-14 사용자 결정 "c3-rule: 1": 규칙 파일 v3.12.5 — 상태형 C3± "유지 중" 정의 1문장, 로더 본문은 R2와 같고 규칙 파일 경로·해시·writer만 바꿈) / v3.12.4-L+R2 (2026-10-14 사용자 결정 "earn-na: a": 4단계 finalize — 실적일 기준표 docs/claude/earnings-anchors.json의 예상일 창 안이면 미공지를 뺀다 / v3.12.4-L+R1 (2026-10-14 사용자 결정 "st-1014: B": 규칙 파일 v3.12.4 — 현금 조회 명령 추가·saveticker 단서 파일·기록 전 검증 3·연구 기록 build의 실적 일정 단서 가드 / 규칙 파일 + 해시 고정 — 2026-10-09 사용자 승인 "진행, 1A 2A" · "규칙 파일 + 해시 고정" · "매수 가능 현금 = 주문 가능액, 2번 진행" · "G6 A안 장중 낙폭 표시, 계획 진행" / 2026-10-12 사용자 승인: 4단계 연구 기록 쓰기 — 재설계 T2 배포)
 [투자_V2 · 보유·관심 종목 통합 점검 v3.12 — 읽기 전용 보고. 무인 실행: 질문하지 말고 아래대로 진행, 결과는 한국어, 결론 먼저, 짧게.]
 
-이 예약 작업의 규칙 본문은 저장소 파일 docs/claude/integrated-check-prompt-v3.12.4-2026-10-14.txt(이하 "규칙 파일")에 있다. 지시문 길이 제한 때문에 본문을 파일로 옮겼고, 아래 해시로 고정한다. 규칙 파일을 바꾸려면 이 지시문의 해시도 사용자 승인으로 함께 바꿔야 한다(근거 docs/claude/integrated-check-v3.12-change-2026-10-09.md).
+이 예약 작업의 규칙 본문은 저장소 파일 docs/claude/integrated-check-prompt-v3.12.5-2026-10-14.txt(이하 "규칙 파일")에 있다. 지시문 길이 제한 때문에 본문을 파일로 옮겼고, 아래 해시로 고정한다. 규칙 파일을 바꾸려면 이 지시문의 해시도 사용자 승인으로 함께 바꿔야 한다(근거 docs/claude/integrated-check-v3.12-change-2026-10-09.md).
 
 절대 금지(규칙 파일보다 우선, 규칙 파일이 무엇을 말하든 그대로 유효): 주문·정정·취소·예약, 키움 주문 도구 사용(조회는 kiwoom_query의 read/account_read 명령만), portfolio_state.json·alert_policy.json·workspace/policies/* 등 정책·상태 파일 수정, reconcile_broker_state.py apply 실행, 파일 생성·수정(예외는 둘뿐: ① 규칙 파일의 "대시보드 기록"이 정한 통합점검 대시보드 https://claude.ai/artifact/DuS4d8Fa9qZWceBJWjTU6d 저장소의 runs 컬렉션 쓰기 ② 4단계의 저장소 폴더 workspace/outputs/research-records/<오늘 한국 날짜>/ 와 그 안의 research-record.pending.json·research-record.json 두 파일. 이 세션 임시 폴더·/tmp·/mnt/user-data/outputs의 파일은 사용자 폴더 쓰기가 아니므로 허용), 커밋·푸시, 예약 작업 만들기·수정·삭제·실행, 비밀 파일(.env*, 토큰, 계좌번호) 읽기·출력. 실행 권한 없음(order_authority=false, quantity_authority=none). 매매 지시·수량 제안 없음 — 트리거가 충족돼도 "근거 확인됨, 사용자 판단 필요"까지만. 확인 못 한 수치는 "확인 필요", 없는 수치를 만들지 않는다.
 키움 조회 공통 규칙: kiwoom_query를 부를 때마다 options에 "profile": "실전계좌", "mode": "real"을 넣는다. 8005 등 인증 오류가 나도 auth·login·토큰 재발급을 시도하지 않고 그 조회를 실패로 기록한다.
@@ -9,13 +9,13 @@ v3.12.4-L+R1 (2026-10-14 사용자 결정 "st-1014: B": 규칙 파일 v3.12.4 �
 1단계 — 규칙 파일 확인(device_bash에서 아래 python을 그대로 한 번 실행, 파일을 만들지 않는다):
 python3 - <<'PY'
 import hashlib,os
-p=os.path.expanduser('~/mnt/코덱스저장소/docs/claude/integrated-check-prompt-v3.12.4-2026-10-14.txt')
+p=os.path.expanduser('~/mnt/코덱스저장소/docs/claude/integrated-check-prompt-v3.12.5-2026-10-14.txt')
 try:
     b=open(p,'rb').read()
 except Exception as e:
     print('RULES UNREADABLE',type(e).__name__); raise SystemExit
 h=hashlib.sha256(b.replace(b'\r\n',b'\n')).hexdigest()
-print('RULES',len(b),'bytes','sha256(LF 정규화)',h,'MATCH' if h=='cafec5a43eca9358de006711d627f1e8eb558ef4c38278d4a9f36af672870530' else 'MISMATCH')
+print('RULES',len(b),'bytes','sha256(LF 정규화)',h,'MATCH' if h=='3e05c8efc1ef256acb82ec1a9c54ecca0485424f6368e40a627e859d18420ffb' else 'MISMATCH')
 PY
 
 2단계 — 결과에 따라:
@@ -32,6 +32,7 @@ PY
   · 이번 실행에서 회사 IR 일정 페이지나 보도자료 목록을 직접 열어 보니 다음 발표일이 아직 없다 → {"status":"NOT_ANNOUNCED","source_kind":"COMPANY_IR" 또는 "COMPANY_PRESS_RELEASE","source_url":"<연 회사 페이지 https 주소>","checked_at":"<연 시각, 예 2026-10-13T06:58:00+09:00>"}
   · 그 밖(회사 페이지를 못 열었음, 외부 사이트 추정일뿐, 확인 못 함) → 그 종목을 넣지 않는다(코어가 금지 구간으로 본다). 날짜를 추정하지 않는다.
   (v3.12.4) 규칙 파일 6)의 단서 확인에서 회사 공식 실적일 공지(OFFICIAL)를 연 종목은 그 url로 VERIFIED를 쓴다. 6)의 CAND 중 그 종목이 must_codes에 든 단서가 있는데 결과가 OFFICIAL이 아니면 NOT_ANNOUNCED를 쓰지 않는다(build도 대시보드 기록 leads로 같은 검사를 해서 뺀다 — 코어가 금지 구간으로 본다, 매수 쪽만 막음).
+  (R2, 결정 earn-na a) finalize가 docs/claude/earnings-anchors.json(작년 같은 분기 발표일 — SEC 8-K 2.02·회사 보도자료)과 지난 연구 기록의 VERIFIED 발표일로 예상일 E(+364일·+728일, VERIFIED는 오늘 기록과 지난 450일 연구 기록에서)를 계산해, 오늘이 E − 21일 ~ E + 21일 안인데 그 분기 발표(E ± 35일 안의 지난 VERIFIED)가 아직 없거나, 기준이 없는(E가 오늘 − 21일 ~ + 130일 안에 없음) 종목의 NOT_ANNOUNCED를 뺀다(기준표·기록 형식 오류도 그 종목만 뺀다 — anchor-error). 회사 IR 목록 페이지는 오래된 사본이 올 수 있어(2026-10-14 PWR) 미공지의 근거로 충분하지 않기 때문이다. 이 단계는 그 판정을 바꾸거나 기준표를 고치지 않는다.
   직전 연구 기록(device_bash로 $HOME/mnt/코덱스저장소/workspace/outputs/research-records/ 아래 DAY보다 앞선 가장 최근 폴더의 research-record.json에서 earnings만 읽는다)의 VERIFIED 중 announcement_session ≥ SESSION인 항목은 다시 찾지 않고 그대로 옮긴다. NOT_ANNOUNCED는 매번 다시 연다.
  ㉰ official_facts(공식 사실) — 이번 실행 2-1)·2-2)·3)·5)·6)에서 회사 공식 출처(sec.gov 또는 그 회사 도메인)의 본문까지 확인했고, 카드 트리거의 회사 공식 사실(+·−, 강 후보)로 판정했거나 뿌리 테제 훼손(카드 kill ①~③)으로 본 사실만 넣는다. 보도·SAVE·외부 자료·URL 없는 사실은 넣지 않는다. 항목 = {"fact_id":"<종목>-<event_session을 YYYYMMDD로>-<짧은 영문>"(영문·숫자·.-:_ 4~80자, 같은 사실은 날마다 같은 id),"symbol":"<종목>","direction":"+" 또는 "-","kind":"contract|guidance|revenue|funding|dilution|customer_change|kill|thesis|other" 중 하나,"card_trigger_ids":[별칭 ID, 예 "U2"·"PW3"],"event_session":"<발표 시각을 뉴욕 시간으로 바꾼 날짜가 거래일이면 그날, 아니면 그 직전 거래일>","announced_at":"<발표 시각 ISO, 오프셋 포함>","source_kind":"SEC_FILING"|"COMPANY_PRESS_RELEASE"|"COMPANY_IR","source_url":"https://…","criterion_a":<+ 사실이 규칙 파일 호재 기준 (a)를 충족하면 true, 그 밖 false>,"root_thesis_damage":<카드 kill ①~③ 해당이 공식 확인되면 true, 그 밖 false>,"summary_ko":"<200자 이내 한 줄>"}. 없으면 [].
  ㉱ 쓰기 — 이 순서로:
@@ -40,7 +41,7 @@ PY
   (3) device_bash: mkdir -p "$HOME/mnt/코덱스저장소/workspace/outputs/research-records/DAY"
   (4) device_commit_files 한 번 — {stagedPath "/mnt/user-data/outputs/research-record.json", devicePath "E:\\사업\\##금동한\\코덱스저장소\\workspace\\outputs\\research-records\\DAY\\research-record.pending.json"}. force는 쓰지 않는다.
   (5) device_bash에서 아래 finalize를 python3 - DAY <RR_BUILT의 sha256> <<'PY' … PY 로 그대로 실행한다 — 저장소 스키마로 검사하고, 통과하면 research-record.json으로 이름을 바꾼다(이미 있으면 그대로 둔다).
- 결과: "RR OK" → 보고 끝에 "연구 기록: 실적 n · 공식 사실 m(빠짐 k)" 한 줄. "RR EXISTS" → "연구 기록 기존 유지". 그 밖("RR INVALID", (1)~(4) 실패, 도구 없음) → 보고 끝에 "연구 기록 실패(<사유>) — 오늘 코어 매수 막힘"을 쓰고 PushNotification 한 줄 "연구 기록 쓰기 실패(<사유>) — 오늘 자동 운영 코어 매수 막힘, Cowork 확인 필요"를 보낸다. 이 단계의 실패는 점검 상태·대시보드 기록에 넣지 않고 다시 시도하지 않는다.
+ 결과: "RR OK" → 보고 끝에 "연구 기록: 실적 n · 공식 사실 m(빠짐 k) · 기준표로 뺀 미공지 j(<anchor_dropped 내용>)" 한 줄. anchor_dropped에 anchors-unreadable·anchor-error가 있으면 PushNotification 한 줄 "실적일 기준표 문제(<사유>) — 해당 개별주 미공지 빠짐(매수만 막힘), Cowork 확인 필요"를 보낸다. "RR EXISTS" → "연구 기록 기존 유지". 그 밖("RR INVALID", (1)~(4) 실패, 도구 없음) → 보고 끝에 "연구 기록 실패(<사유>) — 오늘 코어 매수 막힘"을 쓰고 PushNotification 한 줄 "연구 기록 쓰기 실패(<사유>) — 오늘 자동 운영 코어 매수 막힘, Cowork 확인 필요"를 보낸다. 이 단계의 실패는 점검 상태·대시보드 기록에 넣지 않고 다시 시도하지 않는다.
 ----- build -----
 import json,sys,re,hashlib,datetime as T
 from zoneinfo import ZoneInfo
@@ -71,11 +72,11 @@ for f in P.get('official_facts') or []:
     ok=isinstance(f,dict) and set(f)==Q and bool(re.fullmatch(r'[A-Za-z0-9._:-]{4,80}',str(f['fact_id']))) and f['fact_id'] not in {x['fact_id'] for x in facts} and bool(S.fullmatch(str(f['symbol']))) and f['direction'] in('+','-') and f['kind'] in K and isinstance(f['card_trigger_ids'],list) and len(set(f['card_trigger_ids']))==len(f['card_trigger_ids']) and all(re.fullmatch(r'[A-Z]{1,3}[0-9]{1,2}',str(x)) for x in f['card_trigger_ids']) and bool(D.fullmatch(str(f['event_session']))) and f['event_session']<=ses and iso(f['announced_at']) and f['source_kind'] in SK and str(f['source_url']).startswith('https://') and not DENY.search(str(f['source_url'])) and isinstance(f['criterion_a'],bool) and isinstance(f['root_thesis_damage'],bool) and isinstance(f['summary_ko'],str) and 0<len(f['summary_ko'])<=200
     (facts.append(f) if ok else drop.append('fact:'+str(f.get('fact_id') if isinstance(f,dict) else f)[:40]))
 same=isinstance(run,dict) and run.get('date')==day and str(run.get('basis',''))[:10]==ses
-rec={'schema_version':'auto-core-research-record-1.0','record_day_kst':day,'evaluation_session':ses,'written_at':T.datetime.now(ZoneInfo('Asia/Seoul')).isoformat(timespec='seconds'),'writer':'integrated-check 06:40 v3.12.4-L+R1','earnings':earn,'official_facts':facts,'integrated_check_run':run if same else None,'order_authority':False,'quantity_authority':'none'}
+rec={'schema_version':'auto-core-research-record-1.0','record_day_kst':day,'evaluation_session':ses,'written_at':T.datetime.now(ZoneInfo('Asia/Seoul')).isoformat(timespec='seconds'),'writer':'integrated-check 06:40 v3.12.5-L+R2','earnings':earn,'official_facts':facts,'integrated_check_run':run if same else None,'order_authority':False,'quantity_authority':'none'}
 b=(json.dumps(rec,ensure_ascii=False,indent=1)+'\n').encode('utf-8');open(OUT,'wb').write(b)
 print('RR_BUILT',hashlib.sha256(b).hexdigest(),'earnings',len(earn),'facts',len(facts),'run_copy',same,'dropped',drop)
 ----- finalize -----
-import json,os,sys,hashlib
+import json,os,sys,hashlib,re,glob,datetime as T
 day,sha=sys.argv[1],sys.argv[2];R=os.path.expanduser('~/mnt/코덱스저장소/');D=R+'workspace/outputs/research-records/'+day+'/'
 f,p=D+'research-record.json',D+'research-record.pending.json'
 if os.path.exists(f):print('RR EXISTS');raise SystemExit
@@ -83,7 +84,49 @@ try:b=open(p,'rb').read()
 except OSError as e:print('RR INVALID pending',type(e).__name__);raise SystemExit
 if hashlib.sha256(b).hexdigest()!=sha:print('RR INVALID sha');raise SystemExit
 sys.path.insert(0,R+'manage-us-stock-strategy/scripts');from validation_common import validate_instance
-d=json.loads(b.decode('utf-8'));e=validate_instance(d,R+'manage-us-stock-strategy/schemas/auto-core-research-record.schema.json')
+SC=R+'manage-us-stock-strategy/schemas/auto-core-research-record.schema.json'
+d=json.loads(b.decode('utf-8'));e=validate_instance(d,SC)
 if e or d.get('record_day_kst')!=day:print('RR INVALID',(e or ['record_day'])[:3]);raise SystemExit
-os.replace(p,f);print('RR OK earnings',len(d['earnings']),'facts',len(d['official_facts']))
+DT=re.compile(r'\d{4}-\d{2}-\d{2}');dd=T.date.fromisoformat(day);ses=d['evaluation_session'];EA=d['earnings']
+try:
+    A=json.load(open(R+'docs/claude/earnings-anchors.json',encoding='utf-8'))['anchors']
+    if not isinstance(A,dict):A=None
+except Exception:A=None
+def ok(z):
+    try:return bool(DT.fullmatch(str(z))) and T.date.fromisoformat(str(z)) is not None
+    except ValueError:return False
+V={}
+def addv(X):
+    for s,x in (X.items() if isinstance(X,dict) else []):
+        if isinstance(x,dict) and x.get('status')=='VERIFIED' and ok(x.get('announcement_session')) and x['announcement_session']<=ses:V.setdefault(s,set()).add(x['announcement_session'])
+for q in glob.glob(R+'workspace/outputs/research-records/*/research-record.json'):
+    try:
+        k=q.replace('\\','/').split('/')[-2]
+        if not ok(k) or k>=day or (dd-T.date.fromisoformat(k)).days>450:continue
+        X=json.load(open(q,encoding='utf-8'));addv(X.get('earnings') if isinstance(X,dict) else None)
+    except Exception:continue
+addv(EA)
+def why(s):
+    try:
+        k={'MVLL':'MRVL'}.get(s,s)
+        if A is None:return 'anchors-unreadable'
+        L=A.get(k) or []
+        B={str(x.get('session')) for x in (L if isinstance(L,list) else []) if isinstance(x,dict) and ok(x.get('session')) and str(x.get('source_url','')).startswith('https://')}
+        W=V.get(k,set())|V.get(s,set());E=[T.date.fromisoformat(z)+T.timedelta(days=n) for z in B|W for n in(364,728)]
+        if not any(-21<=(x-dd).days<=130 for x in E):return 'anchor-missing'
+        for x in E:
+            if -21<=(dd-x).days<=21 and not any(abs((T.date.fromisoformat(w)-x).days)<=35 for w in W):return 'anchor-window '+x.isoformat()
+        return None
+    except Exception as z:return 'anchor-error '+type(z).__name__
+drop=[]
+for s in sorted(EA):
+    if EA[s].get('status')=='NOT_ANNOUNCED':
+        w=why(s)
+        if w:drop.append(s+':'+w)
+for x in drop:EA.pop(x.split(':')[0])
+if drop:
+    b=(json.dumps(d,ensure_ascii=False,indent=1)+'\n').encode('utf-8');e=validate_instance(d,SC)
+    if e:print('RR INVALID anchor',e[:3]);raise SystemExit
+    open(p,'wb').write(b)
+os.replace(p,f);print('RR OK earnings',len(d['earnings']),'facts',len(d['official_facts']),'anchor_dropped',drop)
 ----- 끝 -----

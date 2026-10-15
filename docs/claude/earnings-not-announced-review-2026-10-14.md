@@ -3,7 +3,7 @@ id: earnings-not-announced-review-2026-10-14
 title: 실적일 "미공지(NOT_ANNOUNCED)" 확인 방법 재검토
 date: 2026-10-14
 class: K2 후보(통합 점검 로더 4단계 ㉯ + build 가드 + 기준표 1개) — p-earn r1 정책 문언 불변, 미공지를 덜 쓰는 쪽(매수만 더 막힘)
-status: 결정 a(2026-10-14 11:04 KST "결정 earn-na: a") — 구현 초안·시험·독립 검토 완료, 예약 작업 교체는 10/15 07:20 첫 실행 확인 뒤(사용자 승인)
+status: 적용됨 2026-10-15 07:4x KST — 첫 실행 확인 PASS 뒤 통합 점검 로더 v3.12.5-L+R2(c3-rule 규칙 v3.12.5와 한 번에, 206782f6…)로 교체, 재서명. 첫 적용 실행 10/16 06:40
 authority: order_authority=false · quantity_authority=none · execution_quantity=null
 ---
 
