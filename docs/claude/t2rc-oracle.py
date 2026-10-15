@@ -30,7 +30,7 @@ import math
 import os
 import re
 import sys
-from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP
 
 ORACLE_VERSION = "t2rc-oracle-1.0"
 
@@ -45,6 +45,7 @@ C2_ATR_K, C2_POS_HI, C2_POS_LO, C2_VOL_K = 2.5, 0.35, 0.65, 1.2   # rule file 3)
 C6_BAND = 0.015            # rule file 3) C6 / DL6 (user 2026-10-03 (ii))
 EVENT_WINDOW = 5           # rule file 3) persistence: event type counts 5 sessions incl. the day
 C7_SESSIONS = 2            # rule file 3) C7: within 2 sessions
+C7_RECORD_DAYS = 10        # builder report R2-4: C7 reads the facts of the last 10 research-record days
 SPLIT_GUARD = 0.45         # builder prompt F1 split suspicion
 SPLIT_KS = (2, 3, 4, 5, 8, 10, 15, 20)
 SPLIT_TOL = 0.03
@@ -85,7 +86,8 @@ CARD_KIND = {
     "close_at_or_below": ("stop_reference", False), # S8 N9: alert
 }
 INFO_KINDS = {"earnings_notice", "log_only", "display_only"}
-C7_BAD_KINDS = {"guidance", "dilution", "contract", "customer_change"}   # rule file 111 C7+ (가이던스 하향·희석·주요 계약 축소)
+C7_BAD_KINDS = {"guidance", "dilution", "contract", "customer_change"}
+SELL_FACT_KINDS = {"kill", "dilution", "customer_change", "guidance"}   # builder F3: - facts that count as strong (sell)   # rule file 111 C7+ (가이던스 하향·희석·주요 계약 축소)
 MULT_ONE_ASSUMED = {"PWR", "LITE", "MRVL"}   # rule file 99: unregistered approved stocks / underlying counted as 1x
 EXEMPT_FROM_EARNINGS = {"SOXL", "TQQQ", "DRAM", "SOXX", "GRID"}   # rule file 133: index ETFs excluded from the earnings check
 UNDERLYING = {"MVLL": "MRVL"}   # rule file 4 / 133: leveraged single-stock ETF -> underlying earnings
@@ -545,32 +547,47 @@ def c2_events(ind, side):
 
 def c7_events(ind, cal, facts, side):
     """C7- (and card good_news_drop): official good news (criterion (a)) then within 2 sessions close < pre-announcement close.
-    C7+: company official bad news then within 2 sessions close > pre-announcement close. Facts = validated official facts."""
+    C7+: company official bad news then within 2 sessions close > pre-announcement close. Facts = validated official facts.
+    Base = the last regular-session close at or before announced_at (builder F3 announced_at); the window is the next 2
+    sessions after that base; only the first session that meets the condition is the event day (Judge 2026-10-15 3-5).
+    Without a parseable announced_at the base is the session before event_session (announcement before that open)."""
     s = ind.s
     n = len(s.c)
     if facts is None:   # no valid research record: C7 cannot be judged (builder F1: "없으면 unk")
         return [None] * n
     ev = [False] * n
     for f in facts:
-        d = f.get("event_session")
-        if d not in s.index:
-            continue
-        k = s.index[d]
-        if k == 0:
-            continue
-        pre = s.c[k - 1]
         good = f["direction"] == "+" and f.get("criterion_a") is True
         # C7+: only company figures for a guidance cut, dilution or a major contract cut (rule file 111)
         bad = f["direction"] == "-" and f.get("kind") in C7_BAD_KINDS
         if (side == "-" and not good) or (side == "+" and not bad):
             continue
-        for t in range(k, min(n, k + C7_SESSIONS + 1)):
+        b = None
+        try:
+            at = dt.datetime.fromisoformat(str(f.get("announced_at")).replace("Z", "+00:00"))
+            if at.tzinfo is None:
+                raise ValueError
+            for k in range(n):
+                d = s.dates[k]
+                if d in cal.close_at and dt.datetime.fromisoformat(cal.close_at[d]) <= at:
+                    b = k
+                else:
+                    break
+        except Exception:
+            d = f.get("event_session")
+            b = s.index[d] - 1 if d in s.index else None
+        if b is None or b < 0:
+            continue
+        pre = s.c[b]
+        for t in range(b + 1, min(n, b + 1 + C7_SESSIONS)):
             if s.c[t] is None or pre is None:
-                ev[t] = None
-            elif (side == "-" and s.c[t] < pre) or (side == "+" and s.c[t] > pre):
+                if ev[t] is False:
+                    ev[t] = None
+                break
+            if (side == "-" and s.c[t] < pre) or (side == "+" and s.c[t] > pre):
                 ev[t] = True
+                break
     return ev
-
 
 def c8_threshold(entry, mult):
     if entry and entry.get("c8") and entry["c8"].get("one_day") is not None:
@@ -845,9 +862,9 @@ def evidence(sym, side, groups_t, groups_prev, entry, reg_status, facts, trig_t=
             continue
         if side == "buy" and f["direction"] == "+" and f.get("criterion_a") is True:
             strong.append(f["fact_id"]); new_strong.append(f["fact_id"])
-        if side == "sell" and f["direction"] == "-":
+        if side == "sell" and f["direction"] == "-" and f.get("kind") in SELL_FACT_KINDS:
             strong.append(f["fact_id"]); new_strong.append(f["fact_id"])
-    card_kinds, prev_unknown = set(), []
+    card_kinds, card_defined, prev_unknown = set(), set(), []
     for grp, (gside, state, members) in groups_t.items():
         if gside != want or state != "hit":
             continue
@@ -855,6 +872,8 @@ def evidence(sym, side, groups_t, groups_prev, entry, reg_status, facts, trig_t=
         ids.extend(t for t in members)
         if any(not COMMON_ID.match(t) and (trig_t or {}).get(t) == "hit" for t in members):
             card_kinds.add(grp)
+        if any(not COMMON_ID.match(t) for t in members):
+            card_defined.add(grp)
         prev = groups_prev.get(grp)
         # "new" = hit today and none/pending in the previous session; an unknown previous state is not counted as
         # new (fail closed for buys: a condition that held through a data gap must not reopen the circuit)
@@ -865,7 +884,8 @@ def evidence(sym, side, groups_t, groups_prev, entry, reg_status, facts, trig_t=
     official = [x for x in strong if x in set(new_strong)]
     return {"strong": sorted(strong), "weak_kinds": sorted(weak), "new_strong": sorted(new_strong),
             "new_kinds": sorted(new_kinds), "prev_unknown_kinds": sorted(prev_unknown),
-            "card_kinds": sorted(card_kinds), "official": sorted(official),
+            "card_kinds": sorted(card_kinds), "card_defined_kinds": sorted(card_defined), "side": side,
+            "official": sorted(official),
             "static_strong": sorted(x for x in strong if x not in set(new_strong)),
             "basis_met": len(strong) >= 1 or len(weak) >= 2,
             "new_basis_met": len(new_strong) >= 1 or len(new_kinds) >= 2}
@@ -952,12 +972,16 @@ def earnings_reading(cal, rec, eval_session, next_session, generated_at):
 
 
 # ---------------------------------------------------------------- R-REC1
-def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equity_today, s7_hwm):
+def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equity_today, s7_hwm, ev4_hist=()):
     """Returns dict(status ok|no|unk, open, event, rg{}) for one candidate symbol (buy side).
     records: {evaluation_session: [facts]} of research records written before the decide run (RG1 coverage, EV3b).
     RG1 record coverage follows user decision rrec-rg1-bootstrap B (2026-10-13, docs/claude/rrec-rg1-builder-prompt.md):
     sessions before the first record inside the 60-session window are left out; after it every session needs a record;
-    no record in the window -> unk. EV4 is known only for the evaluation session (no equity history; 확인 필요)."""
+    no record in the window -> unk. EV4 (Judge 2026-10-15 9d): the evaluation session from today's total assets, earlier
+    sessions of the window from ev4_hist (sessions whose earlier decide record shows total <= the V6 first line or
+    <= S7 hwm x 0.9, recomputed here from the recorded account values). EV3(b) gap (builder report R2-4 (b)): after the
+    first research record in the window, a session without a valid record whose SOXX 1-day return is <= -1 sigma60 or
+    unknown makes the gate unknown (status unk, open None, EV3B_RECORD_GAP)."""
     sx, ix = ser.get("SOXX"), ind.get("SOXX")
     cs, ci = ser.get(sym), ind.get(sym)
     if sx is None or ix is None or eval_session not in sx.index:
@@ -970,6 +994,17 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
     cover = sorted(d for d in records if d in window)
     first = cover[0] if cover else None
     facts = [f for d in cover for f in records[d]]
+    if first is not None:
+        gaps = []
+        for k in range(lo, t + 1):
+            d = sx.dates[k]
+            if d < first or d in records:
+                continue
+            r, sg = ix.ret[k], ix.sigma[k]
+            if r is None or sg is None or r <= -1 * sg:
+                gaps.append(d)
+        if gaps:
+            return {"status": "unk", "open": None, "reason": "EV3B_RECORD_GAP:" + ",".join(gaps)}
     events = []
     for k in range(lo, t + 1):
         d = sx.dates[k]
@@ -984,7 +1019,8 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
         if r is not None and sg is not None and r <= -1 * sg and any(
                 f.get("root_thesis_damage") is True and f.get("event_session") == d for f in facts):
             kinds.append("EV3b")
-        if d == eval_session and equity_today is not None and (equity_today <= V6_FIRST or (s7_hwm and equity_today <= s7_hwm * 0.9)):
+        if (d == eval_session and equity_today is not None and (equity_today <= V6_FIRST or (s7_hwm and equity_today <= s7_hwm * 0.9))) \
+                or (d != eval_session and d in ev4_hist):
             kinds.append("EV4")
         if d in cs.index:
             j = cs.index[d]
@@ -1060,47 +1096,60 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
 
 
 # ---------------------------------------------------------------- price and quantity (design 7-1, 7-2, 5)
-def loc_price(ref, sigma, side):
-    r, s = Decimal(repr(ref)), Decimal(repr(sigma))
+def loc_mult(sigma, side):
+    """m = 1 + 0.5 sigma (buy, 4 decimals down) / 1 - sigma (sell, 4 decimals up): design 9-1 2-2 "키움 기준종가 x m",
+    T2 Judge J8 (Judge 2026-10-15 3-8)."""
+    s = Decimal(repr(sigma))
     if side == "buy":
-        x = r * (Decimal(1) + Decimal(str(BUY_LOC_K)) * s)
+        return (Decimal(1) + Decimal(str(BUY_LOC_K)) * s).quantize(Decimal("0.0001"), rounding=ROUND_FLOOR)
+    return (Decimal(1) - Decimal(str(SELL_LOC_K)) * s).quantize(Decimal("0.0001"), rounding=ROUND_CEILING)
+
+
+def loc_price(ref, sigma, side):
+    x = Decimal(repr(ref)) * loc_mult(sigma, side)
+    if side == "buy":
         return (x * 100).to_integral_value(rounding=ROUND_FLOOR) / 100
-    x = r * (Decimal(1) - Decimal(str(SELL_LOC_K)) * s)
     return (x * 100).to_integral_value(rounding=ROUND_CEILING) / 100
 
 
-def regret_choice(delta, ref, up, down, r_max, equity, side, cand_up=0.0, cand_down=0.0, invest=None):
-    """design 5 / builder F5: actions {0,1/3,1/2,1}; regret vs the best of all four; choose r_max if its max regret
-    <= 3% equity, else the smallest max regret at or below r_max (ties -> smaller).
-    Sell redeployment bridge (design 5, builder F5): P&L of selling q shares against holding = - q x ref x own return
-    + I(q) x candidate return in the same scenario (pair scenario: both at their 90th pct / both at their 10th pct,
-    design 5 "교체 쌍은 두 종목을 함께"); I(q) = invest(q) = the executable next-day buy amount (<= q x ref, rest stays
-    cash); invest None = full proceeds. Path 2 (sell -> cash) is cand_up = cand_down = 0; path 1 (hold) is the 0 row."""
+CENT = Decimal("0.01")
+
+
+def cents(x):
+    return Decimal(repr(float(x))).quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def regret_choice(delta, ref, up, down, r_max, equity, side, cand=None):
+    """design 5 / builder F5: actions {0,1/3,1/2,1}; regret per scenario column vs the best row of that column; row max
+    regret = max over the columns; choose r_max if its max regret <= 3% equity, else the smallest max regret at or below
+    r_max (ties -> smaller). Amounts are compared in cents (Judge 2026-10-15 S7).
+    Buy columns: up / down. Sell columns (redeployment bridge, Judge S1/S6): {up, down} x {cash, best candidate}; the
+    candidate columns invest the whole sale proceeds q x ref in the candidate (pair scenario: both at their 90th pct /
+    both at their 10th pct, design 5 "교체 쌍은 두 종목을 함께"); without a candidate only the two cash columns."""
+    cols = [("up", up, None), ("down", down, None)]
+    if side != "buy" and cand is not None:
+        cols += [("cand_up", up, cand[0]), ("cand_down", down, cand[1])]
     rows = []
     for a, lab in STEPS:
         q = int((Decimal(delta) * a).to_integral_value(rounding=ROUND_FLOOR)) if a < 1 else int(delta)
-        if side == "buy":
-            pu, pd = q * ref * up, q * ref * down
-        else:
-            inv = q * ref if invest is None else invest(q)
-            pu, pd = inv * cand_up - q * ref * up, inv * cand_down - q * ref * down
-        rows.append({"r": lab, "a": a, "qty": q, "pnl_up": pu, "pnl_down": pd})
-        if side != "buy" and invest is not None:
-            rows[-1]["invest"] = inv
-    best_up = max(x["pnl_up"] for x in rows)
-    best_dn = max(x["pnl_down"] for x in rows)
+        row = {"r": lab, "a": a, "qty": q, "pnl": {}}
+        for name, own, cr in cols:
+            v = q * ref * own if side == "buy" else (-q * ref * own + (q * ref * cr if cr is not None else 0.0))
+            row["pnl"][name] = cents(v)
+        rows.append(row)
+    best = {name: max(x["pnl"][name] for x in rows) for name, _, _ in cols}
     for x in rows:
-        x["regret_up"] = best_up - x["pnl_up"]
-        x["regret_down"] = best_dn - x["pnl_down"]
-        x["max_regret"] = max(x["regret_up"], x["regret_down"])
+        x["regret"] = {name: best[name] - x["pnl"][name] for name, _, _ in cols}
+        x["max_regret"] = max(x["regret"].values())
+        x["regret_up"], x["regret_down"] = x["regret"]["up"], x["regret"]["down"]
+    budget = (Decimal(repr(float(equity))) * Decimal(str(REGRET_BUDGET))).quantize(CENT, rounding=ROUND_HALF_UP)
     feas = [x for x in rows if x["a"] <= r_max]
     top = max(feas, key=lambda x: x["a"])
-    if top["max_regret"] <= REGRET_BUDGET * equity:
+    if top["max_regret"] <= budget:
         pick = top
     else:
-        pick = min(feas, key=lambda x: (round(x["max_regret"], 6), x["a"]))
+        pick = min(feas, key=lambda x: (x["max_regret"], x["a"]))
     return pick, rows
-
 
 def stress_returns(ind, i, n_sessions=SIGMA_WINDOW):
     """5-session returns ending at each of the last 60 sessions (reading: overlapping, ending t-59..t; 확인 필요)."""
@@ -1124,7 +1173,7 @@ class Context:
             self.ind[s] = Ind(ser) if ser.dates else None
 
 
-def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, facts, s7_add, s7_reduce, mult_of):
+def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, facts, s7_add, s7_reduce, mult_of, c7_facts=None):
     """Circuit open set (design 1 (1), builder D5/F4). Returns (open list, per-symbol detail)."""
     out, detail = [], {}
     universe = sorted(set(held) | set(members))
@@ -1140,7 +1189,8 @@ def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, fa
         if ind.s.split_suspected:
             d["status"] = "SPLIT_SUSPECTED"; continue
         i = ind.s.index[eval_session]
-        sym_facts = None if facts is None else [f for f in facts if f.get("symbol") == sym]
+        src7 = facts if c7_facts is None else c7_facts
+        sym_facts = None if src7 is None else [f for f in src7 if f.get("symbol") == sym]
         # card definitions apply only while the symbol is held / a member (registry active_when; rule file 3) "카드 정의는
         # 그 종목이 보유 또는 members일 때만"); an inactive card leaves the common rules in place
         active_entry = None
@@ -1163,7 +1213,9 @@ def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, fa
         if is_held:
             ev_s = evidence(sym, "sell", g_t, g_p, entry, rstat, facts, d["triggers"])
             d["sell"] = ev_s
-            target = sym in s7_reduce or (entry is not None and rstat == "OK" and entry.get("card_action") in ("EXIT", "TRIM"))
+            card_goal = entry is not None and (entry.get("card_action") == "EXIT" or
+                                               (entry.get("card_action") == "TRIM" and entry.get("trim_target_weight") is not None))
+            target = sym in s7_reduce or card_goal
             d["sell_target"] = target
             if target and ev_s["basis_met"]:
                 out.append({"symbol": sym, "side": "sell", "trigger": "S7_REDUCE" if sym in s7_reduce else "CARD_" + str(entry.get("card_action"))})
@@ -1390,7 +1442,16 @@ def cmd_check(args):
     mult_of = mult_fn(policy)
     syms = sorted(set(held) | set(members) | {"SOXX", "GRID"})
     ctx = Context(repo, cal, ev, syms, corp)
-    opened, detail = circuit_for_session(ctx, ev, set(held), set(members), reg, wm, facts, s7_add, s7_reduce, lambda s: mult_of(s) or 1)
+    c7_facts = None
+    if facts is not None:
+        seen = {f.get("fact_id") for f in facts}
+        c7_facts = list(facts)
+        for sess in sorted(history)[-C7_RECORD_DAYS:]:
+            for f in history[sess] or []:
+                if f.get("fact_id") not in seen:
+                    seen.add(f.get("fact_id")); c7_facts.append(f)
+    opened, detail = circuit_for_session(ctx, ev, set(held), set(members), reg, wm, facts, s7_add, s7_reduce,
+                                         lambda s: mult_of(s) or 1, c7_facts)
     core = {(c["symbol"], c["side"]) for c in dec.get("candidates") or []}
     mine = {(c["symbol"], c["side"]) for c in opened}
     res["c1"] = {"oracle_open": sorted([list(x) for x in mine]), "core_candidates": sorted([list(x) for x in core]),
@@ -1401,6 +1462,23 @@ def cmd_check(args):
     env = {"ctx": ctx, "dec": dec, "snap": snap, "s7": s7, "policy": policy, "rr": rr if rr_ok else None, "reg": reg, "wm": wm,
            "facts": facts, "held": held, "members": members, "detail": detail, "cal": cal, "mult_of": mult_of,
            "decide_at": decide_at, "history": history, "state": state, "prev_dec": prev_dec, "repo": repo, "open": mine, "day": day}
+    cfg_p = os.path.join(repo, "workspace/policies/auto_core.json")
+    env["core_cfg"] = load_json(cfg_p) if os.path.exists(cfg_p) else {}
+    ev4_hist = set()
+    for pp in sorted(glob.glob(os.path.join(repo, "workspace/outputs/auto-core", "20??-??-??", "decision.json"))):
+        if os.path.basename(os.path.dirname(pp)) >= day:
+            continue
+        try:
+            pdx = load_json(pp)
+        except Exception:
+            continue
+        acc = pdx.get("account") or {}
+        tot, first_line, hw = fnum(acc.get("total")), fnum(acc.get("first")), fnum(acc.get("s7_hwm_usd"))
+        if pdx.get("evaluation_session") and tot is not None and (
+                (first_line is not None and tot <= first_line) or (hw and tot <= hw * 0.9)):
+            ev4_hist.add(pdx["evaluation_session"])
+    env["ev4_hist"] = ev4_hist
+    res["ev4_history"] = sorted(ev4_hist)
     env["exposure"] = exposure_check(env)
     res["exposure"] = env["exposure"]
     req_rows, req_diffs = {}, []
@@ -1439,15 +1517,32 @@ def cmd_check(args):
                          "m6": [[os.path.relpath(p, repo), sha256_file(p)] for p in sorted(glob.glob(os.path.join(repo, "docs/claude/m6-relative-comparison-7stock*.md")))]}
     ok = res["c1"]["match"] and all(x.get("match") for x in res["tickets"]) and not leaks
     res["verdict"] = "MATCH" if ok else "MISMATCH"
+    # C1 guard (Judge 2026-10-15 5): a symbol the oracle could not evaluate (no data, split suspected, no close on the
+    # evaluation session) while the core evaluated it is not a confirmed "no circuit" -> the session is NOT_CHECKED
+    gap = []
+    for sym, d in sorted(detail.items()):
+        cd = (dec.get("symbols") or {}).get(sym) or {}
+        mi, ci = d.get("indicators") or {}, cd.get("indicators") or {}
+        keys = ("close", "ema20", "sigma60")
+        mine_ok = d.get("status") == "OK" and all(mi.get(k) is not None for k in keys if ci.get(k) is not None)
+        core_ok = cd.get("status") == "OK" and ci.get("close") is not None
+        if not mine_ok and core_ok:
+            gap.append(sym)
+    if gap:
+        res["verdict"] = "NOT_CHECKED"
+        res["reason"] = "ORACLE_DATA_GAP:" + ",".join(gap)
+        res["c2_item_match"] = False
+        for x in res["tickets"]:
+            x["match"] = False
     if hist and (sha_bad or notes):
         res["verdict"] = "INFO_" + res["verdict"]
         res["note"] = "self-check only, not a C1 session: " + ",".join(sha_bad + notes)
     res["counts_for_c1"] = res["verdict"] in ("MATCH", "MISMATCH") and dec.get("decision_mode") == "compare"
-    res["c3"] = c3_record(repo, day, dec, res["tickets"])
+    res["c3"] = c3_record(repo, day, dec, res["tickets"], leaks)
     return finish(res, args)
 
 
-def c3_record(repo, day, dec, checked):
+def c3_record(repo, day, dec, checked, leaks=()):
     """Prereg C3 / M3: after T2 is on, the first ticket of each direction needs a recorded match before the alert may send
     the entry guide. confirmed_before = an earlier apply-mode check of this oracle recorded a matched ticket of that side.
     entry_allowed = no ticket of that side today, or confirmed before, or every ticket of that side today matched.
@@ -1471,7 +1566,8 @@ def c3_record(repo, day, dec, checked):
         today = [x for x in checked if x.get("side") == side]
         before = [dd for dd, r in prev if (((r.get("c3") or {}).get(side) or {}).get("today_all_match") is True
                                            and any(t.get("side") == side and t.get("match") for t in r.get("tickets") or []))]
-        all_match = bool(today) and all(x.get("match") for x in today)
+        # a day with a leak of that side (the oracle would have issued a ticket the core did not) does not confirm it
+        all_match = bool(today) and all(x.get("match") for x in today) and not any(l.get("side") == side for l in leaks)
         out[side] = {"tickets_today": len(today), "tickets": [x.get("ticket_id") for x in today],
                      "matched": [x.get("ticket_id") for x in today if x.get("match")],
                      "today_all_match": all_match, "confirmed_before": before[:1],
@@ -1574,7 +1670,7 @@ def req3_of(env, sym):
 def req4_of(env, sym):
     """buy requirement (4): the M6 7-stock comparison card mentions the code."""
     for p in sorted(glob.glob(os.path.join(env["ctx"].repo, "docs/claude/m6-relative-comparison-7stock*.md"))):
-        if re.search(r"(?<![A-Z])%s(?![A-Z])" % re.escape(sym), open(p, encoding="utf-8").read()):
+        if sym in open(p, encoding="utf-8").read():   # rule file 134 "grep -c" (substring)
             return "ok"
     return "no"
 
@@ -1609,95 +1705,35 @@ def first_entry_target(env, sym, best):
     return float((Decimal(repr(best)) / 2 / WEIGHT_STEP).to_integral_value(rounding=ROUND_FLOOR) * WEIGHT_STEP)
 
 
-def sell_invest(env, w, eq, sym, ref, q, c, cache):
-    """Sell path 3, one row: the dollar amount the next-day buy of candidate c could take after selling q shares of sym,
-    as an executable action (design 5: 그때 실행 가능했던 행동끼리만; design 7-1 5 / 7-4: 교체 쌍은 매수 뒤 예상 E <= 1.55).
-    0 when the projected E after the sale is still >= 1.85 (G2 buy halt), the candidate has no room, or the whole-share
-    amount is under the 2% deadband. Not modelled (Judge): the candidate's own r_max / regret step, G2b, G4 fee buffer."""
-    key = (c, q)
-    if key in cache:
-        return cache[key]
-    ctx, ev, mult_of = env["ctx"], env["dec"]["evaluation_session"], env["mult_of"]
-    w2 = dict(w)
-    w2[sym] = w.get(sym, 0.0) - q * ref / eq
-    if w2[sym] <= 1e-12:
-        del w2[sym]
-    val, why = 0.0, "OK"
-    if any(mult_of(s) is None for s in w2):
-        why = "MULT_MISSING"
-    else:
-        N2 = sum(mult_of(s) * x for s, x in w2.items())
-        V2, _ = compute_V(ctx.ser, w2, ev)
-        if V2 is None:
-            why = "V_AFTER_NONE"
-        elif max(N2, V2) >= 1.85:
-            why = "E_AFTER_GE_1.85"
-        else:
-            best = w_star(env, w2, c)
-            if best is None:
-                why = "W_STAR_NONE"
-            else:
-                room = (first_entry_target(env, c, best) - w2.get(c, 0.0)) * eq
-                ser_c = ctx.ser.get(c)
-                ref_c = ser_c.raw_c[ser_c.index[ev]] if ser_c is not None and ev in ser_c.index else None
-                if not ref_c:
-                    why = "NO_REF"
-                else:
-                    # whole shares at the candidate reference price; the buy deadband (design 7-1 4) applies to it too
-                    val = math.floor(max(0.0, min(q * ref, room)) / ref_c) * ref_c
-                    if val < DEADBAND * eq:
-                        val, why = 0.0, "BUY_DEADBAND"
-    cache[key] = (val, why)
-    return val, why
-
-
-def candidate_buy_blocked(env, c):
-    """Static next-day buy blocks for a redeployment candidate (G2 / G5 pieces that do not depend on the sale):
-    sell target today, earnings blackout (1), R-REC1 (5), S7 pauses, review lines L2+, add pause / cap / peak for held."""
-    s7, d = env["s7"], env["detail"].get(c) or {}
-    if d.get("sell_target"):
-        return "SELL_TARGET_TODAY"
-    if s7["pauses"]["new_buy_recommendations"].get("paused"):
-        return "NEW_BUY_PAUSED"
-    if any(l["triggered_in_current_drawdown"] and l["line_id"] != "L1" for l in s7["review_lines"]["lines"]):
-        return "REVIEW_LINE"
-    if c in env["held"]:
-        caps = {b.get("symbol") for b in s7["single_stock_cap"]["breaches"] if b.get("block_new_buy")}
-        peaks = {p.get("symbol") for p in s7["peak_reviews"] if p.get("pause_add_recommendations") or p.get("open_events")}
-        if s7["pauses"]["add_recommendations"].get("paused") or c in caps or c in peaks:
-            return "ADD_PAUSED"
-    reqs = buy_requirements(env, c)
-    if reqs[0] != "ok":
-        return "EARNINGS_BLACKOUT"
-    if reqs[4] != "ok":
-        return "R_REC1"
-    return None
 
 
 def redeploy_candidates(env, sym):
-    """Sell path 3 candidates (builder F5: 후보 = 등록부 + M6 + ③ 충족; design 5: 카드 ADD 근거와 M6 비교가 있는 후보만):
-    another symbol of this run with data, registry status OK, a buyable product (alert_policy card_stock_core or
-    allowed_index_etfs, as G2, and the rule-file requirement (2) product list - so the sell-only MVLL is never a
-    candidate), requirement (3) ok and (4) ok, and 60 stress returns."""
+    """Sell redeployment candidates (Judge 2026-10-15 S5): another symbol of this run whose buy requirements (1), (3), (4)
+    and (5) are ok today, a policy-approved product (card_stock_core or allowed_index_etfs - the sell-only MVLL is not),
+    registry status OK and 60 stress returns; the symbol sold and every symbol with an open sell circuit today are left
+    out. Requirement (2) (exposure / cash), S7 pauses and the after-sale exposure are not filters (the D+1 gates decide).
+    Ranked (S3): more strong evidence, then more weak kinds, then the code."""
     ctx, ev, policy = env["ctx"], env["dec"]["evaluation_session"], env["policy"]
-    approved = (set(policy.get("card_stock_core") or []) | set(policy.get("allowed_index_etfs") or [])) & set(REQ_PRODUCTS)
+    approved = set(policy.get("card_stock_core") or []) | set(policy.get("allowed_index_etfs") or [])
     cands, skipped = [], []
     for c in sorted(env["detail"]):
         d = env["detail"][c]
-        if c == sym or c not in approved or d.get("status") != "OK" or d.get("registry") != "OK":
+        if c == sym or (c, "sell") in env["open"]:
             continue
-        if req3_of(env, c) != "ok" or req4_of(env, c) != "ok":
+        if c not in approved or d.get("status") != "OK" or d.get("registry") != "OK":
             continue
-        why = candidate_buy_blocked(env, c)
-        if why:
-            skipped.append([c, why]); continue
+        reqs = buy_requirements(env, c)
+        if any(reqs[k] != "ok" for k in (0, 2, 3, 4)):
+            skipped.append([c, "REQ:" + "".join("x" if reqs[k] != "ok" else "." for k in range(5))]); continue
         ind = ctx.ind.get(c)
         st = stress_returns(ind, ind.s.index[ev]) if ind is not None and ev in ind.s.index else None
         if st is None:
             skipped.append([c, "NO_STRESS_RETURNS"]); continue
-        cands.append((c, st[0], st[1]))
+        b = d.get("buy") or {}
+        cands.append({"symbol": c, "up": st[0], "down": st[1], "strong": len(b.get("strong") or []),
+                      "weak_kinds": len(b.get("weak_kinds") or [])})
+    cands.sort(key=lambda x: (-x["strong"], -x["weak_kinds"], x["symbol"]))
     return cands, skipped
-
 
 def buy_requirements(env, sym):
     """Buy-requirement line (rule file 134) cells 1-5 as ok|no|unk."""
@@ -1742,7 +1778,7 @@ def buy_requirements(env, sym):
     e = (env["reg"].get("symbols") or {}).get(sym) or {}
     s7hwm = fnum((s7.get("review_lines") or {}).get("hwm_usd"))
     rg = rrec1(cal, ctx.ser, ctx.ind, ev, sym, e.get("rg2_benchmark") or "SOXX", ev3a_dates(ctx.repo), env["history"],
-               exp.get("total_assets_v6"), s7hwm)
+               exp.get("total_assets_v6"), s7hwm, env.get("ev4_hist") or ())
     d.setdefault("rrec1", rg)
     return [r1, "ok" if r2 else "no", r3, r4, rg.get("status")]
 
@@ -1781,16 +1817,49 @@ def gates_check(env, sym, side, r_max, delta_positive):
     return g
 
 
-def r_max_of(evd):
+def r_max_of(evd, research_cap=None):
+    """G3 (design 3 / builder F4) plus D18 (builder F3): when the strong evidence is only research-record official facts
+    (no registry static strong evidence of the same side) and research_only_strong_r_cap is set, r_max <= that cap."""
+    r = _r_max_base(evd)
+    strong = evd.get("strong") or []
+    if research_cap is not None and strong and not (evd.get("static_strong") or []):
+        r = min(r, Fraction_text_to_decimal(research_cap))
+    return r
+
+
+def Fraction_text_to_decimal(txt):
+    n, _, d = str(txt).partition("/")
+    return Decimal(n) / Decimal(d or 1)
+
+
+def fraction_text(r):
+    return {Decimal(0): "0", Decimal(1) / 3: "1/3", Decimal(1) / 2: "1/2", Decimal(1): "1"}.get(r, str(r))
+
+
+def _r_max_base(evd):
     strong = evd.get("strong") or []
     weak = evd.get("weak_kinds") or []
     r = Decimal(1) if strong else (Decimal(1) / 2 if len(weak) >= 2 else Decimal(0))
     if not strong and r > 0:
-        # common rules only (no card-defined trigger of the counted kinds, no card-table or official evidence) -> <= 1/3
-        non_common = [k for k in weak if k.startswith("static:") or k in set(evd.get("card_kinds") or [])]
+        # common rules only (no card-defined trigger of the counted kinds, no card-table or official evidence) -> <= 1/3.
+        # User decision "t2rc-corefix: 5 = b" (2026-10-15): for a buy the card trigger must be hit today (design G3
+        # "C끼리만 성립"); for a sell a card trigger defined in the counted kind is enough (the core reading, so a sell
+        # step is not cut to 1/3 - "위험 감축을 늦추지 않는다", builder G2b)
+        kinds = set(evd.get("card_defined_kinds") or []) if evd.get("side") == "sell" else set(evd.get("card_kinds") or [])
+        non_common = [k for k in weak if k.startswith("static:") or k in kinds]
         if not non_common:
             r = min(r, Decimal(1) / 3)
     return r
+
+
+def gate_match(g, side, want, cv):
+    """Core ticket gate format (auto-core-ticket schema): G0 / G1 bool; G2 True for a sell, the target weight W* (number,
+    0.001 grid) for a buy; G3 the r_max text "0" | "1/3" | "1/2" | "1"."""
+    if g == "G2" and side == "buy":
+        return isinstance(cv, (int, float)) and not isinstance(cv, bool) and want is not None and abs(cv - want) < 1e-9
+    if isinstance(want, bool):
+        return cv is want
+    return cv == want
 
 
 def ticket_check(env, t):
@@ -1815,9 +1884,10 @@ def ticket_check(env, t):
     cash_avail = fnum(env["snap"]["cash"].get("order_available_cash"))
     d = env["detail"].get(sym) or {}
     evd = d.get(side) or {}
-    r_max = r_max_of(evd)
+    r_max = r_max_of(evd, (env.get("core_cfg") or {}).get("research_only_strong_r_cap"))
     mult_of = env["mult_of"]
     cur_w = (w or {}).get(sym, 0.0)
+    best = None
     delta = 0
     if side == "buy":
         best = w_star(env, w, sym)
@@ -1828,16 +1898,16 @@ def ticket_check(env, t):
         delta = int(math.floor((target - cur_w) * eq / ref))
         out["items"]["target_weight"] = {"w_star": best, "target": target, "current": cur_w}
     else:
-        tw = None
+        goals = []
         red = [x for x in s7["recommendations"]["reduce"] if isinstance(x, dict) and x.get("symbol") == sym]
         if red and red[0].get("target_weight") is not None:
-            tw = float(red[0]["target_weight"])
-        else:
-            e = (env["reg"].get("symbols") or {}).get(sym) or {}
-            if e.get("card_action") == "EXIT":
-                tw = 0.0
-            elif e.get("card_action") == "TRIM":
-                tw = fnum(e.get("trim_target_weight"))
+            goals.append(float(red[0]["target_weight"]))
+        e = (env["reg"].get("symbols") or {}).get(sym) or {}
+        if e.get("card_action") == "EXIT":
+            goals.append(0.0)
+        elif e.get("card_action") == "TRIM" and fnum(e.get("trim_target_weight")) is not None:
+            goals.append(fnum(e.get("trim_target_weight")))
+        tw = min(goals) if goals else None   # two approved goals -> the lower weight (Judge S9)
         if tw is None:
             out["not_recomputed"].append("SELL_TARGET_WEIGHT")
         else:
@@ -1850,34 +1920,20 @@ def ticket_check(env, t):
         up, dn, _ = st
         if side == "buy":
             pick, rows = regret_choice(delta, ref, up, dn, r_max, eq, side)
-        elif w is None:
-            out["not_recomputed"].append("WEIGHTS_MISSING")
-            pick, rows = {"qty": 0, "r": None}, []
         else:
             cands, skipped = redeploy_candidates(env, sym)
-            tables, cache, why_rows = [], {}, {}
-            for c, cu, cd in cands:
-                inv = lambda q, c=c: sell_invest(env, w, eq, sym, ref, q, c, cache)[0] if q > 0 else 0.0
-                pk, rw = regret_choice(delta, ref, up, dn, r_max, eq, side, cu, cd, inv)
-                why_rows[c] = {str(q): cache[(c, q)][1] for (cc, q) in sorted(cache) if cc == c}
-                if all(x.get("invest", 0) == 0 for x in rw):
-                    skipped.append([c, "NOT_EXECUTABLE_ANY_ROW"]); continue
-                tables.append((round(pk["max_regret"], 6), pk["qty"], c, pk, rw, cu, cd))
-            if tables:
-                _, _, best_c, pick, rows, cu, cd = min(tables, key=lambda x: (x[0], x[1], x[2]))
-                path = {"path": "SELL_TO_CANDIDATE", "candidate": best_c, "cand_up": cu, "cand_down": cd}
-            else:
-                pick, rows = regret_choice(delta, ref, up, dn, r_max, eq, side)
-                path = {"path": "SELL_TO_CASH", "candidate": None}
-            path["candidates"] = [{"symbol": x[2], "qty": x[3]["qty"], "max_regret": x[0], "row_status": why_rows.get(x[2])}
-                                  for x in sorted(tables, key=lambda x: x[2])]
-            path["skipped"] = skipped
+            cand = cands[0] if cands else None
+            pick, rows = regret_choice(delta, ref, up, dn, r_max, eq, side,
+                                       (cand["up"], cand["down"]) if cand else None)
+            path = {"path": "SELL_CASH_AND_CANDIDATE" if cand else "SELL_TO_CASH",
+                    "candidate": cand, "ranked": [c["symbol"] for c in cands], "skipped": skipped}
             core_reg = t.get("regret") if isinstance(t.get("regret"), dict) else {}
-            # information only (not a C2 item): what the core wrote about its path, for the Judge
-            path["core_regret_keys"] = sorted(core_reg)
+            # information only (not a C2 item): what the core wrote about its columns, for the Judge
+            path["core_columns"] = core_reg.get("columns")
             out["items"]["redeploy"] = path
         qty, pick_r = pick["qty"], pick["r"]
-        out["items"]["regret_rows"] = [{k: (str(v) if isinstance(v, Decimal) else v) for k, v in r.items()} for r in rows]
+        out["items"]["regret_rows"] = [{"r": r["r"], "qty": r["qty"], "regret": {k: str(v) for k, v in r["regret"].items()},
+                                        "max_regret": str(r["max_regret"])} for r in rows]
     if side == "buy" and cash_avail is not None:
         while qty > 0 and Decimal(qty) * price * (1 + FEE_BUFFER) > Decimal(repr(cash_avail)):
             qty -= 1   # G4: reduce to the verified order-available cash
@@ -1897,16 +1953,18 @@ def ticket_check(env, t):
         reqs = ["ok"] * 5
     gates = gates_check(env, sym, side, r_max, delta > 0)
     cg = t.get("gates") or {}
-    gm = {}
-    for g in ("G0", "G1", "G2", "G3"):
-        cv = cg.get(g)
-        cpass = cv.get("pass") if isinstance(cv, dict) else (cv in (True, "ok", "pass", "PASS"))
-        gm[g] = {"oracle": gates[g], "core": cv, "match": bool(cpass) == gates[g]}
+    # core ticket gate format (auto-core-ticket schema, Judge 2026-10-15 extra A): G0 / G1 bool, G2 = True (sell) or the
+    # target weight W* (buy), G3 = the r_max text
+    want = {"G0": gates["G0"], "G1": gates["G1"],
+            "G2": True if side == "sell" else (round(best, 3) if (gates["G2"] and best is not None) else None),
+            "G3": fraction_text(r_max)}
+    gm = {g: {"oracle": want[g], "core": cg.get(g), "match": gate_match(g, side, want[g], cg.get(g))}
+          for g in ("G0", "G1", "G2", "G3")}
     out["items"]["gates"] = gm
-    out["should_exist"] = ((sym, side) in env["open"] and all(gates.values()) and qty > 0
-                           and all(reqs[k] == "ok" for k in (0, 1, 2, 4)) and d.get("registry") == "OK")
-    # (4) M6 is compared as a requirement cell but is not used as a ticket condition here (builder F4: requirement rows
-    # are for comparison; gates G0-G5 decide) - Judge to rule (확인 필요)
+    kill = bool((env.get("core_cfg") or {}).get("kill_switch"))
+    out["should_exist"] = ((sym, side) in env["open"] and all(gates.values()) and qty > 0 and not kill
+                           and all(reqs[k] == "ok" for k in (0, 1, 2, 3, 4)) and d.get("registry") == "OK")
+    # (4) M6 is a ticket condition too (rule file 134 "막힘 = 매수 검토가 열리지 않음", Judge 2026-10-15 3-13)
     flat = [out["items"]["price"]["match"], out["items"]["qty"]["match"], out["items"]["cash"]["match"]]
     flat += [v["match"] for v in (out["items"].get("requirements") or {}).values()]
     flat += [v["match"] for v in gm.values()]
@@ -2009,24 +2067,40 @@ def cmd_selftest(args):
             fails.append("G-1 row %s %.1f/%.1f != %s/%s" % (r["r"], r["regret_up"], r["regret_down"], eu, ed))
     if pick["qty"] != 118:
         fails.append("G-1 pick %s" % pick["qty"])
-    # G-S1 sell redeployment (hand arithmetic): same MVLL numbers, r_max 1.
-    #   cash path: 236 max regret 2630 > 907.66 (3%) -> minimax 1/2 = 118 (1315)
-    #   candidate A up +10% / down -8%: regret up q x 37.65 x 0.196, down (236-q) x 37.65 x 0.181 -> 236: 1741.5 > budget,
-    #     minimax 1/2 = 118 (870.8)
-    #   candidate B up +25% / down -20%: 236: up 236 x 37.65 x 0.046 = 408.7 <= budget -> 236
+    # G-S1 sell, one table with cash and candidate columns (Judge 2026-10-15 S1/S6, hand arithmetic): MVLL numbers, r_max 1,
+    # budget 907.66. Cash columns alone: row max 0:2319 . 1/3:1553 . 1/2:1315 . 1:2630 -> minimax 1/2 = 118 (118 x 37.65 x 0.296 = 1315.04).
+    # Candidate B (+25% / -20%) adds columns whose regrets are smaller, so the row maxima stay the cash ones -> 118.
     pc, _ = regret_choice(236, 37.65, 0.296, -0.261, Decimal(1), 30255.36, "sell")
-    pa, _ = regret_choice(236, 37.65, 0.296, -0.261, Decimal(1), 30255.36, "sell", 0.10, -0.08)
-    pb, _ = regret_choice(236, 37.65, 0.296, -0.261, Decimal(1), 30255.36, "sell", 0.25, -0.20)
-    if (pc["qty"], pa["qty"], pb["qty"]) != (118, 118, 236) or abs(pa["max_regret"] - 870.8) > 0.5 or abs(pb["max_regret"] - 408.7) > 0.5:
-        fails.append("G-S1 %s/%s/%s %.1f %.1f" % (pc["qty"], pa["qty"], pb["qty"], pa["max_regret"], pb["max_regret"]))
-    # G-S2 candidate B but the next-day buy can take only $2,000 per row (E-room cap) -> rows mix candidate and cash:
-    #   236: up regret = 236 x 37.65 x 0.296 - 2000 x 0.25 = 2630.1 - 500 = 2130.1 (best up = row 0) > budget
-    #   118: up 1315.0 - 500 = 815.0; down: best = 236 row (-236x37.65x-0.261 + 2000x-0.20 = 2319.1 - 400 = 1919.1),
-    #        118 row = 1159.6 - 400 = 759.6 -> regret 1159.5 -> max 1159.5; 78: up 869.2-500=369.2, down 1919.1-366.5 = 1552.6
-    #   0: down 1919.1 -> minimax 118 (1159.5)
-    pd2, rw2 = regret_choice(236, 37.65, 0.296, -0.261, Decimal(1), 30255.36, "sell", 0.25, -0.20, lambda q: 2000.0 if q > 0 else 0.0)
-    if pd2["qty"] != 118 or abs(pd2["max_regret"] - 1159.5) > 0.5:
-        fails.append("G-S2 %s %.1f" % (pd2["qty"], pd2["max_regret"]))
+    pb, rb = regret_choice(236, 37.65, 0.296, -0.261, Decimal(1), 30255.36, "sell", (0.25, -0.20))
+    if (pc["qty"], pb["qty"]) != (118, 118) or pb["max_regret"] != Decimal("1315.04") or len(rb[0]["regret"]) != 4:
+        fails.append("G-S1 %s/%s %s" % (pc["qty"], pb["qty"], pb["max_regret"]))
+    # G-S2 candidate columns change the step: delta 100, ref 10, equity 5000 (budget 150), up +10% / down -10%, r_max 1.
+    #   cash only: row 1 max regret 100 <= 150 -> 100 shares.
+    #   candidate +50% / -50%: cand-up pnl 4q (best row 1 = 400), cand-down pnl -4q (best row 0) ->
+    #   row maxima 0:400 . 33:268 . 50:200 . 100:400 -> row 1 over budget -> minimax 50 (200.00)
+    p1, _ = regret_choice(100, 10.0, 0.10, -0.10, Decimal(1), 5000.0, "sell")
+    p2, _ = regret_choice(100, 10.0, 0.10, -0.10, Decimal(1), 5000.0, "sell", (0.50, -0.50))
+    if (p1["qty"], p2["qty"]) != (100, 50) or p2["max_regret"] != Decimal("200.00"):
+        fails.append("G-S2 %s/%s %s" % (p1["qty"], p2["qty"], p2["max_regret"]))
+    # G-4 core ticket gate format (Judge 2026-10-15 extra A / 11-12)
+    cases = [("G0", "buy", True, True, True), ("G0", "buy", True, "ok", False), ("G1", "sell", True, 1, False),
+             ("G2", "sell", True, True, True), ("G2", "buy", 0.117, 0.117, True), ("G2", "buy", 0.117, 0.1170000000004, True),
+             ("G2", "buy", 0.117, 0.118, False), ("G2", "buy", 0.117, True, False), ("G2", "buy", None, 0.117, False),
+             ("G3", "sell", "1/2", "1/2", True), ("G3", "sell", "1/2", "1", False), ("G3", "buy", "1/3", 0.333, False)]
+    for g, sd, want, cv, exp in cases:
+        if gate_match(g, sd, want, cv) is not exp:
+            fails.append("G-4 %s %s %r %r" % (g, sd, want, cv))
+    # G-5 decision t2rc-corefix 5 = b: two common kinds, one of them holds a card trigger that is defined but not hit
+    e5 = {"strong": [], "weak_kinds": ["trend_break", "oversold"], "card_kinds": [], "card_defined_kinds": ["trend_break"]}
+    if r_max_of(dict(e5, side="buy")) != Decimal(1) / 3 or r_max_of(dict(e5, side="sell")) != Decimal(1) / 2:
+        fails.append("G-5 %s %s" % (r_max_of(dict(e5, side="buy")), r_max_of(dict(e5, side="sell"))))
+    # G-3 m to 4 decimals: SOXL 142.45, sigma 8.35% -> m 0.9165 -> 130.55542 -> 130.56; buy 164.22, sigma 8.45% ->
+    # m = 1.04225 -> 1.0422 (down) -> 171.150084 -> 171.15; a sigma where the 4-decimal m matters: ref 100, sigma 0.033333
+    # -> sell m 0.966667 -> 0.9667 (up) -> 96.67 (unrounded m would give 96.6667 -> 96.67 too); buy m 1.0166665 ->
+    # 1.0166 -> 101.66 (unrounded 101.666665 -> 101.66); ref 250, sigma 0.0123456: buy m 1.0061728 -> 1.0061 -> 251.52
+    # (unrounded 251.5432 -> 251.54)
+    if loc_mult(0.0123456, "buy") != Decimal("1.0061") or loc_price(250.0, 0.0123456, "buy") != Decimal("251.52"):
+        fails.append("G-3 m %s %s" % (loc_mult(0.0123456, "buy"), loc_price(250.0, 0.0123456, "buy")))
     # G-2 SOXL sigma 8.35%, ref 142.45 -> sell floor 130.56 (cents up); buy cap same way down
     if loc_price(142.45, 0.0835, "sell") != Decimal("130.56"):
         fails.append("G-2 sell %s" % loc_price(142.45, 0.0835, "sell"))

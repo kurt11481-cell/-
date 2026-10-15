@@ -23,7 +23,7 @@ python3 -I docs/claude/t2rc-oracle.py selftest
 ```
 - 종료 코드: 0 = MATCH·NOT_CHECKED, 2 = MISMATCH, 1 = 오류.
 - `counts_for_c1`이 true인 결과만 C1의 세션 수에 들어간다. 조건은 판정이 MATCH 또는 MISMATCH이고 decision_mode가 compare일 때다.
-- D0 이후인지는 M2가 센다.
+- C1 세션 수(D0 이후 10세션)·C4(6주)·C5(12주)를 세는 자동 장치는 아직 없다(Judge 2026-10-15 8절). 켜 판정 때 Cowork가 그날까지의 t2rc-check.json을 세고, C5 일몰 알림은 관제판 t2-rc에 날짜로 걸어 둔다.
 - `--ignore-input-sha`는 지난 날짜를 다시 확인할 때만 쓴다. 이때 판정은 `INFO_*`로 나오고 C1 세션 수에 넣지 않는다.
 
 ## 2. 계산 범위 (원문 → 함수)
@@ -172,5 +172,27 @@ python3 -I docs/claude/t2rc-oracle.py selftest
   - 사용자는 적용 승인 때 그 제안을 한 번에 승인한다(손 추가 없음).
   - 코어와 정한 읽기가 다르면 다른 쪽을 고친다: 코어는 Claude Code, 계산기는 새 sha + Judge.
 
+
+## 9. 독립 Judge 1차(2026-10-15, FAIL) 반영 — 계산기 sha ae4a1e8e…(c4bff3f0… + 결정 5 = b)
+Judge 보고 docs/claude/t2rc-judge-report-2026-10-15.md 11절 "계산기" 항목을 고쳤다. 보고서 줄 번호는 옛 파일(6f048432…) 기준이다.
+
+| Judge 항목 | 처리 |
+|---|---|
+| 1 관문 칸 형식 | gate_match: G0·G1 bool, G2 매도 True / 매수 W* 숫자(코어 G2 = best_target 값, 첫 진입 ½ 전), G3 r_max 글자. selftest G-4 12건 |
+| 2 LOC 가격 | loc_mult: m 4자리(매수 내림·매도 올림) → 기준가 × m, 센트 내림/올림. selftest G-3 |
+| 3 D18 | auto_core.json research_only_strong_r_cap을 r_max에 적용(강 근거가 연구 기록 사실뿐일 때). 매도는 정적 근거를 세지 않으므로 강 근거가 있는 매도는 늘 ½ 이하 — 원문 글자 그대로(코어와 같은지 재Judge 확인) |
+| 4 매도 공식 사실 | kill·dilution·customer_change·guidance만 강 근거 |
+| 5 C7 | announced_at 앞 마지막 정규장 종가 기준, 다음 2세션, 첫 충족일만 사건일. 사실은 오늘 기록 + 최근 10 연구 기록일(장 마감 뒤 발표의 창이 다음 날 기록에 없어도 판정) |
+| 6 should_exist ④ | ①~⑤ 모두 ok |
+| 7 매도 회로·Δ | EXIT/TRIM은 등록부 항목 기준(해시·수락 무관), TRIM은 trim_target_weight 있을 때만, 목표가 둘이면 작은 값(S9) |
+| 8 매도 후회표 | S1 4열 한 표(현금·최선 후보 × 상승·하락), S3 근거 강도 순위, S5 후보 = ①③④⑤ ok + 승인 상품 + 등록부 자격 − 판 종목·매도 회로 종목, S6 매도 대금 전부, S7 센트(ROUND_HALF_UP, 손익을 센트로 맞춘 뒤 후회 계산 — 코어 반올림 순서는 재Judge 확인). selftest G-1 그대로, G-S1(118)·G-S2(50) 새 기대값 |
+| 9 R-REC1 | EV4: 오늘은 총자산, 창 안 지난 세션은 이전 decide 기록의 account(total ≤ first 또는 ≤ S7 hwm × 0.9)로 다시 계산. EV3ⓑ 공백: 첫 기록 뒤 기록 없는 세션의 SOXX 1일 ≤ −1σ60(또는 모름) → unk |
+| 10 C1 가드 | 계산기가 평가 못 한 종목(상태·종가·EMA20·σ60)을 코어는 평가했으면 NOT_CHECKED(ORACLE_DATA_GAP), c2_item_match false, 그날 주문표 불일치 |
+| 11 권장 | kill switch 반영, ④ 부분 문자열. 재발행 원장·등록부 미커밋(git)·진단 review 표기는 안 함(거짓 누수 → 불일치 쪽) |
+| 12 시험 | 코어 스키마 형식 주문표로 실자료 시험(저장소 밖 장치, 10-15 자료): 매도 NBIS(TRIM 0.05 가정)·매수 MU(S7 add·R-REC1 통과 가정) 그대로 = MATCH, G3·G1 글자·가격 +1센트·수량·G2 0.118·G2 true 각각 = MISMATCH, 자료 공백 = NOT_CHECKED. 실제 판정 10-13 NOT_CHECKED · 10-14 MATCH · 10-15 MATCH · 리플레이 REPRODUCED |
+| c3 | 그 방향에 누락(leak)이 있는 날은 확인으로 세지 않는다(Judge 5절 의견) |
+| 결정 t2rc-corefix 5 = b (09:31) | G3 ⅓ 상한: 매수는 그 묶음의 카드 트리거가 오늘 hit일 때만 "카드 근거", 매도는 카드 트리거 정의만으로 "카드 근거"(위험 감축을 늦추지 않음, 코어 매도와 같은 읽기). selftest G-5 |
+
+- 재검토(Opus 서브에이전트 1회, 바뀐 곳만): 매수를 더 여는 새 경로 없음. 지적 반영 4건(C7 사실 범위, c2_item_match, C1 가드 지표, C7 공백이 다른 사실의 사건을 덮던 것). 남긴 것: 센트 반올림 순서·16:00 정각 경계(`<=`)는 코어와 맞대 재Judge에서 확인.
 
 검토 완결: 원문 확인 12/12 · 내장 재검토 3회(반영 17건 + 8절 7건) · 미해결 6(6절) · 자료 시점 2026-10-14 18:5x~19:2x KST(10-13·10-14 decision, prereg1009 replay) · 바뀔 조건: 첫 실운영 후보나 주문표가 계산기와 다르면 그날 원문으로 원인을 가린다(사전 등록 1절 C1). 매도 후보가 처음 생기면 6절 첫 항목을 먼저 처리한다.
