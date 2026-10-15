@@ -21,7 +21,11 @@ model: Opus · xhigh · 새 세션(메인 체크아웃, worktree 아님) — 계
 | docs/claude/t2rc-register-task.ps1 | e03e74e0264e1b4843344720406dc06849b0a54dabbc3b1497c33b6238e80bc4 |
 | docs/claude/scheduled-prompts/pending-t2rc/auto-core-alert.txt | f021c4948a85d2c40f45e59767496e302e1c06ddd86a4c2ae7e88b79876a49d8 |
 | docs/claude/scheduled-prompts/auto-core-alert.txt (기준 v2.1) | 66548192913d277d46d792bbcc25eebab86a8e53e85815e182a92b9b3b41ba68 |
-| docs/claude/t2rc-rule115-draft-2026-10-15.md | (작성 뒤 채움) |
+| docs/claude/t2rc-rule115-draft-2026-10-15.md | 53994635bd1042487958e21981919c14a41d8d9bf7be6dd45dd2e852994dadc9 |
+| docs/claude/integrated-check-prompt-v3.12.6-2026-10-15.txt (115행 반영 규칙 파일, LF) | 129f78af973df40a6cac8419c721c0e728293b21e3ed45b0a38dba062cbc071c |
+| docs/claude/scheduled-prompts/pending-t2rc/integrated-check-daily.txt (로더 v3.12.6-L+R2) | 915e1966e31ca1d14cab89d953381b4ca5c0b589ea3a93686c8721310741e65f |
+| 기준: docs/claude/integrated-check-prompt-v3.12.5-2026-10-14.txt (현행 규칙 파일) | 3e05c8efc1ef256acb82ec1a9c54ecca0485424f6368e40a627e859d18420ffb |
+| 기준: docs/claude/scheduled-prompts/integrated-check-daily.txt (현행 로더 사본) | 206782f6584694e8143844b193576ec443438c14d1710f5d0320543998b49312 |
 
 ## 읽을 것
 1. 사전 등록: docs/claude/t2-rc-preregistration-2026-10-14.md(전체).
@@ -66,7 +70,7 @@ model: Opus · xhigh · 새 세션(메인 체크아웃, worktree 아님) — 계
 8. **사전 등록과 일치:**
    - M2 형식 차이를 적는다: 사전 등록의 "예약 작업 + 불일치만 푸시"를 Windows 작업 + 08:50 알림 ⑫로 했고, 오류·결과 없음도 알린다. 더 엄격한지 판정하고, 변경 기록 1줄 문안을 낸다.
    - 그 밖에 숫자·기준을 느슨하게 한 곳이 없는지.
-9. **115행 초안:** K1 문구만인지 본다(매수 불가 상품 + 쪽 state는 계산값 그대로, label만 "매수 불가 상품", 알림 없음). 대조(B1)와 코어 오류 검출이 그대로인지, 다른 행이 바뀌지 않았는지, 규칙 파일 현행판 sha 기준인지.
+9. **115행 초안(v3.12.5 → v3.12.6 규칙 파일·로더 diff 포함 — 규칙 파일 1·115행, 로더 1·4·12·18·75행만 달라야 함):** K1 문구만인지 본다(매수 불가 상품 + 쪽 state는 계산값 그대로, label만 "매수 불가 상품", 알림 없음). 대조(B1)와 코어 오류 검출이 그대로인지, 다른 행이 바뀌지 않았는지, 규칙 파일 현행판 sha 기준인지.
 10. **권한:** 주문 경로 없음, 키움 호출 없음, 정책·상태·일지 쓰기 없음. 권한 표지(order_authority false · quantity_authority none · execution_quantity null) 줄도 확인한다.
 
 ## 출력
