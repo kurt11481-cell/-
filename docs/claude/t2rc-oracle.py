@@ -55,6 +55,8 @@ FEE_BUFFER = Decimal("0.0025")   # design G4 / F4: qty x cap x (1 + 0.25%) <= or
 DEADBAND = 0.02            # design 7-1 4: order amount < 2% of equity -> no ticket
 REGRET_BUDGET = 0.03       # design 5: 3% of equity
 STEPS = ((Decimal(0), "0"), (Decimal(1) / 3, "1/3"), (Decimal(1) / 2, "1/2"), (Decimal(1), "1"))
+# step quantity = floor(delta x n / d) in integers (Judge2 2026-10-15 1: the 28-digit Decimal 1/3 gave k - 1 for delta 3k)
+STEP_FRAC = {"0": (0, 1), "1/3": (1, 3), "1/2": (1, 2), "1": (1, 1)}
 WEIGHT_STEP = Decimal("0.001")   # builder prompt F5 grid
 EXPOSURE_TARGET = 1.55     # alert_policy target_exposure (read again from policy at run time)
 V_WINDOW, V_MIN = 252, 60  # alert_policy sox_equivalent window_sessions / minimum_sessions
@@ -548,7 +550,7 @@ def c2_events(ind, side):
 def c7_events(ind, cal, facts, side):
     """C7- (and card good_news_drop): official good news (criterion (a)) then within 2 sessions close < pre-announcement close.
     C7+: company official bad news then within 2 sessions close > pre-announcement close. Facts = validated official facts.
-    Base = the last regular-session close at or before announced_at (builder F3 announced_at); the window is the next 2
+    Base = the last regular-session close strictly before announced_at (builder F3 announced_at); the window is the next 2
     sessions after that base; only the first session that meets the condition is the event day (Judge 2026-10-15 3-5).
     Without a parseable announced_at the base is the session before event_session (announcement before that open)."""
     s = ind.s
@@ -569,7 +571,9 @@ def c7_events(ind, cal, facts, side):
                 raise ValueError
             for k in range(n):
                 d = s.dates[k]
-                if d in cal.close_at and dt.datetime.fromisoformat(cal.close_at[d]) <= at:
+                # strictly before (Judge2 2026-10-15 4, first Judge 3-5 "announced_at 앞"): a 16:00:00 announcement
+                # takes the previous close as its base
+                if d in cal.close_at and dt.datetime.fromisoformat(cal.close_at[d]) < at:
                     b = k
                 else:
                     break
@@ -1131,7 +1135,8 @@ def regret_choice(delta, ref, up, down, r_max, equity, side, cand=None):
         cols += [("cand_up", up, cand[0]), ("cand_down", down, cand[1])]
     rows = []
     for a, lab in STEPS:
-        q = int((Decimal(delta) * a).to_integral_value(rounding=ROUND_FLOOR)) if a < 1 else int(delta)
+        sn, sd = STEP_FRAC[lab]
+        q = int(delta) * sn // sd
         row = {"r": lab, "a": a, "qty": q, "pnl": {}}
         for name, own, cr in cols:
             v = q * ref * own if side == "buy" else (-q * ref * own + (q * ref * cr if cr is not None else 0.0))
@@ -1528,18 +1533,30 @@ def cmd_check(args):
         core_ok = cd.get("status") == "OK" and ci.get("close") is not None
         if not mine_ok and core_ok:
             gap.append(sym)
-    if gap:
-        res["verdict"] = "NOT_CHECKED"
-        res["reason"] = "ORACLE_DATA_GAP:" + ",".join(gap)
-        res["c2_item_match"] = False
-        for x in res["tickets"]:
-            x["match"] = False
+    apply_gap_guard(res, gap)
     if hist and (sha_bad or notes):
         res["verdict"] = "INFO_" + res["verdict"]
         res["note"] = "self-check only, not a C1 session: " + ",".join(sha_bad + notes)
     res["counts_for_c1"] = res["verdict"] in ("MATCH", "MISMATCH") and dec.get("decision_mode") == "compare"
     res["c3"] = c3_record(repo, day, dec, res["tickets"], leaks)
     return finish(res, args)
+
+
+def apply_gap_guard(res, gap):
+    """C1 guard (Judge 2026-10-15 5, Judge2 2): with a gap a MATCH is not a confirmed "no circuit" -> NOT_CHECKED; a
+    MISMATCH stays a MISMATCH (it counts for C1 and is pushed) with ORACLE_DATA_GAP added to the reason. Either way no
+    ticket counts as matched (C2 items, C3)."""
+    if not gap:
+        return
+    tag = "ORACLE_DATA_GAP:" + ",".join(gap)
+    if res.get("verdict") == "MATCH":
+        res["verdict"] = "NOT_CHECKED"
+        res["reason"] = tag
+    else:
+        res["reason"] = (res["reason"] + ";" + tag) if res.get("reason") else tag
+    res["c2_item_match"] = False
+    for x in res.get("tickets") or []:
+        x["match"] = False
 
 
 def c3_record(repo, day, dec, checked, leaks=()):
@@ -1624,6 +1641,30 @@ def weights_now(env):
     return w, eq
 
 
+def equity_cash_t2(cash, holdings):
+    """(cash, basis) of the total assets behind V6 / EV4 - user decision t2-equity-cash (2026-10-13 09:21,
+    docs/claude/redesign-t2-merge-decision-2026-10-12.md:90): Kiwoom order-available cash when T1's one cash check passes,
+    otherwise the smallest known of order-available / withdrawable / foreign-currency deposit (never raises the total).
+    The check, as the decision states it: order-available minus withdrawable is not below -$1, and above +$1 only when
+    one holdings row shows a filled, unsettled sale (settled_quantity > held_quantity)."""
+    vals = [fnum((cash or {}).get(k)) for k in ("order_available_cash", "withdrawable_cash", "foreign_currency_deposit")]
+    known = [v for v in vals if v is not None]
+    if not known:
+        return None, "CASH_UNAVAILABLE"
+    oa, wd = vals[0], vals[1]
+    if oa is None or wd is None:
+        return min(known), "MIN_FALLBACK:CASH_VALUE_MISSING"
+    diff = Decimal(repr(oa)) - Decimal(repr(wd))
+    if diff < -1:
+        return min(known), "MIN_FALLBACK:BELOW_WITHDRAWABLE"
+    sale = any(fnum(h.get("settled_quantity")) is not None and fnum(h.get("held_quantity")) is not None
+               and fnum(h.get("settled_quantity")) > fnum(h.get("held_quantity"))
+               for h in holdings or [] if isinstance(h, dict))
+    if diff > 1 and not sale:
+        return min(known), "MIN_FALLBACK:UNSETTLED_NOT_RECONCILED"
+    return oa, "ORDER_AVAILABLE"
+
+
 def exposure_check(env):
     ctx, ev, s7, mult_of = env["ctx"], env["dec"]["evaluation_session"], env["s7"], env["mult_of"]
     w, eq = weights_now(env)
@@ -1635,9 +1676,10 @@ def exposure_check(env):
     N = None if unreg else sum(mult_of(s) * x for s, x in w.items())
     V, vs = compute_V(ctx.ser, w, ev)
     s7e = s7["exposure"]
-    # V6 / EV4 total assets = sum(qty x close) + foreign-currency deposit (rule file 1-1 (2))
-    dep = fnum((env["snap"].get("cash") or {}).get("foreign_currency_deposit"))
+    # V6 / EV4 total assets = sum(qty x close) + the t2-equity-cash cash (Judge2 2026-10-15 3)
+    dep, dep_basis = equity_cash_t2(env["snap"].get("cash"), env["snap"].get("holdings"))
     return {"status": "OK", "equity_s7": eq, "equity_oracle": vals + (cash or 0.0), "total_assets_v6": (vals + dep) if dep is not None else None,
+            "total_cash_v6": dep, "total_cash_basis": dep_basis,
             "N_oracle": N, "N_unregistered": unreg, "V_oracle": V, "V_status": vs,
             "N_s7": s7e.get("nominal"), "V_s7": s7e.get("sox_equivalent"), "E_s7": s7e.get("effective"),
             "E_oracle": max(N, V) if (V is not None and N is not None) else None}
@@ -2107,6 +2149,41 @@ def cmd_selftest(args):
     if loc_price(164.22, 0.0845, "buy") != Decimal("171.15"):
         # design 7-2 example says $171.16 with sigma 8.45% at ref 164.22 (rounded sigma); exact = 171.158... -> cents down 171.15
         fails.append("G-2 buy %s" % loc_price(164.22, 0.0845, "buy"))
+    # G-6 exact step quantity (Judge2 1): delta 165 -> 1/3 = 55, delta 3 -> 1, delta 297 -> 99 (rows 0 / 1/3 / 1/2 / 1)
+    for dl, want in ((165, [0, 55, 82, 165]), (3, [0, 1, 1, 3]), (297, [0, 99, 148, 297])):
+        _, rq = regret_choice(dl, 10.0, 0.10, -0.10, Decimal(1), 1e9, "buy")
+        if [x["qty"] for x in rq] != want:
+            fails.append("G-6 %s %s" % (dl, [x["qty"] for x in rq]))
+    # G-7 C1 guard (Judge2 2): MATCH -> NOT_CHECKED; MISMATCH stays MISMATCH with the gap in the reason
+    g1 = {"verdict": "MATCH", "tickets": [{"match": True}]}
+    g2 = {"verdict": "MISMATCH", "reason": "CORE_BUG", "tickets": [{"match": True}]}
+    apply_gap_guard(g1, ["A"]); apply_gap_guard(g2, ["A"])
+    if (g1["verdict"], g2["verdict"], g2["reason"], g1["tickets"][0]["match"], g2["c2_item_match"]) != (
+            "NOT_CHECKED", "MISMATCH", "CORE_BUG;ORACLE_DATA_GAP:A", False, False):
+        fails.append("G-7 %s %s" % (g1, g2))
+    # G-8 t2-equity-cash (Judge2 3): 10-13 snapshot (SOXL settled 75 > held 53) -> order-available 12,469.18;
+    # same numbers without the sale row -> smallest 9,396.68; order-available below withdrawable -> smallest; missing -> smallest
+    c13 = {"order_available_cash": 12469.18, "withdrawable_cash": 9396.68, "foreign_currency_deposit": 9396.68}
+    h13 = [{"ticker": "SOXL", "held_quantity": 53.0, "settled_quantity": 75.0}]
+    got = [equity_cash_t2(c13, h13)[0], equity_cash_t2(c13, [{"held_quantity": 53.0, "settled_quantity": 53.0}])[0],
+           equity_cash_t2({"order_available_cash": 100.0, "withdrawable_cash": 102.0, "foreign_currency_deposit": 103.0}, [])[0],
+           equity_cash_t2({"order_available_cash": 100.5, "withdrawable_cash": 100.0, "foreign_currency_deposit": 99.0}, [])[0],
+           equity_cash_t2({"order_available_cash": 100.0, "foreign_currency_deposit": 90.0}, h13)[0], equity_cash_t2({}, h13)[0]]
+    if got != [12469.18, 9396.68, 100.0, 100.5, 90.0, None]:
+        fails.append("G-8 %s" % got)
+    # G-9 C7 base strictly before announced_at (Judge2 4): announcement 16:00:00 on d1 -> base d0 close 100 -> d1 close 90 is
+    # the C7- event (with "at or before" the base would be d1 = 90 and no event)
+    class _O:
+        pass
+    s9, c9, i9 = _O(), _O(), _O()
+    s9.dates = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"]
+    s9.c = [100.0, 90.0, 95.0, 95.0]
+    s9.index = {d: k for k, d in enumerate(s9.dates)}
+    c9.close_at = {d: d + "T16:00:00-05:00" for d in s9.dates}
+    i9.s = s9
+    f9 = [{"direction": "+", "criterion_a": True, "announced_at": "2026-11-03T16:00:00-05:00", "event_session": "2026-11-04"}]
+    if c7_events(i9, c9, f9, "-") != [False, True, False, False]:
+        fails.append("G-9 %s" % c7_events(i9, c9, f9, "-"))
     # synthetic C3 persistence (rule file 113 v3.12.5)
     rel_seq = [False, True, True, True, False, True]
     st = state_run(len(rel_seq), lambda i: rel_seq[i], 2, True)

@@ -196,3 +196,20 @@ Judge 보고 docs/claude/t2rc-judge-report-2026-10-15.md 11절 "계산기" 항�
 - 재검토(Opus 서브에이전트 1회, 바뀐 곳만): 매수를 더 여는 새 경로 없음. 지적 반영 4건(C7 사실 범위, c2_item_match, C1 가드 지표, C7 공백이 다른 사실의 사건을 덮던 것). 남긴 것: 센트 반올림 순서·16:00 정각 경계(`<=`)는 코어와 맞대 재Judge에서 확인.
 
 검토 완결: 원문 확인 12/12 · 내장 재검토 3회(반영 17건 + 8절 7건) · 미해결 6(6절) · 자료 시점 2026-10-14 18:5x~19:2x KST(10-13·10-14 decision, prereg1009 replay) · 바뀔 조건: 첫 실운영 후보나 주문표가 계산기와 다르면 그날 원문으로 원인을 가린다(사전 등록 1절 C1). 매도 후보가 처음 생기면 6절 첫 항목을 먼저 처리한다.
+
+## 10. 독립 Judge 2차(2026-10-15, FAIL) 반영 — 계산기 sha 5607b09b…(ae4a1e8e… + 4건)
+Judge 보고 docs/claude/t2rc-judge2-report-2026-10-15.md 10절 "고칠 최소 항목" 4건. 모두 계산기 쪽, 코어·알림·등록 스크립트 변경 없음.
+
+| Judge2 항목 | 처리 | 시험 |
+|---|---|---|
+| 1 ⅓ 단계 수량 | STEP_FRAC 정수 분수로 `delta × n // d`(코어 tickets:304-305 step_quantity와 같은 값). 옛 식은 28자리 Decimal 1/3 내림이라 Δ = 3k에서 1~3000 중 556개가 k − 1 | G-6: Δ 165 → [0, 55, 82, 165], Δ 3 → [0, 1, 1, 3], Δ 297 → [0, 99, 148, 297] |
+| 2 C1 가드 | apply_gap_guard: MATCH만 NOT_CHECKED(ORACLE_DATA_GAP), MISMATCH는 그대로(C1에 세고 ⑫ 푸시) + reason에 ORACLE_DATA_GAP 덧붙임. 둘 다 주문표 match false·c2_item_match false | G-7 |
+| 3 EV4·V6 총자산 현금 | equity_cash_t2: 사용자 결정 t2-equity-cash(10-13 09:21, redesign-t2-merge-decision-2026-10-12.md:90) — 주문가능 − 출금가능 ≥ −$1, $1 초과면 보유 행 중 settled_quantity > held_quantity 있을 때 주문가능, 아니면(값 없음 포함) 세 값 중 아는 최솟값. 출력에 total_cash_v6·total_cash_basis | G-8 6건, 10-13 self-check 총자산 27,695.1487 = 코어 account.total(ORDER_AVAILABLE) |
+| 4 C7 16:00 정각 | 기준 = close_at **<** announced_at(코어 rules:436, 1차 3-5 "앞") | G-9: 16:00:00 발표 → 전일 종가 기준 |
+
+- 재현(2026-10-15 13:2x KST, HEAD ef3bad1): selftest PASS(open 1건 그대로) · 10-13 NOT_CHECKED(DECIDE_AFTER_0840) · 10-14 MATCH(counts_for_c1 true, 총자산 27,750.0403) · 10-15 MATCH(25,548.2229) · 10-13 self-check INFO_MATCH(총자산 27,695.1487 = 코어, 이전 판 24,622.6487 · ⑤ 8종목 차이 코어 unk 대 계산기 no는 이전 판과 같음 — 원인은 현금이 아니라 10-13 코어 RG1 unk(10-09 기록 누락, cmp-fix3 B4), 진단 표시로 판정 밖. Judge3 4절 정정) · 리플레이 REPRODUCED.
+- 실행기 t2rc-check-run.ps1:16 고정값 → 5607b09b47585a8b0799ae84b93cff434ebecdfc2b30f305607c8641b8f02a26(실행기 sha 5d3502b9…).
+- Judge2 권장 R1~R5·코어 의견(reduce_items)은 안 함 — FAIL 사유 아님, 지금 자료에 해당 없음. 남은 위험 12절 그대로.
+
+검토 완결: Judge2 지적 4/4 원문 대조(계산기 :57·:572·:1134·:1531·:1640, 코어 tickets:304-305 · rules:436 · decide:141-163 · kiwoom_broker_shadow:252-267, 결정 문서 :90) · 시험 G-6~G-9 추가 · 미해결 = Judge2 12절 · 바뀔 조건: 3차 Judge가 범위 1·3·4·6에서 결함을 찾으면 같은 방식으로 최소 수정.
+- Judge 3차(2026-10-15, docs/claude/t2rc-judge3-report-2026-10-15.md): VERDICT PASS — 4건 모두 코어와 0건 차이(⅓ 수량 20만 건, 현금 30만 건, C7 5만 건). 고칠 최소 항목 없음.
