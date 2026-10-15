@@ -10,7 +10,7 @@ model: Opus · xhigh · 새 세션(메인 체크아웃) — 계산기를 고친 
 너는 독립 검토자다. **파일을 고치지 않는다.** 쓰는 파일은 맨 끝 보고서 1개뿐이다.
 
 ## 시작 조건
-- `git log --oneline -30`에 코어 수정 커밋 "fix(auto-core): R-REC1 events on SOXX … (t2-rc Judge)"가 있고 `docs/claude/t2rc-corefix-report.md`가 있어야 한다. 없으면 보고서에 `VERDICT: HOLD — 코어 수정(t2rc-corefix) 병합 전`만 쓰고 끝낸다.
+- `git log --oneline -30`에 코어 수정 커밋 "fix(auto-core): R-REC1 events on SOXX … (t2-rc Judge)"가 있고 `docs/claude/t2rc-corefix2-report.md`가 있어야 한다. 없으면 보고서에 `VERDICT: HOLD — 코어 수정(t2rc-corefix2) 병합 전`만 쓰고 끝낸다.
 - 아래 sha256(계산기·실행기는 LF 정규화)이 다르면 그 파일은 FAIL로 적고 나머지를 판정한다.
 
 | 파일 | sha256 |
@@ -25,9 +25,9 @@ model: Opus · xhigh · 새 세션(메인 체크아웃) — 계산기를 고친 
 
 ## 읽을 것
 - 1차 보고 docs/claude/t2rc-judge-report-2026-10-15.md(특히 3·4·5·7·11절).
-- 수정 기록: docs/claude/t2rc-oracle-report-2026-10-14.md 9절, docs/claude/t2rc-m2-m3-2026-10-14.md 8절, docs/claude/t2rc-corefix-report.md.
+- 수정 기록: docs/claude/t2rc-oracle-report-2026-10-14.md 9절, docs/claude/t2rc-m2-m3-2026-10-14.md 8절, docs/claude/t2rc-corefix2-report.md.
 - 계산기 diff: `git diff cf2c86c -- docs/claude/t2rc-oracle.py`(1차 때 계산기 6f048432…는 cf2c86c 이후 첫 변경 전 판). 알림 diff: `git diff --no-index`로 1차 판(f021c494…, git 기록)과 비교한다.
-- 코어 diff: t2rc-corefix 병합 커밋.
+- 코어 diff: t2rc-corefix2 병합 커밋(1회차 t2rc-corefix는 골든 sell 해시로 BLOCKED — 2회차는 그 한 키만 정해 둔 값으로 갱신 허용). GOLDEN["sell"] 변경이 항목 4 원인 하나뿐인지도 본다.
 
 ## 돌려도 되는 것
 - 1차와 같다: selftest, check 10-13·10-14·10-15(그리고 오늘 decide가 있으면 오늘), replay, register -PlanOnly.
