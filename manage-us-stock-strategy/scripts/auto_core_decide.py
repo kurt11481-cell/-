@@ -1036,11 +1036,14 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                                     evaluation_session=evaluation_session)
     ev4_all = sorted(set(ev4_sessions) | {entry["session"] for entry in backfill if entry["ev4_open"]}
                      | ({evaluation_session} if account["ev4_open"] else set()))
+    # t2rc-corefix 1 (rule file 102): events, C0, L0, RG3, RG4, DS1 and the record-gap check on SOXX for every
+    # candidate; the sector's RG2 benchmark (GRID for 'A1 power') is only the benchmark leg of RG2.
     for symbol in sorted(symbols_out):
-        shocks[symbol] = rules.rrec1(benchmark=series.get(rules.rg2_benchmark(sectors.get(symbol))),
+        shocks[symbol] = rules.rrec1(benchmark=series.get(rules.C["RREC_BENCHMARK"]),
                                      candidate=series.get(symbol), evaluation_session=evaluation_session,
                                      ev3_user_dates=ev3, thesis_damage=damage, ev4_sessions=ev4_all,
-                                     candidate_symbol=symbol, research_sessions=research["sessions"])
+                                     candidate_symbol=symbol, research_sessions=research["sessions"],
+                                     rg2_series=series.get(rules.rg2_benchmark(sectors.get(symbol))))
     portfolio_shock = rules.rrec1(benchmark=series.get("SOXX"), candidate=None, evaluation_session=evaluation_session,
                                   ev3_user_dates=ev3, thesis_damage=damage, ev4_sessions=ev4_all,
                                   research_sessions=research["sessions"])
@@ -1072,12 +1075,9 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                        for symbol in universe if bars[symbol]["status"] == "OK"}
     model_for = s7_model_factory(policy, adjusted_for_s7, sessions, evaluation_session)
     scenario = {symbol: tickets_module.scenarios(item["close"]) for symbol, item in series.items() if item}
-    ranked = sorted((symbol for symbol in symbols_out if checks[symbol]["eligible"] and evidence[symbol]["buy"]["basis_met"]
-                     and rules.m6_listed(symbol, m6_docs)["s"] == "ok" and scenario.get(symbol, {}).get("status") == "ok"),
-                    key=lambda symbol: (-len(evidence[symbol]["buy"]["strong"]),
-                                        -len(evidence[symbol]["buy"]["weak_kinds"]), symbol))
-    redeploy = None if not ranked else {"symbol": ranked[0], "up": scenario[ranked[0]]["up"],
-                                        "down": scenario[ranked[0]]["down"]}
+    policy_instruments = set(exposure_policy["card_stock_core"]) | set(exposure_policy["allowed_index_etfs"])
+    redeploy_ranked = redeploy_ranking(rows=rows, checks=checks, evidence=evidence, scenarios=scenario,
+                                       policy_instruments=policy_instruments)
     ctx = {
         "run_day": day, "mode": mode, "evaluation_session": evaluation_session, "buy_session": buy_session,
         "calendar": calendar, "issued_at": issued_at, "symbols": symbols_out, "checks": checks, "review": review,
@@ -1087,8 +1087,8 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
         "config": config, "gate0": {"ok": not gate0, "reasons": list(gate0)},
         "gate1": {"ok": not gate1, "reasons": gate1}, "evidence": evidence, "buy_rows": rows,
         "data_reasons": data_reasons, "proposal_results": proposal_results,
-        "policy_instruments": set(exposure_policy["card_stock_core"]) | set(exposure_policy["allowed_index_etfs"]),
-        "scenarios": scenario, "keys": keys, "model_for": model_for, "redeploy_candidate": redeploy,
+        "policy_instruments": policy_instruments,
+        "scenarios": scenario, "keys": keys, "model_for": model_for, "redeploy_ranked": redeploy_ranked,
         "input_hashes": {**input_hashes, "s7_review_id": review.get("review_id")},
         "research_block": research["block"],
         # risk1r: evaluation-session EMA20 and ATR14 for the display-only 1R of a buy ticket.
@@ -1106,6 +1106,27 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
             "facts_seen": facts_seen, "gate1": gate1, "proposal_results": proposal_results, "series": series,
             "buy_session": buy_session, "ev4_backfill": backfill}
 
+
+# Buy requirement cells a redeployment candidate must pass: (1) earnings, (3) evidence, (4) M6, (5) R-REC1.
+REDEPLOY_REQUIRED_CELLS = (0, 2, 3, 4)
+
+
+def redeploy_ranking(*, rows: list[dict[str, Any]], checks: dict[str, dict[str, Any]],
+                     evidence: dict[str, dict[str, Any]], scenarios: dict[str, dict[str, Any]],
+                     policy_instruments: set[str]) -> list[dict[str, Any]]:
+    """t2rc-corefix 4 (Judge S3, S5): the ranked redeployment candidates of the sell regret bridge. A candidate
+    passes buy requirements (1), (3), (4), (5) that day, is an approved policy product (card_stock_core +
+    allowed_index_etfs, so a sell-only holding is not one), has an eligible card and scenario returns. (2), the
+    S7 pauses and the E after the sale are not filtered: the D+1 gates see the new state and the cash columns
+    are always there. Rank: strong evidence count, weak kind count, code. plan() leaves out the symbols whose
+    sell circuit is open that day and takes the first remaining one."""
+    ranked = sorted((row["code"] for row in rows
+                     if (checks.get(row["code"]) or {}).get("eligible") and row["code"] in policy_instruments
+                     and all(row["c"][index]["s"] == "ok" for index in REDEPLOY_REQUIRED_CELLS)
+                     and (scenarios.get(row["code"]) or {}).get("status") == "ok"),
+                    key=lambda symbol: (-len(evidence[symbol]["buy"]["strong"]),
+                                        -len(evidence[symbol]["buy"]["weak_kinds"]), symbol))
+    return [{"symbol": symbol, "up": scenarios[symbol]["up"], "down": scenarios[symbol]["down"]} for symbol in ranked]
 
 
 def _score(journal_path: Path) -> Any:

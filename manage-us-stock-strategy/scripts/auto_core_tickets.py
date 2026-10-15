@@ -691,21 +691,21 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
     reduce_items = {item["symbol"]: item for item in (review or {}).get("recommendations", {}).get("reduce") or []}
     add_symbols = {item["symbol"] for item in (review or {}).get("recommendations", {}).get("add") or []}
 
+    # t2rc-corefix 4: the redeployment candidate is the first ranked one whose sell circuit is not open today
+    # (a symbol sold today is one of them), so a sold first-ranked symbol gives way to the next.
+    if ctx.get("redeploy_ranked") is not None:
+        selling = {symbol for symbol in holdings if _sell_gap_sources(checks, symbol, reduce_items)[0]
+                   and ctx["evidence"][symbol]["sell"]["basis_met"]}
+        ctx["redeploy_candidate"] = next((dict(item) for item in ctx["redeploy_ranked"]
+                                          if item["symbol"] not in selling), None)
+
     # Sells (circuit D5): a held symbol with an S7 reduce item or a card EXIT/TRIM target and sell evidence.
     for symbol in sorted(holdings):
-        check, entry = checks.get(symbol) or {}, (checks.get(symbol) or {}).get("entry") or {}
+        check = checks.get(symbol) or {}
         evidence = ctx["evidence"][symbol]["sell"]
-        gap_sources = []
-        if symbol in reduce_items and reduce_items[symbol].get("target_weight") is not None:
-            gap_sources.append(("S7_REDUCE_" + str(reduce_items[symbol]["order"]),
-                                Decimal(str(reduce_items[symbol]["target_weight"]))))
-        if entry.get("card_action") == "EXIT":
-            gap_sources.append(("CARD_EXIT", Decimal(0)))
-        elif entry.get("card_action") == "TRIM":
-            if entry.get("trim_target_weight") is None:
-                blocked.append({"symbol": symbol, "side": "sell", "reasons": ["CARD_TRIM_SIZE_MISSING"]})
-            else:
-                gap_sources.append(("CARD_TRIM", Decimal(str(entry["trim_target_weight"]))))
+        gap_sources, trim_missing = _sell_gap_sources(checks, symbol, reduce_items)
+        if trim_missing:
+            blocked.append({"symbol": symbol, "side": "sell", "reasons": ["CARD_TRIM_SIZE_MISSING"]})
         if not gap_sources or not evidence["basis_met"]:
             continue
         source, target = min(gap_sources, key=lambda item: item[1])
@@ -751,6 +751,26 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
         top = ["NO_CIRCUIT_OPEN"]
     return {"candidates": candidates, "tickets": tickets, "blocked": blocked,
             "no_action": {"value": no_action, "reasons": top[:5] if no_action else []}}
+
+
+def _sell_gap_sources(checks: dict[str, Any], symbol: str, reduce_items: dict[str, Any]
+                      ) -> tuple[list[tuple[str, Decimal]], bool]:
+    """The sell gap sources of a held symbol (S7 reduce item, card EXIT or TRIM target) and whether a TRIM card
+    lacks its size. Pure: plan() records the missing TRIM size itself."""
+    entry = (checks.get(symbol) or {}).get("entry") or {}
+    gap_sources: list[tuple[str, Decimal]] = []
+    trim_missing = False
+    if symbol in reduce_items and reduce_items[symbol].get("target_weight") is not None:
+        gap_sources.append(("S7_REDUCE_" + str(reduce_items[symbol]["order"]),
+                            Decimal(str(reduce_items[symbol]["target_weight"]))))
+    if entry.get("card_action") == "EXIT":
+        gap_sources.append(("CARD_EXIT", Decimal(0)))
+    elif entry.get("card_action") == "TRIM":
+        if entry.get("trim_target_weight") is None:
+            trim_missing = True
+        else:
+            gap_sources.append(("CARD_TRIM", Decimal(str(entry["trim_target_weight"]))))
+    return gap_sources, trim_missing
 
 
 def _sigma_and_ref(ctx: dict[str, Any], symbol: str) -> tuple[Decimal | None, float | None]:

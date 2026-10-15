@@ -38,7 +38,9 @@ GOLDEN = {
     "g2b": "0857c795b26629af20982b09bb815f995ccb1d7340b9ea580031b3c6ac28bca9",
     "cash5": "c3ad82a2d647e0da1a14fa5a65fe7545f52cf509d16af8e576b1826c0f4ec4c8",
     "research_block": "8254e97e2e1ea50b89e966120d83e942bc32d1bd34a0c19eaac3e83252273091",
-    "sell": "a3a2372037ca36cdc2ed355be7b5585e2538988e8e82f0a7c49a8c9f69509dbb",
+    # t2rc-corefix2: MU (R-REC1 open, requirement 5 no) is no longer the redeployment candidate, so the SOXL sell
+    # regret table keeps only the cash columns (qty 19, r 1/3 unchanged); docs/claude/t2rc-corefix2-report.md.
+    "sell": "07c781346ca9dfa243a83e826f83759e0e57751b7f1b02eb3fb52b9e716cdfb0",
     "pwr": "85e3651e053e32a99d1c61ace526692810c14a2c76b7ce3a32fce0aca53d7133",
     "decide_compare": "929a8d0059f7743b733826bc6f731d47d07a9f2868349c681173b06aab323492",
     "decide_apply": "431712bf43bcbb315a612c6f56492e7dc2e4fa175910f409aec84c281f383e71",

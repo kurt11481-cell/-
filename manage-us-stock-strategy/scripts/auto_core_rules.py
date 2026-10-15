@@ -688,12 +688,22 @@ def _margins_at(series: dict[str, Any], c8: dict[str, float | None], t: int) -> 
 
 
 def price_evidence(result: dict[str, Any], side: str) -> dict[str, Any]:
-    """Merged groups of one side that are hit: one per group (card definition first, rule file 3))."""
+    """Merged groups of one side that are hit: one per group (card definition first, rule file 3)).
+
+    New (builder D5 "newly hit today", t2rc-corefix 3): only a group whose previous session was none or pending;
+    an unknown previous session cannot show it is new (fail closed). card_defined (design G3, t2rc-corefix 5,
+    user decision 5 = b): for buy evidence (+) a group counts only when one of its card triggers is hit today;
+    for sell evidence (-) a card trigger definition in the group is enough (risk reduction is not slowed)."""
     hits = [group for group in result["groups"].values() if group["side"] == side and group["state"] == "hit"]
-    new = [group for group in hits if group["previous_state"] != "hit"]
+    new = [group for group in hits if group.get("previous_state") in ("none", "pending")]
+    if side == "+":
+        card_hit = {trigger.get("group") for trigger in result.get("triggers") or []
+                    if trigger.get("source") == "card" and trigger.get("side") == side and trigger.get("state") == "hit"}
+        card_defined = any(group["group"] in card_hit for group in hits)
+    else:
+        card_defined = any(group["card_defined"] for group in hits)
     return {"groups": sorted(group["group"] for group in hits), "new_groups": sorted(group["group"] for group in new),
-            "card_defined": any(group["card_defined"] for group in hits),
-            "ids": sorted(rule for group in hits for rule in group["ids"])}
+            "card_defined": card_defined, "ids": sorted(rule for group in hits for rule in group["ids"])}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -738,10 +748,20 @@ def ev3_dates(text: str) -> list[str]:
     return sorted({match.group(1) for line in text.splitlines() if (match := EV3_LINE.match(line))})
 
 
+SAME_AS_BENCHMARK = object()  # rrec1 rg2_series default: the RG2 benchmark leg is the benchmark itself
+
+
 def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None, evaluation_session: str,
           ev3_user_dates: list[str], thesis_damage: list[dict[str, Any]] | None, ev4_sessions: list[str],
-          candidate_symbol: str | None = None, research_sessions: Any = None) -> dict[str, Any]:
+          candidate_symbol: str | None = None, research_sessions: Any = None,
+          rg2_series: Any = SAME_AS_BENCHMARK) -> dict[str, Any]:
     """Shock event and recovery gates for one candidate. benchmark/candidate are build_series outputs.
+
+    benchmark is SOXX for every candidate (rule file 102, t2rc-corefix 1): events EV1 EV2 EV3 (b), the EV3 (b)
+    record-gap check, C0, L0, RG3, RG4 and DS1 all use it. rg2_series is only the benchmark leg of RG2 (GRID for
+    a sector starting 'A1 power', see rg2_benchmark); the default uses benchmark, and None (data missing) makes
+    that leg unknown. RG3 (t2rc-corefix 2): no regular-session low below L0 from the session after the event to
+    the judged session; a DS1 restarts only the count of two closes above C0, not the low window.
 
     thesis_damage: official facts with root_thesis_damage from the research records covering the R-REC1 window
     (None = no research record -> RG1 unknown). ev4_sessions: sessions on which the account line EV4 was open
@@ -847,14 +867,20 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
                                            if needs_record(s["days"][k]))
         rg1 = None if damage_after is None else False if damage_after else _all(
             i - e >= C["RREC_RG1_SESSIONS"], True if recorded else None)
-        bench_ok = _cmp(s["close"][i], "ge", s["ema50"][i])
+        if rg2_series is SAME_AS_BENCHMARK:
+            bench_ok = _cmp(s["close"][i], "ge", s["ema50"][i])
+        else:
+            bench_ok = None
+            if rg2_series is not None and s["days"][i] in rg2_series["days"]:
+                g = rg2_series["days"].index(s["days"][i])
+                bench_ok = _cmp(rg2_series["close"][g], "ge", rg2_series["ema50"][g])
         cand_ok = None
         if candidate is not None and s["days"][i] in candidate["days"]:
             j = candidate["days"].index(s["days"][i])
             cand_ok = _cmp(candidate["close"][j], "ge", candidate["ema50"][j])
         rg2 = _all(bench_ok, cand_ok) if candidate is not None else bench_ok
         start = max(e, last_ds1)
-        lows = [s["low"][k] for k in range(start + 1, i + 1)]
+        lows = [s["low"][k] for k in range(e + 1, i + 1)]
         no_new_low = None if any(low is None for low in lows) else all(low >= l0 for low in lows)
         two = C["RREC_RG3_SESSIONS"]
         rg3 = _all(i - start >= two, _all(*[_cmp(s["close"][k], "gt", c0) for k in range(i - two + 1, i + 1)])
@@ -895,6 +921,7 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
 
 
 def rg2_benchmark(sector: str | None) -> str:
+    """The ETF of the RG2 benchmark leg only (rule file 102); R-REC1 events and the other gates use SOXX."""
     return C["RREC_POWER_BENCHMARK"] if (sector or "").startswith(POWER_SECTOR_PREFIX) else C["RREC_BENCHMARK"]
 
 
