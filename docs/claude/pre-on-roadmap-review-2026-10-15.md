@@ -102,3 +102,24 @@ redesign-t2-replay-2026-10-14.md "보충(2026-10-15)" 절에 적었다.
 
 ## 결정 기록
 - 2026-10-15 16:32 KST 사용자 원문 "결정 pre-on-fix: a" → ④①⑥ 한 파이프라인 run(⑥ = 예외 알림). 지시문 docs/claude/pre-on-fix-builder-prompt.md(sha d49339c8…), 큐 docs/claude/_dev-queue/pre-on-fix.txt. 결과 뒤 사용자 `.\tools\dev-merge.ps1 pre-on-fix -ApproveAuthority` 1번.
+
+## 재검토 2026-10-16 09:1x KST (rrec-k3-timing, Cowork)
+바뀐 입력: T1 첫 기록 성공(10/16 06:15) · C1 1/10(D0 10/16, t2rc-check MATCH) · 10/15 종가 자산 $25,252.58.
+
+| 처음(10/15) | 재검토 | 이유 | 원문 |
+|---|---|---|---|
+| ①②와 ev-rg1-hyper를 계산기와 한 K3 묶음(a) | ① 단독 먼저(계산기 그대로, C1 재시작 없음) → ev-rg1-hyper + 계산기 RG1을 "켜" 전 한 묶음. ②는 뺀다 | 1차 누락: 오늘 EV4는 코어·계산기 모두 그날 S7 파일 review_lines.hwm_usd로 계산 → ①만으로 앞으로의 결함이 닫히고 어긋남이 없다. ②(과거 10/12·10/13 EV4)는 10/14·10/15 EV4가 이미 있어 events[-1]이 바뀌지 않음 → 관문 효과 0 | auto_core_decide.py:1033-1035 · auto_core_tickets.py:199 · t2rc-oracle.py:1821·1472-1484 · auto_core_rules.py:730-731·834 |
+| 현금 두 건(cashflow-api-gap·deposit ③)도 같은 묶음 검토 | 분리(③ 기한 2027-01-04 전 별도 K3) | 주문표·C1과 무관, Judge 범위 축소. hwm-fix a 결정의 묶음 문구를 바꾸므로 사용자 결정 필요 | cpi-shock-review:204·214 · 관제판 deposit-interest-i3 resume |
+
+새로 찾음(위험 쪽 fail-open, 지금 실효 없음): 실제 고점 $31,711.76 기준이면 10/15 종가 $25,252.58 = −20.37%로 L2($25,369.41) 아래다. 시스템은 HWM $30,255.36 기준 L2 $24,204.29 미도달로 본다(auto-core/2026-10-16/s7/2026-10-15/portfolio-exposure-review…json:142-160). 정책상 L2 = 전체 검토·되사기 추천 정지. 지금은 R-REC1(EV2+EV4, RG1~RG3 no)로 매수가 이미 막혀 잘못된 주문표는 없다. 그래서 ①이 급해졌다.
+매수 주문표가 나오려면 자산이 EV4 선 위로 올라야 한다(EV4가 매일 열리면 사건 기준일이 매일 새로 잡혀 RG3 불가): 옛 선 $27,229.82(+7.8%), ① 뒤 $28,540.58(+13.0%). c("켜" 뒤)는 첫 실제 매수 주문표가 바로 이 결함 구간에서 나오므로 권하지 않는다.
+확인 필요(① Builder·Judge 범위): ① 뒤 L2가 열릴 때 코어 G2가 계산기 G2의 lines_open(t2rc-oracle.py:1850-1855)과 같게 막는지. 10/6~10/9 외부 현금 흐름 유무(firstrun 13절은 10/10~10/13만).
+바뀔 조건: 코어가 S7 파일 밖에서 HWM을 받는 경로가 보임 · ev-rg1-hyper가 지금 열린 사건의 RG1을 바꿈 · 사용자가 묶음 결정을 유지.
+검토 완결: 원문 확인 11/11 · 내장 재검토 1회(Opus, 반영 3건) · 미해결 2(위 확인 필요) · 자료 시점 2026-10-16 decision.json(10/15 세션)·현행 코드 · 바뀔 조건 위 3개
+
+### 결정 기록
+- 2026-10-16 09:21 KST 사용자 원문 "결정 rrec-k3-timing: d".
+  - hwm-fix: ①(보류 세션 재평가, portfolio_exposure.py) + ③(이미 남긴 선 검토 일지 항목 처리, 추가 전용)만 단독 K3(수동 경로 Builder → 독립 Judge → 사용자 병합). 계산기 고정값은 바꾸지 않는다(C1 계속). ②(과거 EV4 재계산)는 범위에서 뺀다.
+  - ev-rg1-hyper: hwm-fix 병합 뒤 계산기 RG1 동반 수정(새 sha → Judge → 실행기 고정값 교체 승인)과 한 K3 묶음, "켜" 전. C1은 병합 뒤 0부터.
+  - cashflow-api-gap·deposit-interest-i3 ③: 묶음에서 분리, 별도 K3(관제판 deposit-interest-i3 재개일 2027-01-04 전). hwm-fix a 결정의 "한 K3 묶음 검토" 문구를 이 결정으로 바꾼다.
+  - 시작: autocore-on 종료(10/17 점검) 뒤 권한 슬롯. Cowork가 ① Builder·Judge 지시문 작성.
