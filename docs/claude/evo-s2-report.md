@@ -1,0 +1,36 @@
+# evo-s2 Builder 보고 (진화 루프 1단계 재실행, 2026-10-16)
+
+- **바꾼 파일(6개, allowed_paths 안):**
+  - `score_decision_journal.py`: `--learning`·`--museum`·`--epochs` 추가, learning 블록 함수, main 연결
+  - 새 파일: `run_journal_score.ps1`, `register_journal_score_task.ps1`, `test_score_learning.py`, `test_journal_score_task_static.py`, 이 보고서
+- **1회차 코드:** `.claude/worktrees/evo-s1`은 이 세션의 작업 디렉터리 밖이라 읽기가 막혔다(권한 거부). 그래서 처음부터 구현했다.
+- **기본 길 불변:**
+  - `score_journal` 시그니처·반환은 그대로다. 플래그가 없으면 종가 읽기 조건·티커 목록·`close_histories`가 이전과 같다.
+  - 테스트 a로 확인했다: learning 유무 두 실행에서 `learning`·`close_histories` 밖의 모든 키, 종료 코드, 화면 줄이 같다.
+  - learning 함수 4개를 예외로 바꿔 둔 채 플래그 없이 `main`을 돌려도 0으로 끝나고 하나도 불리지 않는다(코어 `_score` 호출 길).
+  - 실행 중 `auto_core*`를 import하지 않는다. 대역 식은 채점기 안 `scenario_band`·`band_closes`에 있다.
+- **learning 블록:** schema·preregistration·label·display_only·epochs·errors, 그리고 decision_days·gate_units·shock_periods·gate_episodes·rrec1_units·rrec1_unk_units·sell_floor·scenario_band·trigger_kinds·buckets·overlap_summary·museum·counts·previous_report.
+- **고칠 것 3곳:**
+  - 1: `find_previous_learning`은 `errors` 사유가 `LEARNING_FAILED`로 시작하는 보고서와 못 읽는 보고서를 건너뛴다. 테스트: 0주 → 1주 BROKEN → 2주 실패 → 3주에도 BROKEN과 first_sha256이 유지된다.
+  - 2: 실행기는 고른 보고서를 JSON으로 읽는다. 실패 블록이면 status FAIL, `learning_failed` true다. 못 읽으면 FAIL이다. 정적 테스트와 실패 블록 모양 테스트가 있다.
+  - 3: 새 파일과 바뀐 줄에 정지 스위치 사유 문자열이 없다. `ORDER_MARKERS`·권한 값 표지도 없다(grep으로 확인).
+- **테스트(새 실패 0):**
+  - `test_score_*.py`: 66건 OK (기존 `test_score_ticket_outcomes` 14건 포함)
+  - `test_journal_score_task_static*.py`: 5건 OK
+  - 채점기를 쓰는 `test_event_calendar`·`test_decision_journal_cards`·`test_auto_core_decide*`: OK
+  - 스키마 감사: PASS
+  - 전체: 3162건 중 실패 19·오류 9. 모두 acceptance pin·identity·provider scope·고정 자료 테스트이고, 채점기와 새 파일 밖이다. 기준선 대비 확인은 파이프라인이 한다.
+- **사전 등록과 해석이 갈린 곳:**
+  - (1) 같은 evaluation_session 비교는 다른 자격 조건을 통과한 날끼리만 한다. 늦은 날이 FAIL이나 no_new_session이면 앞날을 쓴다.
+  - (2) R-REC1 묶음 값은 구성원 중 하나라도 PENDING이면 PENDING이다. 주마다 평균이 바뀌지 않게 하려는 것이다.
+  - (3) UNK 묶음은 R-REC1 키별로 묶는다(UNKNOWN 포함, 표시만).
+  - (4) S7을 못 읽은 날의 NO_EVIDENCE 판정 행은 gate_units에 NOT_SCORABLE로 남기고, 구간·버킷에는 넣지 않는다.
+  - (5) 주문표 날짜가 없어 epoch가 null인 버킷의 finding은 `EPOCH_UNKNOWN`이다.
+  - (6) 채점기 파일은 기존 위생 테스트 2개가 ASCII를 요구한다. 그래서 한국어 화면 문구는 `\U0000XXXX` 형식으로 썼고, 원문은 테스트에서 고정한다.
+  - (7) WEEKLY_LATEST에 `reason` 필드를 더했다. 보고서가 없으면 종료 코드는 1이다.
+  - (8) museum 출력에 채운 항목 요약 `entries`를 더했다.
+  - (9) `distinct_*`는 버킷의 모든 단위로 센다.
+- **남은 위험:**
+  - PowerShell은 정적 검사만 했다. PS 5.1의 큰 JSON은 JavaScriptSerializer로 읽고, 없으면 ConvertFrom-Json으로 읽는다.
+  - 실제 자료로 한 번 실행하는 확인은 병합 뒤 Cowork가 한다.
+  - 같은 날 여러 종목은 서로 독립이 아니다(사전 등록 9절).
