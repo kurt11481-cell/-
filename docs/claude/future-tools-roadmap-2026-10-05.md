@@ -205,3 +205,4 @@
 - 2026-10-05: 작업 중 `git status`가 남긴 `.git/index.lock`(0바이트)을 사용자 삭제 승인 뒤 제거. 교훈: Cowork device_bash에서는 index를 건드리는 git 명령을 쓰지 않는다(삭제 권한이 없으면 잠금 파일이 남는다).
 - 2026-10-05: 사용자 승인으로 §7 "최종 목표 기준 재평가" 추가(Paperclip 판정 상향, 트레이딩 인프라 공백 4개, 사용자 확인: PC·앱 24시간 가동). 관제판 f-trading-infra-gap 추가.
 - 2026-10-16: f-evo-loop 1단계 설계·사전 등록 고정(docs/claude/f-evo-loop-s1-preregistration-2026-10-16.md, sha256 cd370982…). §4의 "원장 30건 뒤 시작"은 2026-10-15 결정 learn-loop a로 앞당겨졌고, 판단 품질 결론은 여전히 버킷당 독립 단위 30건부터. §4 경계·실패 유형은 그 문서 6·7절로 구체화. 개발 작업 evo-s1(일반 변경) 대기열.
+- 2026-10-16: evo-s1 Judge FAIL(보존 표지 fail-open·주간 실패 OK 표시·class 오인) → evo-s2 PASS, 사용자 병합(c3bd452)·주간 작업 등록. Cowork 실제 자료 1회 실행 OK(journal-scores/20261016T092528Z: 결정 4일 자격 4, 버킷 3, 결론 허용 0).
