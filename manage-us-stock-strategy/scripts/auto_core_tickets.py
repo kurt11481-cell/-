@@ -522,6 +522,20 @@ def order_days(ticket: dict[str, Any], calendar: dict[str, Any]) -> list[str] | 
     return [(first + timedelta(days=offset)).isoformat() for offset in range((last - first).days + 1)]
 
 
+def session_close(ticket: dict[str, Any], calendar: dict[str, Any]) -> datetime | None:
+    """pre-on-fix 1 (judge2 G 1): the KST time of the ticket session's regular close (the operating calendar's
+    core_close_at, earlier on an early close), the end of the last order day of order_days. None = unknown (the
+    session is not in the calendar or its close cannot be read): the caller treats it as ORDER_WINDOW_UNKNOWN."""
+    row = (calendar.get("sessions") or {}).get(ticket["session"])
+    if row is None:
+        return None
+    try:
+        closed = datetime.fromisoformat(str(row.get("core_close_at") or ""))
+    except ValueError:
+        return None
+    return closed.astimezone(KST) if closed.tzinfo is not None else None
+
+
 def issue_time(ticket: dict[str, Any]) -> time | None:
     """r4 R4-1: the KST time of day of the ticket's issuedAt ("YYYY-MM-DD HH:MM KST"); None = unreadable."""
     match = ISSUED_AT.fullmatch(str(ticket.get("issuedAt") or "").strip())
@@ -529,15 +543,23 @@ def issue_time(ticket: dict[str, Any]) -> time | None:
 
 
 def ticket_rows(ticket: dict[str, Any], dated_rows: list[tuple[str, dict[str, Any]]],
-                attributed: set[tuple[str, str]]) -> dict[str, Any]:
+                attributed: set[tuple[str, str]], *, close_at: datetime | None) -> dict[str, Any]:
     """r4 R4-1: the order rows that can be the ticket's, from (KST order day, ust21150 row) pairs of its order
     days: its ticker and side, an (ord_dt, ord_no) not attributed to a ticket already, and on its issue KST day
     only ord_time >= the issue time (an order placed before the ticket was issued is not for it). orders = the
     (ord_dt, ord_no) of the rows kept. A candidate row without an order number, or an issue-day row whose order
     time (or the ticket's issue time) cannot be read, makes the outcome unknown (note set, fail closed).
+    pre-on-fix 1 (judge2 G 1): close_at = session_close, the KST time of the session's regular close. On its KST
+    day (the last order day) only ord_time <= that time counts (an order placed after the close is not for the
+    ticket); an unreadable order time there is ORD_TIME_UNREADABLE. When the issue day is that day too, both
+    bounds apply. close_at None = ORDER_WINDOW_UNKNOWN (fail closed).
     t1-safety (judge2 G 2, T1's FILL_ROW_DUPLICATE_CONFLICT rule): an (ord_dt, ord_no) that comes twice as the
     very same row counts once; a candidate row whose (ord_dt, ord_no) also comes as a different row makes the
     outcome unknown (ORD_NO_DUPLICATE_CONFLICT)."""
+    if close_at is None:
+        return {"rows": [], "orders": [], "note": "ORDER_WINDOW_UNKNOWN"}
+    close_kst = close_at.astimezone(KST)
+    end_day, end_clock = close_kst.date().isoformat(), close_kst.time().replace(tzinfo=None)
     side_name = SIDE_NAMES[ticket["side"]]
     start = issue_time(ticket)
     rows: list[dict[str, Any]] = []
@@ -567,6 +589,12 @@ def ticket_rows(ticket: dict[str, Any], dated_rows: list[tuple[str, dict[str, An
             if placed is None:
                 return {"rows": [], "orders": [], "note": "ORD_TIME_UNREADABLE"}
             if placed < start:
+                continue
+        if day == end_day:
+            placed = order_clock(row.get("ord_time"))
+            if placed is None:
+                return {"rows": [], "orders": [], "note": "ORD_TIME_UNREADABLE"}
+            if placed > end_clock:
                 continue
         rows.append(row)
         orders.append({"ord_dt": day, "ord_no": number})

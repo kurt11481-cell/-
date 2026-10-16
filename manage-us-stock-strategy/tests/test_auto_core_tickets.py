@@ -274,7 +274,10 @@ class OrderAttributionTests(unittest.TestCase):
         return row
 
     def chosen(self, dated_rows, attributed=(), ticket=None):
-        return tk.ticket_rows(ticket or self.TICKET, dated_rows, set(attributed))
+        ticket = ticket or self.TICKET
+        # pre-on-fix 1: the session close (05:00 KST on 2026-10-15) bounds the last order day.
+        return tk.ticket_rows(ticket, dated_rows, set(attributed),
+                              close_at=tk.session_close(ticket, helpers.calendar(CALENDAR_DAYS)))
 
     def test_issue_day_rows_before_the_issue_time_are_left_out(self):
         self.assertEqual(tk.issue_time(self.TICKET), time(7, 45))
@@ -311,8 +314,8 @@ class OrderAttributionTests(unittest.TestCase):
         self.assertIsNone(tk.issue_time(broken))
         self.assertEqual(self.chosen([("2026-10-14", self.row("0000001", "17:30:00"))], ticket=broken)["note"],
                          "ISSUED_AT_UNREADABLE")
-        # Order time and issue time matter only on the issue day.
-        later = self.chosen([("2026-10-15", self.row("0000001", ""))], ticket=broken)
+        # Issue time matters only on the issue day (order time also on the close day, pre-on-fix 1).
+        later = self.chosen([("2026-10-15", self.row("0000001", "00:30:00"))], ticket=broken)
         self.assertEqual((later["note"], later["orders"]), (None, [{"ord_dt": "2026-10-15", "ord_no": "0000001"}]))
 
     def test_ledger_keeps_thirty_calendar_days_and_each_pair_once(self):

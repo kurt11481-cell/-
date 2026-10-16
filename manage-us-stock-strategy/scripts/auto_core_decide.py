@@ -296,7 +296,8 @@ def read_outcomes(pending: list[dict[str, Any]], *, reader: Callable[..., list[d
     order-day window leaves its ticket unclassified (OUTCOME_UNKNOWN).
     r4 R4-1: tickets are classified oldest first, each from tickets_module.ticket_rows: rows of the ledger's
     attributed_orders and rows a ticket classified earlier in this run took are left out, and so are issue-day
-    rows placed before the ticket was issued. attributed = the (ord_dt, ord_no, ticket_id) of the rows taken by
+    rows placed before the ticket was issued and last-order-day rows placed after the session's close
+    (pre-on-fix 1; an unknown close is ORDER_WINDOW_UNKNOWN). attributed = the (ord_dt, ord_no, ticket_id) of the rows taken by
     the outcomes that update the ledger (not those that disagree with T1, r2 R2-7); the caller keeps them only
     in recording mode."""
     windows = {ticket["ticket_id"]: tickets_module.order_days(ticket, calendar) for ticket in pending
@@ -329,7 +330,8 @@ def read_outcomes(pending: list[dict[str, Any]], *, reader: Callable[..., list[d
             reasons.append(f"G0_TICKET_SESSION_NOT_YET:{ticket['ticket_id']}")
             continue
         needed = windows[ticket["ticket_id"]]
-        if needed is None:  # r3 R3-2: the order-day window is unknown
+        close_at = tickets_module.session_close(ticket, calendar)
+        if needed is None or close_at is None:  # r3 R3-2 / pre-on-fix 1: the order-day window is unknown
             still_open.append(ticket)
             reasons += [f"ORDER_WINDOW_UNKNOWN:{ticket['ticket_id']}", f"OUTCOME_UNKNOWN:{ticket['ticket_id']}"]
             continue
@@ -338,7 +340,7 @@ def read_outcomes(pending: list[dict[str, Any]], *, reader: Callable[..., list[d
             reasons.append(f"OUTCOME_UNKNOWN:{ticket['ticket_id']}")
             continue
         chosen = tickets_module.ticket_rows(ticket, [(day, row) for day in needed for row in rows_by_day.get(day, [])],
-                                            taken)
+                                            taken, close_at=close_at)
         outcome = tickets_module.classify_outcome(ticket, chosen["rows"]) if chosen["note"] is None else None
         if outcome is None or outcome["state"] == "unknown":
             still_open.append(ticket)
@@ -704,6 +706,11 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
                            "\uc8fc\ubb38\ud45c \uacb0\uacfc\uc640 T1 \uccb4\uacb0 \ub300\uc870\uac00 \ub2e4\ub984 \u2014 Cowork \ud655\uc778"))
     if any(reason.startswith(("OUTCOME_UNKNOWN", "OPEN_ORDERS_READ")) for reason in outcome_block["reasons"]):
         exceptions.append(("OUTCOME_UNKNOWN", "\uc8fc\ubb38\ud45c \uacb0\uacfc \ubd84\ub958 \uc2e4\ud328 \u2014 \uc624\ub298 \uc0c8 \uc8fc\ubb38\ud45c \uc5c6\uc74c"))
+    if any(reason.startswith("G0_TICKET_SESSION_NOT_YET:") for reason in outcome_block["reasons"]):
+        # pre-on-fix 6 (judge2 G 6): a carried ticket whose session is after the evaluation session on a new-session
+        # day is an anomaly; gate0 keeps the HOLD and this pushes it.
+        exceptions.append(("G0_TICKET_SESSION_NOT_YET",
+                           "\uc8fc\ubb38\ud45c \uc138\uc158 \uc774\uc804 \uc0c1\ud0dc \u2014 \uc0c8 \uc8fc\ubb38\ud45c \uc5c6\uc74c, Cowork \ud655\uc778"))
     if carry["unreadable_after"]:
         gate0.append("G0_PREVIOUS_DECISION_UNREADABLE")
     keys = dict(carry["keys"])
@@ -936,10 +943,28 @@ def _no_new_session(*, decision: dict[str, Any], carry: dict[str, Any], previous
         alerts=[{"code": "NO_NEW_SESSION", "push": False,
                  "line": f"\uc0c8 \ubbf8\uad6d \uc138\uc158 \uc5c6\uc74c \u2014 \ud3c9\uac00 \uc138\uc158 {evaluation_session} "
                          "\uadf8\ub300\ub85c(\uc8fc\ubb38\ud45c\u00b7\uc77c\uc9c0 \uc5c6\uc74c)"}],
-        next_action_for_user=(f"\uc8fc\ubb38\ud45c {len(orders)}\uac74 \u2014 \uc800\ub141 \ud0a4\uc6c0 \uc785\ub825"
-                              if mode == "apply" and orders else None),
+        next_action_for_user=(_carried_entry_line(orders, open_tickets) if mode == "apply" and orders else None),
         next_action_for_cowork=None)
     return _finish(decision, output_root, output_directory, carry)
+
+
+def _carried_entry_line(orders: list[dict[str, Any]], open_tickets: list[dict[str, Any]]) -> str:
+    """pre-on-fix 4 (judge2 G 4): the user line of a no-new-session day that carries order rows. They are the
+    same tickets issued earlier (every issue KST day is named, M/D); the day reads no open order, so the line
+    says not to enter them again if already entered (enter in the evening only if not). An unreadable issue day
+    shows as "?" (visible, not guessed)."""
+    issued = {ticket["ticket_id"]: str(ticket.get("issued_day") or "") for ticket in open_tickets}
+    days = set()
+    for order in orders:
+        try:
+            value = date.fromisoformat(issued.get(order.get("id"), ""))
+            days.add((value.isoformat(), f"{value.month}/{value.day}"))
+        except ValueError:
+            days.add(("~", "?"))
+    names = "\u00b7".join(name for _key, name in sorted(days))
+    return (f"\uc8fc\ubb38\ud45c {len(orders)}\uac74 \u2014 {names} \ubc1c\ud589\ubd84\uacfc \uac19\uc740 \uc8fc\ubb38\ud45c: "
+            "\uc774\ubbf8 \uc785\ub825\ud588\uc73c\uba74 \ub2e4\uc2dc \ub123\uc9c0 \uc54a\uc74c"
+            "(\uc548 \ub123\uc5c8\uc73c\uba74 \uc800\ub141 \ud0a4\uc6c0 \uc785\ub825)")
 
 
 def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str, Any], evaluation_session: str,

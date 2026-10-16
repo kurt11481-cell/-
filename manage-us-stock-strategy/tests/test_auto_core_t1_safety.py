@@ -278,10 +278,16 @@ def _row(**overrides):
     return row
 
 
+def _close():
+    """pre-on-fix 1: the ticket session's close (05:00 KST on 2026-10-02), passed to ticket_rows."""
+    return tickets_module.session_close(_ticket(), helpers.calendar(decide_fixture.CALENDAR_DAYS))
+
+
 class DuplicateOrderNumberTests(unittest.TestCase):
     def test_f1_the_same_row_twice_counts_once(self):
         ticket = _ticket()
-        chosen = tickets_module.ticket_rows(ticket, [("2026-10-01", _row()), ("2026-10-01", _row())], set())
+        chosen = tickets_module.ticket_rows(ticket, [("2026-10-01", _row()), ("2026-10-01", _row())], set(),
+                                            close_at=_close())
         self.assertIsNone(chosen["note"])
         self.assertEqual(chosen["orders"], [{"ord_dt": "2026-10-01", "ord_no": "0000001"}])
         outcome = tickets_module.classify_outcome(ticket, chosen["rows"])
@@ -291,7 +297,8 @@ class DuplicateOrderNumberTests(unittest.TestCase):
         ticket = _ticket()
         for name, other in (("fill", _row(cntr_qty="000000000003")), ("other_ticker", _row(stk_cd="SOXS"))):
             with self.subTest(case=name):
-                chosen = tickets_module.ticket_rows(ticket, [("2026-10-01", _row()), ("2026-10-01", other)], set())
+                chosen = tickets_module.ticket_rows(ticket, [("2026-10-01", _row()), ("2026-10-01", other)], set(),
+                                                    close_at=_close())
                 self.assertEqual(chosen, {"rows": [], "orders": [], "note": "ORD_NO_DUPLICATE_CONFLICT"})
 
     def test_f2_through_read_outcomes_the_ticket_stays_open(self):
@@ -310,7 +317,8 @@ class DuplicateOrderNumberTests(unittest.TestCase):
         ticket = _ticket()
         chosen = tickets_module.ticket_rows(
             ticket, [("2026-10-01", _row(ord_qty="000000000003", cntr_qty="000000000003")),
-                     ("2026-10-02", _row(ord_qty="000000000002", cntr_qty="000000000002"))], set())
+                     ("2026-10-02", _row(ord_qty="000000000002", cntr_qty="000000000002", ord_time="00:30:00"))],
+            set(), close_at=_close())
         self.assertIsNone(chosen["note"])
         self.assertEqual(len(chosen["orders"]), 2)
 
@@ -322,7 +330,7 @@ class DuplicateOrderNumberTests(unittest.TestCase):
         early = _row(ord_no="0000004", ord_time="07:00:00")  # before the ticket was issued
         chosen = tickets_module.ticket_rows(
             ticket, [("2026-10-01", one), ("2026-10-01", foreign), ("2026-10-01", two), ("2026-10-01", early)],
-            {("2026-10-01", "0000009")})
+            {("2026-10-01", "0000009")}, close_at=_close())
         self.assertIsNone(chosen["note"])
         self.assertEqual(chosen["rows"], [one, two])
         self.assertEqual(chosen["orders"], [{"ord_dt": "2026-10-01", "ord_no": "0000001"},
@@ -330,11 +338,12 @@ class DuplicateOrderNumberTests(unittest.TestCase):
         outcome = tickets_module.classify_outcome(ticket, chosen["rows"])
         self.assertEqual((outcome["state"], outcome["filled_qty"]), ("partial", 3))
         # The other existing notes are unchanged.
-        self.assertEqual(tickets_module.ticket_rows(ticket, [("2026-10-01", _row(ord_no=""))], set())["note"],
-                         "ORD_NO_UNREADABLE")
-        self.assertEqual(tickets_module.ticket_rows(ticket, [("2026-10-01", _row(ord_time="x"))], set())["note"],
-                         "ORD_TIME_UNREADABLE")
-        attributed = tickets_module.ticket_rows(ticket, [("2026-10-01", _row())], {("2026-10-01", "0000001")})
+        self.assertEqual(tickets_module.ticket_rows(ticket, [("2026-10-01", _row(ord_no=""))], set(),
+                                                    close_at=_close())["note"], "ORD_NO_UNREADABLE")
+        self.assertEqual(tickets_module.ticket_rows(ticket, [("2026-10-01", _row(ord_time="x"))], set(),
+                                                    close_at=_close())["note"], "ORD_TIME_UNREADABLE")
+        attributed = tickets_module.ticket_rows(ticket, [("2026-10-01", _row())], {("2026-10-01", "0000001")},
+                                                close_at=_close())
         self.assertEqual((attributed["rows"], attributed["note"]), ([], None))
 
 

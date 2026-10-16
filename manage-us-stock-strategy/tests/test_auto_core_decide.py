@@ -1041,11 +1041,12 @@ class OrderAttributionTests(unittest.TestCase):
         self.assertEqual(self.journaled(), [(first["ticket_id"], "filled"), (second["ticket_id"], "not_entered")])
 
     def test_the_ledger_alone_keeps_a_later_row_out_across_a_hold_day(self):
-        # The D+1 run reads the broker after its research wait: a row placed at 08:10 KST on D+1 (after T's
-        # session closed, after T' was issued at 07:45) was counted for T. Only the ledger keeps it from T'.
+        # A row placed at 04:30 KST on D+1 (before T's session closed) is counted for T and the ledger carries it
+        # across the HOLD day (pre-on-fix 1: a row after the 05:00 close is no longer T's; this one is also
+        # before T' was issued at 07:45).
         first = self.ticket(D_R4, D_R4)
         self.source(D_R4, "2026-10-13", [first])
-        late = _order_row("0000102", "08:10:00")
+        late = _order_row("0000102", "04:30:00")
         d1 = self.run_on(D1_R4, FakeReader(fills={"20261015": [late]}), self.sold(D_R4))
         self.assertEqual(self.states(d1), [(first["ticket_id"], "filled")])
         mine = [{"ord_dt": D1_R4, "ord_no": "0000102", "ticket_id": first["ticket_id"]}]
@@ -1063,13 +1064,14 @@ class OrderAttributionTests(unittest.TestCase):
         self.assertEqual(d3["attributed_orders"], mine)
 
     def test_compare_mode_keeps_no_list(self):
-        # Compare mode: no ledger update, so the D+1 row of T is read again for T' (as before r4).
+        # Compare mode: no ledger update, so the D+1 row is read again for T' (as before r4). pre-on-fix 1: the
+        # 08:10 KST row is after T's session closed (05:00), so it is not T's; it is T''s.
         self.make_env("compare")
         first = self.ticket(D_R4, D_R4)
         self.source(D_R4, "2026-10-13", [first])
         late = _order_row("0000102", "08:10:00")
         d1 = self.run_on(D1_R4, FakeReader(fills={"20261015": [late]}), self.sold(D_R4))
-        self.assertEqual((self.states(d1), d1["attributed_orders"]), ([(first["ticket_id"], "filled")], []))
+        self.assertEqual((self.states(d1), d1["attributed_orders"]), ([(first["ticket_id"], "not_entered")], []))
         second = self.ticket(D1_R4, D1_R4, key="e" * 64)
         self.add_ticket(D1_R4, second)
         d2 = self.run_on(D2_R4, FakeReader(fills={"20261015": [late]}), self.sold(D1_R4))
@@ -1077,7 +1079,7 @@ class OrderAttributionTests(unittest.TestCase):
 
     def test_within_one_run_a_row_counts_once_in_both_modes(self):
         # A (issued Tuesday, session Tuesday, left open) and B (issued Wednesday D) are classified in the same run.
-        # A's window ends on D; a row at 08:00 KST on D (after B was issued) is taken by the older A.
+        # A's window ends on D at 05:00 KST (pre-on-fix 1); a row at 04:30 KST on D is taken by the older A.
         for mode in ("compare", "apply"):
             with self.subTest(mode=mode):
                 self.make_env(mode)
@@ -1085,7 +1087,7 @@ class OrderAttributionTests(unittest.TestCase):
                 older["issued_day"] = "2026-10-13"
                 newer = self.ticket(D_R4, D_R4)
                 self.source(D_R4, "2026-10-13", [newer], open_tickets=[older])
-                reader = FakeReader(fills={"20261014": [_order_row("0000301", "08:00:00")]})
+                reader = FakeReader(fills={"20261014": [_order_row("0000301", "04:30:00")]})
                 decision = self.run_on(D1_R4, reader, self.sold("2026-10-13"))
                 self.assertEqual(self.states(decision),
                                  [(older["ticket_id"], "filled"), (newer["ticket_id"], "not_entered")])
