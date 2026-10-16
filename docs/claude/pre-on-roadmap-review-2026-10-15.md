@@ -123,3 +123,10 @@ redesign-t2-replay-2026-10-14.md "보충(2026-10-15)" 절에 적었다.
   - ev-rg1-hyper: hwm-fix 병합 뒤 계산기 RG1 동반 수정(새 sha → Judge → 실행기 고정값 교체 승인)과 한 K3 묶음, "켜" 전. C1은 병합 뒤 0부터.
   - cashflow-api-gap·deposit-interest-i3 ③: 묶음에서 분리, 별도 K3(관제판 deposit-interest-i3 재개일 2027-01-04 전). hwm-fix a 결정의 "한 K3 묶음 검토" 문구를 이 결정으로 바꾼다.
   - 시작: autocore-on 종료(10/17 점검) 뒤 권한 슬롯. Cowork가 ① Builder·Judge 지시문 작성.
+
+### 결정 기록 (t2rc-c45)
+- 2026-10-16 18:3x KST 사용자 원문 "결정 t2rc-c45: a" → 1회 예약 작업 2개 등록(코드·정책·상태 변경 없음, 읽기 전용, 푸시 알림).
+  - C4 6주: trig_01XMeLrqhTonicWVjWQHvKmV, 2026-11-27 09:30 KST. 구간 10/16~11/27 주문표 합 0이면 알림, 결과 workspace/outputs/auto-core/t2rc-c45/c4-2026-11-27.json.
+  - C5 12주: trig_01RrxUNLe5tAbWEh49FMyyUm, 2027-01-08 09:30 KST. 구간 안 C2 미충족이면 알림("답이 없으면 비교 모드·B+ 기준 유지" 문구 포함), 결과 .../c5-2027-01-08.json. 달력(cal-2027) 정지일이 있으면 따로 적는다.
+  - D0 = 2026-10-16(t2rc-check.json day_kst, C1 1/10 기준). 알림은 안내일 뿐 자동 변경 없음. 확인 필요: C4·C5 막힌 사유 집계에 쓰는 circuit_detail 사유 필드 형식(첫 실행 때 불분명하면 해당 항목만 "확인 필요"로 표시).
+  - 사용자 손: 0 (일회성 등록은 Cowork가 끝냄).
