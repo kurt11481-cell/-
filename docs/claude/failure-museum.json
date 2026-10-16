@@ -1,0 +1,8 @@
+{
+  "schema": "failure-museum-1.0",
+  "description": "Failure Museum (constitution §11 'Which assumption failed?'). Cowork appends one entry per scorer candidate (journal-scores learning.museum.pending) during card, M6 or evaluation sessions. Append only: a correction is a later entry with the same candidate_id (the later one wins). Display only, grade D; never a trade reason and never written back to the decision journal. Definition: docs/claude/f-evo-loop-s1-preregistration-2026-10-16.md 3-5.",
+  "categories": ["THESIS", "EVIDENCE", "TIMING", "SIZE", "DATA", "RULE", "TAIL_EVENT", "NONE"],
+  "entry_fields": ["candidate_id", "failed_assumption", "category", "evidence", "feasible_note", "written_by", "written_at", "grade"],
+  "order_authority": false,
+  "entries": []
+}

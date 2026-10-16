@@ -1,0 +1,15 @@
+{
+  "schema": "gate-rule-epochs-1.0",
+  "description": "Rule epochs for the f-evo-loop learning buckets (docs/claude/f-evo-loop-s1-preregistration-2026-10-16.md 3-6). One entry per merged change that alters a gate or evidence definition of the auto-core, effective from the first decision run day that contains the commit. Cowork appends an entry in the session that verifies such a merge. Scorer reads only. scope: ALL | EVIDENCE_BUY | EVIDENCE_SELL | GATE:<gate name> (GATE:SELL_FLOOR and GATE:SCENARIO_BAND for the ticket-based units).",
+  "order_authority": false,
+  "epochs": [
+    {"scope": "GATE:REQ5_RREC1", "first_run_day": "2026-10-14", "commit": "55803bf", "note": "R-REC1 RG1 needs research records only from the first record in the window on (rrec-rg1-bootstrap B); in decision 2026-10-14 commit 4051391, not in 2026-10-13 commit 73e18b4 (git merge-base)"},
+    {"scope": "GATE:REQ5_RREC1", "first_run_day": "2026-10-14", "commit": "4051391", "note": "EV4 neighbour-session margin (RREC_EV4_NEIGHBOR_MARGIN) added; this is the 2026-10-14 decision's own commit"},
+    {"scope": "EVIDENCE_BUY", "first_run_day": "2026-10-15", "commit": "1a2b7d6", "note": "C6 rebound/pullback session must close up/down vs the prior close; in decision 2026-10-15 commit cf2c86c, not in 2026-10-14 commit 4051391"},
+    {"scope": "EVIDENCE_SELL", "first_run_day": "2026-10-15", "commit": "1a2b7d6", "note": "same change as above, counted for sell evidence too (conservative split)"},
+    {"scope": "GATE:REQ5_RREC1", "first_run_day": "2026-10-16", "commit": "ef3bad1", "note": "R-REC1 events on SOXX (GRID only RG2), RG3 lows from the event (t2-rc Judge); in decision 2026-10-16 commit ad12759, not in 2026-10-15 commit cf2c86c"},
+    {"scope": "EVIDENCE_BUY", "first_run_day": "2026-10-16", "commit": "ef3bad1", "note": "unknown previous state is not new evidence; buy G3 card hit"},
+    {"scope": "EVIDENCE_SELL", "first_run_day": "2026-10-16", "commit": "ef3bad1", "note": "unknown previous state is not new evidence (conservative split for sells)"},
+    {"scope": "GATE:SELL_FLOOR", "first_run_day": "2026-10-17", "commit": "04f9a85", "note": "F6 order window cut at the session close touches the recording-mode unfilled classification; not a gate definition change, split conservatively (04f9a85 is in HEAD d597a5b on 2026-10-16)"}
+  ]
+}
