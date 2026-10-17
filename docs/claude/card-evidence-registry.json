@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-10-10",
-  "updated_by": "redesign-t2 Builder (transcription)",
+  "updated_at": "2026-10-17",
+  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지)",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -286,7 +286,7 @@
       "role": "watch",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "## 6. MU 관심 카드 (신규, 미보유)",
-      "section_sha256": "2b45ee6adf410d41e2e78d33e04cd52f298191d03c2a18056f67d3c8e1925ed4",
+      "section_sha256": "c570530ab738c24049f5072ef58f6c1bc8701c1b673c7c349c0ea3d5a64ab318",
       "accepted": {
         "text": "cardStatus 수락(2026-10-02)",
         "date": "2026-10-02",
@@ -432,7 +432,7 @@
       "role": "watch",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "### 5-1. BE (Bloom Energy, NYSE) 관심 카드",
-      "section_sha256": "b795024b7d1fceff14255581b22adf0a3997ecebe70605bce487f1530be36fd6",
+      "section_sha256": "ff632222d54a9dd1c94a37c001f80c44b2b7c8a781903af4ec956d32a2425f0f",
       "accepted": {
         "text": "cardStatus 수락(2026-10-02)",
         "date": "2026-10-02",
@@ -572,7 +572,7 @@
       "role": "watch",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "### 5-2. DELL (Dell Technologies, NYSE) 관심 카드",
-      "section_sha256": "dd5d5e1d4de45902163617bd53c579e09e8462bb06080d5b57729debc7bf34cb",
+      "section_sha256": "674ecfc9b19ddb76a5aee34468371d60900728bf374739379c6ddeab0adecf51",
       "accepted": {
         "text": "cardStatus 수락(2026-10-02)",
         "date": "2026-10-02",
@@ -708,7 +708,7 @@
       "role": "watch",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "### 5-3. AMD (Advanced Micro Devices, NASDAQ) 관심 카드",
-      "section_sha256": "5400f3de18f5f449c3b5f822fab783e3d596807fdfab329c9b5ea4f3bfd1cb19",
+      "section_sha256": "4613aa6ba895e3ecd8dcfd6f699806784fb6c563b8c5673425d392c832700078",
       "accepted": {
         "text": "수락(v2, 2-2, 10/2): BE·DELL·AMD 관심 카드(WATCH 3종, 확신도 낮음)",
         "date": "2026-10-02",
@@ -863,7 +863,7 @@
       "role": "watch",
       "card_doc": "docs/claude/watch-card-PWR-2026-10-03.md",
       "card_section": "# PWR (Quanta Services, NYSE) 관심 카드 v1 (2026-10-03, 신규, 미보유)",
-      "section_sha256": "a8852743d6ca11ed9ac7b454eed99308e7ace2c7163c56142e8823bc121ef5c5",
+      "section_sha256": "c34a38e68cc29826afbd6d469792629b96b5a2c8b14ae2e8d0c7db92789b4e24",
       "accepted": {
         "text": "cardStatus 수락(2026-10-03)",
         "date": "2026-10-03",
@@ -999,7 +999,7 @@
       "role": "watch",
       "card_doc": "docs/claude/watch-card-LITE-2026-10-03.md",
       "card_section": "# LITE (Lumentum Holdings, NASDAQ) 관심 카드 v1 (2026-10-03, 신규, 미보유)",
-      "section_sha256": "1d31e432d849981ea72c575390754394d41691749c739d31ff1d195c866dd723",
+      "section_sha256": "f4cde54f98f1b29f6ac2205543a2f8f5f9866232c75d1afb0e1acf9aadf5748e",
       "accepted": {
         "text": "cardStatus 수락(2026-10-03)",
         "date": "2026-10-03",
@@ -1128,6 +1128,152 @@
           "date": "2026-11-05",
           "label": "실적 11/5(외부 재게시, 금지 구간 11/3~11/6)",
           "source": "docs/claude/watch-card-LITE-2026-10-03.md:33"
+        }
+      ]
+    },
+    "PLTR": {
+      "role": "watch",
+      "card_doc": "docs/claude/watch-card-PLTR-2026-10-17.md",
+      "card_section": "# PLTR (Palantir Technologies, NASDAQ) 관심 카드 v1 (2026-10-17, 신규, 미보유)",
+      "section_sha256": "754e8b5c9c958ba19c3e86274fef451f8d31caa9c27c3fc56fb0e8c62ebb4dc8",
+      "accepted": {
+        "text": "사용자 수락 2026-10-17 \"결정 pltr-card: a\" (관심 편입·상품 승인 아님)",
+        "date": "2026-10-17",
+        "source": "docs/claude/watch-card-PLTR-2026-10-17.md:20"
+      },
+      "card_action": "WATCH",
+      "trim_target_weight": null,
+      "trigger_set": "PL",
+      "sector": "C1 AI 소프트웨어(활용)",
+      "rg2_benchmark": "SOXX",
+      "official_domains": [
+        "palantir.com",
+        "sec.gov"
+      ],
+      "c8": {
+        "one_day": 0.1,
+        "five_day": null,
+        "source": "docs/claude/watch-card-PLTR-2026-10-17.md:63"
+      },
+      "card_triggers": [
+        {
+          "id": "PL1",
+          "kind": "earnings_notice",
+          "side": "info",
+          "strength": "info",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:56"
+        },
+        {
+          "id": "PL4",
+          "kind": "good_news_drop",
+          "side": "-",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:59"
+        },
+        {
+          "id": "PL5",
+          "kind": "new_high_hold",
+          "side": "+",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:60"
+        },
+        {
+          "id": "PL6",
+          "kind": "pullback_rebound",
+          "side": "+",
+          "strength": "weak",
+          "params": {
+            "band": 0.015
+          },
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:61"
+        },
+        {
+          "id": "PL7",
+          "kind": "ema20_below_twice",
+          "side": "-",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:62"
+        },
+        {
+          "id": "PL8",
+          "kind": "drop_alert",
+          "side": "alert",
+          "strength": "review",
+          "params": {
+            "one_day": 0.1,
+            "five_day": null
+          },
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:63"
+        }
+      ],
+      "static_evidence": [
+        {
+          "id": "PLTR-SE1",
+          "e1_kind": "thesis",
+          "strength": "strong",
+          "direction": "+",
+          "as_of": "2026-10-17",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:29",
+          "quote": "미국 상업 $764M(+149%)**, 미국 정부 $809M(+90%). **미국 상업 RDV $6.238B(+124% YoY, +27% QoQ)**, TCV $3.373B(+49%)"
+        },
+        {
+          "id": "PLTR-SE2",
+          "e1_kind": "valuation",
+          "strength": "weak",
+          "direction": "-",
+          "as_of": "2026-10-17",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:30",
+          "quote": "FY26 매출 가이던스 중간값 $8.154B 대비 **54.8~58.6배**, 조정 FCF 중간값 $4.6B 대비 97~104배"
+        },
+        {
+          "id": "PLTR-SE3",
+          "e1_kind": "event_reaction",
+          "strength": "strong",
+          "direction": "+",
+          "as_of": "2026-10-17",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:31",
+          "quote": "Q2(8/3 장후 발표): 8/3 종가 $125.65 → 8/4 $162.66(**+29.5%**), 발표일부터 10세션 뒤 8/17 $172.55(+37.3%), 그 뒤 8/3 종가 아래 복귀 없음"
+        },
+        {
+          "id": "PLTR-SE4",
+          "e1_kind": "event_reaction",
+          "strength": "weak",
+          "direction": "-",
+          "as_of": "2026-10-17",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:31",
+          "quote": "Q1(5/4 장후): 5/5 −6.9%(5/4 $146.03 → $135.91), 10세션 뒤 5/18 $135.14(−7.5%) — PL4 발생"
+        }
+      ],
+      "kill_refs": [
+        {
+          "id": "PL3",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:58"
+        },
+        {
+          "id": "PLTR-KILL",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:46"
+        }
+      ],
+      "known_events": [
+        {
+          "date": "2026-11-02",
+          "label": "3분기 실적(미국 장 마감 뒤, Business Wire 2026-10-12)",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:47"
+        },
+        {
+          "date": "2026-11-03",
+          "label": "미국 중간선거",
+          "source": "docs/claude/watch-card-PLTR-2026-10-17.md:47"
         }
       ]
     }

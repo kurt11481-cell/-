@@ -1,0 +1,89 @@
+1c1
+< [투자_V2 · 관심 명단 주간 재채점·자동 교체 v3.2(자동 모드 + 유지 보호 ⑧, 사용자 결정 A6 a 2026-10-10 / 매주 커밋 목록, 사용자 결정 wl-snap-commit: a 2026-10-17 / 분할 종목 수정주가, 사용자 결정 2026-10-17) — 분석 + 명단 파일·새 카드 초안 기록. 무인 실행: 질문하지 말고 아래대로 진행, 결과는 한국어, 결론 먼저, 짧게.]
+---
+> [투자_V2 · 관심 명단 주간 재채점·자동 교체 v3.3(자동 모드 + 유지 보호 ⑧, 사용자 결정 A6 a 2026-10-10 / 매주 커밋 목록, 사용자 결정 wl-snap-commit: a 2026-10-17 / 분할 종목 수정주가, 사용자 결정 2026-10-17 / 수락 카드 재사용, 사용자 요청 2026-10-17 "카드 재사용 작업 시작") — 분석 + 명단 파일·새 카드 초안 기록. 무인 실행: 질문하지 말고 아래대로 진행, 결과는 한국어, 결론 먼저, 짧게.]
+4,5c4,5
+< 자동 모드(사용자 결정 A6 a, 2026-10-10 — 점수표 R2.1·교체 규칙은 그대로, 결과만 알림): 규칙이 편입·교체·제외를 정하면 아래 python이 명단 파일 members에 바로 반영하고 history에 add·swap·remove 1건(mode "auto", by "weekly")을 더한다. 실행당 최대 1건. 바꿀 것이 없거나 판단 보류면 members·candidates·history를 바꾸지 않는다. 이번 실행의 상태(점수, 가장 약한 관심 종목, 보호 상태, 알림 여부)는 weeklyRun 한 칸에 덮어쓰고, mode는 python이 "auto"로 적는다. 바뀐 관심 칸 밖의 기존 관심 칸(종목·순서·카드·편입일·점수 칸)은 한 글자도 바꾸지 않는다. 교체로 나간 종목은 후보 끝에, 철회 기준으로 나간 종목은 excluded에, 보유로 바뀐 종목은 어디에도 넣지 않는다. 되돌리기는 사용자 지시로 Cowork가 한다(history by "user"). 관심 편입은 매수 승인이 아니다 — 새 관심 종목 카드는 python이 쓰는 '자동 작성 초안(미수락)'이라 통합 점검이 가격·트리거만 표시하고 매수 요건 ③을 '확인 필요(카드 미수락)'로 둔다. 카드 없는 종목은 편입하지 않는다(규칙 ⑥).
+< 점수표·규칙(루프가 바꾸지 않는다): R2.1 = S1 공식 테제 0~2(최근 분기 공식 자료에 수치로 확인되는 병목·수요 증가: 강 2·약 1·없음 0, 콜 전사본만 근거면 한 단계 낮춤) · S2 실적 가속 0~2(최신 분기 매출 YoY > 직전 분기 YoY → 1, 연간 가이던스 상향 또는 다음 분기 매출 가이던스 중간값 ≥ 이번 분기 매출 × 1.05 → 1) · S3 주도 신호 0~2(60세션 수익률 > 기준 ETF[전력 GRID, 그 외 SOXX] → 1, 종가 ≥ 252세션 종가 고점 × 0.85 → 1) · S4 성장 대비 가격 0~1(예상 PER ≤ 최신 매출 YoY%, MU는 사이클 업종이라 0 — 사이클 업종 목록은 MU만 유지(결정 대기, 기본 NO_CHANGE): 섹터 첫 단어가 B1이거나 메모리·스토리지·NAND·DRAM·HDD인 다른 종목은 flag만 남기고, 그 종목이 들어올 차례면 판단 보류) · S5 추세 0~1(종가 > EMA50) · S7 실적 반응 0~2(발표 직전 종가 P0 대비 10세션 뒤 종가 +5% 이상 2·0% 이상 1·미만 0, 10세션 전이면 최신 종가로 잠정). 출처가 없거나 "확인 필요"인 항목은 0점. 입장 조건: 미국 상장 보통주, 시총 $5B 이상, 시총 $1T 미만(MU·AMD는 명단 안팎 모두 예외), 보유 종목과 MRVL(보유 MVLL의 기초자산) 제외. 후보 목록은 Cowork·사용자만 바꾼다(최신 발굴 문서 A1~A3 분야·현재 관심 종목·최신 수락된 next-sandisk-scan의 점화 씨앗 — F5). 교체 규칙(3-3): ① 강제 제외 — 관심 종목의 철회 기준(카드 kill ①~③) 충족이 회사 공식 자료로 확인되거나 보유로 바뀌면 제외 ② 빈 칸 채우기 — 6점 이상 최고점 후보 ③ 교체 — 후보 점수 ≥ 가장 약한 관심 종목 + 2가 2주 연속 주간 평가에서 성립하고, 그 관심 종목 편입 후 28일 이상 ④ 실행당 편입·교체·제외 합계 최대 1건(사용자 결정으로 앞당긴 교체 — history의 by "user" — 는 이 한도에 세지 않는다), 분야(섹터 첫 단어 A1·A3 등)당 관심 최대 2종목 ⑤ 동점은 기존 관심 종목 유지, 후보끼리는 S1 → S2 → 시총 작은 쪽 ⑥ 편입·교체로 들어올 종목은 새 카드의 철회 기준 ①~③을 회사 공식 자료로 채울 수 있어야 하고(6)의 카드 단계), 못 채우면 "판단 보류" ⑧ 유지 보호(2026-10-04 사용자 결정, Next 샌디스크 설계 16-3·16-5) — ③의 교체 대상이 된 관심 종목이 ㉠ 지금 S1+S2가 편입 때(명단 파일 members의 items) 이상이고 ㉡ 철회 기준 공식 확인이 없으면 교체하지 않고 "조정 중(테제 유지)"으로 둔다. 보호는 그 종목의 다음 분기 실적 반응(S7)이 새로 측정될 때(새 반응일 + 10세션)까지, 최대 13주(91일). 그 뒤에도 교체 조건이 남으면 일반 규칙(같은 압력 구간에서 다시 보호하지 않는다, 압력이 사라지면 보호 기록을 지운다). 보호 중인 종목은 빼고 그다음 약한 종목을 교체 대상으로 보되, 그 종목에 대해서도 지난주·이번 주 모두 +2 이상이어야 한다. 강제 제외(①)가 보호보다 먼저다. 보호 상태는 weeklyRun.protect에만 기록한다. 계산·규칙 적용·검증은 아래 python이 하고, 판정은 python 출력만 쓴다.
+---
+> 자동 모드(사용자 결정 A6 a, 2026-10-10 — 점수표 R2.1·교체 규칙은 그대로, 결과만 알림): 규칙이 편입·교체·제외를 정하면 아래 python이 명단 파일 members에 바로 반영하고 history에 add·swap·remove 1건(mode "auto", by "weekly")을 더한다. 실행당 최대 1건. 바꿀 것이 없거나 판단 보류면 members·candidates·history를 바꾸지 않는다. 이번 실행의 상태(점수, 가장 약한 관심 종목, 보호 상태, 알림 여부)는 weeklyRun 한 칸에 덮어쓰고, mode는 python이 "auto"로 적는다. 바뀐 관심 칸 밖의 기존 관심 칸(종목·순서·카드·편입일·점수 칸)은 한 글자도 바꾸지 않는다. 교체로 나간 종목은 후보 끝에, 철회 기준으로 나간 종목은 excluded에, 보유로 바뀐 종목은 어디에도 넣지 않는다. 되돌리기는 사용자 지시로 Cowork가 한다(history by "user"). 관심 편입은 매수 승인이 아니다 — 새 관심 종목 카드는 python이 쓰는 '자동 작성 초안(미수락)'이라 통합 점검이 가격·트리거만 표시하고 매수 요건 ③을 '확인 필요(카드 미수락)'로 둔다. 예외(v3.3): 1)의 REUSE에 있는 종목은 사용자가 이미 수락한 카드를 그대로 쓰고 cardStatus를 '수락(<수락일>, 수락 카드 재사용 — <TODAY> 자동 편입)'으로 둔다 — 매수는 여전히 상품 승인·노출·R-REC1 등 다른 요건을 모두 거친다. 카드 없는 종목은 편입하지 않는다(규칙 ⑥).
+> 점수표·규칙(루프가 바꾸지 않는다): R2.1 = S1 공식 테제 0~2(최근 분기 공식 자료에 수치로 확인되는 병목·수요 증가: 강 2·약 1·없음 0, 콜 전사본만 근거면 한 단계 낮춤) · S2 실적 가속 0~2(최신 분기 매출 YoY > 직전 분기 YoY → 1, 연간 가이던스 상향 또는 다음 분기 매출 가이던스 중간값 ≥ 이번 분기 매출 × 1.05 → 1) · S3 주도 신호 0~2(60세션 수익률 > 기준 ETF[전력 GRID, 그 외 SOXX] → 1, 종가 ≥ 252세션 종가 고점 × 0.85 → 1) · S4 성장 대비 가격 0~1(예상 PER ≤ 최신 매출 YoY%, MU는 사이클 업종이라 0 — 사이클 업종 목록은 MU만 유지(결정 대기, 기본 NO_CHANGE): 섹터 첫 단어가 B1이거나 메모리·스토리지·NAND·DRAM·HDD인 다른 종목은 flag만 남기고, 그 종목이 들어올 차례면 판단 보류) · S5 추세 0~1(종가 > EMA50) · S7 실적 반응 0~2(발표 직전 종가 P0 대비 10세션 뒤 종가 +5% 이상 2·0% 이상 1·미만 0, 10세션 전이면 최신 종가로 잠정). 출처가 없거나 "확인 필요"인 항목은 0점. 입장 조건: 미국 상장 보통주, 시총 $5B 이상, 시총 $1T 미만(MU·AMD는 명단 안팎 모두 예외), 보유 종목과 MRVL(보유 MVLL의 기초자산) 제외. 후보 목록은 Cowork·사용자만 바꾼다(최신 발굴 문서 A1~A3 분야·현재 관심 종목·최신 수락된 next-sandisk-scan의 점화 씨앗 — F5). 교체 규칙(3-3): ① 강제 제외 — 관심 종목의 철회 기준(카드 kill ①~③) 충족이 회사 공식 자료로 확인되거나 보유로 바뀌면 제외 ② 빈 칸 채우기 — 6점 이상 최고점 후보 ③ 교체 — 후보 점수 ≥ 가장 약한 관심 종목 + 2가 2주 연속 주간 평가에서 성립하고, 그 관심 종목 편입 후 28일 이상 ④ 실행당 편입·교체·제외 합계 최대 1건(사용자 결정으로 앞당긴 교체 — history의 by "user" — 는 이 한도에 세지 않는다), 분야(섹터 첫 단어 A1·A3 등)당 관심 최대 2종목 ⑤ 동점은 기존 관심 종목 유지, 후보끼리는 S1 → S2 → 시총 작은 쪽 ⑥ 편입·교체로 들어올 종목은 새 카드의 철회 기준 ①~③을 회사 공식 자료로 채울 수 있어야 하고(6)의 카드 단계), 못 채우면 "판단 보류"(1)의 REUSE 종목은 수락 카드의 철회 기준으로 대신한다, v3.3) ⑧ 유지 보호(2026-10-04 사용자 결정, Next 샌디스크 설계 16-3·16-5) — ③의 교체 대상이 된 관심 종목이 ㉠ 지금 S1+S2가 편입 때(명단 파일 members의 items) 이상이고 ㉡ 철회 기준 공식 확인이 없으면 교체하지 않고 "조정 중(테제 유지)"으로 둔다. 보호는 그 종목의 다음 분기 실적 반응(S7)이 새로 측정될 때(새 반응일 + 10세션)까지, 최대 13주(91일). 그 뒤에도 교체 조건이 남으면 일반 규칙(같은 압력 구간에서 다시 보호하지 않는다, 압력이 사라지면 보호 기록을 지운다). 보호 중인 종목은 빼고 그다음 약한 종목을 교체 대상으로 보되, 그 종목에 대해서도 지난주·이번 주 모두 +2 이상이어야 한다. 강제 제외(①)가 보호보다 먼저다. 보호 상태는 weeklyRun.protect에만 기록한다. 계산·규칙 적용·검증은 아래 python이 하고, 판정은 python 출력만 쓴다.
+14c14
+< 1) 사전 확인(device_bash, 읽기만, 파일을 만들지 않는 heredoc 실행): 아래를 그대로 실행하고 출력만 읽는다. 출력: CARDS(관심 종목별 카드 파일 경로) · MISS(카드 파일이 없는 관심 종목) · REG(명단 파일 sha256 앞 12자·mode·proposalRunsLeft·관심·후보·지난 주간 실행일) · DUE(마지막 실적 반응일 + 80일이 지나 새 분기 실적 확인이 필요한 종목) · MEMO·MEMO-EV(SAVE 메모 머리 줄·시장 이벤트 3건) · LEAD(SAVE 메모에서 관심·후보 종목이 나온 줄).
+---
+> 1) 사전 확인(device_bash, 읽기만, 파일을 만들지 않는 heredoc 실행): 아래를 그대로 실행하고 출력만 읽는다. 출력: CARDS(관심 종목별 카드 파일 경로) · MISS(카드 파일이 없는 관심 종목) · REG(명단 파일 sha256 앞 12자·mode·proposalRunsLeft·관심·후보·지난 주간 실행일) · DUE(마지막 실적 반응일 + 80일이 지나 새 분기 실적 확인이 필요한 종목) · MEMO·MEMO-EV(SAVE 메모 머리 줄·시장 이벤트 3건) · LEAD(SAVE 메모에서 관심·후보 종목이 나온 줄) · REUSE(card-evidence-registry.json에 수락된 관심 카드가 있고, 절 해시가 맞고, 수락일 뒤로 명단에서 빠진 적이 없고, 카드 valid_until 날짜가 오늘 이후인 후보: 카드 경로·수락일·트리거 세트·유효일 — 편입·교체되면 새 초안 대신 이 카드를 쓴다. 하나라도 못 맞추면 새 초안 경로, v3.3).
+16c16
+< import json,os,sys,hashlib,datetime as T
+---
+> import json,os,re,sys,hashlib,datetime as T
+21a22,47
+> try:cr=json.loads(open(R+'docs/claude/card-evidence-registry.json','rb').read().decode('utf-8-sig')).get('symbols') or {}
+> except Exception:cr={}
+> def sec(tx,h):
+>     L=tx.replace('\r\n','\n').split('\n')
+>     if L and L[-1]=='':L.pop()
+>     v=len(h)-len(h.lstrip('#'))
+>     for i,l in enumerate(L):
+>         if l!=h:continue
+>         e=len(L)
+>         for j in range(i+1,len(L)):
+>             c=L[j];d=len(c)-len(c.lstrip('#'))
+>             if c.startswith('#') and c[d:d+1]==' ' and d<=v:e=j;break
+>         return '\n'.join(L[i:e])
+>     return None
+> RU={}
+> for c in g['candidates']:
+>     x=cr.get(c['code']) or {}
+>     try:
+>         acc=(x.get('accepted') or {}).get('date') or '';outs=[h.get('date','') for h in g.get('history',[]) if c['code'] in str(h.get('out','')).split(',')]
+>         tx=open(R+x['card_doc'],encoding='utf-8-sig').read();vd=re.match(r'valid_until:\s*(\d{4}-\d{2}-\d{2})',next((l for l in tx.split('\n')[:20] if l.startswith('valid_until:')),''))
+>         s=sec(tx,x['card_section']) if x.get('role')=='watch' and (x.get('accepted') or {}).get('text') else None
+>         if s is not None and hashlib.sha256(s.encode('utf-8')).hexdigest()==x.get('section_sha256') and acc and all(acc>o for o in outs) and vd and T.date.fromisoformat(vd.group(1))>=t:
+>             n=re.match(r'#{2,} ([0-9]+(?:-[0-9]+)*)\.',x['card_section'])
+>             RU[c['code']]={'card':x['card_doc']+('#'+n.group(1) if n else ''),'accepted':acc,'triggerSet':x.get('trigger_set') or c['code'],'validUntil':vd.group(1)}
+>     except Exception:pass
+> print('REUSE',json.dumps(RU,ensure_ascii=False))
+39,40c65,66
+< 3) 통합 점검 기록 읽기(읽기만): ToolSearch(query "select:ArtifactData")로 도구를 불러와 통합점검 대시보드(https://claude.ai/artifact/DuS4d8Fa9qZWceBJWjTU6d) 저장소에서 action query, collection runs, query {where [["date","gte","<TODAY − 7일>"]], order_by {field "date", direction "desc"}, limit 7}, out_dir "/tmp/wk/runs"로 받는다(실패하면 list(limit 10, out_dir 같음)). 그다음 클라우드 Bash에서 아래를 실행한다(MISS는 1)의 JSON 그대로). 출력: RUNS(읽은 날짜·SAVE 리포트 날짜·시장 이벤트 상위 3) · NEWS · SAVETICKER · CTX(보유 종목 = 최신 기록의 account.holdings, 철회 신호 = 7일 안 관심 종목 "회사 공식 사실(−)" 충족). 기록을 하나도 못 읽으면 "시장환경 미확인"으로 두고 계속한다(보유 종목은 명단 파일의 held를 쓰고, 강제 제외 확인 불가는 python flags에 남는다).
+< python3 - /tmp/wk '<MISS>' <<'PY'
+---
+> 3) 통합 점검 기록 읽기(읽기만): ToolSearch(query "select:ArtifactData")로 도구를 불러와 통합점검 대시보드(https://claude.ai/artifact/DuS4d8Fa9qZWceBJWjTU6d) 저장소에서 action query, collection runs, query {where [["date","gte","<TODAY − 7일>"]], order_by {field "date", direction "desc"}, limit 7}, out_dir "/tmp/wk/runs"로 받는다(실패하면 list(limit 10, out_dir 같음)). 그다음 클라우드 Bash에서 아래를 실행한다(MISS·REUSE는 1)의 JSON 그대로). 출력: RUNS(읽은 날짜·SAVE 리포트 날짜·시장 이벤트 상위 3) · NEWS · SAVETICKER · CTX(보유 종목 = 최신 기록의 account.holdings, 철회 신호 = 7일 안 관심 종목 "회사 공식 사실(−)" 충족). 기록을 하나도 못 읽으면 "시장환경 미확인"으로 두고 계속한다(보유 종목은 명단 파일의 held를 쓰고, 강제 제외 확인 불가는 python flags에 남는다).
+> python3 - /tmp/wk '<MISS>' '<REUSE>' <<'PY'
+46c72
+< ctx={'cardsMissing':json.loads(sys.argv[2])}
+---
+> ctx={'cardsMissing':json.loads(sys.argv[2]),'reuse':json.loads(sys.argv[3]) if len(sys.argv)>3 else {}}
+144c170
+< miss=ctx.get('cardsMissing',[]);capbad=[e['code'] for e in M if not capok(e)];r6=ctx.get('rule6Fail',{});CK=ctx.get('card',{})
+---
+> miss=ctx.get('cardsMissing',[]);capbad=[e['code'] for e in M if not capok(e)];r6=ctx.get('rule6Fail',{});CK=ctx.get('card',{});RU=ctx.get('reuse',{})
+198c224
+<         elif not(isinstance(KS,list) and len(KS)==3 and all(isinstance(x,str) and len(x.strip())>=6 and not any(b in x.upper() for b in BAD) for x in KS) and isinstance(SR,list) and SR and all(isinstance(u,str) and u.startswith('https://') for u in SR)):need,act,why=i_,'hold',f"판단 보류 — {i_} 새 카드(철회 기준 ①~③·공식 출처) 없음 — 카드 없는 편입 금지"
+---
+>         elif i_ not in RU and not(isinstance(KS,list) and len(KS)==3 and all(isinstance(x,str) and len(x.strip())>=6 and not any(b in x.upper() for b in BAD) for x in KS) and isinstance(SR,list) and SR and all(isinstance(u,str) and u.startswith('https://') for u in SR)):need,act,why=i_,'hold',f"판단 보류 — {i_} 새 카드(철회 기준 ①~③·공식 출처) 없음 — 카드 없는 편입 금지"
+204c230
+<         ce=F[i_];ck=CK[i_];CP=f'docs/claude/watch-card-{i_}-{TODAY}.md';d=ce.get('detail',{});it=ce['items']
+---
+>         ce=F[i_];ck=CK.get(i_) or {'kill':[],'src':[],'thesis':''};CP='' if i_ in RU else f'docs/claude/watch-card-{i_}-{TODAY}.md';d=ce.get('detail',{});it=ce['items']
+206a233
+>         if i_ in RU:nm.update(card=RU[i_]['card'],triggerSet=RU[i_]['triggerSet'],cardStatus=f"수락({RU[i_]['accepted']}, 수락 카드 재사용 — {TODAY} 자동 편입)")
+251c278
+<     if not re.fullmatch(r'docs/claude/watch-card-[A-Z.]+-\d{4}-\d{2}-\d{2}\.md',nm.get('card','')) or nm.get('cardStatus','').startswith('수락') or nm.get('since')!=TODAY:V.append(i_+' 새 관심 칸 형식')
+---
+>     if ((nm.get('card')!=RU[i_]['card'] or not nm.get('cardStatus','').startswith('수락')) if i_ in RU else (not re.fullmatch(r'docs/claude/watch-card-[A-Z.]+-\d{4}-\d{2}-\d{2}\.md',nm.get('card','')) or nm.get('cardStatus','').startswith('수락'))) or nm.get('since')!=TODAY:V.append(i_+' 새 관심 칸 형식')
+267c294
+< print(json.dumps({'basis':last,'b60':{k:round(v,1) for k,v in B.items()},'weakest':[w['code'],w['score'],thr,age(w)],'action':[act,i_,o_,why],'needCard':need,'card':[CO,CP] if CP and not V else [],'push':push,'protect':{c:[s.get('status'),s.get('start'),s.get('cap'),s.get('endReason','')] for c,s in reg['weeklyRun']['protect'].items()},'flags':FLAG,'validation':V or 'OK','written':not V,'members':NC},ensure_ascii=False))
+---
+> print(json.dumps({'basis':last,'b60':{k:round(v,1) for k,v in B.items()},'weakest':[w['code'],w['score'],thr,age(w)],'action':[act,i_,o_,why],'needCard':need,'card':[CO,CP] if CP and not V else [],'reuseCard':RU[i_]['card'] if act in('add','swap') and i_ in RU else '','push':push,'protect':{c:[s.get('status'),s.get('start'),s.get('cap'),s.get('endReason','')] for c,s in reg['weeklyRun']['protect'].items()},'flags':FLAG,'validation':V or 'OK','written':not V,'members':NC},ensure_ascii=False))
+288c315
+< 점검 상태(모두 충족해야 "정상"): ㉠ device_bash·kiwoom_query 사용 가능 ㉡ 명단 파일 받기 성공 ㉢ 관심 종목 전부와 기준 ETF 2개의 일봉 확보(후보 일부 실패는 정상 범주, 개수만 적는다) ㉣ 검증 통과·기록 성공(편입·교체면 새 카드 기록 포함). 하나라도 아니면 "불완전(사유)". 통합 점검 기록·SAVE 메모 읽기 실패는 점검 상태에 넣지 않는다("시장환경 미확인"으로만 적는다).
+---
+> 점검 상태(모두 충족해야 "정상"): ㉠ device_bash·kiwoom_query 사용 가능 ㉡ 명단 파일 받기 성공 ㉢ 관심 종목 전부와 기준 ETF 2개의 일봉 확보(후보 일부 실패는 정상 범주, 개수만 적는다) ㉣ 검증 통과·기록 성공(편입·교체면 새 카드 기록 포함 — reuseCard면 카드 기록이 없는 것이 정상). 하나라도 아니면 "불완전(사유)". 통합 점검 기록·SAVE 메모 읽기 실패는 점검 상태에 넣지 않는다("시장환경 미확인"으로만 적는다).
+291c318
+<  (a) 한 줄 결론 — "관심 명단 주간 재채점(자동 모드): 변경 없음 | 적용: <편입/교체/제외 내용> — 새 카드 초안 <경로>(미수락, 매수 승인 아님) | 판단 보류(사유)". protect에서 상태가 active인 종목(조정 중)이 있으면 " · 조정 중: <종목>(~<상한>)"을 붙인다. 점검 불완전이면 맨 앞에 "점검 불완전(사유)". 오늘이 그달 첫 토요일(1~7일)이면 끝에 "월간 전체 발굴 필요 — Cowork에서 진행(이 작업 범위 밖)"을 붙인다.
+---
+>  (a) 한 줄 결론 — "관심 명단 주간 재채점(자동 모드): 변경 없음 | 적용: <편입/교체/제외 내용> — 새 카드 초안 <경로>(미수락, 매수 승인 아님) 또는 reuseCard가 있으면 "수락 카드 재사용 <reuseCard>(매수 승인 아님)" | 판단 보류(사유)". protect에서 상태가 active인 종목(조정 중)이 있으면 " · 조정 중: <종목>(~<상한>)"을 붙인다. 점검 불완전이면 맨 앞에 "점검 불완전(사유)". 오늘이 그달 첫 토요일(1~7일)이면 끝에 "월간 전체 발굴 필요 — Cowork에서 진행(이 작업 범위 밖)"을 붙인다.
+296c323
+<  (f) 기록·검증: 완료 기준 — 관심 5 이하, 관심에 보유 종목 없음(실행당 1건 한도로 남으면 flag), 시총 상한 위반 없음(예외 MU·AMD), 카드 경로 존재(새 관심 종목은 카드 파일 기록·미수락 표시), 점수 항목 0/1/2(S4·S5는 0/1)이고 출처가 있거나 "확인 필요"(=0점), 이번 실행 변경 1건 이하, 바뀐 칸 밖 기존 관심 칸 불변 — 각각 통과/실패. written, 명단 파일 sha256 앞 12자(전→후), 카드 파일 sha256 앞 12자(있으면).
+---
+>  (f) 기록·검증: 완료 기준 — 관심 5 이하, 관심에 보유 종목 없음(실행당 1건 한도로 남으면 flag), 시총 상한 위반 없음(예외 MU·AMD), 카드 경로 존재(새 관심 종목은 카드 파일 기록·미수락 표시, 또는 reuseCard면 수락 카드 경로·"수락" 표시), 점수 항목 0/1/2(S4·S5는 0/1)이고 출처가 있거나 "확인 필요"(=0점), 이번 실행 변경 1건 이하, 바뀐 칸 밖 기존 관심 칸 불변 — 각각 통과/실패. written, 명단 파일 sha256 앞 12자(전→후), 카드 파일 sha256 앞 12자(있으면).
