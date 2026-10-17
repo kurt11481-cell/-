@@ -43,6 +43,9 @@ SUMMARY_MAX = 200
 SOURCE_KINDS = ("SEC_FILING", "COMPANY_PRESS_RELEASE", "COMPANY_IR")
 FACT_CHECK_NOT_BEFORE = time(16, 0)
 RESEARCH_LOOKBACK_DAYS = 10
+# ev-rg1-hyper: a root-thesis-damage fact accepted only through the registry's thesis_damage_domains carries this
+# marker; it reaches R-REC1 RG1 alone (never facts, evidence, C7 or EV3 (b)).
+DAMAGE_DOMAIN_SOURCE = "THESIS_DAMAGE_DOMAIN"
 # Card trigger kind -> allowed sides (r2 R2-9): alert and log kinds are never evidence, evidence kinds are + or -.
 # The schema dialect (validation_common) has no if/then, so the registry schema states this rule and the loader
 # enforces it: a mismatch makes that symbol ineligible (REGISTRY_KIND_SIDE_INVALID, no ticket).
@@ -113,10 +116,13 @@ def kind_side_mismatches(entry: dict[str, Any] | None) -> list[str]:
 def load_registry(path: Path = REGISTRY_PATH, *, repo: Path = REPO_ROOT,
                   committed_check: Callable[[Path, Path], tuple[bool, str | None]] = registry_committed
                   ) -> dict[str, Any]:
-    """{status OK|MISSING|INVALID, errors, entries, sha256, committed, commit_reason}."""
+    """{status OK|MISSING|INVALID, errors, entries, sha256, committed, commit_reason, damage_domains}.
+
+    damage_domains (ev-rg1-hyper): the top-level thesis_damage_domains in lower case; empty unless status is OK."""
     path = Path(path)
     result: dict[str, Any] = {"status": "MISSING", "errors": [], "entries": {}, "sha256": None,
-                              "committed": False, "commit_reason": "REGISTRY_MISSING", "path": REGISTRY_RELATIVE}
+                              "committed": False, "commit_reason": "REGISTRY_MISSING", "path": REGISTRY_RELATIVE,
+                              "damage_domains": []}
     if not path.is_file():
         return result
     raw = path.read_bytes()
@@ -135,7 +141,8 @@ def load_registry(path: Path = REGISTRY_PATH, *, repo: Path = REPO_ROOT,
     committed, reason = committed_check(path, repo)
     invalid = {symbol: ids for symbol, entry in document["symbols"].items() if (ids := kind_side_mismatches(entry))}
     return {**result, "status": "OK", "entries": document["symbols"], "committed": committed,
-            "commit_reason": reason, "kind_side_invalid": invalid}
+            "commit_reason": reason, "kind_side_invalid": invalid,
+            "damage_domains": [str(domain).lower() for domain in document.get("thesis_damage_domains") or []]}
 
 
 def load_watchlist(path: Path = WATCHLIST_PATH) -> dict[str, Any]:
@@ -217,7 +224,11 @@ def _host_allowed(url: Any, domains: list[str]) -> bool:
 
 def check_record(document: Any, *, record_day: str, calendar_sessions: list[str], decide_time: datetime,
                  registry: dict[str, Any]) -> dict[str, Any]:
-    """{status OK|INVALID, reasons, facts (kept), dropped [{fact_id, reason}], earnings, integrated_check_run}."""
+    """{status OK|INVALID, reasons, facts (kept), dropped [{fact_id, reason}], earnings, integrated_check_run}.
+
+    ev-rg1-hyper: a root_thesis_damage fact whose https host is not sec.gov or the symbol's official domain but
+    matches the registry damage_domains goes through the remaining checks and, if it passes, into damage_only
+    (a key present only when it has one) instead of facts: R-REC1 RG1 only."""
     out: dict[str, Any] = {"status": "INVALID", "reasons": [], "facts": [], "dropped": [], "earnings": None,
                            "integrated_check_run": None, "evaluation_session": None, "written_at": None,
                            "record_day_kst": record_day}
@@ -239,12 +250,17 @@ def check_record(document: Any, *, record_day: str, calendar_sessions: list[str]
         out["reasons"].append("RESEARCH_RECORD_WRITTEN_AT_OUT_OF_RANGE")
         return out
     entries = registry.get("entries") or {}
+    damage_domains = list(registry.get("damage_domains") or [])
+    damage_only: list[dict[str, Any]] = []
     for fact in document["official_facts"]:
         domains = list((entries.get(fact["symbol"]) or {}).get("official_domains") or [])
         reason = None
+        official = _host_allowed(fact["source_url"], domains)
+        damage_domain = (not official and fact["root_thesis_damage"] is True
+                         and _host_allowed(fact["source_url"], damage_domains))
         if fact["source_kind"] not in SOURCE_KINDS:
             reason = "SOURCE_KIND_INVALID"
-        elif not _host_allowed(fact["source_url"], domains):
+        elif not official and not damage_domain:
             reason = "SOURCE_HOST_NOT_OFFICIAL"
         elif fact["event_session"] not in calendar_sessions or fact["event_session"] > session:
             reason = "EVENT_SESSION_INVALID"
@@ -254,9 +270,13 @@ def check_record(document: Any, *, record_day: str, calendar_sessions: list[str]
             reason = "SUMMARY_TOO_LONG"
         if reason:
             out["dropped"].append({"fact_id": fact["fact_id"], "symbol": fact["symbol"], "reason": reason})
+        elif damage_domain:
+            damage_only.append({**fact, "damage_source": DAMAGE_DOMAIN_SOURCE})
         else:
             out["facts"].append(dict(fact))
     out.update(status="OK", earnings=document["earnings"], integrated_check_run=document["integrated_check_run"])
+    if damage_only:
+        out["damage_only"] = damage_only
     return out
 
 
@@ -265,8 +285,8 @@ def load_research(*, root: Path = RESEARCH_ROOT, run_day: str, calendar_sessions
                   window_start: str | None = None) -> dict[str, Any]:
     """Today's record (status, earnings, run copy), the official facts of the last `lookback_days` valid records
     (C7 and new official evidence) and, over the R-REC1 window (record days from window_start, r2 R2-4), the
-    root-thesis-damage facts (RG1, EV3 (b)) and the evaluation sessions that have a valid record. Records dated
-    after run_day are ignored."""
+    root-thesis-damage facts (RG1, EV3 (b); ev-rg1-hyper: with the thesis-damage-domain facts, marked damage_source,
+    RG1 only) and the evaluation sessions that have a valid record. Records dated after run_day are ignored."""
     available = sorted(path.parent.name for path in Path(root).glob(f"*/{RESEARCH_FILE}")
                        if path.parent.name <= run_day)
     days = available[-lookback_days:]
@@ -291,6 +311,10 @@ def load_research(*, root: Path = RESEARCH_ROOT, run_day: str, calendar_sessions
                 if day in days:
                     facts.setdefault(fact["fact_id"], {**fact, "record_day_kst": day})
                 if day in window and fact.get("root_thesis_damage"):
+                    damage.setdefault(fact["fact_id"], {**fact, "record_day_kst": day})
+            # ev-rg1-hyper: a thesis-damage-domain fact (marked) joins only the damage facts (RG1), never facts.
+            for fact in checked.get("damage_only") or []:
+                if day in window:
                     damage.setdefault(fact["fact_id"], {**fact, "record_day_kst": day})
             if day in window:
                 sessions.add(checked["evaluation_session"])

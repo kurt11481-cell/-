@@ -14,6 +14,12 @@
     "rule": {"type": "string", "minLength": 1},
     "order_authority": {"const": false},
     "quantity_authority": {"const": "none"},
+    "thesis_damage_domains": {
+      "description": "ev-rg1-hyper (optional): lower-case hosts (a host or its subdomains, https only) accepted as the source of a research-record fact only when root_thesis_damage is true; such a fact is used for R-REC1 RG1 only (never evidence, C7 or EV3 (b)). Changing the list is an authority change (K3).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$"}
+    },
     "symbols": {
       "type": "object",
       "additionalProperties": {

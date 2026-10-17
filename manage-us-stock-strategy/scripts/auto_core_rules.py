@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 import re
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -749,12 +749,58 @@ def ev3_dates(text: str) -> list[str]:
 
 
 SAME_AS_BENCHMARK = object()  # rrec1 rg2_series default: the RG2 benchmark leg is the benchmark itself
+# ev-rg1-hyper R0: the KST date of an announcement uses a fixed UTC+9 offset (the calculator's KST).
+KST_FIXED = timezone(timedelta(hours=9))
+ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def iso_day(value: Any) -> str | None:
+    """A strict YYYY-MM-DD date string, or None."""
+    if not isinstance(value, str) or not ISO_DAY.match(value):
+        return None
+    try:
+        return date.fromisoformat(value).isoformat()
+    except ValueError:
+        return None
+
+
+def damage_release_day(fact: dict[str, Any]) -> str | None:
+    """ev-rg1-hyper R0 rel(f): max(event_session, the KST date of announced_at); None when either is unreadable
+    (announced_at: a trailing "Z" read as +00:00, an offset required, as auto_core_inputs._moment)."""
+    session = iso_day(fact.get("event_session"))
+    announced = fact.get("announced_at")
+    if session is None or not isinstance(announced, str):
+        return None
+    try:
+        moment = datetime.fromisoformat(announced.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        return None
+    return max(session, moment.astimezone(KST_FIXED).date().isoformat())
+
+
+def uncleared_damage(thesis_damage: list[dict[str, Any]] | None, window_start_day: str, through_day: str,
+                     card_accepted_on: str | None = None) -> list[dict[str, Any]]:
+    """ev-rg1-hyper R0 U(through_day): damage facts with window_start_day <= event_session <= through_day that the
+    card acceptance has not cleared, sorted by fact_id. A fact is cleared only when rel(f) <= accepted <= through_day
+    (no retroactive release: an acceptance counts from its own date on); an unreadable date clears nothing."""
+    accepted = iso_day(card_accepted_on)
+    out = []
+    for fact in thesis_damage or []:
+        if not window_start_day <= fact["event_session"] <= through_day:
+            continue
+        release = damage_release_day(fact)
+        if accepted is not None and release is not None and release <= accepted <= through_day:
+            continue
+        out.append(fact)
+    return sorted(out, key=lambda fact: str(fact["fact_id"]))
 
 
 def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None, evaluation_session: str,
           ev3_user_dates: list[str], thesis_damage: list[dict[str, Any]] | None, ev4_sessions: list[str],
           candidate_symbol: str | None = None, research_sessions: Any = None,
-          rg2_series: Any = SAME_AS_BENCHMARK) -> dict[str, Any]:
+          rg2_series: Any = SAME_AS_BENCHMARK, card_accepted_on: str | None = None) -> dict[str, Any]:
     """Shock event and recovery gates for one candidate. benchmark/candidate are build_series outputs.
 
     benchmark is SOXX for every candidate (rule file 102, t2rc-corefix 1): events EV1 EV2 EV3 (b), the EV3 (b)
@@ -764,7 +810,14 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     the judged session; a DS1 restarts only the count of two closes above C0, not the low window.
 
     thesis_damage: official facts with root_thesis_damage from the research records covering the R-REC1 window
-    (None = no research record -> RG1 unknown). ev4_sessions: sessions on which the account line EV4 was open
+    (None = no research record -> RG1 unknown). ev-rg1-hyper (recovery-gate-R-REC1 37: no buy before the card is
+    rewritten): a damage fact in the 60-session window keeps RG1 "no" until the candidate card is accepted again,
+    whatever the event day, a new event, the time decay or a close (uncleared_damage; card_accepted_on = the
+    registry accepted.date, None = nothing is cleared). The time-decay close does not happen on a day RG1 is "no".
+    After a close, or with no event in the window, an uncleared fact makes the status "no" (open stays False,
+    rg RG1 "no", reason RG1_THESIS_DAMAGE:<ids>), and rg1_damage lists the uncleared fact ids (only when there is
+    one). EV3 (b) uses only facts without the damage_source marker (a thesis-damage-domain fact is RG1 only).
+    ev4_sessions: sessions on which the account line EV4 was open
     (earlier decide records and, r2 R2-3, the evaluation session itself). research_sessions (r2 R2-4): the
     sessions that have a valid research record; None = not tracked (every session is taken as recorded). With
     it, RG1 needs a record for every session after the event from the first recorded session in the window
@@ -798,13 +851,33 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
                     sigma is None or ret is None or ret <= -C["RREC_EV3_SIGMA"] * sigma):
                 gaps.append(day)
 
+    window_first = s["days"][window_start]
+
+    def uncleared(through_day: str) -> list[dict[str, Any]] | None:
+        """ev-rg1-hyper U(through_day); None when the research records are not tracked (RG1 unknown)."""
+        return None if thesis_damage is None else uncleared_damage(thesis_damage, window_first, through_day,
+                                                                   card_accepted_on)
+
+    pending = [str(fact["fact_id"]) for fact in uncleared(s["days"][t]) or []]
+
     def settle(result: dict[str, Any]) -> dict[str, Any]:
         if gaps:
             result.update(status="unk", open=None)
             result["reasons"].append("EV3B_RECORD_GAP:" + ",".join(gaps))
+        if pending:
+            result["rg1_damage"] = list(pending)
         return result
 
-    damage_days = {fact["event_session"] for fact in thesis_damage or []}
+    def damage_block(result: dict[str, Any]) -> dict[str, Any]:
+        # ev-rg1-hyper R3: closed or no event in the window - an uncleared damage fact still blocks (open stays False).
+        if pending:
+            result["status"] = "no"
+            result["rg"]["RG1"] = "no"
+            result["reasons"].append("RG1_THESIS_DAMAGE:" + ",".join(pending))
+        return result
+
+    # EV3 (b): only facts from sec.gov or the symbol's official domains (a damage_source fact is RG1 only, R5).
+    damage_days = {fact["event_session"] for fact in thesis_damage or [] if "damage_source" not in fact}
     events = []
     for i in range(window_start, t + 1):
         sigma, ret = s["sigma60"][i], s["ret1"][i]
@@ -830,7 +903,7 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     out["events"] = [{"date": item["date"], "kinds": item["kinds"]} for item in events]
     if not events:
         out.update(status="ok", open=False)
-        return settle(out)
+        return settle(damage_block(out))
     event = events[-1]
     e = event["index"]
     c0 = s["close"][e]
@@ -859,13 +932,13 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
         return _any(_cmp(s["close"][i], "lt", l0), _cmp(s["close"][i], "lt", s["ema50"][i]))
 
     def gates(i: int, last_ds1: int) -> dict[str, bool | None]:
-        damage_after = None if thesis_damage is None else any(
-            fact["event_session"] > s["days"][e] and fact["event_session"] <= s["days"][i] for fact in thesis_damage)
-        # RG1 needs a research record for every session after the event from the first record on (r2 R2-4,
-        # rrec-rg1 bootstrap B); a known damage fact is "no".
+        # ev-rg1-hyper R1: any uncleared damage fact of the window up to this day is "no" (not compared with the
+        # event day). RG1 needs a research record for every session after the event from the first record on
+        # (r2 R2-4, rrec-rg1 bootstrap B).
+        damage = uncleared(s["days"][i])
         recorded = coverage is None or all(s["days"][k] in coverage for k in range(e + 1, i + 1)
                                            if needs_record(s["days"][k]))
-        rg1 = None if damage_after is None else False if damage_after else _all(
+        rg1 = None if damage is None else False if damage else _all(
             i - e >= C["RREC_RG1_SESSIONS"], True if recorded else None)
         if rg2_series is SAME_AS_BENCHMARK:
             bench_ok = _cmp(s["close"][i], "ge", s["ema50"][i])
@@ -904,7 +977,8 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
         if all(value is True for value in current.values()):
             closed_at = s["days"][i]
             break
-        if i - last_ds1 >= C["RREC_CLOSE_SESSIONS"] and current["RG2"] is True:
+        # ev-rg1-hyper R2: the time decay does not close on a day RG1 is "no" (unknown does not stop it).
+        if i - last_ds1 >= C["RREC_CLOSE_SESSIONS"] and current["RG2"] is True and current["RG1"] is not False:
             closed_at = s["days"][i]
             break
     if e == t:
@@ -913,7 +987,7 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     out["rg"] = {key: ("ok" if value is True else "no" if value is False else "unk") for key, value in current.items()}
     if closed_at is not None:
         out.update(status="ok", open=False, closed_at=closed_at)
-        return settle(out)
+        return settle(damage_block(out))
     out["open"] = True
     out["status"] = "ok" if all(value is True for value in current.values()) else (
         "unk" if any(value is None for value in current.values()) else "no")

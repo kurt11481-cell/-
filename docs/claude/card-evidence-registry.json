@@ -6,6 +6,7 @@
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다.",
   "order_authority": false,
   "quantity_authority": "none",
+  "thesis_damage_domains": ["microsoft.com", "abc.xyz", "atmeta.com", "aboutamazon.com"],
   "symbols": {
     "MVLL": {
       "role": "holding",

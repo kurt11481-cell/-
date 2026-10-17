@@ -13,7 +13,7 @@ param(
 # (LF-normalized) and the result says ORACLE_SHA_MISMATCH (a calculator change needs a new pin and Judge confirmation, prereg C1).
 # No retry. Exit code = calculator exit code (0 MATCH or NOT_CHECKED, 2 MISMATCH, 1 error); 3 = runner cannot start.
 
-$ExpectedOracleSha256 = "5607b09b47585a8b0799ae84b93cff434ebecdfc2b30f305607c8641b8f02a26"
+$ExpectedOracleSha256 = "9f0e2238f2a8238016be5406cd2e195aaf24c232adeda5f1fba3a52cd09b1aae"
 
 $ErrorActionPreference = "Stop"
 if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {

@@ -268,6 +268,9 @@ def buy_requirements(*, symbol: str, held: bool, s7: dict[str, Any], nominal: di
     # (5) R-REC1: an open event needs RG1-RG4; missing data blocks.
     if shock.get("status") == "unk":
         cells.append({"s": "unk", "t": "\ud655\uc778 \ud544\uc694(\ub9c9\ud798) " + ",".join(shock.get("reasons") or [])})
+    elif shock.get("status") == "no" and not shock.get("open"):
+        # ev-rg1-hyper R3: closed or no event, but an uncleared official thesis damage fact blocks until re-acceptance.
+        cells.append({"s": "no", "t": "\ub9c9\ud798 RG1 \uacf5\uc2dd \ud14c\uc81c \ud6fc\uc190(\uce74\ub4dc \uc7ac\uc218\ub77d \uc804)"})
     elif shock.get("open"):
         missing = [key for key, value in (shock.get("rg") or {}).items() if value != "ok"]
         cells.append({"s": "ok" if not missing else "unk" if "unk" in (shock.get("rg") or {}).values() else "no",

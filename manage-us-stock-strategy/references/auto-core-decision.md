@@ -89,6 +89,17 @@ journal block, dirty paths, research wait, the S7 review file and id, ticket iss
   record for every session after the event (else unknown; `rg1_coverage`). From the first record in the window
   (`ev3b_coverage_start`; before it EV3 (a) covers), a session without a record on which the benchmark fell
   1 sigma60 or more makes R-REC1 unknown (`EV3B_RECORD_GAP`); a missing record on a milder day changes nothing.
+  RG1 (ev-rg1-hyper, decision a): a damage fact whose event_session is in the 60-session window keeps RG1 "no"
+  until the card is accepted again, whatever the event day, a new event, the time decay or a close
+  (`uncleared_damage`). It is cleared only when release <= accepted.date <= the judged session, release =
+  max(event_session, the KST date of announced_at); the acceptance never clears an earlier session
+  (no retroactive close). The candidate uses its registry accepted.date, the portfolio the earliest
+  accepted.date of the holdings (none if a holding has no entry or date). The time-decay close does not
+  happen on a day RG1 is "no". After a close, or with no event in the window, an uncleared fact gives
+  status "no" with open false, rg RG1 "no" and reason `RG1_THESIS_DAMAGE:<ids>` (buy requirement (5)
+  "blocked RG1 official thesis damage"); `rg1_damage` lists the uncleared ids (only when there is one) and
+  alert state `2:RG1DMG` sends one exception line when they or the blocked symbols change. A
+  thesis-damage-domain fact is RG1 only: it never makes EV3 (b).
   It blocks or delays buys only; it never blocks a sell.
 
 ## Contracts
@@ -102,7 +113,9 @@ journal block, dirty paths, research wait, the S7 review file and id, ticket iss
   earnings_notice, display_only) are `alert` or `info`, evidence kinds are `+` or `-`; a mismatch makes that
   symbol ineligible (`REGISTRY_KIND_SIDE_INVALID`; stated in the schema, enforced by the loader because the
   schema dialect has no conditional keyword). The Cowork session that changes or accepts a card updates the
-  registry in the same session.
+  registry in the same session. The optional top-level `thesis_damage_domains` (lower-case hosts; ev-rg1-hyper)
+  lets a research-record fact from those hosts through only when `root_thesis_damage` is true, and only into
+  R-REC1 RG1 (never official evidence, C7 or EV3 (b)); changing the list is an authority change (K3).
 - Research record (`workspace/outputs/research-records/<KST date>/research-record.json`, schema
   `auto-core-research-record`): written by the 06:40 integrated check. Items are checked deterministically
   (https URL on sec.gov or a registry official domain, source kind, written after 16:00 New York time on the

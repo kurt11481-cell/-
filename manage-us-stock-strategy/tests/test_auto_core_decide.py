@@ -663,6 +663,11 @@ class DamageWindowTests(unittest.TestCase):
         record_days = [self.write_record(env, session, [damage] if session == DAYS[event + 2] else [])
                        for session in DAYS[-25:-1]]
         damaged_day = record_days[DAYS[-25:-1].index(DAYS[event + 2])]
+        # ev-rg1-hyper: the card must be accepted before the damage fact so it stays uncleared
+        registry = load_json(env.registry)
+        for card in registry["symbols"].values():
+            card["accepted"]["date"] = DAYS[event]
+        write_json(env.registry, registry)
         decision = env.run()
         loaded = inputs.load_research(root=env.research_root, run_day=RUN_DAY, calendar_sessions=CALENDAR_DAYS,
                                       decide_time=NOW, registry=inputs.load_registry(
