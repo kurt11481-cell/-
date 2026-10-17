@@ -9,6 +9,9 @@ ledger or the journal, never calls a broker, and its output grants no order or q
 
 Confirmed holdings history comes from the reconciliation ledger: the current state is replayed
 backwards through each applied proposal's recorded changes (user decision P1, recompute every run).
+Each replayed revision is linked, read-only, to the broker read behind it (ledger proposal_id -> saved
+reconciliation proposal -> broker snapshot, both hashes recomputed) so that a session inside a hold window
+that has ended can be revalued at that read's order-available cash (hwm-fix).
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ from apply_user_confirmed_broker_snapshot import default_ledger_path, ledger_sta
 from corporate_actions import (
     FILE_NAME as CORPORATE_ACTIONS_FILE, STATUS_INVALID, STATUS_MISSING, STATUS_OK, validate_corporate_actions,
 )
-from kiwoom_broker_shadow import PROPOSAL_SCHEMA_VERSION
+from kiwoom_broker_shadow import PROPOSAL_SCHEMA_VERSION, proposal_content_hash
 from portfolio_exposure import (
     LATEST_SESSION_STATUS, ExposureError, build_exposure_review, exposure_config, exposure_display_block,
     render_exposure_line,
@@ -55,6 +58,12 @@ DEFAULT_OUTPUT_ROOT = REPO_ROOT / "workspace/outputs/exposure-review"
 REVIEW_FILE_PREFIX = "portfolio-exposure-review"
 HISTORY_SUFFIX = ".close-history.json"
 PROTECTED_OUTPUT_PARENTS = ("stock-strategy-system", "workspace/policies", "workspace/state")
+# Saved reconciliation proposals (human path, then the auto-core); both are outside git (.gitignore).
+PROPOSAL_GLOBS = ("workspace/outputs/reconciliation/*/reconciliation_proposal.json",
+                  "workspace/outputs/auto-core/*/reconciliation_proposal.json")
+VERIFIED_CASH_STATUSES = ("VERIFIED_ZERO", "VERIFIED_POSITIVE")
+UNSETTLED_FIELDS = ("d1_sell_settlement_usd", "d1_buy_settlement_usd", "d2_sell_settlement_usd",
+                    "d2_buy_settlement_usd")
 
 
 class ReviewRunError(ValueError):
@@ -162,6 +171,122 @@ def reconstruct_snapshots(state: dict[str, Any], entries: list[dict[str, Any]], 
         snapshots.append(snapshot(base_revision))
     ordered = [item for item in reversed(snapshots) if isinstance(item["as_of"], str)]
     return ordered or [current], reasons, notes
+
+
+def _read_json(path: Path) -> Any:
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return None
+
+
+def _read_time(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).tzinfo is not None
+    except ValueError:
+        return False
+
+
+def proposal_index(evidence_root: Path) -> dict[str, list[dict[str, Any]]]:
+    """Saved reconciliation proposals by their recorded proposal_id (read only; unreadable files are left out)."""
+    index: dict[str, list[dict[str, Any]]] = {}
+    for pattern in PROPOSAL_GLOBS:
+        for path in sorted(Path(evidence_root).glob(pattern)):
+            document = _read_json(path)
+            if isinstance(document, dict) and isinstance(document.get("proposal_id"), str):
+                index.setdefault(document["proposal_id"], []).append(document)
+    return index
+
+
+def broker_capture(entry: dict[str, Any], snapshot: dict[str, Any], index: dict[str, list[dict[str, Any]]],
+                   evidence_root: Path) -> tuple[dict[str, Any] | None, str | None]:
+    """(capture, None) or (None, reason) for one replayed revision; no new trust path, the existing hashes only.
+
+    The ledger entry's proposal_id must name a saved proposal whose content hash is that id; its
+    source.snapshot_path must hold a broker snapshot whose recomputed hash equals both its own snapshot_hash and
+    the proposal's source.snapshot_hash; the snapshot cash must be verified with non-negative amounts; and its
+    held quantities must equal the replayed holdings of that revision.
+    """
+    proposal_id = entry.get("proposal_id")
+    if not isinstance(proposal_id, str) or not proposal_id:
+        return None, "PROPOSAL_ID_MISSING"
+    candidates = index.get(proposal_id) or []
+    if not candidates:
+        return None, "PROPOSAL_NOT_FOUND"
+    proposal = next((item for item in candidates if proposal_content_hash(item) == proposal_id), None)
+    if proposal is None:
+        return None, "PROPOSAL_HASH_MISMATCH"
+    source = proposal.get("source") if isinstance(proposal.get("source"), dict) else {}
+    path_text, expected = source.get("snapshot_path"), source.get("snapshot_hash")
+    if not isinstance(path_text, str) or not path_text or not isinstance(expected, str):
+        return None, "SNAPSHOT_REFERENCE_MISSING"
+    root = Path(evidence_root).resolve()
+    path = (root / path_text).resolve()
+    if root not in path.parents:
+        return None, "SNAPSHOT_PATH_OUTSIDE_EVIDENCE_ROOT"
+    broker = _read_json(path)
+    if not isinstance(broker, dict):
+        return None, "SNAPSHOT_NOT_FOUND"
+    recomputed = canonical_hash({key: value for key, value in broker.items() if key != "snapshot_hash"})
+    if recomputed != broker.get("snapshot_hash") or recomputed != expected:
+        return None, "SNAPSHOT_HASH_MISMATCH"
+    cash = broker.get("cash") if isinstance(broker.get("cash"), dict) else {}
+    if cash.get("cash_status") not in VERIFIED_CASH_STATUSES:
+        return None, "CASH_NOT_VERIFIED"
+    unsettled_raw = cash.get("unsettled_funds") if isinstance(cash.get("unsettled_funds"), dict) else {}
+    order_available, deposit = _cash_text(cash.get("order_available_cash")), _cash_text(cash.get("foreign_currency_deposit"))
+    unsettled = {key: _cash_text(unsettled_raw.get(key)) for key in UNSETTLED_FIELDS}
+    if any(value is None or Decimal(value) < 0 for value in [order_available, deposit, *unsettled.values()]):
+        return None, "CASH_AMOUNT_INVALID"
+    earliest, latest = source.get("earliest_required_retrieved_at"), source.get("broker_snapshot_as_of")
+    if not _read_time(earliest) or not _read_time(latest):
+        return None, "READ_TIME_MISSING"
+    quantities: dict[str, int] = {}
+    for row in broker.get("holdings") or []:
+        quantity = _cash_text(row.get("held_quantity")) if isinstance(row, dict) else None
+        if quantity is None or Decimal(quantity) != Decimal(quantity).to_integral_value():
+            return None, "HOLDINGS_INVALID"
+        if Decimal(quantity) > 0:
+            quantities[str(row.get("ticker"))] = int(Decimal(quantity))
+    replayed = {str(symbol): quantity for symbol, quantity in (snapshot.get("holdings") or {}).items()
+                if isinstance(quantity, int) and not isinstance(quantity, bool) and quantity > 0}
+    if quantities != replayed:
+        return None, "HOLDINGS_MISMATCH"
+    return {"earliest_read_at": earliest, "latest_read_at": latest, "order_available_cash_usd": order_available,
+            "foreign_currency_deposit_usd": deposit, "unsettled": unsettled, "proposal_id": proposal_id,
+            "snapshot_hash": expected}, None
+
+
+def broker_captures(snapshots: list[dict[str, Any]], entries: list[dict[str, Any]], evidence_root: Path
+                    ) -> tuple[dict[int, dict[str, Any] | None], list[str]]:
+    """({state_revision: capture or None}, notes) for every revision replayed from a ledger entry.
+
+    reconstruct_snapshots' output is not changed. The base state before the earliest replayed entry has no
+    reconciliation of its own and gets neither a capture nor a note.
+    """
+    by_revision = {entry.get("state_revision_after"): entry for entry in entries}
+    captures: dict[int, dict[str, Any] | None] = {}
+    notes: list[str] = []
+    index: dict[str, list[dict[str, Any]]] | None = None
+    for snapshot in snapshots:
+        revision = snapshot.get("state_revision")
+        if snapshot.get("from_ledger_entry") is not True or not isinstance(revision, int) or isinstance(revision, bool):
+            continue
+        entry = by_revision.get(revision) or {}
+        if index is None and isinstance(entry.get("proposal_id"), str):
+            index = proposal_index(evidence_root)
+        captures[revision], reason = broker_capture(entry, snapshot, index or {}, evidence_root)
+        if reason is not None:
+            notes.append(f"BROKER_CAPTURE_UNLINKED:{revision}:{reason}")
+    return captures, notes
+
+
+def session_bounds(calendar: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """{session: {"core_open_at", "core_close_at"}} from the calendar rows (an early close keeps its own time)."""
+    return {day: {"core_open_at": row.get("core_open_at"), "core_close_at": row.get("core_close_at")}
+            for day, row in calendar["sessions"].items() if isinstance(row, dict)}
 
 
 def reproduce_history(history: dict[str, Any], pages_dir: Path, calendar: dict[str, Any]
@@ -391,6 +516,9 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     entries = read_ledger_entries(ledger_path) if status["exists"] and status["chain_ok"] else []
     snapshots, snapshot_reasons, ledger_notes = reconstruct_snapshots(
         state, entries, chain_ok=status["chain_ok"], ledger_exists=status["exists"])
+    evidence_root = Path(getattr(args, "evidence_root", None) or REPO_ROOT)
+    captures, capture_notes = broker_captures(snapshots, entries, evidence_root)
+    ledger_notes = ledger_notes + capture_notes
 
     cards, card_report = load_cards(Path(args.cards) if args.cards else None,
                                     Path(args.fact_pack) if args.fact_pack else None)
@@ -408,7 +536,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     defaults = (("policy", policy_path, DEFAULT_POLICY), ("state", state_path, DEFAULT_STATE),
                 ("ledger", ledger_path, default_ledger_path(DEFAULT_STATE)),
                 ("journal", journal_path, DEFAULT_JOURNAL),
-                ("closes_root", Path(args.closes_root), DEFAULT_CLOSES_ROOT))
+                ("closes_root", Path(args.closes_root), DEFAULT_CLOSES_ROOT),
+                ("evidence_root", evidence_root, REPO_ROOT))
     non_default = [name for name, used, default in defaults if Path(used).resolve() != Path(default).resolve()]
     if calendar["identity"]["authority_status"] != "ACTIVE":
         non_default.append("calendar")  # only reachable with --calendar: the default calendar is the active one
@@ -435,7 +564,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         policy=policy, evaluation_session=session, calendar_sessions=calendar_sessions, snapshots=snapshots,
         snapshot_reasons=snapshot_reasons, closes=closes, close_unverified=unverified, journal=journal,
         cards=cards, earnings=earnings, proposals=proposals, inputs=inputs, evaluation_reasons=session_reasons,
-        corporate_actions=corporate_actions, generated_at=generated_at)
+        corporate_actions=corporate_actions, generated_at=generated_at, broker_captures=captures,
+        session_bounds=session_bounds(calendar))
     errors = validate_instance(review, REVIEW_SCHEMA)
     if errors:
         raise ReviewRunError("EXPOSURE_REVIEW_SCHEMA_FAILED:" + ";".join(errors[:5]))
@@ -470,6 +600,9 @@ def build_parser() -> argparse.ArgumentParser:
         '"checked_at": "<ISO time with offset, at or after 16:00 New York time on the evaluation session>"}. '
         'No record or any other status stays an earnings blackout'))
     parser.add_argument("--proposals", type=Path, help='{"proposals": [{"kind": "new_buy_within_band", ...}]}')
+    parser.add_argument("--evidence-root", type=Path, default=REPO_ROOT, help=(
+        "repository root whose workspace/outputs reconciliation proposals and broker snapshots link each ledger "
+        "revision to its broker read (read only); default: this repository. Any other root is labelled"))
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--now", help="ISO timestamp with offset used as now (tests; the result is labelled)")
     return parser
