@@ -10,6 +10,8 @@ Read-only. Never imports manage-us-stock-strategy/scripts (no auto_core* module)
     7-1 quantity, 7-2 price) and its T2 transcription docs/claude/redesign-t2-builder-prompt-2026-10-10.md
     (D5-D7, F1-F5, appendix A-3/A-4),
   - docs/claude/recovery-gate-R-REC1-2026-10-09.md (R-REC1),
+  - docs/claude/event-strategy-2026-10-13.md 11-1 and docs/claude/ev-rg1-hyper-builder-prompt.md R0-R8 (RG1: an official
+    thesis-damage fact blocks until the card is accepted again; thesis-damage domains for RG1 only),
   - manage-us-stock-strategy/references/portfolio-exposure-review.md (R1 E = max(N, V), p-earn r1 blackout),
   - policy values read from stock-strategy-system/alert_policy.json.
 Inputs are data files only (decision.json and the files its inputs point to, 30-minute pages, calendar).
@@ -802,8 +804,12 @@ def research_record_ok(rr, day, eval_session, decide_at, cal):
     return not why, why
 
 
-def validate_facts(rr, reg, cal, eval_session, decide_at, prev_seen):
-    """F3 validation; returns (valid facts with 'new' flag, dropped)."""
+def validate_facts(rr, reg, cal, eval_session, decide_at, prev_seen, damage_domains=None):
+    """F3 validation; returns (valid facts with 'new' flag, dropped).
+    damage_domains (ev-rg1-hyper, only load_rrec1_records passes it): a root_thesis_damage fact whose host is not sec.gov
+    or the symbol's official domain but matches one of these hosts goes through the same remaining checks and, if it
+    passes, is kept with damage_source THESIS_DAMAGE_DOMAIN (R-REC1 RG1 only); every other caller keeps the default and
+    drops it as DOMAIN, as before."""
     keep, dropped = [], []
     if not isinstance(rr, dict):
         return keep, dropped
@@ -820,9 +826,13 @@ def validate_facts(rr, reg, cal, eval_session, decide_at, prev_seen):
         host = m.group(1).lower() if m else None
         sym = f.get("symbol")
         doms = [d.lower() for d in (((reg.get("symbols") or {}).get(sym) or {}).get("official_domains") or [])] + ["sec.gov"]
+        # ev-rg1-hyper (Judge 1 item 6): official and marked before the chain, so a marked fact passes every check below
+        official = host is not None and any(host == d or host.endswith("." + d) for d in doms)
+        marked = host is not None and not official and f.get("root_thesis_damage") is True and any(
+            host == d or host.endswith("." + d) for d in [str(x).lower() for x in damage_domains or []])
         if host is None:
             why = "URL"
-        elif not any(host == d or host.endswith("." + d) for d in doms):
+        elif not official and not marked:
             why = "DOMAIN"
         elif f.get("source_kind") not in SOURCE_KINDS:
             why = "SOURCE_KIND"
@@ -840,6 +850,8 @@ def validate_facts(rr, reg, cal, eval_session, decide_at, prev_seen):
             dropped.append([f.get("fact_id"), "DIRECTION"]); continue
         prev = cal.prev_session(eval_session)
         g["new"] = f.get("event_session") == eval_session or (f.get("event_session") == prev and f.get("fact_id") not in prev_seen)
+        if marked:
+            g["damage_source"] = "THESIS_DAMAGE_DOMAIN"
         keep.append(g)
     return keep, dropped
 
@@ -976,7 +988,58 @@ def earnings_reading(cal, rec, eval_session, next_session, generated_at):
 
 
 # ---------------------------------------------------------------- R-REC1
-def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equity_today, s7_hwm, ev4_hist=()):
+DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+KST_UTC9 = dt.timezone(dt.timedelta(hours=9))   # ev-rg1-hyper R0: fixed UTC+9 (same as KST below)
+
+
+def strict_day(x):
+    """YYYY-MM-DD only (ev-rg1-hyper R0: accepted.date and event_session), else None."""
+    if not isinstance(x, str) or not DAY_RE.match(x):
+        return None
+    try:
+        return dt.date.fromisoformat(x).isoformat()
+    except ValueError:
+        return None
+
+
+def offset_moment(x):
+    """ISO date-time with a required offset, trailing Z read as +00:00 (the research-record date-time rule), else None."""
+    if not isinstance(x, str):
+        return None
+    try:
+        m = dt.datetime.fromisoformat(x.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return m if m.tzinfo is not None else None
+
+
+def rg1_release_day(f):
+    """ev-rg1-hyper R0 rel(f) = max(event_session, KST date of announced_at); None if either cannot be read."""
+    es, m = strict_day(f.get("event_session")), offset_moment(f.get("announced_at"))
+    if es is None or m is None:
+        return None
+    kst_day = m.astimezone(KST_UTC9).date().isoformat()
+    return kst_day if kst_day > es else es
+
+
+def rg1_uncleared(facts, w0, d, accepted_on):
+    """ev-rg1-hyper R0 U(d): sorted fact ids with w0 <= event_session <= d not cleared by the card acceptance
+    (cleared only when rel(f) <= accepted_on <= d - no retroactive release)."""
+    a = strict_day(accepted_on)
+    ids = []
+    for f in facts:
+        es = str(f.get("event_session"))
+        if es < w0 or es > d:
+            continue
+        rel_day = rg1_release_day(f)
+        if a is not None and rel_day is not None and rel_day <= a and a <= d:
+            continue
+        ids.append(str(f.get("fact_id")))
+    return sorted(ids)
+
+
+def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equity_today, s7_hwm, ev4_hist=(),
+          accepted_on=None):
     """Returns dict(status ok|no|unk, open, event, rg{}) for one candidate symbol (buy side).
     records: {evaluation_session: [facts]} of research records written before the decide run (RG1 coverage, EV3b).
     RG1 record coverage follows user decision rrec-rg1-bootstrap B (2026-10-13, docs/claude/rrec-rg1-builder-prompt.md):
@@ -985,7 +1048,12 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
     sessions of the window from ev4_hist (sessions whose earlier decide record shows total <= the V6 first line or
     <= S7 hwm x 0.9, recomputed here from the recorded account values). EV3(b) gap (builder report R2-4 (b)): after the
     first research record in the window, a session without a valid record whose SOXX 1-day return is <= -1 sigma60 or
-    unknown makes the gate unknown (status unk, open None, EV3B_RECORD_GAP)."""
+    unknown makes the gate unknown (status unk, open None, EV3B_RECORD_GAP).
+    ev-rg1-hyper (decision a, event-strategy-2026-10-13.md 11-1): records here come from load_rrec1_records (damage facts
+    only). A damage fact of the 60-session window keeps RG1 "no" until the card is accepted again (accepted_on = the
+    registry accepted.date; R0 rg1_uncleared), whatever the event day, a new event, the time decay or a close; the time
+    decay does not close on a day RG1 is "no"; closed or no event with an uncleared fact -> status "no", open False,
+    rg RG1 "no", reason RG1_THESIS_DAMAGE:<ids>. EV3b uses only facts without damage_source (R5)."""
     sx, ix = ser.get("SOXX"), ind.get("SOXX")
     cs, ci = ser.get(sym), ind.get(sym)
     if sx is None or ix is None or eval_session not in sx.index:
@@ -997,7 +1065,22 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
     window = set(sx.dates[lo:t + 1])
     cover = sorted(d for d in records if d in window)
     first = cover[0] if cover else None
-    facts = [f for d in cover for f in records[d]]
+    # ev-rg1-hyper G-1-1 (3): one version per fact_id, the first in record order (the core's load_research setdefault)
+    facts, seen_ids = [], set()
+    for d in cover:
+        for f in records[d]:
+            if f.get("root_thesis_damage") is True and f.get("fact_id") not in seen_ids:
+                seen_ids.add(f.get("fact_id"))
+                facts.append(f)
+    w0 = sx.dates[lo]
+    pending = rg1_uncleared(facts, w0, eval_session, accepted_on)
+
+    def damage_block(res, rg):
+        # ev-rg1-hyper R3: closed or no event in the window, an uncleared damage fact still blocks (open stays False)
+        if pending:
+            res.update(status="no", rg=dict(rg, RG1="no"), reason="RG1_THESIS_DAMAGE:" + ",".join(pending))
+        return res
+
     if first is not None:
         gaps = []
         for k in range(lo, t + 1):
@@ -1021,7 +1104,7 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
         if d in ev3a_dates:
             kinds.append("EV3a")
         if r is not None and sg is not None and r <= -1 * sg and any(
-                f.get("root_thesis_damage") is True and f.get("event_session") == d for f in facts):
+                f.get("root_thesis_damage") is True and "damage_source" not in f and f.get("event_session") == d for f in facts):
             kinds.append("EV3b")
         if (d == eval_session and equity_today is not None and (equity_today <= V6_FIRST or (s7_hwm and equity_today <= s7_hwm * 0.9))) \
                 or (d != eval_session and d in ev4_hist):
@@ -1034,7 +1117,7 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
         if kinds:
             events.append((k, d, kinds))
     if not events:
-        return {"status": "ok", "open": False, "events": []}
+        return damage_block({"status": "ok", "open": False, "events": []}, {})
     ke, de, kinds = events[-1]
     c0, l0 = sx.c[ke], sx.l[ke]
     if c0 is None or l0 is None:
@@ -1045,7 +1128,7 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
     def rg12(k):
         d = sx.dates[k]
         rg = {}
-        damage = any(f.get("root_thesis_damage") is True and de < str(f.get("event_session")) <= d for f in facts)
+        damage = bool(rg1_uncleared(facts, w0, d, accepted_on))   # ev-rg1-hyper R1: not compared with the event day
         need = [x for x in sx.dates[ke + 1:k + 1] if first is not None and x >= first]
         if damage or k - ke < 2:
             rg["RG1"] = "no"
@@ -1086,11 +1169,12 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
         else:
             rg["RG4"] = "ok" if (abs(r) <= 2 * sg and stdev(five) <= 1.5 * sg) else "no"
         final = rg
-        if all(v == "ok" for v in rg.values()) or (k - reset >= RREC_CLOSE_SESSIONS and rg["RG2"] == "ok"):
+        # ev-rg1-hyper R2: no time-decay close on a day RG1 is "no" (unknown does not stop it)
+        if all(v == "ok" for v in rg.values()) or (k - reset >= RREC_CLOSE_SESSIONS and rg["RG2"] == "ok" and rg["RG1"] != "no"):
             closed_at = sx.dates[k]
             break
     if closed_at is not None:
-        return {"status": "ok", "open": False, "event": de, "kinds": kinds, "closed_at": closed_at}
+        return damage_block({"status": "ok", "open": False, "event": de, "kinds": kinds, "closed_at": closed_at}, final)
     if final is None:   # event on the evaluation session itself
         final = rg12(ke)
         final.update({"RG3": "no", "RG4": "no"})
@@ -1326,6 +1410,36 @@ def load_research_history(repo, day, decide_at, reg, cal):
     return out, files
 
 
+def load_rrec1_records(repo, day, decide_at, reg, cal):
+    """ev-rg1-hyper G-1-1: {evaluation_session: [root-thesis-damage facts]} for rrec1 only (C7 keeps load_research_history).
+    (1) a record with any fact whose announced_at is missing or has no offset fails the research-record schema in the core
+    (auto_core_inputs.check_record) and counts for nothing here (not as coverage either); (2) a damage fact counts only with
+    announced_at <= the decide run, event_session <= the record's evaluation session and summary_ko <= 200 characters
+    (check_record); records of one evaluation session are joined in record-day order (rrec1 keeps the first version of a
+    fact_id). Thesis-damage-domain facts (registry thesis_damage_domains) come after the record's other facts, marked."""
+    out = {}
+    domains = reg.get("thesis_damage_domains") or []
+    for p in sorted(glob.glob(os.path.join(repo, "workspace/outputs/research-records/*/research-record.json"))):
+        try:
+            r = load_json(p)
+        except Exception:
+            continue
+        rd, ev = r.get("record_day_kst"), r.get("evaluation_session")
+        if not isinstance(rd, str) or rd > day or ev not in cal.index:
+            continue
+        ok, _ = research_record_ok(r, rd, ev, decide_at, cal)
+        if not ok:
+            continue
+        if any(not isinstance(f, dict) or offset_moment(f.get("announced_at")) is None for f in r.get("official_facts") or []):
+            continue
+        facts, _ = validate_facts(r, reg, cal, ev, decide_at, [], damage_domains=domains)
+        kept = [f for f in facts if f.get("root_thesis_damage") is True
+                and (decide_at is None or offset_moment(f.get("announced_at")) <= decide_at)
+                and str(f.get("event_session")) <= ev and len(str(f.get("summary_ko") or "")) <= 200]
+        out.setdefault(ev, []).extend([f for f in kept if "damage_source" not in f] + [f for f in kept if "damage_source" in f])
+    return out
+
+
 def mult_fn(policy):
     mults = policy.get("nominal_multipliers") or {}
 
@@ -1466,7 +1580,8 @@ def cmd_check(args):
     res["diagnostics"] = diagnostics(dec, detail, ctx)
     env = {"ctx": ctx, "dec": dec, "snap": snap, "s7": s7, "policy": policy, "rr": rr if rr_ok else None, "reg": reg, "wm": wm,
            "facts": facts, "held": held, "members": members, "detail": detail, "cal": cal, "mult_of": mult_of,
-           "decide_at": decide_at, "history": history, "state": state, "prev_dec": prev_dec, "repo": repo, "open": mine, "day": day}
+           "decide_at": decide_at, "history": history, "state": state, "prev_dec": prev_dec, "repo": repo, "open": mine, "day": day,
+           "rrec_records": load_rrec1_records(repo, day, decide_at, reg, cal)}
     cfg_p = os.path.join(repo, "workspace/policies/auto_core.json")
     env["core_cfg"] = load_json(cfg_p) if os.path.exists(cfg_p) else {}
     ev4_hist = set()
@@ -1819,10 +1934,20 @@ def buy_requirements(env, sym):
     # (5) R-REC1
     e = (env["reg"].get("symbols") or {}).get(sym) or {}
     s7hwm = fnum((s7.get("review_lines") or {}).get("hwm_usd"))
-    rg = rrec1(cal, ctx.ser, ctx.ind, ev, sym, e.get("rg2_benchmark") or "SOXX", ev3a_dates(ctx.repo), env["history"],
-               exp.get("total_assets_v6"), s7hwm, env.get("ev4_hist") or ())
+    rg = rrec1(cal, ctx.ser, ctx.ind, ev, sym, e.get("rg2_benchmark") or "SOXX", ev3a_dates(ctx.repo), env["rrec_records"],
+               exp.get("total_assets_v6"), s7hwm, env.get("ev4_hist") or (), accepted_on=(e.get("accepted") or {}).get("date"))
     d.setdefault("rrec1", rg)
     return [r1, "ok" if r2 else "no", r3, r4, rg.get("status")]
+
+
+def g2_buy(s7, E, sym, approved, req1, delta_positive, held):
+    """G2 for a buy (moved out of gates_check unchanged so selftest S16 can call it, ev-rg1-hyper)."""
+    # review lines L2 and below pause until a journal review: the pause itself is the gate (decision D1 = c,
+    # ev-rg1-hyper). R4: pauses.new_buy carries REVIEW_LINE_OPEN for open pause lines (portfolio-exposure-review.md 27, 321)
+    peaks = {p.get("symbol") for p in s7["peak_reviews"] if p.get("pause_add_recommendations") or p.get("open_events")}
+    return (E is not None and E < 1.85 and sym in approved and req1 == "ok" and delta_positive
+            and not s7["pauses"]["new_buy_recommendations"].get("paused")
+            and not (sym in held and (s7["pauses"]["add_recommendations"].get("paused") or sym in peaks)))
 
 
 def gates_check(env, sym, side, r_max, delta_positive):
@@ -1847,12 +1972,7 @@ def gates_check(env, sym, side, r_max, delta_positive):
         E = fnum(s7["exposure"].get("effective"))
         approved = set(policy.get("card_stock_core") or []) | set(policy.get("allowed_index_etfs") or [])
         reqs = buy_requirements(env, sym)
-        # review lines L2 and below pause recommendations until a journal review (portfolio-exposure-review.md R4)
-        lines_open = any(l["triggered_in_current_drawdown"] and l["line_id"] != "L1" for l in s7["review_lines"]["lines"])
-        peaks = {p.get("symbol") for p in s7["peak_reviews"] if p.get("pause_add_recommendations") or p.get("open_events")}
-        g["G2"] = (E is not None and E < 1.85 and sym in approved and reqs[0] == "ok" and delta_positive and not lines_open
-                   and not s7["pauses"]["new_buy_recommendations"].get("paused")
-                   and not (sym in env["held"] and (s7["pauses"]["add_recommendations"].get("paused") or sym in peaks)))
+        g["G2"] = g2_buy(s7, E, sym, approved, reqs[0], delta_positive, env["held"])
     else:
         g["G2"] = True
     g["G3"] = r_max > 0 and (env["detail"].get(sym) or {}).get("registry") == "OK"
@@ -2098,6 +2218,137 @@ def cmd_replay(args):
 
 
 # ---------------------------------------------------------------- selftest
+def _rg1_world(n=70, events=(), ds1=(), dips=(), rebound=()):
+    """ev-rg1-hyper selftest series (hand-set indicator values, no bars): close 100 / low 99 / ret +0.1% / sigma 2% /
+    EMA50 99 / 20-session high 101; an event day closes 95 (low 94) with -5% (EV1, above the EV2 line 94.94); a DS1 day
+    closes 98 (< EMA50, RG2 no); a dip day returns -2.5% (<= -1 sigma, > -2 sigma); a rebound day returns +3% (keeps the
+    5-session sigma above 1.5 sigma60, RG4 no, while it is in the 5-session window). SOXX is also the candidate X."""
+    class _N:
+        pass
+    s, i = _N(), _N()
+    day, s.dates = dt.date(2026, 3, 2), []
+    while len(s.dates) < n:
+        if day.weekday() < 5:
+            s.dates.append(day.isoformat())
+        day += dt.timedelta(days=1)
+    s.index = {d: k for k, d in enumerate(s.dates)}
+    s.c, s.l = [100.0] * n, [99.0] * n
+    i.ret, i.sigma, i.hi20, i.ema50 = [0.001] * n, [0.02] * n, [101.0] * n, [99.0] * n
+    for k in events:
+        s.c[k], s.l[k], i.ret[k] = 95.0, 94.0, -0.05
+    for k in ds1:
+        s.c[k], s.l[k] = 98.0, 97.5
+    for k in dips:
+        i.ret[k] = -0.025
+    for k in rebound:
+        i.ret[k] = 0.03
+    return s, {"SOXX": s, "X": s}, {"SOXX": i, "X": i}
+
+
+def _rg1_fact(fid, session, announced=None, **extra):
+    f = {"fact_id": fid, "event_session": session, "root_thesis_damage": True,
+         "announced_at": announced if announced is not None else session + "T16:05:00-04:00"}
+    f.update(extra)
+    return f
+
+
+def _rg1_run(world, facts=(), accepted_on=None, t=None):
+    s, ser, ind = world
+    t = len(s.dates) - 1 if t is None else t
+    records = {d: [] for d in s.dates[:t + 1]}
+    for f in facts:
+        records[f["event_session"]].append(f)
+    return rrec1(None, ser, ind, s.dates[t], "X", "SOXX", set(), records, None, None, (), accepted_on=accepted_on)
+
+
+def _next_day(d):
+    return (dt.date.fromisoformat(d) + dt.timedelta(days=1)).isoformat()
+
+
+def selftest_rg1_damage():
+    """ev-rg1-hyper S1-S9: the same cases and expectations as manage-us-stock-strategy/tests/test_auto_core_rg1_damage.py
+    (status, open, RG1)."""
+    fails = []
+
+    def want(name, got, status, opened, rg1):
+        have = (got.get("status"), got.get("open"), (got.get("rg") or {}).get("RG1"))
+        if have != (status, opened, rg1):
+            fails.append("RG1 %s %s != %s" % (name, have, (status, opened, rg1)))
+
+    w = _rg1_world(events=(60,))
+    want("base", _rg1_run(w), "ok", False, None)
+    d = w[0].dates
+    # S1 damage on the event day itself (EV1): blocked; re-accepted on its KST date -> closes after it
+    f1 = _rg1_fact("D1", d[60])
+    want("S1", _rg1_run(w, [f1]), "no", True, "no")
+    want("S1 re-accepted", _rg1_run(w, [f1], accepted_on=_next_day(d[60])), "ok", False, None)
+    # S2 rebase: damage after event A, then a new event B
+    w2 = _rg1_world(events=(50, 60))
+    want("S2", _rg1_run(w2, [_rg1_fact("D2", w2[0].dates[52])]), "no", True, "no")
+    # S3 time decay: event, damage, 20+ sessions without DS1 and RG2 ok -> stays open
+    w3 = _rg1_world(events=(40,))
+    want("S3", _rg1_run(w3, [_rg1_fact("D3", w3[0].dates[41])]), "no", True, "no")
+    # S4 damage after a close
+    w4 = _rg1_world(events=(50,))
+    r4 = _rg1_run(w4, [_rg1_fact("D4", w4[0].dates[60])])
+    want("S4", r4, "no", False, "no")
+    if r4.get("reason") != "RG1_THESIS_DAMAGE:D4" or r4.get("closed_at") != w4[0].dates[52]:
+        fails.append("RG1 S4 reason %s %s" % (r4.get("reason"), r4.get("closed_at")))
+    # S5 no event in the window
+    w5 = _rg1_world()
+    r5 = _rg1_run(w5, [_rg1_fact("D5", w5[0].dates[60])])
+    want("S5", r5, "no", False, "no")
+    if r5.get("rg") != {"RG1": "no"} or r5.get("events") != []:
+        fails.append("RG1 S5 %s" % r5)
+    # S6 release boundary: after-close announcement (KST next day); offset rules
+    f6 = _rg1_fact("D6", "2026-05-04")
+    for acc, through, exp in (("2026-05-04", "2026-05-06", ["D6"]), ("2026-05-05", "2026-05-05", []),
+                              ("2026-05-06", "2026-05-05", ["D6"]), (None, "2026-05-06", ["D6"]),
+                              ("2026-5-5", "2026-05-06", ["D6"])):
+        if rg1_uncleared([f6], "2026-03-02", through, acc) != exp:
+            fails.append("RG1 S6 %s %s" % (acc, through))
+    for announced, exp in (("", ["D6"]), ("2026-05-04T16:05:00", ["D6"]), ("2026-05-04T20:05:00Z", [])):
+        if rg1_uncleared([_rg1_fact("D6", "2026-05-04", announced)], "2026-03-02", "2026-05-06", "2026-05-05") != exp:
+            fails.append("RG1 S6 announced %r" % announced)
+    # S6b no retroactive release: event 40, rebound 41-43 (RG4 no to 44), damage 43, RG2-RG4 ok 45-48 but RG1 no, DS1 from
+    # 49 on, re-accepted at 55 -> open; re-accepted on the damage's own release day -> closes at 45
+    w6 = _rg1_world(events=(40,), ds1=range(49, 70), rebound=(41, 42, 43))
+    f6b = _rg1_fact("D6B", w6[0].dates[43])
+    want("S6b", _rg1_run(w6, [f6b], accepted_on=w6[0].dates[55]), "no", True, "ok")   # RG1 cleared, RG2 no (DS1)
+    want("S6b base", _rg1_run(w6, [f6b]), "no", True, "no")
+    want("S6b early", _rg1_run(w6, [f6b], accepted_on=_next_day(w6[0].dates[43])), "ok", False, None)
+    # S7 window edge: event_session = W[0] blocks, the session before is ignored
+    w7 = _rg1_world()
+    want("S7 edge", _rg1_run(w7, [_rg1_fact("D7", w7[0].dates[10])]), "no", False, "no")
+    want("S7 out", _rg1_run(w7, [_rg1_fact("D7", w7[0].dates[9])]), "ok", False, None)
+    # S9 thesis-damage-domain fact (marked): no EV3b on a -1 sigma day, RG1 no; the same fact unmarked opens EV3b
+    w9 = _rg1_world(dips=(60,))
+    r9 = _rg1_run(w9, [_rg1_fact("D9", w9[0].dates[60], damage_source="THESIS_DAMAGE_DOMAIN")])
+    want("S9 marked", r9, "no", False, "no")
+    r9b = _rg1_run(w9, [_rg1_fact("D9", w9[0].dates[60])])
+    if r9b.get("event") != w9[0].dates[60] or "EV3b" not in (r9b.get("kinds") or []) or (r9b.get("rg") or {}).get("RG1") != "no":
+        fails.append("RG1 S9 unmarked %s" % r9b)
+    return fails
+
+
+def selftest_g2_lines():
+    """ev-rg1-hyper S16 (decision D1 = c): an L2 line already reviewed (no open event, no pause) does not block G2; an open
+    L2 pause (pauses.new_buy REVIEW_LINE_OPEN) does."""
+    fails = []
+
+    def s7(paused):
+        return {"review_lines": {"lines": [{"line_id": "L2", "triggered_in_current_drawdown": True}],
+                                 "open_events": [{"line_id": "L2", "pause_new_buy_recommendations": True}] if paused else []},
+                "pauses": {"new_buy_recommendations": {"paused": paused, "reasons": ["REVIEW_LINE_OPEN:L2"] if paused else []},
+                           "add_recommendations": {"paused": paused}},
+                "peak_reviews": []}
+    if g2_buy(s7(False), 1.2, "MU", {"MU"}, "ok", True, {}) is not True:
+        fails.append("S16 reviewed L2")
+    if g2_buy(s7(True), 1.2, "MU", {"MU"}, "ok", True, {}) is not False:
+        fails.append("S16 open L2")
+    return fails
+
+
 def cmd_selftest(args):
     fails = []
     # G-1 design 5 MVLL regret table: delta 236, ref 37.65, equity 30,255.36, up +29.6%, down -26.1%, r_max 1/2 -> 118
@@ -2202,6 +2453,8 @@ def cmd_selftest(args):
     q = quantile_linear([1, 2, 3, 4], 0.9)
     if abs(q - 3.7) > 1e-12:
         fails.append("quantile %s" % q)
+    fails.extend(selftest_rg1_damage())
+    fails.extend(selftest_g2_lines())
     # data anchors (only when the repository data is present): design 5 / 7-2 numbers recomputed from saved pages
     anchors, open_items = [], []
     repo = getattr(args, "repo", None)

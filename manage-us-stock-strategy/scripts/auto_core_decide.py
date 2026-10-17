@@ -439,6 +439,14 @@ def alert_candidates(*, decision: dict[str, Any], previous: dict[str, Any] | Non
     if previous is not None and ((previous.get("alert_states") or {}).get("2:RREC") or states["2:RREC"]) != states["2:RREC"]:
         opened_text = "\uc5f4\ub9bc" if shock.get("open") else "\ub2eb\ud798"
         lines.append(("2:RREC", f"R-REC1 \uc774\ubca4\ud2b8 {opened_text}", True))
+    # ev-rg1-hyper C-2: uncleared official thesis damage (portfolio or a candidate) blocks buys until a card is
+    # accepted again; the state is "<fact ids>|<blocked symbols>" and only exists while such a fact does.
+    by_symbol = shock.get("by_symbol") or {}
+    damage_ids = sorted(set(shock.get("rg1_damage") or []) | {fact_id for item in by_symbol.values()
+                                                              for fact_id in item.get("rg1_damage") or []})
+    damage_blocked = sorted(symbol for symbol, item in by_symbol.items() if item.get("rg1_damage"))
+    if damage_ids:
+        states["2:RG1DMG"] = ",".join(damage_ids) + "|" + ",".join(damage_blocked)
     for row in decision["buy_requirements"]:
         if row["c"][2]["s"] == "ok" and decision["symbols"].get(row["code"], {}).get("buy_approved"):
             states[f"4:{row['code']}"] = "ok"
@@ -462,6 +470,13 @@ def alert_candidates(*, decision: dict[str, Any], previous: dict[str, Any] | Non
         alerts.append({"code": code, "line": line + suffix, "push": mode == "apply"})
     for code, line in exceptions:
         alerts.append({"code": code, "line": line, "push": True})
+    # ev-rg1-hyper C-2: an exception (push in every mode) on the day the facts or the blocked symbols first appear or
+    # change; no symbol code or fact id in the line (they are in buy requirement (5) and rg1_damage).
+    if damage_ids and previous_states.get("2:RG1DMG") != states["2:RG1DMG"]:
+        alerts.append({"code": "2:RG1DMG", "push": True,
+                       "line": f"R-REC1 RG1 \uacf5\uc2dd \ud14c\uc81c \ud6fc\uc190 {len(damage_ids)}\uac74 \u2014 "
+                               f"\uce74\ub4dc \uc7ac\uc218\ub77d \uc804 \ub9e4\uc218 \ub9c9\ud798 {len(damage_blocked)}\uc885\ubaa9"
+                               "(\ub300\uc2dc\ubcf4\ub4dc \ub9e4\uc218 \uc694\uac74 \u2464)"})
     if mode == "apply":
         for ticket in decision["tickets"]:
             price_text = "\ub9e4\ub3c4 \ud558\ud55c" if ticket["side"] == "sell" else "\ub9e4\uc218 \uc0c1\ud55c"
@@ -967,6 +982,18 @@ def _carried_entry_line(orders: list[dict[str, Any]], open_tickets: list[dict[st
             "(\uc548 \ub123\uc5c8\uc73c\uba74 \uc800\ub141 \ud0a4\uc6c0 \uc785\ub825)")
 
 
+def card_accepted_on(check: dict[str, Any]) -> str | None:
+    """ev-rg1-hyper: the registry accepted.date (strict YYYY-MM-DD) of a card_check entry; None without one."""
+    return rules.iso_day((((check or {}).get("entry") or {}).get("accepted") or {}).get("date"))
+
+
+def portfolio_accepted_on(accepted_on: dict[str, str | None], holdings: dict[str, int]) -> str | None:
+    """ev-rg1-hyper R0: the portfolio card date = the earliest accepted.date of the holdings; None when there is no
+    holding or one of them has no registry entry or date (nothing is cleared)."""
+    dates = [accepted_on.get(symbol) for symbol in sorted(holdings)]
+    return min(dates) if dates and None not in dates else None
+
+
 def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str, Any], evaluation_session: str,
                      bars: dict[str, dict[str, Any]], holdings: dict[str, int], cash: Decimal | None,
                      deposit: Decimal | None, sectors: dict[str, Any], members: list[str],
@@ -1063,15 +1090,20 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                      | ({evaluation_session} if account["ev4_open"] else set()))
     # t2rc-corefix 1 (rule file 102): events, C0, L0, RG3, RG4, DS1 and the record-gap check on SOXX for every
     # candidate; the sector's RG2 benchmark (GRID for 'A1 power') is only the benchmark leg of RG2.
+    # ev-rg1-hyper: a damage fact is cleared only by a later card acceptance (registry accepted.date) - the
+    # candidate's own card; for the portfolio the earliest card of the holdings (none if a holding has no date).
+    accepted_on = {symbol: card_accepted_on(checks[symbol]) for symbol in symbols_out}
     for symbol in sorted(symbols_out):
         shocks[symbol] = rules.rrec1(benchmark=series.get(rules.C["RREC_BENCHMARK"]),
                                      candidate=series.get(symbol), evaluation_session=evaluation_session,
                                      ev3_user_dates=ev3, thesis_damage=damage, ev4_sessions=ev4_all,
                                      candidate_symbol=symbol, research_sessions=research["sessions"],
-                                     rg2_series=series.get(rules.rg2_benchmark(sectors.get(symbol))))
+                                     rg2_series=series.get(rules.rg2_benchmark(sectors.get(symbol))),
+                                     card_accepted_on=accepted_on[symbol])
     portfolio_shock = rules.rrec1(benchmark=series.get("SOXX"), candidate=None, evaluation_session=evaluation_session,
                                   ev3_user_dates=ev3, thesis_damage=damage, ev4_sessions=ev4_all,
-                                  research_sessions=research["sessions"])
+                                  research_sessions=research["sessions"],
+                                  card_accepted_on=portfolio_accepted_on(accepted_on, holdings))
     exposure = {
         "N": nominal.get("n"), "N_status": nominal.get("status"), "N_assumed_one_x": nominal.get("assumed_one_x"),
         "S7": {"E": s7.get("e"), "band": s7.get("band"), "fresh": s7.get("fresh"), "session": s7.get("session"),
@@ -1081,6 +1113,7 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                    "threshold": item.get("threshold")} for symbol, item in sorted(peaks.items())],
     }
     shock = {**portfolio_shock, "by_symbol": {symbol: {"status": item["status"], "open": item["open"], "rg": item["rg"]}
+                                              | ({"rg1_damage": item["rg1_damage"]} if "rg1_damage" in item else {})
                                               for symbol, item in shocks.items()}}
     rows = []
     for symbol in sorted(symbols_out):
