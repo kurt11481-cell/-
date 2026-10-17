@@ -1,0 +1,37 @@
+{
+ "purpose": "관제판 주간 점검 v1.2 적용 시 schedules 문서에 추가할 trigs 필드(문서 id → 예약 작업 id). Windows 작업 8개 문서는 trigs 없이 둔다.",
+ "trigs": {
+  "sch-autocore-alert": [
+   "trig_01D5KxMSJgbeRG1ZL5ox3Fna"
+  ],
+  "sch-board": [
+   "trig_017qqjiQdpUbHxHXsLDPrL8Z"
+  ],
+  "sch-boardreview": [
+   "trig_01XvqwKG2gt7EKLEVMHGYR6Y"
+  ],
+  "sch-check": [
+   "trig_01YWzNq847nJfNgDUnnukBqP"
+  ],
+  "sch-event-calendar": [
+   "trig_015WVdwRscJ2tQqjPputAxsU"
+  ],
+  "sch-monpre": [
+   "trig_01M1DYJ28pstoumsEV6ZSWhf"
+  ],
+  "sch-nextsndk": [
+   "trig_01GqUwXK9KLqTRUJPVefHhq3"
+  ],
+  "sch-preevents": [
+   "trig_01VX1k7UugjSryyU2dpgnyqR",
+   "trig_011mBe1U4oC1K9LdZjJuDfoU",
+   "trig_01PnMt8ZfnsUfFpNoJkSNzMX"
+  ],
+  "sch-save": [
+   "trig_01VrX6zRZ8XYGeycXBXo1J3D"
+  ],
+  "sch-watchrot": [
+   "trig_01MuMHqXHrRAeNVZt2ZjzRxu"
+  ]
+ }
+}
