@@ -4,17 +4,59 @@ from __future__ import annotations
 
 import sys
 import unittest
+from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import portfolio_exposure as pe  # noqa: E402
 import s5_exposure_fixtures as fx  # noqa: E402
 from cash_flow_evidence import build_declaration, normalize_transaction_history  # noqa: E402
-from test_portfolio_exposure import EVAL, Scenario, make_closes, trigger  # noqa: E402
+from test_portfolio_exposure import EVAL, SCHEMA, Scenario, make_closes, trigger  # noqa: E402
+from validation_common import validate_instance  # noqa: E402
+
+NEW_YORK = ZoneInfo("America/New_York")
+
+
+def et(day: str, clock: str) -> str:
+    """A New York wall-clock time on `day` as an ISO timestamp with offset (synthetic broker read times)."""
+    return datetime.combine(date.fromisoformat(day), time.fromisoformat(clock), NEW_YORK).isoformat()
+
+
+def session_bounds(sessions: list[str]) -> dict[str, dict[str, str]]:
+    """Calendar-row session times (core 09:30-16:00 New York) for synthetic sessions."""
+    return {day: {"core_open_at": et(day, "09:30"), "core_close_at": et(day, "16:00")} for day in sessions}
+
+
+def capture(read_at: str, order_available: str, *, deposit: str | None = None, sell: str = "0", sell_d2: str = "0",
+            buy: str = "0", latest: str | None = None) -> dict[str, Any]:
+    """A synthetic broker capture (hwm-fix); the deposit defaults to order-available minus pending sale proceeds."""
+    if deposit is None:
+        deposit = format(Decimal(order_available) - Decimal(sell) - Decimal(sell_d2) + Decimal(buy), "f")
+    return {"earliest_read_at": read_at, "latest_read_at": latest or read_at, "order_available_cash_usd": order_available,
+            "foreign_currency_deposit_usd": deposit,
+            "unsettled": {"d1_sell_settlement_usd": sell, "d1_buy_settlement_usd": buy, "d2_sell_settlement_usd": sell_d2,
+                          "d2_buy_settlement_usd": "0"},
+            "proposal_id": "0" * 64, "snapshot_hash": "0" * 64}
+
+
+def released_review(scenario: Scenario, captures: dict[int, Any] | None, *, bounds: dict[str, Any] | None = None,
+                    **extra: Any) -> dict[str, Any]:
+    """Scenario.review() plus the hwm-fix inputs: broker captures and the session times."""
+    result = pe.build_exposure_review(
+        policy=scenario.policy, evaluation_session=scenario.evaluation, calendar_sessions=scenario.sessions,
+        snapshots=scenario.snapshots, snapshot_reasons=scenario.snapshot_reasons, closes=scenario.closes,
+        close_unverified=scenario.close_unverified, journal=scenario.journal, cards=scenario.cards,
+        earnings=scenario.earnings, proposals=scenario.proposals, broker_captures=captures,
+        session_bounds=session_bounds(scenario.sessions) if bounds is None else bounds, **extra)
+    errors = validate_instance(result, SCHEMA)
+    assert not errors, errors
+    return result
 
 
 def line_scenario(soxl_path: list[str], *, hwm: str = "10000") -> Scenario:
@@ -234,7 +276,9 @@ class CashFlowHoldTests(unittest.TestCase):
             fx.snapshot(scenario.days[2], {"SOXL": 50}, "6000", revision=2, block=undeclared, from_entry=True),
             fx.snapshot("2026-09-29", {"SOXL": 50}, "6000", revision=3, block=late, from_entry=True),
         ]
-        review = scenario.review()
+        # hwm-fix inputs: revision 2 read before its session opened, revision 3 after the held session's close.
+        review = released_review(scenario, {2: capture(et(scenario.days[2], "08:00"), "6000"),
+                                            3: capture(et("2026-09-29", "07:00"), "6000")})
         lines = review["review_lines"]
         self.assertEqual((lines["status"], lines["hwm_usd"]), ("EVALUATED", "11000.00"))
         self.assertEqual(lines["skipped_sessions"], [scenario.days[2]])
@@ -254,7 +298,9 @@ class CashFlowHoldTests(unittest.TestCase):
         self.assertEqual(review["review_lines"]["skipped_sessions"], scenario.days[2:])
         scenario.snapshots.append(fx.snapshot("2026-09-29", {"SOXL": 30}, "7000", revision=3, from_entry=True,
                                               block=declaration([], None, period=(day, "2026-09-30"))))
-        review = scenario.review()
+        # hwm-fix inputs: revision 2 read after the sale session's close; order-available = cash 5,000 + proceeds 2,000.
+        review = released_review(scenario, {2: capture(et(day, "19:00"), "7000", sell="2000"),
+                                            3: capture(et("2026-09-29", "19:00"), "7000")})
         self.assertEqual((review["review_lines"]["status"], review["review_lines"]["events"]), ("EVALUATED", []))
         self.assertEqual(review["review_lines"]["skipped_sessions"], [day])
 

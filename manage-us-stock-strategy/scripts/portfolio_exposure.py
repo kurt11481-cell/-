@@ -78,6 +78,12 @@ CARD_REDUCE_ACTIONS = ("TRIM", "EXIT")
 EARNINGS_CHECK_SOURCE_KINDS = ("COMPANY_IR", "COMPANY_PRESS_RELEASE", "SEC_FILING")
 EARNINGS_CHECK_NOT_BEFORE = time(16, 0)
 EXCHANGE_TIMEZONE = "America/New_York"
+# hwm-fix (docs/claude/hwm-fix-builder-prompt.md): Kiwoom transaction-history deal dates are Korean dates.
+DEAL_DATE_TIMEZONE = "Asia/Seoul"
+# Deposit-detail fields of a broker capture (run_portfolio_exposure_review.broker_captures).
+UNSETTLED_SELL_KEYS = ("d1_sell_settlement_usd", "d2_sell_settlement_usd")
+UNSETTLED_BUY_KEYS = ("d1_buy_settlement_usd", "d2_buy_settlement_usd")
+SUPERSEDED_REVIEW_REASON = "HWM_RECOMPUTED_HELD_SESSIONS"
 
 
 class ExposureError(ValueError):
@@ -413,6 +419,148 @@ def _in_hold(session: str, holds: list[tuple[str, str | None]]) -> bool:
     return any(start <= session and (end is None or session < end) for start, end in holds)
 
 
+def _timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _capture_view(capture: Any) -> dict[str, Any] | None:
+    """One revision's broker capture, parsed; None when it is missing or any field is unusable."""
+    if not isinstance(capture, dict):
+        return None
+    earliest, latest = _timestamp(capture.get("earliest_read_at")), _timestamp(capture.get("latest_read_at"))
+    unsettled = capture.get("unsettled") if isinstance(capture.get("unsettled"), dict) else {}
+    amounts = {key: _dec(unsettled.get(key)) for key in UNSETTLED_SELL_KEYS + UNSETTLED_BUY_KEYS}
+    order_available = _dec(capture.get("order_available_cash_usd"))
+    deposit = _dec(capture.get("foreign_currency_deposit_usd"))
+    if earliest is None or latest is None or earliest > latest or any(
+            value is None or value < 0 for value in [order_available, deposit, *amounts.values()]):
+        return None
+    # Deposit + pending sale settlements - pending buy settlements. A settlement moving d2 -> d1 -> deposit
+    # leaves it unchanged, so two reads with the same holdings and the same total saw no fill in between.
+    total = (deposit + sum((amounts[key] for key in UNSETTLED_SELL_KEYS), ZERO)
+             - sum((amounts[key] for key in UNSETTLED_BUY_KEYS), ZERO))
+    return {"earliest": earliest, "latest": latest, "order_available": order_available, "cash_total": total,
+            "capture": capture}
+
+
+def _session_bounds(session_bounds: dict[str, Any] | None, session: str | None) -> tuple[datetime, datetime] | None:
+    row = (session_bounds or {}).get(session) if session is not None else None
+    if not isinstance(row, dict):
+        return None
+    opened, closed = _timestamp(row.get("core_open_at")), _timestamp(row.get("core_close_at"))
+    return (opened, closed) if opened is not None and closed is not None and opened < closed else None
+
+
+def revalue_held_session(*, session: str, next_session: str | None, snapshots: list[dict[str, Any]],
+                         broker_captures: dict[int, Any] | None, session_bounds: dict[str, Any] | None,
+                         closes: dict[str, dict[str, str]], split_actions: list[dict[str, Any]] | None,
+                         adjustments: list[dict[str, str]]) -> dict[str, Any]:
+    """Closing equity of a session inside a hold window that has ended since (hwm-fix rule 1).
+
+    N is the first confirmed reconciliation whose earliest broker read is at or after the session's core close.
+    Equity = N holdings x the session's raw close + N's broker order-available cash - the declared external flows
+    that N's cash already holds but whose HWM adjustment takes effect after the session (R6: each declared flow
+    moves the HWM once). N is used when its latest read is before the next session's core open (POST_CLOSE), or
+    when the last reconciliation read before the session's core open (P) shows the same holdings and the same
+    deposit + pending settlements as N (BRACKETED: the broker saw no fill in between; the order-available amount
+    itself is not compared). Fills are never inferred from prices and quantities are never rescaled for a split.
+    `snapshots` are the ones dated on or before the evaluation session only.
+
+    Returns {"status": "OK", "equity", "record"}, {"status": "GAP", "missing"} (a close or the cash is missing,
+    rule D5) or {"status": "FAIL", "reason"}.
+    """
+    def fail(reason: str) -> dict[str, Any]:
+        return {"status": "FAIL", "reason": reason}
+
+    bounds, following = _session_bounds(session_bounds, session), _session_bounds(session_bounds, next_session)
+    if bounds is None or following is None:
+        return fail("SESSION_BOUNDS_MISSING")
+    (opened, closed), next_open = bounds, following[0]
+    confirmed = sorted((snapshot for snapshot in snapshots if snapshot.get("from_ledger_entry") is True
+                        and isinstance(snapshot.get("state_revision"), int)
+                        and not isinstance(snapshot["state_revision"], bool)),
+                       key=lambda item: item["state_revision"])
+    before: tuple[dict[str, Any], dict[str, Any]] | None = None
+    chosen: tuple[dict[str, Any], dict[str, Any]] | None = None
+    for snapshot in confirmed:
+        view = _capture_view((broker_captures or {}).get(snapshot["state_revision"]))
+        if view is None:
+            # A reconciliation from the session's date on that cannot be placed in time may hold a fill.
+            if not isinstance(snapshot.get("as_of"), str) or snapshot["as_of"] >= session:
+                return fail(f"BROKER_CAPTURE_MISSING:{snapshot['state_revision']}")
+            continue
+        if view["earliest"] >= closed:
+            chosen = (snapshot, view)
+            break
+        if view["latest"] <= opened:
+            before = (snapshot, view)
+    if chosen is None:
+        return fail("NO_POST_CLOSE_RECONCILIATION")
+    snapshot, view = chosen
+    holdings = held(snapshot)
+    latest_day = view["latest"].astimezone(ZoneInfo(EXCHANGE_TIMEZONE)).date().isoformat()
+    for action in sorted(split_actions or [], key=lambda item: (item["symbol"], item["effective_session"])):
+        # corporate_actions.split_reconciliation_symbols only sees as_of < effective <= session; N is read after
+        # the session, so a split between the session and N's read would put post-split shares on its close.
+        if action["symbol"] in holdings and session < action["effective_session"] <= latest_day:
+            return fail(f"SPLIT_AFTER_SESSION:{action['symbol']}:{action['effective_session']}")
+    if view["latest"] < next_open:
+        method = "POST_CLOSE"
+    elif before is None:
+        return fail("NO_PRE_OPEN_RECONCILIATION")
+    elif held(before[0]) != holdings or before[1]["cash_total"] != view["cash_total"]:
+        return fail(f"BRACKET_MISMATCH:{before[0]['state_revision']}:{snapshot['state_revision']}")
+    else:
+        method = "BRACKETED"
+    seoul = ZoneInfo(DEAL_DATE_TIMEZONE)
+    first_day = view["earliest"].astimezone(seoul).date().isoformat()
+    last_day = view["latest"].astimezone(seoul).date().isoformat()
+    blocks = {str(item["state_revision"]): item.get("cash_flow_declaration") for item in confirmed}
+    correction = ZERO
+    for adjustment in adjustments:
+        if adjustment["effective_date"] <= session:
+            continue  # already on the HWM before this session is compared (and in N's cash)
+        revision = str(adjustment.get("state_revision"))
+        block = blocks.get(revision)
+        if not isinstance(block, dict):
+            return fail(f"CASH_FLOW_BLOCK_NOT_FOUND:{revision}")
+        counted = set(block.get("previously_counted_keys") or [])
+        rows = [row for row in block.get("external_rows") or [] if isinstance(row, dict) and row.get("key") not in counted]
+        amounts = [_dec(row.get("signed_amount_usd")) for row in rows]
+        if any(amount is None for amount in amounts) or sum(amounts, ZERO) != _dec(adjustment.get("amount_usd")):
+            return fail(f"CASH_FLOW_ADJUSTMENT_NOT_ROW_SUM:{revision}")
+        if revision == str(snapshot["state_revision"]):
+            correction += sum(amounts, ZERO)  # read by N's own reconciliation run: in N's cash
+            continue
+        for row, amount in zip(rows, amounts):
+            day = _date(row.get("deal_date"))
+            if day is None:
+                return fail(f"CASH_FLOW_DEAL_DATE_INVALID:{row.get('key')}")
+            if day.isoformat() < first_day:
+                correction += amount  # processed before N's first read: in N's cash
+            elif day.isoformat() <= last_day:
+                return fail(f"CASH_FLOW_DATE_AMBIGUOUS:{row.get('key')}")
+    cash = view["order_available"] - correction
+    if cash < 0:
+        return fail("CASH_NEGATIVE_AFTER_FLOW_CORRECTION")
+    priced = {"as_of": snapshot.get("as_of"), "holdings": snapshot.get("holdings"), "cash_usd": format(cash, "f")}
+    equity, _, missing = closing_equity(priced, closes, session, split_actions)
+    if equity is None:
+        return {"status": "GAP", "missing": missing}
+    capture = view["capture"]
+    return {"status": "OK", "equity": equity, "record": {
+        "session": session, "method": method, "state_revision": snapshot["state_revision"],
+        "earliest_read_at": capture["earliest_read_at"], "latest_read_at": capture["latest_read_at"],
+        "order_available_cash_usd": _plain(view["order_available"]), "flow_correction_usd": _plain(correction),
+        "closing_equity_usd": _plain(equity)}}
+
+
 # ---------------------------------------------------------------------------------------------
 # Journal
 # ---------------------------------------------------------------------------------------------
@@ -448,13 +596,28 @@ def journal_view(journal: dict[str, Any]) -> dict[str, Any]:
 def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] | None,
                           line_reviews: list[dict[str, Any]], sessions: list[str], evaluation_session: str,
                           snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]],
-                          split_actions: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Recompute HWM, line breaches and pauses from the activation record forward (decision P1)."""
+                          split_actions: list[dict[str, Any]] | None = None,
+                          broker_captures: dict[int, Any] | None = None,
+                          session_bounds: dict[str, Any] | None = None,
+                          revalue_held_sessions: bool = True) -> dict[str, Any]:
+    """Recompute HWM, line breaches and pauses from the activation record forward (decision P1).
+
+    skipped_sessions lists every session inside a cash-flow or sale hold window (its meaning is unchanged).
+    hwm-fix rule 1: a session before the evaluation session whose covering windows have all ended is revalued
+    (revalue_held_session) and listed in revalued_sessions; a session that cannot be revalued stops the walk
+    UNVERIFIED (HELD_SESSION_NOT_REVALUABLE), and a window that has not ended is still skipped (HELD).
+    Rule 3: the same input is walked once more with revalued sessions skipped (revalue_held_sessions=False,
+    the rule before hwm-fix). A completed line review that matches none of the events but one of that walk's
+    events exactly (line_id, breach_date, hwm) is listed in superseded_journal_reviews: it is not unmatched and
+    completes no event, so the recomputed event stays open until its own review is recorded. That
+    walk's HWM is also the floor of hwm_usd while a revaluation fails.
+    """
     result: dict[str, Any] = {
         "status": "NOT_ACTIVATED", "reasons": [], "hwm_usd": None, "hwm_date": None, "closing_equity_usd": None,
         "evaluated_through": None, "lines": [], "events": [], "open_events": [], "next_line": None,
         "skipped_sessions": [], "cash_flow": None, "sale_pending_hold": False, "unmatched_journal_reviews": [],
         "ledger_unconfirmed_revisions": [], "automatic_sell": False,
+        "revalued_sessions": [], "superseded_journal_reviews": [],
     }
     if activation is None:
         result["reasons"].append("S5_NOT_ACTIVATED")
@@ -514,21 +677,40 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
     # The activation session itself is judged too: its equity may already sit below a line of the
     # rechecked HWM (the high between the policy start date and activation).
     todo = [session for session in sessions if activation["activation_date"] <= session <= evaluation_session]
+    revaluation_attempted = False
     for session in todo:
-        if _in_hold(session, cash_holds) or _in_hold(session, sale_holds):
+        windows = [window for window in cash_holds + sale_holds if _in_hold(session, [window])]
+        if windows:
             result["skipped_sessions"].append(session)
-            continue
-        snapshot = snapshot_for(snapshots, session)
-        if snapshot is None:
-            status = "UNVERIFIED"
-            result["reasons"].append(f"NO_CONFIRMED_SNAPSHOT:{session}")
-            break
-        equity, _, missing = closing_equity(snapshot, closes, session, split_actions)
-        if equity is None:
-            # D5: a missing close is never skipped; skipping would understate the HWM.
-            status = "UNVERIFIED"
-            result["reasons"].append(f"EQUITY_GAP:{session}:{','.join(missing)}")
-            break
+            if not revalue_held_sessions or any(end is None for _, end in windows):
+                continue
+            revaluation_attempted = True
+            outcome = revalue_held_session(
+                session=session, next_session=next((item for item in sessions if item > session), None),
+                snapshots=snapshots, broker_captures=broker_captures, session_bounds=session_bounds, closes=closes,
+                split_actions=split_actions, adjustments=chain["adjustments"])
+            if outcome["status"] == "FAIL":
+                status = "UNVERIFIED"
+                result["reasons"].append(f"HELD_SESSION_NOT_REVALUABLE:{session}:{outcome['reason']}")
+                break
+            if outcome["status"] == "GAP":
+                status = "UNVERIFIED"
+                result["reasons"].append(f"EQUITY_GAP:{session}:{','.join(outcome['missing'])}")
+                break
+            equity = outcome["equity"]
+            result["revalued_sessions"].append(outcome["record"])
+        else:
+            snapshot = snapshot_for(snapshots, session)
+            if snapshot is None:
+                status = "UNVERIFIED"
+                result["reasons"].append(f"NO_CONFIRMED_SNAPSHOT:{session}")
+                break
+            equity, _, missing = closing_equity(snapshot, closes, session, split_actions)
+            if equity is None:
+                # D5: a missing close is never skipped; skipping would understate the HWM.
+                status = "UNVERIFIED"
+                result["reasons"].append(f"EQUITY_GAP:{session}:{','.join(missing)}")
+                break
         for adjustment in [item for item in pending if item["effective_date"] <= session]:
             hwm += Decimal(adjustment["amount_usd"])
             pending.remove(adjustment)
@@ -547,6 +729,17 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
     if status == "EVALUATED" and held_now:
         status = "HELD"
         result["reasons"].append("LINE_EVALUATION_ON_HOLD")
+    previous_events: list[dict[str, Any]] = []
+    if revaluation_attempted:
+        previous = evaluate_review_lines(
+            config=config, activation=activation, line_reviews=[], sessions=sessions,
+            evaluation_session=evaluation_session, snapshots=snapshots, closes=closes, split_actions=split_actions,
+            revalue_held_sessions=False)
+        previous_events = previous["events"]
+        floor = _dec(previous["hwm_usd"])
+        if floor is not None and floor > hwm:
+            # Never below the rule before hwm-fix: the core records the day's EV4 from this value.
+            hwm, hwm_date = floor, previous["hwm_date"]
 
     reviewed: set[tuple[str, str]] = set()
     for entry in line_reviews:
@@ -554,7 +747,15 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
         match = next((event for event in events if event["line_id"] == payload.get("line_id")
                       and event["breach_date"] == payload.get("breach_date")
                       and _dec(payload.get("hwm")) == event["hwm"]), None)
-        if match is None or payload.get("review_status") != "completed":
+        superseded = match is None and payload.get("review_status") == "completed" and any(
+            event["line_id"] == payload.get("line_id") and event["breach_date"] == payload.get("breach_date")
+            and _dec(payload.get("hwm")) == _dec(event["hwm"]) for event in previous_events)
+        if superseded:
+            result["superseded_journal_reviews"].append(
+                {"entry_id": entry.get("entry_id"), "line_id": payload.get("line_id"),
+                 "breach_date": payload.get("breach_date"), "hwm": payload.get("hwm"),
+                 "reason": SUPERSEDED_REVIEW_REASON})
+        elif match is None or payload.get("review_status") != "completed":
             result["unmatched_journal_reviews"].append(
                 {"entry_id": entry.get("entry_id"), "line_id": payload.get("line_id"),
                  "breach_date": payload.get("breach_date")})
@@ -1032,7 +1233,9 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
                           inputs: dict[str, Any] | None = None,
                           evaluation_reasons: list[str] | None = None,
                           corporate_actions: dict[str, Any] | None = None,
-                          generated_at: str | None = None) -> dict[str, Any]:
+                          generated_at: str | None = None,
+                          broker_captures: dict[int, Any] | None = None,
+                          session_bounds: dict[str, Any] | None = None) -> dict[str, Any]:
     """One deterministic review for the completed session `evaluation_session`.
 
     calendar_sessions  ascending session dates (may extend past the evaluation session)
@@ -1050,6 +1253,13 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
     generated_at       review generation time (ISO with offset; the runner's inputs.generated_at). Only a
                        confirmed NOT_ANNOUNCED earnings record uses it, with this review's evaluation
                        session; without it that record stays a blackout.
+    broker_captures    {state_revision: capture or None}: the verified broker read behind each confirmed
+                       revision (earliest_read_at, latest_read_at, order_available_cash_usd,
+                       foreign_currency_deposit_usd, unsettled{d1/d2 sell/buy settlement}, proposal_id,
+                       snapshot_hash) from run_portfolio_exposure_review.broker_captures. Only sessions in a
+                       hold window that has ended use it (hwm-fix); without it such a session fails closed.
+    session_bounds     {session: {"core_open_at", "core_close_at"}} from the session calendar rows; needed for
+                       the same revaluation.
     """
     config = exposure_config(policy)
     cards, proposals = cards or {}, proposals or []
@@ -1135,7 +1345,8 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
             [f"JOURNAL_{view['status']}"] + [str(item) for item in view["errors"]])
     lines = evaluate_review_lines(
         config=config, activation=view["activation"], line_reviews=view["line_reviews"], sessions=sessions,
-        evaluation_session=evaluation_session, snapshots=snapshots, closes=closes, split_actions=in_effect)
+        evaluation_session=evaluation_session, snapshots=snapshots, closes=closes, split_actions=in_effect,
+        broker_captures=broker_captures, session_bounds=session_bounds)
     peaks = evaluate_peak_reviews(
         config=config, activation=view["activation"], peak_reviews=view["peak_reviews"], sessions=sessions,
         evaluation_session=evaluation_session, snapshots=snapshots, closes=adjusted_closes,

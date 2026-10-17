@@ -25,7 +25,7 @@ import portfolio_review_journal as journal_module  # noqa: E402
 import run_portfolio_exposure_review as runner  # noqa: E402
 import s5_exposure_fixtures as fx  # noqa: E402
 from test_portfolio_exposure import EVAL, Scenario, trigger  # noqa: E402
-from test_portfolio_exposure_fail_closed import declaration  # noqa: E402
+from test_portfolio_exposure_fail_closed import capture, declaration, et, released_review  # noqa: E402
 from test_run_portfolio_exposure_review import POLICY, RunnerCase  # noqa: E402
 
 LATER = "2026-10-01"  # a reconciliation dated after the evaluation session (Korean-afternoon reconcile)
@@ -109,7 +109,9 @@ class FixAHeldFailsClosedTests(unittest.TestCase):
             fx.snapshot(scenario.days[2], {"SOXL": 30}, "8000", revision=2, block=undeclared, from_entry=True),
             fx.snapshot(EVAL, {"SOXL": 30}, "8000", revision=3, block=late, from_entry=True),
         ]
-        review = scenario.review()
+        # hwm-fix inputs: revision 2 read before its session opened, revision 3 before EVAL opened.
+        review = released_review(scenario, {2: capture(et(scenario.days[2], "08:00"), "8000"),
+                                            3: capture(et(EVAL, "07:00"), "8000")})
         self.assertEqual((review["review_lines"]["status"], review["review_lines"]["hwm_usd"]), ("EVALUATED", "11000.00"))
         self.assertFalse(review["fail_closed"]["active"])
 
