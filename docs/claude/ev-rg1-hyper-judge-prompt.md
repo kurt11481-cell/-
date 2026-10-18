@@ -48,3 +48,13 @@ authority: order_authority=false · quantity_authority=none · execution_quantit
 
 - 한국어 표 `| # | 항목 | PASS/FAIL | 근거(파일:행 / 재계산 값) |`(위 1~15), 그 아래 "발견"(R7 실험 결과 요약, ③ 소비처 전수 표, 비교 B7·통합 점검 문구 차이, 남은 위험, 의견 — 기본 NO_CHANGE), 고칠 최소 항목(있으면), 바뀐 파일 sha256(네가 잰 작업 트리 바이트 값) + 새 계산기 sha256_lf + 실행기 sha256, 마지막 줄은 정확히 `VERDICT: PASS` 또는 `VERDICT: FAIL`.
 - 같은 내용을 **새 파일 하나** `docs/claude/ev-rg1-hyper-judge-report.md`(메인 체크아웃)에 저장한다. 그 밖의 파일은 쓰지 않는다.
+
+## 재판정 (Judge 1차 FAIL 수정 뒤 — 2026-10-18 추가, Cowork)
+
+1차 보고 docs/claude/ev-rg1-hyper-judge-report.md(sha 307984a3…, FAIL 사유 = 항목 6 계산기 `validate_facts`의 ③ 사실 검사 누락)를 먼저 읽는다. Builder 지시문 끝 "추가 범위 — Judge 1차 FAIL 수정"이 고칠 범위다. 새 세션(메인 체크아웃, Opus · xhigh, Builder·1차 Judge와 다른 세션), 파일 수정 금지는 같다.
+
+1. **범위 고정**: worktree의 10개 파일(1차 보고 끝 sha256 표 중 t2rc-oracle.py·t2rc-check-run.ps1·test_auto_core_rg1_oracle_parity.py·보고서를 뺀 것)이 1차 표와 바이트가 같은지 잰다. 같으면 1차의 항목 1~5·7~9·11~13·15 판정은 유지한다. 다르면 그 파일에 해당하는 항목을 처음부터 다시 판정한다.
+2. **항목 6 재판정**: 새 `validate_facts`에서 ③ 사실이 URL → DOMAIN(공식도 표지도 아님) → SOURCE_KIND → 작성 시각 2개 → EVENT_SESSION을 모두 거치는지 원문으로 확인. 1차의 재현(event_session = 토요일 2026-09-12 microsoft.com 훼손 사실)을 다시 돌려 코어·계산기 모두 버리는지, source_kind 불량 ③ 사실을 계산기가 버리는지 확인. `damage_domains` 없는 호출(history·오늘 사실)의 출력이 base 판과 같은지 무작위 고정 시드 입력 200개 이상으로 비교. 1차의 대등 실험(이름 붙은 28경우 + 무작위)을 새 계산기로 다시 돌려 불일치 0.
+3. **항목 10 재판정**: 새 계산기 sha256_lf = 실행기 16행 값. 계산기 diff(1차 판 대비)가 validate_facts 사슬뿐. selftest PASS. 실데이터 check 10-16·10-17: worktree 판 = base 판(oracle_sha256 말고).
+4. **항목 14 재판정**: parity 파일의 새 경우 3개가 주장대로 단언, `test_auto_core*.py` 새 실패 0(PLTR 1건 그대로), 전체 스위트는 1차 기준과 같은 실패 집합.
+5. 출력: 1차와 같은 표 형식(바뀐 항목만 행으로, 나머지는 "1차 유지 — 바이트 동일" 1줄), 바뀐 파일 sha256(네가 잰 값) + 새 계산기 sha256_lf + 실행기 sha256_lf, 마지막 줄 `VERDICT: PASS` 또는 `VERDICT: FAIL`. **새 파일** `docs/claude/ev-rg1-hyper-judge2-report.md`(메인 체크아웃)에만 쓴다. 1차 보고서는 고치지 않는다.

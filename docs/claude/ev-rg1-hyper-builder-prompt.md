@@ -190,3 +190,19 @@ R5의 관문들, rules.CONSTANTS, RG1 기록 범위, auto_core_compare.py, auto_
 - 내장 재검토 2회차(고친 부분만, 10건, 모두 원문 재확인 뒤 반영): 기록 전체 무효(스키마)와 사실 단위 검사 구분·합집합은 rrec1 입력에만·fact_id 세션 간 첫 판(G-1-1), 알림은 예외 줄로·종목 코드 없이(기록 모드 필터 56~60행, 비교 모드 문구 122행 유지 — 알림 지시문 무변경), 가정 실험은 `rg1_damage`로 확인, Judge 10 호출부 1822행, S6·S6b 날짜 조건, 줄 번호 4곳, KST 고정 오프셋 이유.
 - 내장 재검토 1회(Opus, 읽기 전용, 13건) — 본 세션이 원문으로 다시 확인하고 모두 반영: 소급 해제 금지(R0 a ≤ d — 처음 초안은 재수락 전 날의 닫힘을 만들어 결정 ①②보다 느슨했음), 알림은 비교 모드에서도 push(auto_core_decide.py 462·507행), 알림 자료 키 `rg1_damage`(R8·C-1-1), 계산기 훼손 사실 검사·합집합(G-1-1), D2는 결정 범위로 처리(질문 안 함), worktree 줄 끝 CRLF(hwm-fix worktree 확인)·sha256_lf로만 비교, D1 선택지 c(삭제) 추가·a 식을 멈춤 표지 기준으로·영향 문구 정정(회로 집합 아님), 사전 등록 고정값 로더·규칙 파일 포함·C2 불산입 승인 범위, 같은 정의를 적은 문서(references/auto-core-decision.md는 I로, 회복 관문 문서·CLAUDE.md는 병합 절), 채점기·대시보드 표시 차이(보고 8(g)), D1 답 기한, 등록부 HEAD 9종목.
 - 결정 문구보다 느슨해지는 곳: 없음. 결정 a의 해제(재수락)는 지금 코드보다 느슨해질 수 있는 유일한 경로다(R7) — 11-1a의 "매수를 더 막는 쪽으로만"은 이 경로를 빼면 맞다.
+
+# 추가 범위 — Judge 1차 FAIL 수정 (2026-10-18 05시대 KST, Cowork)
+
+- 근거: docs/claude/ev-rg1-hyper-judge-report.md(sha 307984a3…, `VERDICT: FAIL`) 항목 6·"고칠 최소 항목" 1~4. Cowork가 worktree 원문으로 다시 확인함: t2rc-oracle.py 829~843행 — ③ 사실(`marked`)은 `elif not any(... doms)` 가지 안에서 통과해 if/elif 사슬의 아래 검사(SOURCE_KIND 836·WRITTEN_BEFORE_CLOSE 838·WRITTEN_AFTER_DECIDE 840·EVENT_SESSION 842)를 건너뛴다. 코어 check_record(auto_core_inputs.py 258~270행)는 ③ 사실도 남은 검사를 모두 한다. 그래서 거래일이 아닌 event_session(예: 토요일)의 ③ 사실을 계산기만 받아 요건 ⑤가 갈리고(코어 ok·계산기 no) 60세션 동안 MISMATCH가 날 수 있다. 지시문 B-2·G-2("B-2와 같은 규칙")를 어긴 구현 결함이다.
+- 이 작업은 **같은 Builder worktree(ev-rg1-hyper)에서 최소 수정**만 한다. 커밋하지 않는다.
+
+1. `docs/claude/t2rc-oracle.py` `validate_facts`(829~843행): 사슬 전에 `official = any(host == d or host.endswith("." + d) for d in doms)`(host가 있을 때)와 `marked = (not official) and f.get("root_thesis_damage") is True and <damage_domains 일치>`를 구하고, 사슬을 `if host is None: URL` → `elif not official and not marked: DOMAIN` → 그 아래 기존 가지(SOURCE_KIND·WRITTEN_BEFORE_CLOSE·WRITTEN_AFTER_DECIDE·EVENT_SESSION) **글자 그대로**로 바꾼다. 그러면 ③ 사실도 남은 검사를 모두 거친다. `damage_domains`를 넘기지 않는 호출(1406 history·1555 오늘 사실)은 marked가 늘 거짓이라 출력이 base와 글자까지 같아야 한다.
+2. 테스트 — `manage-us-stock-strategy/tests/test_auto_core_rg1_oracle_parity.py` `LoaderParityTests`에 2경우(테스트 이름·단언 추가만, 기존 경우 불변):
+   - ③ 사실(microsoft.com, root_thesis_damage true)의 event_session이 거래일이 아님(토요일) → 코어 load_research `damage`와 계산기 `load_rrec1_records` 모두 그 사실이 없다.
+   - ③ 사실의 source_kind가 열거값 밖 → 계산기는 그 사실을 버린다. 코어는 스키마로 기록 전체가 무효다 — 기록 단위 차이는 이미 있던 것(범위 밖)이라고 영문 주석 1줄.
+   - 그리고 기본 호출 동일성: `damage_domains` 없이 부른 새 `validate_facts`와 base 판 식(테스트 안에 base 사슬을 옮겨 적지 말고, 고정 입력 몇 개의 base 결과(keep·dropped)를 상수로 고정)이 같음을 1경우로 단언한다.
+3. 새 계산기 `sha256_lf`로 `docs/claude/t2rc-check-run.ps1` 16행만 다시 바꾼다(체크아웃된 줄 끝 그대로).
+4. 다시 돌린다: `-p "test_auto_core_rg1_oracle_parity.py"`, `-p "test_auto_core*.py"`(새 실패 0, PLTR 1건은 그대로), `t2rc-oracle.py selftest --repo <메인 체크아웃>` PASS, 실데이터 `check --day 2026-10-16`·`2026-10-17`(worktree 판 vs base 판, `--repo <메인>`, 필요하면 양쪽 `--ignore-input-sha`) — `oracle_sha256` 말고 같아야 한다.
+5. 바꿔도 되는 파일은 이제 셋뿐: t2rc-oracle.py, t2rc-check-run.ps1(16행), test_auto_core_rg1_oracle_parity.py(+ 보고서). 나머지 10개 파일은 Judge 1차 보고 끝 sha256 표와 **바이트가 같아야** 한다(재판정이 그것으로 범위를 줄인다).
+6. 범위 밖(이번에 고치지 않음): Judge 발견 5(b) 호스트 추출 차이(계산기 정규식 `^https://([^/]+)` vs 코어 `urlsplit().hostname` — 포트·쿼리가 든 URL, base부터 있던 차이, 오늘 사실·C7에도 영향)는 NO_CHANGE. 보고서 8절에 "(j) 후속 후보"로 1줄 적는다(Cowork가 관제판에 별도 후보로 올린다). 5(c) 알림 ⑦ 3줄 접힘도 8절에 1줄.
+7. 보고서 `docs/claude/ev-rg1-hyper-report.md` 갱신: front matter에 "Judge 1차 FAIL 수정 반영", 1절(oracle·실행기·parity 줄 수), 3절(다시 잰 결과), 6절(소비처 표 — validate_facts 사슬 변경 1줄), 7절(바뀐 세 파일 sha256·새 sha256_lf·실행기 sha256_lf, 나머지 10개는 "Judge 1차 표와 같음" 확인), 새 10절 "Judge 1차 FAIL 수정"(고친 줄·테스트·결과).
