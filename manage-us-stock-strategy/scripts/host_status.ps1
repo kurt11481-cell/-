@@ -12,9 +12,10 @@ param(
 # state UNKNOWN for that check only. From Winlogon only AutoAdminLogon is read (no other Winlogon values).
 # powercfg is used with query options only. Exit code is always 0 so a check failure never fails the task.
 # Consumer: the 08:50 alert (docs/claude/scheduled-prompts/auto-core-alert.txt).
+# InvestmentV2-JournalScore (weekly, f-evo-loop) uses the same rules: not registered, disabled, or a nonzero last result within 7 days gives WARN.
 
 $ErrorActionPreference = "Stop"
-$coreTaskNames = @("InvestmentV2-AutoCore", "InvestmentV2-AutoCoreDecide")
+$coreTaskNames = @("InvestmentV2-AutoCore", "InvestmentV2-AutoCoreDecide", "InvestmentV2-JournalScore")
 
 function ConvertTo-OneLine {
     param([string]$Text)

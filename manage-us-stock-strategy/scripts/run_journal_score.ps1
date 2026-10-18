@@ -10,8 +10,12 @@ param(
 # (through a temp file). No broker call and no network call exist on this path. No retry: next week's run is the retry.
 # WEEKLY_LATEST.json names the latest report written after the start that has a learning block. status FAIL when
 # the Python exit code is not 0, no such report exists, the report is not readable JSON, or its learning block failed
-# as a whole (an errors reason starting with LEARNING_FAILED; learning_failed true).
-# Exit code = the Python exit code; 1 when no report with a learning block was found; 3 when the runner cannot start.
+# as a whole (an errors reason starting with LEARNING_FAILED; learning_failed true), or the runner itself threw after
+# RUNNER_START (reason RUNNER_EXCEPTION; log line RUNNER_FAIL RUNNER_EXCEPTION type=... message=...; exit_code is -1
+# when Python had not finished, so a missing value never reads as success; if the status write fails too, only the log line remains).
+# Exit code = the Python exit code; 1 when no report with a learning block was found; 1 also when the status is FAIL
+# but Python exited 0 (LEARNING_FAILED), so the task scheduler's last result shows every FAIL (the exit_code field
+# stays the Python exit code); 3 when the runner cannot start; 4 on an unexpected runner exception.
 
 $ErrorActionPreference = "Stop"
 if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
@@ -75,7 +79,7 @@ function Get-JsonValue {
     param($Object, [string]$Name)
     if ($null -eq $Object) { return $null }
     if ($Object -is [System.Collections.IDictionary]) {
-        if (-not $Object.Contains($Name)) { return $null }
+        if (-not ($Object.Keys -ccontains $Name)) { return $null }
         $value = $Object[$Name]
     } else {
         $property = $Object.PSObject.Properties[$Name]
@@ -111,65 +115,87 @@ if ([string]::IsNullOrWhiteSpace($PythonPath) -or -not (Test-Path -LiteralPath $
 $timezoneId = try { (Get-TimeZone -ErrorAction Stop).Id } catch { "NOT_VERIFIED" }
 Write-RunnerLine ("RUNNER_START utc=" + $stamp + " timezone=" + $timezoneId)
 
-$env:PYTHONIOENCODING = "utf-8"
-$env:PYTHONUTF8 = "1"
-Set-Location -LiteralPath $resolvedRepository
-$commandLine = '"' + $PythonPath + '" "' + $scriptPath + '" --learning >> "' + $logPath + '" 2>&1'
-$previousErrorActionPreference = $ErrorActionPreference
-$ErrorActionPreference = "Continue"
-try {
-    cmd /c $commandLine
-    $exitCode = $LASTEXITCODE
-} finally {
-    $ErrorActionPreference = $previousErrorActionPreference
-}
-
-# The report: the latest <UTC time> folder created after the start whose journal-scores.json has a learning block
-# (a report the auto-core wrote in the meantime has none and is not picked).
+# From here on any unexpected exception ends in the catch block at the bottom (exit 4). -1 marks "Python did not finish".
+$exitCode = -1
 $reportPath = $null
 $learningPresent = $false
 $learningFailed = $false
-$unreadable = $false
-$folders = @(Get-ChildItem -LiteralPath $scoresRoot -Directory -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -match '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' -and $_.Name.Substring(0, 16) -ge $stamp } |
-    Sort-Object -Descending -Property @{ Expression = { $_.Name.Substring(0, 16) } },
-        @{ Expression = { if ($_.Name.Length -gt 17) { [int]$_.Name.Substring(17) } else { 0 } } })
-foreach ($folder in $folders) {
-    $candidate = Join-Path $folder.FullName "journal-scores.json"
-    if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+try {
+    $env:PYTHONIOENCODING = "utf-8"
+    $env:PYTHONUTF8 = "1"
+    Set-Location -LiteralPath $resolvedRepository
+    $commandLine = '"' + $PythonPath + '" "' + $scriptPath + '" --learning >> "' + $logPath + '" 2>&1'
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     try {
-        $report = Read-JsonDocument -Path $candidate
-    } catch {
-        $unreadable = $true
-        continue
+        cmd /c $commandLine
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
     }
-    $learning = Get-JsonValue -Object $report -Name "learning"
-    if ($null -eq $learning) { continue }
-    $reportPath = $candidate
-    $learningPresent = $true
-    # Assigned first: @(function call) would wrap the returned array once more.
-    $learningErrors = Get-JsonValue -Object $learning -Name "errors"
-    foreach ($item in @($learningErrors)) {
-        $reason = [string](Get-JsonValue -Object $item -Name "reason")
-        if ($reason.StartsWith("LEARNING_FAILED")) { $learningFailed = $true }
-    }
-    break
-}
 
-$status = "OK"
-$why = $null
-$finalExit = $exitCode
-if ($null -eq $reportPath) {
-    $status = "FAIL"
-    $why = if ($unreadable) { "REPORT_NOT_JSON" } else { "NO_LEARNING_REPORT" }
-    $finalExit = 1
-} elseif ($learningFailed) {
-    $status = "FAIL"
-    $why = "LEARNING_FAILED"
-} elseif ($exitCode -ne 0) {
-    $status = "FAIL"
-    $why = "SCORER_EXIT"
+    # The report: the latest <UTC time> folder created after the start whose journal-scores.json has a learning block
+    # (a report the auto-core wrote in the meantime has none and is not picked).
+    $unreadable = $false
+    $folders = @(Get-ChildItem -LiteralPath $scoresRoot -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$' -and $_.Name.Substring(0, 16) -ge $stamp } |
+        Sort-Object -Descending -Property @{ Expression = { $_.Name.Substring(0, 16) } },
+            @{ Expression = { if ($_.Name.Length -gt 17) { [int]$_.Name.Substring(17) } else { 0 } } })
+    foreach ($folder in $folders) {
+        $candidate = Join-Path $folder.FullName "journal-scores.json"
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+        try {
+            $report = Read-JsonDocument -Path $candidate
+        } catch {
+            $unreadable = $true
+            continue
+        }
+        $learning = Get-JsonValue -Object $report -Name "learning"
+        if ($null -eq $learning) { continue }
+        $reportPath = $candidate
+        $learningPresent = $true
+        # Assigned first: @(function call) would wrap the returned array once more.
+        $learningErrors = Get-JsonValue -Object $learning -Name "errors"
+        foreach ($item in @($learningErrors)) {
+            $reason = [string](Get-JsonValue -Object $item -Name "reason")
+            if ($reason.StartsWith("LEARNING_FAILED")) { $learningFailed = $true }
+        }
+        break
+    }
+
+    $status = "OK"
+    $why = $null
+    $finalExit = $exitCode
+    if ($null -eq $reportPath) {
+        $status = "FAIL"
+        $why = if ($unreadable) { "REPORT_NOT_JSON" } else { "NO_LEARNING_REPORT" }
+        $finalExit = 1
+    } elseif ($learningFailed) {
+        $status = "FAIL"
+        $why = "LEARNING_FAILED"
+    } elseif ($exitCode -ne 0) {
+        $status = "FAIL"
+        $why = "SCORER_EXIT"
+    }
+    Write-WeeklyLatest -ExitCode $exitCode -Status $status -Reason $why -ReportPath $reportPath -LearningPresent $learningPresent -LearningFailed $learningFailed
+    # A FAIL status never ends with process exit 0, so the task scheduler's last result shows it.
+    if ($status -eq "FAIL" -and $finalExit -eq 0) { $finalExit = 1 }
+    Write-RunnerLine ("RUNNER_END exit=" + $finalExit + " status=" + $status)
+    exit $finalExit
+} catch {
+    # Each step is guarded alone: a failing status write must not hide the log line.
+    $failureLine = "RUNNER_FAIL RUNNER_EXCEPTION"
+    try {
+        $failureType = $_.Exception.GetType().FullName
+        $failureMessage = ([string]$_.Exception.Message -replace "[\r\n]+", " ") -replace "[^\x20-\x7E]", "?"
+        if ($failureMessage.Length -gt 300) { $failureMessage = $failureMessage.Substring(0, 300) }
+        $failureLine = "RUNNER_FAIL RUNNER_EXCEPTION type=" + $failureType + " message=" + $failureMessage
+    } catch {
+    }
+    try { Write-RunnerLine $failureLine } catch { }
+    try {
+        Write-WeeklyLatest -ExitCode $exitCode -Status "FAIL" -Reason "RUNNER_EXCEPTION" -ReportPath $reportPath -LearningPresent $learningPresent -LearningFailed $learningFailed
+    } catch {
+    }
+    exit 4
 }
-Write-WeeklyLatest -ExitCode $exitCode -Status $status -Reason $why -ReportPath $reportPath -LearningPresent $learningPresent -LearningFailed $learningFailed
-Write-RunnerLine ("RUNNER_END exit=" + $finalExit + " status=" + $status)
-exit $finalExit

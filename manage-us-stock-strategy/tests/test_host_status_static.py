@@ -160,6 +160,12 @@ class HostStatusScriptTests(unittest.TestCase):
         self.assertIn("$now.AddDays(-7)", task)
         self.assertIn("[int64]$info.LastTaskResult -ne 0", task)
 
+    def test_task_list_watches_the_weekly_journal_score_task(self):
+        match = re.search(r"^\$coreTaskNames = @\((.*)\)$", self.text, flags=re.MULTILINE)
+        self.assertIsNotNone(match)
+        self.assertEqual(re.findall(r'"([^"]+)"', match.group(1)),
+                         ["InvestmentV2-AutoCore", "InvestmentV2-AutoCoreDecide", "InvestmentV2-JournalScore"])
+
 
 class RegisterHostStatusTaskTests(unittest.TestCase):
     def setUp(self):
