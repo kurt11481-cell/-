@@ -244,6 +244,7 @@ v1은 근원 CPI 수치 크기(≤0.1~≥0.4)로 나눴다. 그런데 수치 크
   ③ 하이퍼스케일러 출처: 등록부 최상위에 훼손 전용 도메인 목록(microsoft.com·abc.xyz·atmeta.com·aboutamazon.com — 일정표 result_url에서 확인한 IR 호스트) → 코어는 root_thesis_damage가 참인 사실에 한해 그 도메인을 받는다(매수·매도 근거로는 안 씀). 통합 점검 지시문에 같은 범위로 1줄(개장 전 기록의 ⚠ 줄 재사용). 같은 병합 때 함께 교체(사용자 승인 포함).
   ④ 비교 모드 골든: 훼손 사실 없음에서는 결정·해시 불변.
 - 아래는 결정 전 분석 기록(그대로 둔다).
+- 완료(2026-10-18 07:1x KST): 사용자 "결정 ev-rg1-hyper 병합: 승인" → 병합 0d55b9a(커밋 55133ae). 해제 = 등록부 accepted.date(발표 KST 날짜 이후, 소급 없음), 사건 없음·닫힘 뒤도 막음, ③ 사실은 RG1에만(EV3b 아님), 계산기 lines_open 항 삭제(D1 c), 계산기 9f0e2238…·C1 0/10 재시작. 기록 docs/claude/ev-rg1-hyper-report.md · judge-report(FAIL) · judge2-report(PASS).
 
 ### 11-1a. 결정 전 분석 — ev-rg1-hyper (재검토 2026-10-14 00:2x KST, 권장 a(수정판) · 무응답 기본 b)
 
