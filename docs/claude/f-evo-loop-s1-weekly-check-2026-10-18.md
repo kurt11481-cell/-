@@ -101,3 +101,17 @@ weekly_user_touch: 0 (일회성: .\tools\dev-merge.ps1 evo-s3 1번)
 - 최대 2회 규칙으로 여기서 멈춘다. 미해결 0.
 
 검토 완결: 원문 확인 31/33(확인 필요 2 = Windows PowerShell 5.1 직접 실행·작업 스케줄러 10/18 결과 코드 — evo-s3 테스트와 병합 뒤 PC 상태 점검이 확인) · 내장 재검토 2회(반영 24건) · 미해결 0 · 자료 시점 2026-10-18 09:20 KST 실행분·git HEAD 5190fe2(2026-10-18 10:16 KST) · 바뀔 조건 6절
+
+## 8. 병합 확인 (2026-10-18 12:0x KST, 사용자 "병합 완료" 12:03)
+
+| 항목 | 값 | 원문 |
+|---|---|---|
+| 병합 | 67e781d(ff, 2026-10-18 11:58:48 KST), base d9f5044, class general | workspace/outputs/dev-runs/LATEST.json · git log |
+| 판정 | 테스트 새 실패 0 · 전체 Ran 3213 → 3223 · skip 3 → 3 · 대상 test_journal_score_* Ran 14 skip 0, test_host_status* Ran 19 skip 0 · 스키마 PASS · 바뀐 파일 5개(allowed 안) · Judge PASS(G1~G7·J-a~J-i, min_fixes 없음) | dev-runs/evo-s3/checks-1.json · judge-1.parsed.json |
+| 코드 | run_journal_score.ps1 82행 `$Object.Keys -ccontains $Name` · 본문 try/catch → `RUNNER_FAIL RUNNER_EXCEPTION` 로그 줄, FAIL/RUNNER_EXCEPTION, 종료 4(로그·상태 쓰기 각각 따로 try) · FAIL이면 종료 0 금지(182행) · host_status.ps1 15행 영어 주석, 18행 목록에 InvestmentV2-JournalScore | 두 파일 원문 |
+| 실행 테스트 | Windows PowerShell 5.1에서 경우 1~7이 실제로 돎(JavaScriptSerializer 경로, 중첩 객체·배열). 경우 7은 `.tmp` 폴더로 실제 예외를 만들어 확인 | docs/claude/evo-s3-report.md |
+| 남은 확인 필요 | 고치기 전 실행기가 5.1에서 경우 1에 실패하는지는 Builder도 확인 못 함 → 화요일 10/20 05:50 PC 상태 점검의 JournalScore last_task_result(10/18 실행)로 확인 | evo-s3-report.md · host_status.ps1 121~143행 |
+
+- 운영 완료 기준(사전 등록 7절)은 아직이다. 10/25 09:20 실행 뒤 WEEKLY_LATEST status OK이고 started_at ≥ 2026-10-25T00:20Z이면 충족이다.
+- 10/20~10/24 08:50 알림 ⑭에 "InvestmentV2-JournalScore: last result …" 줄이 나올 수 있다(10/18 결과가 0이 아니면). 이미 아는 실패다. 조치 없음.
+- Builder 참고(기존 동작, 바꾸지 않음): OK일 때 reason은 null이 아니라 ""로 저장된다. 소비자는 status를 본다.
