@@ -38,6 +38,9 @@ summary: 현행 분석 문서 포인터. 수동 작성(설계 1단계, K0). 캐�
 | design | ALL | 2026-10-05 | — | analysis-linkage-map-2026-10-05.md | **분석 결과 연결 지도·규칙(사용자 상시 지시 10/5)**: 모든 분석 결과는 다른 작업이 읽는 곳에 남기고 소비자 지정. 새 작업 체크리스트 1절 |
 | design | ALL | 2026-10-06 | K3 승인 전(시범 3회 뒤) | order-instruction-design-2026-10-06.md | **주문 지시서(ORDER_INTENT_ONLY) 설계**: 9단계 판단 회로(관문→3층 확률→체결 포함 후회표→4인 위원회 줄이기·보류만→결정론 수량), 낮 발행·저녁 LOC·다음 날 대조, 봉인 SHADOW 시범 10/7~(기록 order-instructions/). 권한 변화 없음 |
 | rules(예약) | ALL | 2026-10-09 | 사용자 승인 때까지 | integrated-check-prompt-v3.12.2-2026-10-09.txt (규칙 본문) + integrated-check-prompt-v3.12.2-L-loader-2026-10-09.txt (예약 작업 지시문, 해시 고정) | **통합 점검 현행 규칙**(화~토 06:40). 로더는 규칙 파일 sha256(LF) ee098920…1e59를 확인한다. 롤백 원본: integrated-check-prompt-v3.12.1-2026-10-09.txt · v3.12.1-L 로더. 예약 지시문 원문 보관: scheduled-prompts/README.md (8개, 해시 표) |
+| design(조직) | ALL | 2026-10-19 | 2단계 평가(보고 4회 뒤) | company-org-plan-2026-10-19.md | 운용회사 조직·운영계획 — 4팀·감사실·리스크·권한위원회·주간 팀장회의(사용자 결정 org-setup) |
+| report(주간 경영보고) | ALL | 매주 일 09:47 | 다음 보고 | ceo-weekly-report.md | 주간 팀장회의 → 사장 보고(덧붙이기, 결정·답 줄) · 화면: 대시보드 '주간 팀장회의'(https://claude.ai/artifact/GccBmdQcQopX415T5TRFWN) |
+| review(외부 저장소) | ALL | 2026-10-19 | 관제판 paperclip-1019 결정 | paperclip-review-2026-10-19.md | Paperclip 재검토 — 도구 안 들임, 출근부·반복 지적 구분 채택 권장 |
 
 ## 문서 밖 최신본(포인터만)
 - 시장환경 메모: workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md (SAVE 작업이 씀)
