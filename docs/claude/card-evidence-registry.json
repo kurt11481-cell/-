@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-10-17",
-  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지)",
+  "updated_at": "2026-10-19",
+  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -12,10 +12,10 @@
       "role": "holding",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "## 2. MVLL 카드 (갱신)",
-      "section_sha256": "0f662c09fbaa5669370e7781dccbd546cab1740738fe9fa45f75b459d44af189",
+      "section_sha256": "fa928e0a2927c56f706301517e4e662718676aa21e7ab4d09b526e913e1a7fab",
       "accepted": {
-        "text": "보유 3종목(MVLL·SOXL·NBIS) 현행 카드(2~4절, 2026-10-04 사용자 확정)",
-        "date": "2026-10-04",
+        "text": "보유 3종목(MVLL·SOXL·NBIS) L2 전면 재검토 카드(2~4절, 2026-10-19 사용자 수락 \"L2 검토 HOLD 3종목 수락\", 판단 HOLD ×3)",
+        "date": "2026-10-19",
         "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:10"
       },
       "card_action": "HOLD",
@@ -65,10 +65,10 @@
       "role": "holding",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "## 3. SOXL 카드 (10/1 수락본 유지 + 10/2 갱신)",
-      "section_sha256": "11a7c8519da4a1359b82b03b52f73f30b837007a838e45320279f3fea2830932",
+      "section_sha256": "466489c733738045fcc4c545225aac68af7926fcc2f09ae92eb801399ca688b1",
       "accepted": {
-        "text": "보유 3종목(MVLL·SOXL·NBIS) 현행 카드(2~4절, 2026-10-04 사용자 확정)",
-        "date": "2026-10-04",
+        "text": "보유 3종목(MVLL·SOXL·NBIS) L2 전면 재검토 카드(2~4절, 2026-10-19 사용자 수락 \"L2 검토 HOLD 3종목 수락\", 판단 HOLD ×3)",
+        "date": "2026-10-19",
         "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:10"
       },
       "card_action": "HOLD",
@@ -171,10 +171,10 @@
       "role": "holding",
       "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
       "card_section": "## 4. NBIS 카드 (10/1 수락본 유지 + 10/2 갱신)",
-      "section_sha256": "947747263ff8817507621a48c2f06cd65ce29ccf74552ffde3e96cf58e3581ee",
+      "section_sha256": "fc54d9b35bf94e2f8df7628ae69dbf08b445309d50c261d270b4e4bcec9fd181",
       "accepted": {
-        "text": "보유 3종목(MVLL·SOXL·NBIS) 현행 카드(2~4절, 2026-10-04 사용자 확정)",
-        "date": "2026-10-04",
+        "text": "보유 3종목(MVLL·SOXL·NBIS) L2 전면 재검토 카드(2~4절, 2026-10-19 사용자 수락 \"L2 검토 HOLD 3종목 수락\", 판단 HOLD ×3)",
+        "date": "2026-10-19",
         "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:10"
       },
       "card_action": "HOLD",
