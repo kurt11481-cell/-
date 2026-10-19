@@ -28,7 +28,7 @@ def bench(closes):
 
 def run_rrec1(data, **kwargs):
     arguments = dict(benchmark=data, candidate=None, evaluation_session=data["days"][-1], ev3_user_dates=[],
-                     thesis_damage=[], ev4_sessions=[])
+                     thesis_damage=[])
     arguments.update(kwargs)
     return rules.rrec1(**arguments)
 

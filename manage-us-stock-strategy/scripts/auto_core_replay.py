@@ -212,7 +212,7 @@ def run_replay(*, start: str, end: str, closes_root: Path, calendar: dict[str, A
                 for symbol, quantity in reference["holdings"].items())
             cash = total - sum(Decimal(quantity) * end_bars[symbol]["raw"]["sessions"][period[-1]]["close"]
                                for symbol, quantity in holdings.items())
-        sessions_out, ev4_sessions, no_data = [], [], []
+        sessions_out, no_data = [], []
         snapshots: list[dict[str, Any]] = []
         activation = None
         for session in period:
@@ -251,7 +251,7 @@ def run_replay(*, start: str, end: str, closes_root: Path, calendar: dict[str, A
                     day=session, mode="compare", issued_at=f"{session} 00:00 KST", calendar=calendar,
                     evaluation_session=session, bars=bars, holdings=holdings, cash=cash, deposit=cash,
                     sectors=sectors, members=members, checks=checks, watchlist=watchlist, m6_docs=m6_docs, facts=[],
-                    earnings=earnings, ev3=ev3, ev4_sessions=list(ev4_sessions), seen_fact_ids=set(), policy=policy,
+                    earnings=earnings, ev3=ev3, seen_fact_ids=set(), policy=policy,
                     config=config, keys={}, gate0=[], gate1=[], s7_runner=s7_runner,
                     research={"block": None, "sessions": [item for item in sessions if item <= session], "damage": []},
                     input_hashes={})
@@ -259,8 +259,6 @@ def run_replay(*, start: str, end: str, closes_root: Path, calendar: dict[str, A
                 sessions_out.append({"session": session, "status": "EXCEPTION",
                                      "error": f"{type(exc).__name__}:{str(exc)[:200]}"})
                 continue
-            if result["account"].get("ev4_open"):  # rules.ev4_open via evaluate_session (this session included there)
-                ev4_sessions.append(session)
             should = oracle(result, holdings=holdings, checks=checks, m6_docs=m6_docs, earnings=earnings,
                             calendar_sessions=sessions, evaluation_session=session, policy=policy, cash=cash)
             sessions_out.append({

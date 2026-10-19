@@ -80,11 +80,11 @@ journal block, dirty paths, research wait, the S7 review file and id, ticket iss
   the trend-break group). C7 needs research-record facts (missing record = unk).
 - V6 lines (HWM 28,473.94; first 25,626.55; approach 26,395.34; maximum 22,779.15) on
   sum(poss_qty x close) + fc_entra. R5 from the S7 peak reviews (near at <= 0.75 P).
-- R-REC1 (prompt A-4): EV1, EV2, EV4, EV5, DS1 and RG2-RG4 in code, EV3 (a) from the R-REC1 document line
+- R-REC1 (prompt A-4): EV1, EV2, EV5, DS1 and RG2-RG4 in code, EV3 (a) from the R-REC1 document line
   `^- 이벤트 (\d{4}-\d{2}-\d{2})\(EV`, EV3 (b) and RG1 from research facts (`root_thesis_damage`). L0 = the
   event day's regular-session low. Power-sector symbols use GRID for RG2 (no history = unknown = blocked).
-  The evaluation session's own EV4 (`auto_core_rules.ev4_open`: total <= the V6 first line or <= S7 hwm x 0.9)
-  is added before R-REC1 is computed (the replay uses the same function). Damage facts come from every valid
+  EV4 (account line) was removed 2026-10-19 (rrec-ev4 REMOVE); the S7 review lines pause buys from L2.
+  Damage facts come from every valid
   research record over the R-REC1 window (60 sessions), not only the 10 record days C7 uses. RG1 needs a valid
   record for every session after the event (else unknown; `rg1_coverage`). From the first record in the window
   (`ev3b_coverage_start`; before it EV3 (a) covers), a session without a record on which the benchmark fell

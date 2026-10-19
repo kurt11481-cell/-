@@ -70,13 +70,13 @@ class RgGapHelperTests(unittest.TestCase):
         days = helpers.sessions("2026-06-01", 75)
         bench = rules.build_series(helpers.bars("SOXX", days, helpers.zigzag(75, 100, 0.5))["adjusted"], days, days[-1])
         result = rules.rrec1(benchmark=bench, candidate=None, evaluation_session=days[-1], ev3_user_dates=[days[-4]],
-                             thesis_damage=[], ev4_sessions=[], research_sessions=[days[-5]] + days[-2:])
+                             thesis_damage=[], research_sessions=[days[-5]] + days[-2:])
         self.assertEqual(result["event"]["date"], days[-4])
         self.assertEqual(result["rg1_coverage"]["missing_sessions"], [days[-3]])
         self.assertEqual(result["rg"]["RG1"], "unk")
         self.assertTrue(cmp._rg1_record_gap(result))
         covered = rules.rrec1(benchmark=bench, candidate=None, evaluation_session=days[-1], ev3_user_dates=[days[-4]],
-                              thesis_damage=[], ev4_sessions=[], research_sessions=days[-3:])
+                              thesis_damage=[], research_sessions=days[-3:])
         self.assertEqual(covered["rg1_coverage"]["missing_sessions"], [])
         self.assertNotEqual(covered["rg"]["RG1"], "unk")
         self.assertFalse(cmp._rg1_record_gap(covered))

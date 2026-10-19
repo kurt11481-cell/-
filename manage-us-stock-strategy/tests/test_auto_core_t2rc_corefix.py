@@ -42,7 +42,7 @@ def flat(n=30, **overrides):
 
 def run_rrec1(benchmark, **kwargs):
     arguments = dict(benchmark=benchmark, candidate=None, evaluation_session=benchmark["days"][-1],
-                     ev3_user_dates=[], thesis_damage=[], ev4_sessions=[])
+                     ev3_user_dates=[], thesis_damage=[])
     arguments.update(kwargs)
     return rules.rrec1(**arguments)
 

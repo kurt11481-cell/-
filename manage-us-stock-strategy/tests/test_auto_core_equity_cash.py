@@ -58,7 +58,7 @@ def total_view(cash_value, holdings=None, closes=None, hwm=S7_HWM_1013):
     total = nominal["total"]
     return {"total": None if total is None else total.quantize(CENT),
             "n": None if nominal["n"] is None else round(nominal["n"], 4), "status": nominal["status"],
-            "v6": rules.v6_account(total)["state"], "ev4": rules.ev4_open(total, hwm)}
+            "v6": rules.v6_account(total)["state"]}
 
 
 def settled_as_held(rows):
@@ -72,12 +72,10 @@ class EquityCashChoiceTests(unittest.TestCase):
         cash, basis = decide_module.equity_cash(CASH_1013, ROWS_1013)
         self.assertEqual((cash, basis), (Decimal("12469.18"), "ORDER_AVAILABLE"))
         self.assertEqual(total_view(cash), {"total": Decimal("27695.15"), "n": 1.2466, "status": "OK",
-                                            "v6": "none", "ev4": False})
-        self.assertFalse(rules.ev4_open(tickets_module.rule_file_nominal(
-            HOLDINGS_1013, CLOSES_1013, cash, MULTIPLIERS)["total"], "30255.3600"))
+                                            "v6": "none"})
         # That day's record (fc_entra): the account line in review and EV4 open.
         self.assertEqual(total_view(old_deposit(CASH_1013, ROWS_1013)[0]),
-                         {"total": Decimal("24622.65"), "n": 1.4022, "status": "OK", "v6": "review", "ev4": True})
+                         {"total": Decimal("24622.65"), "n": 1.4022, "status": "OK", "v6": "review"})
 
     def test_the_check_is_t1s_imported_function(self):
         self.assertIs(decide_module.order_available_cash_errors, kiwoom_broker_shadow.order_available_cash_errors)
@@ -125,7 +123,7 @@ class EquityCashChoiceTests(unittest.TestCase):
         cash_block = {field: 9396.68 for field in FIELDS}
         cash, basis = decide_module.equity_cash(cash_block, rows)
         self.assertEqual((cash, basis), (Decimal("9396.68"), "ORDER_AVAILABLE"))
-        golden = {"total": Decimal("24622.65"), "n": 1.4022, "status": "OK", "v6": "review", "ev4": True}
+        golden = {"total": Decimal("24622.65"), "n": 1.4022, "status": "OK", "v6": "review"}
         self.assertEqual(total_view(cash), golden)
         self.assertEqual(total_view(old_deposit(cash_block, rows)[0]), golden)
         self.assertEqual(tickets_module.rule_file_nominal(HOLDINGS_1013, CLOSES_1013, cash, MULTIPLIERS),
@@ -166,7 +164,7 @@ class EquityCashChoiceTests(unittest.TestCase):
                 cash, basis = decide_module.equity_cash(cash_block, ROWS_1013)
                 self.assertEqual((cash, basis), (None, "CASH_UNAVAILABLE"))
                 view = total_view(cash)
-                self.assertEqual((view["total"], view["n"], view["v6"], view["ev4"]), (None, None, "unk", False))
+                self.assertEqual((view["total"], view["n"], view["v6"]), (None, None, "unk"))
                 self.assertEqual(view["status"], "CASH_UNAVAILABLE")
                 self.assertEqual(total_view(old_deposit(cash_block, ROWS_1013)[0])["n"], None)
 
@@ -300,8 +298,6 @@ class DecideOctober13Tests(unittest.TestCase):
         self.assertEqual(Decimal(str(account["total"])).quantize(CENT), Decimal("27695.15"))
         self.assertEqual(round(exposure["N"], 4), 1.2466)
         self.assertEqual(account["state"], "none")
-        self.assertEqual(account["ev4_open"], rules.ev4_open(Decimal(str(account["total"])), account["s7_hwm_usd"]))
-        self.assertFalse(rules.ev4_open(Decimal(str(account["total"])), S7_HWM_1013))
         with mock.patch.object(decide_module, "equity_cash", old_deposit):
             before = env.run()
         self.assertEqual(Decimal(str(before["account"]["total"])).quantize(CENT), Decimal("24622.65"))

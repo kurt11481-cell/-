@@ -55,10 +55,6 @@ CONSTANTS: dict[str, tuple[Any, str]] = {
     "RREC_EV2_SIGMA": (3.0, "R-REC1 EV2 close <= prior 20-session close high x (1 - 3 sigma60)"),
     "RREC_EV3_SIGMA": (1.0, "R-REC1 EV3 (b) same-day SOXX <= -1 sigma60"),
     "RREC_EV5_SIGMA": (2.0, "R-REC1 EV5 own 1-day return <= -2 sigma60"),
-    "RREC_EV4_HWM_FRACTION": (Decimal("0.9"), "R-REC1 EV4 total <= S7 hwm_usd x 0.9 (or the V6 first line)"),
-    "RREC_EV4_NEIGHBOR_MARGIN": (Decimal("1.03"), "t1-safety (judge2 G 5): a past session whose EV4 cannot be "
-                                 "rebuilt counts as open when a nearest known total is within 3% of the EV4 line "
-                                 "(the V6 approach margin, rule file 3) first line + 3%)"),
     "RREC_RG1_SESSIONS": (2, "R-REC1 RG1 two sessions after the event"),
     "RREC_RG3_SESSIONS": (2, "R-REC1 RG3 two consecutive closes above C0"),
     "RREC_RG4_DAY_SIGMA": (2.0, "R-REC1 RG4 |1-day| <= 2 sigma60"),
@@ -721,16 +717,6 @@ def v6_account(total: Decimal | None, s7_hwm: Any = None) -> dict[str, Any]:
             "s7_hwm_usd": s7_hwm}
 
 
-def ev4_open(total: Decimal | None, s7_hwm: Any) -> bool:
-    """R-REC1 EV4 of one session: total <= the V6 first line or <= S7 hwm_usd x 0.9 (r2 R2-3: decide and the
-    replay both get it from here, before R-REC1 is computed). An unknown total is not an EV4 day; the rule-file N
-    is then unknown too and buy requirement (2) already blocks buys."""
-    if total is None:
-        return False
-    return total <= C["V6_FIRST_LINE_USD"] or (
-        s7_hwm is not None and total <= Decimal(str(s7_hwm)) * C["RREC_EV4_HWM_FRACTION"])
-
-
 def r5_state(peak_item: dict[str, Any]) -> str:
     if peak_item.get("status") == "REVIEW_OPEN":
         return "review"
@@ -798,7 +784,7 @@ def uncleared_damage(thesis_damage: list[dict[str, Any]] | None, window_start_da
 
 
 def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None, evaluation_session: str,
-          ev3_user_dates: list[str], thesis_damage: list[dict[str, Any]] | None, ev4_sessions: list[str],
+          ev3_user_dates: list[str], thesis_damage: list[dict[str, Any]] | None,
           candidate_symbol: str | None = None, research_sessions: Any = None,
           rg2_series: Any = SAME_AS_BENCHMARK, card_accepted_on: str | None = None) -> dict[str, Any]:
     """Shock event and recovery gates for one candidate. benchmark/candidate are build_series outputs.
@@ -817,8 +803,8 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
     After a close, or with no event in the window, an uncleared fact makes the status "no" (open stays False,
     rg RG1 "no", reason RG1_THESIS_DAMAGE:<ids>), and rg1_damage lists the uncleared fact ids (only when there is
     one). EV3 (b) uses only facts without the damage_source marker (a thesis-damage-domain fact is RG1 only).
-    ev4_sessions: sessions on which the account line EV4 was open
-    (earlier decide records and, r2 R2-3, the evaluation session itself). research_sessions (r2 R2-4): the
+    Events: EV1, EV2, EV3 (a)(b), EV5. The account-line event EV4 was removed by user decision rrec-ev4 REMOVE
+    (2026-10-19); account drawdown is handled by the S7 review lines. research_sessions (r2 R2-4): the
     sessions that have a valid research record; None = not tracked (every session is taken as recorded). With
     it, RG1 needs a record for every session after the event from the first recorded session in the window
     (ev3b_coverage_start) on (else unknown, rg1_coverage); earlier sessions could not have one and EV3 (a)
@@ -891,8 +877,6 @@ def rrec1(*, benchmark: dict[str, Any] | None, candidate: dict[str, Any] | None,
             kinds.append("EV3a")
         if day in damage_days and sigma is not None and ret is not None and ret <= -C["RREC_EV3_SIGMA"] * sigma:
             kinds.append("EV3b")
-        if day in ev4_sessions:
-            kinds.append("EV4")
         if candidate is not None and day in candidate["days"]:
             j = candidate["days"].index(day)
             c_sigma, c_ret = candidate["sigma60"][j], candidate["ret1"][j]

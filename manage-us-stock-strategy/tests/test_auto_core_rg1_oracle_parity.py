@@ -55,12 +55,12 @@ def both(series, facts, *, sessions="all", gap=None, accepted=None):
     days = list(series["days"])
     covered = [day for day in days if day != gap] if sessions == "gap" else days
     core = cases.rules.rrec1(benchmark=series, candidate=None, evaluation_session=days[-1], ev3_user_dates=[],
-                             thesis_damage=list(facts), ev4_sessions=[],
+                             thesis_damage=list(facts),
                              research_sessions=None if sessions == "none" else covered, card_accepted_on=accepted)
     records = {day: [] for day in covered}
     records[days[-1]] = list(facts)
     ser, ind = oracle_inputs(series)
-    mine = oracle.rrec1(None, ser, ind, days[-1], "X", "SOXX", set(), records, None, None, (), accepted_on=accepted)
+    mine = oracle.rrec1(None, ser, ind, days[-1], "X", "SOXX", set(), records, accepted_on=accepted)
     core_rg1 = core["rg"].get("RG1") if "rg" in mine else None
     return (core["status"], core_rg1), (mine["status"], (mine.get("rg") or {}).get("RG1"))
 

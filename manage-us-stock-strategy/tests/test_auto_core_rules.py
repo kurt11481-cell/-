@@ -397,25 +397,25 @@ class AccountAndShockTests(unittest.TestCase):
     def test_no_event_is_closed_and_missing_benchmark_is_unknown(self):
         quiet, _days = self.bench(helpers.zigzag(80, 500, 2.0, 0.3))
         result = rules.rrec1(benchmark=quiet, candidate=None, evaluation_session=quiet["days"][-1], ev3_user_dates=[],
-                             thesis_damage=[], ev4_sessions=[])
+                             thesis_damage=[])
         self.assertEqual((result["status"], result["open"]), ("ok", False))
         missing = rules.rrec1(benchmark=None, candidate=None, evaluation_session="2026-10-09", ev3_user_dates=[],
-                              thesis_damage=[], ev4_sessions=[])
+                              thesis_damage=[])
         self.assertEqual(missing["status"], "unk")
 
     def test_event_opens_and_gates_need_two_sessions_and_the_research_record(self):
         closes = helpers.zigzag(79, 500, 2.0, 0.3) + [470.0]
         crash, days = self.bench(closes)
         result = rules.rrec1(benchmark=crash, candidate=None, evaluation_session=days[-1], ev3_user_dates=[],
-                             thesis_damage=[], ev4_sessions=[])
+                             thesis_damage=[])
         self.assertTrue(result["open"])
         self.assertIn("EV1", result["event"]["kinds"])
         self.assertEqual(result["rg"]["RG1"], "no")      # 0 sessions after the event
         unknown = rules.rrec1(benchmark=crash, candidate=None, evaluation_session=days[-1], ev3_user_dates=[],
-                              thesis_damage=None, ev4_sessions=[])
+                              thesis_damage=None)
         self.assertEqual(unknown["rg"]["RG1"], "unk")   # no research record: RG1 unknown (buy blocked)
         user = rules.rrec1(benchmark=self.bench(helpers.zigzag(80, 500, 2.0, 0.3))[0], candidate=None,
-                           evaluation_session=days[-1], ev3_user_dates=[days[-3]], thesis_damage=[], ev4_sessions=[])
+                           evaluation_session=days[-1], ev3_user_dates=[days[-3]], thesis_damage=[])
         self.assertEqual(user["event"]["kinds"], ["EV3a"])
 
     def test_benchmark_choice(self):
@@ -438,19 +438,9 @@ class RecoveryCoverageTests(unittest.TestCase):
 
     def run_rrec1(self, data, **kwargs):
         arguments = dict(benchmark=data, candidate=None, evaluation_session=data["days"][-1], ev3_user_dates=[],
-                         thesis_damage=[], ev4_sessions=[])
+                         thesis_damage=[])
         arguments.update(kwargs)
         return rules.rrec1(**arguments)
-
-    def test_ev4_lines(self):
-        self.assertTrue(rules.ev4_open(Decimal("25626.55"), None))
-        self.assertFalse(rules.ev4_open(Decimal("25626.56"), None))
-        self.assertTrue(rules.ev4_open(Decimal("27000.00"), "30000"))       # S7 hwm x 0.9
-        self.assertFalse(rules.ev4_open(Decimal("27000.01"), "30000"))
-        self.assertFalse(rules.ev4_open(None, "30000"))
-        data, days = self.bench(helpers.zigzag(80, 500, 2.0, 0.3))
-        opened = self.run_rrec1(data, ev4_sessions=[days[-1]])
-        self.assertEqual((opened["open"], opened["event"]["kinds"], opened["event"]["date"]), (True, ["EV4"], days[-1]))
 
     def crash(self, back):
         closes = helpers.zigzag(80, 500, 2.0, 0.3)
