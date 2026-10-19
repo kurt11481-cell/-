@@ -70,7 +70,7 @@ def next_day(day):
 
 def run(series, facts=(), *, research=True, **kwargs):
     arguments = dict(benchmark=series, candidate=None, evaluation_session=series["days"][-1], ev3_user_dates=[],
-                     thesis_damage=None if facts is None else list(facts), ev4_sessions=[],
+                     thesis_damage=None if facts is None else list(facts),
                      research_sessions=list(series["days"]) if research else None)
     arguments.update(kwargs)
     return rules.rrec1(**arguments)
@@ -178,7 +178,7 @@ class RuleCaseTests(unittest.TestCase):
         series, days = world(crashes=(80,))
         self.assertEqual(run(series, None, research=False)["rg"]["RG1"], "unk")
         none_tracked = rules.rrec1(benchmark=series, candidate=None, evaluation_session=days[-1], ev3_user_dates=[],
-                                   thesis_damage=None, ev4_sessions=[])
+                                   thesis_damage=None)
         self.assertNotIn("rg1_damage", none_tracked)
 
     def test_record_gap_still_wins(self):
@@ -441,7 +441,7 @@ def case_run(case, through=N - 1, *, accepted=None, base_input=False):
     sessions = {"all": list(days), "none": None, "gap": [day for day in days if day != days[case["gap"]]]}[case["coverage"]]
     facts = [item for item in case["facts"] if not (base_input and "damage_source" in item)]
     return rules.rrec1(benchmark=series, candidate=None, evaluation_session=days[through], ev3_user_dates=[],
-                       thesis_damage=facts, ev4_sessions=[], research_sessions=sessions, card_accepted_on=accepted)
+                       thesis_damage=facts, research_sessions=sessions, card_accepted_on=accepted)
 
 
 SEEDS = range(60)

@@ -334,9 +334,8 @@ class OrderAttributionTests(unittest.TestCase):
 class Scenario:
     """evaluate_session on synthetic bars: SOXL held, MU a watch member with an official good-news fact.
 
-    The default cash keeps the account total above the V6 first line (25,626.55): r2 R2-3 counts this
-    session's EV4, so a smaller account opens R-REC1 and blocks every buy. research_block / research_sessions
-    are the decide inputs for today's research record (None = OK) and the recorded sessions (default: all)."""
+    research_block / research_sessions are the decide inputs for today's research record (None = OK) and the
+    recorded sessions (default: all)."""
 
     def __init__(self, *, holdings=None, cash="30000", members=("MU",), mu_entry=True, mu_eligible=True,
                  mu_hash_ok=True, facts=True, config=None, gate0=(), soxx=None, keys=None, earnings=True,
@@ -395,7 +394,7 @@ class Scenario:
             evaluation_session=LAST, bars=bars, holdings=self.holdings, cash=self.cash, deposit=self.cash,
             sectors=sectors, members=self.members, checks=self.checks, watchlist=watchlist,
             m6_docs=[("m6-relative-comparison-7stock-TEST.md", "MU PWR SOXL")], facts=self.facts,
-            earnings=self.earnings, ev3=[], ev4_sessions=[], seen_fact_ids=set(), policy=self.policy,
+            earnings=self.earnings, ev3=[], seen_fact_ids=set(), policy=self.policy,
             config=self.config, keys=self.keys, gate0=self.gate0, gate1=[], s7_runner=runner,
             research={"block": self.research_block,
                       "sessions": CALENDAR_DAYS if self.research_sessions is None else self.research_sessions,
@@ -663,24 +662,6 @@ class ResearchRecordGateTests(unittest.TestCase):
         self.assertFalse(any(reason.startswith("RESEARCH_RECORD_NOT_OK")
                              for item in missing["planned"]["blocked"] if item["side"] == "sell"
                              for reason in item["reasons"]))
-
-
-class SessionEv4Tests(unittest.TestCase):
-    """r2 R2-3 (Judge F-3): the evaluation session's own EV4 opens R-REC1 before the gates."""
-
-    def test_no_previous_record_and_total_below_the_first_line_blocks_buys(self):
-        scenario = Scenario(cash="5000")
-        result = scenario.run()
-        self.assertTrue(result["account"]["ev4_open"])
-        self.assertLessEqual(Decimal(str(result["account"]["total"])), Decimal("25626.55"))
-        self.assertTrue(result["shock"]["open"])
-        self.assertEqual(result["shock"]["event"]["date"], LAST)
-        self.assertIn("EV4", result["shock"]["event"]["kinds"])
-        mu = next(row for row in result["rows"] if row["code"] == "MU")
-        self.assertNotEqual(mu["c"][4]["s"], "ok")
-        self.assertIn({"symbol": "MU", "side": "buy", "trigger": "NEW_EVIDENCE"}, result["planned"]["candidates"])
-        self.assertEqual(tickets_of(result, side="buy"), [])
-        self.assertTrue(any(reason.startswith("REQ5_RREC1") for reason in blocked_reasons(result, "MU", "buy")))
 
 
 class ResearchCoverageTests(unittest.TestCase):

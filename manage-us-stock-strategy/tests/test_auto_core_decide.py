@@ -65,8 +65,7 @@ class FakeReader:
 
 
 class Env:
-    """A temporary repository-like folder with everything decide reads. The default cash keeps the account above
-    the V6 first line (r2 R2-3: this session's EV4 now opens R-REC1)."""
+    """A temporary repository-like folder with everything decide reads."""
 
     def __init__(self, *, holdings=None, cash="30000.00", decision_mode="compare", kill=False, profile=True,
                  research=True, members=("MU",), soxl_closes=None, journal_entries=True):

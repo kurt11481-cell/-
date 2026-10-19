@@ -38,7 +38,9 @@ GOLDEN = {
     # changed; the tickets are otherwise identical (checked by removing the two keys); docs/claude/hwm-fix-report.md
     "default": "0ddc8af344e761de9af9eb90a75a226fafde6b1acd2d238d861f987fa4e20423",
     "g2b": "0857c795b26629af20982b09bb815f995ccb1d7340b9ea580031b3c6ac28bca9",
-    "cash5": "c3ad82a2d647e0da1a14fa5a65fe7545f52cf509d16af8e576b1826c0f4ec4c8",
+    # rrec-ev4-remove: this scenario's only R-REC1 event was the session's own EV4 (total $1,032), so MU's
+    # blocked and no_action reasons lose REQ5_RREC1:no (G2 hard ceiling still blocks); docs/claude/rrec-ev4-remove-report.md
+    "cash5": "c6f6158903b7727497439df2f6f6fba8c9ad15d9395f7f0eeda0a81f799db7c5",
     "research_block": "8254e97e2e1ea50b89e966120d83e942bc32d1bd34a0c19eaac3e83252273091",
     # t2rc-corefix2: MU (R-REC1 open, requirement 5 no) is no longer the redeployment candidate, so the SOXL sell
     # regret table keeps only the cash columns (qty 19, r 1/3 unchanged); docs/claude/t2rc-corefix2-report.md.

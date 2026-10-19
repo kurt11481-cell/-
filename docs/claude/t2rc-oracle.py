@@ -12,6 +12,7 @@ Read-only. Never imports manage-us-stock-strategy/scripts (no auto_core* module)
   - docs/claude/recovery-gate-R-REC1-2026-10-09.md (R-REC1),
   - docs/claude/event-strategy-2026-10-13.md 11-1 and docs/claude/ev-rg1-hyper-builder-prompt.md R0-R8 (RG1: an official
     thesis-damage fact blocks until the card is accepted again; thesis-damage domains for RG1 only),
+  - docs/claude/rrec-ev4-remove-decision-2026-10-19.md (user decision rrec-ev4 REMOVE: no account-line EV4 in R-REC1),
   - manage-us-stock-strategy/references/portfolio-exposure-review.md (R1 E = max(N, V), p-earn r1 blackout),
   - policy values read from stock-strategy-system/alert_policy.json.
 Inputs are data files only (decision.json and the files its inputs point to, 30-minute pages, calendar).
@@ -63,7 +64,6 @@ WEIGHT_STEP = Decimal("0.001")   # builder prompt F5 grid
 EXPOSURE_TARGET = 1.55     # alert_policy target_exposure (read again from policy at run time)
 V_WINDOW, V_MIN = 252, 60  # alert_policy sox_equivalent window_sessions / minimum_sessions
 REQ_PRODUCTS = ("BE", "MU", "NBIS", "DELL", "AMD", "SOXL", "TQQQ", "DRAM", "PWR", "LITE")  # rule file 3) buy-req (2)
-V6_FIRST, V6_APPROACH = 25626.55, 26395.34   # rule file V6 / R-REC1 EV4
 RREC_LOOKBACK = 60          # R-REC1 doc 1 / rule file 2-3 (4): most recent event within 60 sessions
 RREC_CLOSE_SESSIONS = 20    # R-REC1 doc 2: time decay 20 sessions + RG2
 
@@ -1038,15 +1038,12 @@ def rg1_uncleared(facts, w0, d, accepted_on):
     return sorted(ids)
 
 
-def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equity_today, s7_hwm, ev4_hist=(),
-          accepted_on=None):
+def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, accepted_on=None):
     """Returns dict(status ok|no|unk, open, event, rg{}) for one candidate symbol (buy side).
     records: {evaluation_session: [facts]} of research records written before the decide run (RG1 coverage, EV3b).
     RG1 record coverage follows user decision rrec-rg1-bootstrap B (2026-10-13, docs/claude/rrec-rg1-builder-prompt.md):
     sessions before the first record inside the 60-session window are left out; after it every session needs a record;
-    no record in the window -> unk. EV4 (Judge 2026-10-15 9d): the evaluation session from today's total assets, earlier
-    sessions of the window from ev4_hist (sessions whose earlier decide record shows total <= the V6 first line or
-    <= S7 hwm x 0.9, recomputed here from the recorded account values). EV3(b) gap (builder report R2-4 (b)): after the
+    no record in the window -> unk. EV4 removed (rrec-ev4 REMOVE 2026-10-19). EV3(b) gap (builder report R2-4 (b)): after the
     first research record in the window, a session without a valid record whose SOXX 1-day return is <= -1 sigma60 or
     unknown makes the gate unknown (status unk, open None, EV3B_RECORD_GAP).
     ev-rg1-hyper (decision a, event-strategy-2026-10-13.md 11-1): records here come from load_rrec1_records (damage facts
@@ -1106,9 +1103,6 @@ def rrec1(cal, ser, ind, eval_session, sym, bench_rg2, ev3a_dates, records, equi
         if r is not None and sg is not None and r <= -1 * sg and any(
                 f.get("root_thesis_damage") is True and "damage_source" not in f and f.get("event_session") == d for f in facts):
             kinds.append("EV3b")
-        if (d == eval_session and equity_today is not None and (equity_today <= V6_FIRST or (s7_hwm and equity_today <= s7_hwm * 0.9))) \
-                or (d != eval_session and d in ev4_hist):
-            kinds.append("EV4")
         if d in cs.index:
             j = cs.index[d]
             rr, ss = ci.ret[j], ci.sigma[j]
@@ -1584,21 +1578,6 @@ def cmd_check(args):
            "rrec_records": load_rrec1_records(repo, day, decide_at, reg, cal)}
     cfg_p = os.path.join(repo, "workspace/policies/auto_core.json")
     env["core_cfg"] = load_json(cfg_p) if os.path.exists(cfg_p) else {}
-    ev4_hist = set()
-    for pp in sorted(glob.glob(os.path.join(repo, "workspace/outputs/auto-core", "20??-??-??", "decision.json"))):
-        if os.path.basename(os.path.dirname(pp)) >= day:
-            continue
-        try:
-            pdx = load_json(pp)
-        except Exception:
-            continue
-        acc = pdx.get("account") or {}
-        tot, first_line, hw = fnum(acc.get("total")), fnum(acc.get("first")), fnum(acc.get("s7_hwm_usd"))
-        if pdx.get("evaluation_session") and tot is not None and (
-                (first_line is not None and tot <= first_line) or (hw and tot <= hw * 0.9)):
-            ev4_hist.add(pdx["evaluation_session"])
-    env["ev4_hist"] = ev4_hist
-    res["ev4_history"] = sorted(ev4_hist)
     env["exposure"] = exposure_check(env)
     res["exposure"] = env["exposure"]
     req_rows, req_diffs = {}, []
@@ -1933,9 +1912,8 @@ def buy_requirements(env, sym):
     r4 = req4_of(env, sym)
     # (5) R-REC1
     e = (env["reg"].get("symbols") or {}).get(sym) or {}
-    s7hwm = fnum((s7.get("review_lines") or {}).get("hwm_usd"))
     rg = rrec1(cal, ctx.ser, ctx.ind, ev, sym, e.get("rg2_benchmark") or "SOXX", ev3a_dates(ctx.repo), env["rrec_records"],
-               exp.get("total_assets_v6"), s7hwm, env.get("ev4_hist") or (), accepted_on=(e.get("accepted") or {}).get("date"))
+               accepted_on=(e.get("accepted") or {}).get("date"))
     d.setdefault("rrec1", rg)
     return [r1, "ok" if r2 else "no", r3, r4, rg.get("status")]
 
@@ -2258,7 +2236,7 @@ def _rg1_run(world, facts=(), accepted_on=None, t=None):
     records = {d: [] for d in s.dates[:t + 1]}
     for f in facts:
         records[f["event_session"]].append(f)
-    return rrec1(None, ser, ind, s.dates[t], "X", "SOXX", set(), records, None, None, (), accepted_on=accepted_on)
+    return rrec1(None, ser, ind, s.dates[t], "X", "SOXX", set(), records, accepted_on=accepted_on)
 
 
 def _next_day(d):
@@ -2455,6 +2433,12 @@ def cmd_selftest(args):
         fails.append("quantile %s" % q)
     fails.extend(selftest_rg1_damage())
     fails.extend(selftest_g2_lines())
+    # rrec-ev4 REMOVE (2026-10-19): the account total is no longer an R-REC1 input. A total below the V6 first line and
+    # below S7 hwm x 0.9 (2026-10-16: 23,695.43 < 25,626.55 and < 31,711.76 x 0.9) with no other event in the window
+    # -> ok, open False (before the change: EV4 on the evaluation session, open)
+    r_ev4 = _rg1_run(_rg1_world())
+    if (r_ev4.get("status"), r_ev4.get("open"), r_ev4.get("events")) != ("ok", False, []):
+        fails.append("EV4 removed %s" % r_ev4)
     # data anchors (only when the repository data is present): design 5 / 7-2 numbers recomputed from saved pages
     anchors, open_items = [], []
     repo = getattr(args, "repo", None)
