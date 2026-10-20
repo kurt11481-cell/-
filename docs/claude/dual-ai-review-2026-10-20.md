@@ -1,7 +1,7 @@
 ---
 id: dual-ai-review-2026-10-20
 type: review
-status: Q2 결정 a(OneDrive) 2026-10-20 10:24 KST → 개발 offsite-bak · Q1 결정 대기(무응답 = 현행 유지)
+status: 결정 완료 — Q2 a(OneDrive) 2026-10-20 10:24 KST → 개발 offsite-bak · Q1 c(안 함) 2026-10-20 11:01 KST
 as_of: 2026-10-20 11:20 KST
 tickers: [ALL]
 class: 문서만(K0). 설치·구독·런타임·정책·예약 작업·권한 변경 0
@@ -104,6 +104,8 @@ summary: AI 2개(Claude 메인 + 다른 회사 AI 서브 검수) 검토 — 가�
 - **Q2 백업**: **a) 코드·문서 매일 자동 push + 기록 파일 PC 밖 매일 복사(권장)** · b) 기록 파일(+코드 `git bundle`) PC 밖 매일 복사만, GitHub 업로드 없음 · c) 현행. a·b는 복사 위치(OneDrive / 외장 디스크)도 함께 답한다.
 
 - **답(Q2)**: 사용자 "1. 결정 Q2 a(OneDrive)"(2026-10-20 10:24 KST, Cowork 대화) → 개발 파이프라인 작업 offsite-bak(docs/claude/offsite-bak-builder-prompt.md): 매일 23:50 지금 브랜치 push + git 밖·추적 안 되는 기록 파일(결정 일지·대조 원장·상태·자동 코어 기록·종가·연구 기록 등) OneDrive 날짜별 압축(30개 보관, workspace/private_inputs는 계좌 식별 정보 가능성으로 제외) + 05:50 PC 상태 점검 8번째 항목 backup_recent(26시간 기준). 08:50 알림 연결은 등록·첫 OK 확인 뒤 알림 지시문 v2.4(사용자 승인 1번) — 그 전까지 백업 실패는 host-status LATEST.json에만 보인다. 등록 전 GitHub 원격 비공개 확인(일회성). Q1은 대기.
+
+- **답(Q1)**: 사용자 "결정 dual-ai-1020 : Q1 c"(2026-10-20 11:01 KST, Cowork 대화) → 서브 AI 시범 안 함. 검토는 Claude 3층 그대로. AGENTS.md는 E7대로 보류 유지(system-design-ops-review-2026-10-09.md:87의 "Codex 계속 쓰는지" 질문에는 "투자_V2에는 안 씀"으로 답이 됨). 다시 볼 조건은 7-1 바뀔 조건.
 
 ## 7-1. 자동화·간소화 관점 재평가 (사용자 질문 2026-10-20 10:24 "운영 자동화, 간소화 측면에서 AI 2개 사용은 합리적인가?")
 **결론: 자동화·간소화만 기준이면 합리적이지 않다.** 운영 자동화 이익은 0이고 부품은 늘어난다. 합리적인 근거는 "검수 품질" 하나뿐이고 그것도 측정 전 가설이다. 그래서 Q1 권장을 좁힌다 — **지금 Plus 구독 중이면(추가 비용 0) 축소판 시범, 아니면 c(안 함)**.
