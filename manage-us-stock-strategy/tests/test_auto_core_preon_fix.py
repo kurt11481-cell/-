@@ -34,11 +34,13 @@ SELL = tickets_module.SIDE_NAMES["sell"]
 SATURDAY, MONDAY, TUESDAY = decide_fixture.SATURDAY, decide_fixture.MONDAY, decide_fixture.TUESDAY
 HOLIDAY_DAYS = [day for day in decide_fixture.R3_DAYS if day != MONDAY]  # U.S. holiday on Monday 10/19
 CALENDAR = helpers.calendar(helpers.sessions("2026-09-01", 80))
-# "<n> tickets - <days> issue: if already entered do not enter again (if not, enter in Kiwoom in the evening)"
+# "<n> tickets - <days> issue: if already entered do not enter again (if not, enter in Kiwoom <when>)";
+# enter-window: <when> = "<M/D>(<weekday>) <HH:MM> 이후" (the entry start), or "저녁" when it cannot be read.
 CARRIED = ("주문표 {count}건 — {days} 발행분과 같은 주문표: "
            "이미 입력했으면 다시 넣지 않음"
-           "(안 넣었으면 저녁 키움 입력)")
-NEW_SESSION_LINE = "주문표 {count}건 — 저녁 키움 입력"
+           "(안 넣었으면 {when} 키움 입력)")
+EVENING = "저녁"
+NEW_SESSION_LINE = "주문표 {count}건 — {start} 이후 키움 입력"
 NOT_YET_LINE = "주문표 세션 이전 상태 — 새 주문표 없음, Cowork 확인"
 
 
@@ -87,7 +89,7 @@ class NoNewSessionEntryLineTests(unittest.TestCase):
         reader = decide_fixture.FakeReader()
         quiet = self.run_on(TUESDAY, reader)
         self.assertEqual((quiet["status"], quiet["no_new_session"]), ("OK", True))
-        self.assertEqual(quiet["next_action_for_user"], CARRIED.format(count=1, days="10/17"))
+        self.assertEqual(quiet["next_action_for_user"], CARRIED.format(count=1, days="10/17", when="10/20(화) 17:00 이후"))
         # Display only: the carried rows, the files and the reads of that day are as before.
         self.assertEqual(quiet["dashboard"]["orders"],
                          [{"id": ticket["ticket_id"], "session": TUESDAY, "outcome": {"state": "pending"}}])
@@ -107,7 +109,8 @@ class NoNewSessionEntryLineTests(unittest.TestCase):
         self.source(extra=[friday])
         quiet = self.run_on(TUESDAY)
         self.assertEqual(quiet["inputs"]["no_new_session"]["not_yet"], ["AT-20261016-SOXL-1", "AT-20261017-SOXL-1"])
-        self.assertEqual(quiet["next_action_for_user"], CARRIED.format(count=2, days="10/16·10/17"))
+        self.assertEqual(quiet["next_action_for_user"],
+                         CARRIED.format(count=2, days="10/16·10/17", when="10/20(화) 17:00 이후"))
 
     def test_compare_mode_has_no_user_line(self):
         self.make_env("compare")
@@ -124,11 +127,12 @@ class NoNewSessionEntryLineTests(unittest.TestCase):
         decision = env.run()
         self.assertEqual((decision["status"], decision["no_new_session"]), ("OK", False))
         self.assertEqual(len(decision["tickets"]), 1, decision["blocked"])
-        self.assertEqual(decision["next_action_for_user"], NEW_SESSION_LINE.format(count=1))
+        self.assertEqual(decision["tickets"][0]["session"], "2026-10-12")  # issued Saturday 10/10 for Monday
+        self.assertEqual(decision["next_action_for_user"], NEW_SESSION_LINE.format(count=1, start="10/12(월) 17:00"))
 
     def test_an_unreadable_issue_day_shows_as_unknown(self):
         line = decide_module._carried_entry_line([{"id": "A"}], [{"ticket_id": "A", "issued_day": None}])
-        self.assertEqual(line, CARRIED.format(count=1, days="?"))
+        self.assertEqual(line, CARRIED.format(count=1, days="?", when=EVENING))
 
 
 # ---------------------------------------------------------------------------------------------

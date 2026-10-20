@@ -36,7 +36,8 @@ forbidden_keys = score_tests.forbidden_keys
 GOLDEN = {
     # hwm-fix: review_lines gained revalued_sessions and superseded_journal_reviews (empty here), so inputs.s7_review_id
     # changed; the tickets are otherwise identical (checked by removing the two keys); docs/claude/hwm-fix-report.md
-    "default": "0ddc8af344e761de9af9eb90a75a226fafde6b1acd2d238d861f987fa4e20423",
+    # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
+    "default": "e44f3d6ae695d3bb16d85bbfac6eeb9e0c0e41edd9d2e8dbaf2aa2280c0e23a0",
     "g2b": "0857c795b26629af20982b09bb815f995ccb1d7340b9ea580031b3c6ac28bca9",
     # rrec-ev4-remove: this scenario's only R-REC1 event was the session's own EV4 (total $1,032), so MU's
     # blocked and no_action reasons lose REQ5_RREC1:no (G2 hard ceiling still blocks); docs/claude/rrec-ev4-remove-report.md
@@ -44,10 +45,14 @@ GOLDEN = {
     "research_block": "8254e97e2e1ea50b89e966120d83e942bc32d1bd34a0c19eaac3e83252273091",
     # t2rc-corefix2: MU (R-REC1 open, requirement 5 no) is no longer the redeployment candidate, so the SOXL sell
     # regret table keeps only the cash columns (qty 19, r 1/3 unchanged); docs/claude/t2rc-corefix2-report.md.
-    "sell": "04d0c947817377eb8f51815b0c47173988236afee41519c1eacb9a66ecbbbadc",
-    "pwr": "cb46340d4e5c08df3a793fff727dc1c3537fb084f57a0b413d50dd82f7fda807",
-    "decide_compare": "612f246deed9729f1d61fa7bdc913c54ddc18945a1f4f943903837bdad993955",
-    "decide_apply": "91c252b86a22b15808196cc38f36c5e954bbed5734657c35990ad8b2c4f200a5",
+    # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
+    "sell": "18633988ed376dbcc8b1053009cf6f9f480f6715307211177774fb11165879d6",
+    # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
+    "pwr": "2aabe270157c4d8a401b10d1606874ccba4220a2206e1c7728614653595404c1",
+    # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
+    "decide_compare": "2e565c3b7f2d10eb10089c81cce6899b62168bb36a6ede08f78159fcf925bf95",
+    # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
+    "decide_apply": "d78459cbeb51b2d7ebe70284de3d73ffbae404093fb680c4f7fa1acbe870c43b",
 }
 OK_LINE = "1R(표시만) 무효선 $95.00 · 기준가 대비 -5.0% (2.0σ) · 약 $50 = 자산 0.50% · 자동 매도 없음"
 

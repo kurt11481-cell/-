@@ -67,6 +67,13 @@ AUTHORITY = {"order_authority": False, "quantity_authority": "ORDER_TICKET_HUMAN
 SIDE_NAMES = {"sell": "\ub9e4\ub3c4", "buy": "\ub9e4\uc218"}  # Korean side names in ust21150 slby_tp_nm
 LOC_TYPE = "Limit On Close"  # ust21150 frgn_trde_tp of a LOC order (measurements 2026-10-10)
 ATTRIBUTION_DAYS = 30  # r4 R4-1: attributed order days kept (run day included); no ticket window reaches further back
+# enter-window (display only, not a gate, constant or config value): Kiwoom takes a U.S. LOC order from the
+# pre-market open to the regular close (user 2026-10-20), and the pre-market opens 5h30m before core_open_at
+# (17:00 KST in summer, 18:00 in winter). The company's own entry window ends at the open.
+PREMARKET_LEAD = timedelta(hours=5, minutes=30)
+ISSUE_TIME = time(7, 45)  # the auto-core run time (KST): an entry window never starts before its issue day's run
+# Korean weekday letters, Monday first (code points: the source stays ASCII).
+WEEKDAYS = tuple(chr(code) for code in (0xC6D4, 0xD654, 0xC218, 0xBAA9, 0xAE08, 0xD1A0, 0xC77C))
 ISSUED_AT = re.compile(r"\d{4}-\d{2}-\d{2} ([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))? KST")  # ticket issuedAt
 
 
@@ -823,16 +830,41 @@ def reissue_block(ledger: dict[str, Any], config: dict[str, Any]) -> str | None:
     return None
 
 
+def _entry_start(issued: date, opens: datetime) -> datetime:
+    """The later of the issue day's 07:45 KST and the session day's pre-market open (opens in KST)."""
+    return max(datetime.combine(issued, ISSUE_TIME, tzinfo=KST), opens - PREMARKET_LEAD)
+
+
+def entry_start(issue_day: Any, session_row: dict[str, Any] | None) -> datetime | None:
+    """enter-window: the KST time from which the ticket can be entered in Kiwoom (_entry_start); None when the
+    issue day or the session's core_open_at is missing or unreadable (no offset: not a known time). Display only."""
+    try:
+        issued = date.fromisoformat(str(issue_day))
+        opened = datetime.fromisoformat(str((session_row or {})["core_open_at"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+    if opened.tzinfo is None:
+        return None
+    return _entry_start(issued, opened.astimezone(KST))
+
+
+def entry_start_text(start: datetime) -> str:
+    """'M/D(<weekday>) HH:MM' of an entry start in KST (weekday one Korean letter)."""
+    return f"{start.month}/{start.day}({WEEKDAYS[start.weekday()]}) {start:%H:%M}"
+
+
 def enter_window(issue_day: str, session_row: dict[str, Any]) -> str:
-    """r4 R4-2: when to enter the ticket in Kiwoom: from 17:00 KST of the issue day to the session's open (the
-    operating calendar's core_open_at in KST: 22:30 in summer, 23:30 in winter). The open's KST date is written
-    when it is not the issue day (a Saturday ticket for Monday, a ticket across a holiday)."""
+    """r4 R4-2, enter-window: when to enter the ticket in Kiwoom: from the pre-market open of the session's own
+    KST day (core_open_at in KST - PREMARKET_LEAD: 17:00 in summer, 18:00 in winter), never before the issue day's
+    07:45, to the session's open (core_open_at in KST: 22:30 in summer, 23:30 in winter). A Saturday ticket for
+    Monday or a ticket across a holiday names the open's KST date and weekday; the end stays the open."""
     issued = date.fromisoformat(issue_day)
     opens = datetime.fromisoformat(session_row["core_open_at"]).astimezone(KST)
-    start = f"\ud55c\uad6d {issued.month}/{issued.day} 17:00 \uc774\ud6c4 ~ "
+    start = _entry_start(issued, opens)
     if opens.date() == issued:
-        return start + f"\uc815\uaddc\uc7a5 \uac1c\uc7a5 \uc804({opens:%H:%M})"
-    return start + f"{opens.month}/{opens.day} {opens:%H:%M} \uac1c\uc7a5 \uc804"
+        return (f"\ud55c\uad6d {start.month}/{start.day} {start:%H:%M} \uc774\ud6c4 ~ "
+                f"\uc815\uaddc\uc7a5 \uac1c\uc7a5 \uc804({opens:%H:%M})")
+    return f"\ud55c\uad6d {entry_start_text(start)} \uc774\ud6c4 ~ {opens:%H:%M} \uac1c\uc7a5 \uc804"
 
 
 def _common_ticket(ctx: dict[str, Any], *, symbol: str, side: str, qty: int, price_info: dict[str, Any],

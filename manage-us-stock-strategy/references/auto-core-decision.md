@@ -158,10 +158,15 @@ journal block, dirty paths, research wait, the S7 review file and id, ticket iss
   (1 - sigma60) cent up; multiplier to 4 decimals in the same direction; dashboard conversion = Kiwoom
   reference close x mult, valid within the approximate close +/- 1%. No emergency, MOC or strength-trigger
   ticket (alerts only). The option layer is not built in T2 (no option field; the screen shows "생략").
-- Entry window (r4): `enterWindow` = "한국 <issue M/D> 17:00 이후 ~ 정규장 개장 전(<open>)" when the session opens
-  on the issue KST day, otherwise "한국 <issue M/D> 17:00 이후 ~ <open M/D> <open> 개장 전" (a Saturday ticket for
-  Monday, a ticket across a holiday); open = calendar `core_open_at` in KST (22:30 summer, 23:30 winter).
-  `fillAt` = the session close in KST.
+- Entry window (r4, enter-window 2026-10-20): the start is the pre-market open of the session's own KST day =
+  calendar `core_open_at` in KST - 5h30m (17:00 summer, 18:00 winter; Kiwoom takes a U.S. LOC order from the
+  pre-market open to the regular close, user 2026-10-20), never before 07:45 of the issue day; the end stays the open
+  (company entry in the evening, before the LOC cut-off). `enterWindow` = "한국 <M/D> <start> 이후 ~ 정규장 개장
+  전(<open>)" when the session opens on the issue KST day, otherwise "한국 <open M/D>(<요일>) <start> 이후 ~ <open>
+  개장 전": a weekend or holiday ticket names the open day, not the issue day. The day session (주간거래) is outside
+  the company's trading hours. The apply-mode user line is "주문표 N건 — <M/D>(<요일>) <start> 이후 키움 입력"
+  (earliest start); a carried day says "(안 넣었으면 <M/D>(<요일>) <start> 이후 키움 입력)"; an unreadable start keeps
+  "저녁". Display only (`PREMARKET_LEAD` is not a gate, constant or config value). `fillAt` = the session close in KST.
 - Valid one session; decision key = sha256(symbol | side | sorted evidence ids | card section hash | gap
   source). Unfilled (market rejected) once -> one re-issue; twice -> closed. Not entered does not count; two in
   a row close the key. Re-issue after not entered only when `reissue_buy_cap_not_above_first` is present

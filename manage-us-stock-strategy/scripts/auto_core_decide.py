@@ -697,7 +697,9 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         decision=decision, previous=previous, mode=mode, exceptions=exceptions, previous_run_missing=bool(missing_previous))
     decision["dashboard"] = _dashboard(decision, mode)
     if mode == "apply" and decision["tickets"]:
-        decision["next_action_for_user"] = f"\uc8fc\ubb38\ud45c {len(decision['tickets'])}\uac74 \u2014 \uc800\ub141 \ud0a4\uc6c0 \uc785\ub825"
+        start = _earliest_entry_start([(day, ticket.get("session")) for ticket in decision["tickets"]], calendar)
+        decision["next_action_for_user"] = f"\uc8fc\ubb38\ud45c {len(decision['tickets'])}\uac74 \u2014 " + (
+            f"{start} \uc774\ud6c4 \ud0a4\uc6c0 \uc785\ub825" if start else "\uc800\ub141 \ud0a4\uc6c0 \uc785\ub825")
     # F7 journal (recording mode only).
     decision_sha = decision_identity_hash(decision)
     from portfolio_review_journal import JOURNAL_CORE_DECISION, JournalError, append_auto_core_entries, auto_core_payloads
@@ -838,17 +840,31 @@ def _no_new_session(*, decision: dict[str, Any], carry: dict[str, Any], previous
         alerts=[{"code": "NO_NEW_SESSION", "push": False,
                  "line": f"\uc0c8 \ubbf8\uad6d \uc138\uc158 \uc5c6\uc74c \u2014 \ud3c9\uac00 \uc138\uc158 {evaluation_session} "
                          "\uadf8\ub300\ub85c(\uc8fc\ubb38\ud45c\u00b7\uc77c\uc9c0 \uc5c6\uc74c)"}],
-        next_action_for_user=(_carried_entry_line(orders, open_tickets) if mode == "apply" and orders else None),
+        next_action_for_user=(_carried_entry_line(orders, open_tickets, calendar) if mode == "apply" and orders else None),
         next_action_for_cowork=None)
     return _finish(decision, output_root, output_directory, carry)
 
 
-def _carried_entry_line(orders: list[dict[str, Any]], open_tickets: list[dict[str, Any]]) -> str:
+def _earliest_entry_start(pairs: list[tuple[Any, Any]], calendar: dict[str, Any] | None) -> str | None:
+    """enter-window: 'M/D(<weekday>) HH:MM' of the earliest entry start (tickets_module.entry_start) of the
+    (issue day, session) pairs; None when there is none or any of them cannot be read (not guessed)."""
+    sessions = (calendar or {}).get("sessions") or {}
+    starts = [tickets_module.entry_start(issued, sessions.get(session)) if isinstance(session, str) else None
+              for issued, session in pairs]
+    if not starts or None in starts:
+        return None
+    return tickets_module.entry_start_text(min(starts))
+
+
+def _carried_entry_line(orders: list[dict[str, Any]], open_tickets: list[dict[str, Any]],
+                        calendar: dict[str, Any] | None = None) -> str:
     """pre-on-fix 4 (judge2 G 4): the user line of a no-new-session day that carries order rows. They are the
     same tickets issued earlier (every issue KST day is named, M/D); the day reads no open order, so the line
-    says not to enter them again if already entered (enter in the evening only if not). An unreadable issue day
-    shows as "?" (visible, not guessed)."""
-    issued = {ticket["ticket_id"]: str(ticket.get("issued_day") or "") for ticket in open_tickets}
+    says not to enter them again if already entered (enter only if not). An unreadable issue day shows as "?"
+    (visible, not guessed). enter-window: "if not" names the earliest entry start of those tickets' sessions
+    (M/D(<weekday>) HH:MM); when one cannot be read, the line keeps "in the evening"."""
+    by_id = {ticket["ticket_id"]: ticket for ticket in open_tickets}
+    issued = {ticket_id: str(ticket.get("issued_day") or "") for ticket_id, ticket in by_id.items()}
     days = set()
     for order in orders:
         try:
@@ -857,9 +873,12 @@ def _carried_entry_line(orders: list[dict[str, Any]], open_tickets: list[dict[st
         except ValueError:
             days.add(("~", "?"))
     names = "\u00b7".join(name for _key, name in sorted(days))
+    start = _earliest_entry_start([(issued.get(order.get("id")), (by_id.get(order.get("id")) or {}).get("session"))
+                                   for order in orders], calendar)
+    when = f"{start} \uc774\ud6c4" if start else "\uc800\ub141"
     return (f"\uc8fc\ubb38\ud45c {len(orders)}\uac74 \u2014 {names} \ubc1c\ud589\ubd84\uacfc \uac19\uc740 \uc8fc\ubb38\ud45c: "
             "\uc774\ubbf8 \uc785\ub825\ud588\uc73c\uba74 \ub2e4\uc2dc \ub123\uc9c0 \uc54a\uc74c"
-            "(\uc548 \ub123\uc5c8\uc73c\uba74 \uc800\ub141 \ud0a4\uc6c0 \uc785\ub825)")
+            f"(\uc548 \ub123\uc5c8\uc73c\uba74 {when} \ud0a4\uc6c0 \uc785\ub825)")
 
 
 def card_accepted_on(check: dict[str, Any]) -> str | None:

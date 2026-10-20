@@ -769,23 +769,23 @@ class EnterWindowTests(unittest.TestCase):
         self.assertEqual(self.window("2026-10-14", "2026-10-14"), "한국 10/14 17:00 이후 ~ 정규장 개장 전(22:30)")
 
     def test_saturday_for_monday(self):
-        self.assertEqual(self.window("2026-10-17", "2026-10-19"), "한국 10/17 17:00 이후 ~ 10/19 22:30 개장 전")
+        self.assertEqual(self.window("2026-10-17", "2026-10-19"), "한국 10/19(월) 17:00 이후 ~ 22:30 개장 전")
 
     def test_tuesday_after_a_holiday(self):
         calendar = copy.deepcopy(self.CALENDAR)
         del calendar["sessions"]["2026-10-19"]  # U.S. holiday on Monday 10/19: the Saturday ticket is for Tuesday
-        self.assertEqual(self.window("2026-10-17", "2026-10-20", calendar), "한국 10/17 17:00 이후 ~ 10/20 22:30 개장 전")
+        self.assertEqual(self.window("2026-10-17", "2026-10-20", calendar), "한국 10/20(화) 17:00 이후 ~ 22:30 개장 전")
 
     def test_winter_time(self):
         # 09:30 EST = 23:30 KST (from 11/2).
-        self.assertEqual(self.window("2026-11-04", "2026-11-04"), "한국 11/4 17:00 이후 ~ 정규장 개장 전(23:30)")
-        self.assertEqual(self.window("2026-11-07", "2026-11-09"), "한국 11/7 17:00 이후 ~ 11/9 23:30 개장 전")
+        self.assertEqual(self.window("2026-11-04", "2026-11-04"), "한국 11/4 18:00 이후 ~ 정규장 개장 전(23:30)")
+        self.assertEqual(self.window("2026-11-07", "2026-11-09"), "한국 11/9(월) 18:00 이후 ~ 23:30 개장 전")
 
     def test_the_ticket_carries_it_and_fill_at_is_unchanged(self):
         # Scenario issues on Saturday 2026-10-10 for Monday 2026-10-12.
         ticket = tickets_of(Scenario().run(), "MU", "buy")[0]
         self.assertEqual(ticket["session"], "2026-10-12")
-        self.assertEqual(ticket["enterWindow"], "한국 10/10 17:00 이후 ~ 10/12 22:30 개장 전")
+        self.assertEqual(ticket["enterWindow"], "한국 10/12(월) 17:00 이후 ~ 22:30 개장 전")
         self.assertEqual(ticket["fillAt"], "10/13 05:00 (한국) 정규장 종가")
 
 
