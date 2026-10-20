@@ -1,0 +1,488 @@
+{
+ "schema": "t2rc-check-1.0",
+ "oracle_version": "t2rc-oracle-1.0",
+ "oracle_sha256": "6a74f813c918046b6e58b19087e1cee69b5984591a54639f84be0b47d0139d64",
+ "day_kst": "2026-10-16",
+ "verdict": "MATCH",
+ "counts_for_c1": true,
+ "order_authority": false,
+ "quantity_authority": "none",
+ "execution_quantity": null,
+ "decision_sha256": "bf4ad05504dc09701d9affac83f9dff7749599dbfd29c5efa1f25a2ab0ecccd0",
+ "decision": {
+  "evaluation_session": "2026-10-15",
+  "buy_session": "2026-10-16",
+  "status": "OK",
+  "reasons": [],
+  "mode": "apply",
+  "decision_mode": "compare",
+  "generated_at": "2026-10-15T22:45:01.795428+00:00",
+  "commit_sha": "ad127596badd3bfab74e9de835d09d62e0a4e043",
+  "result_written_at": "2026-10-15T22:45:07.351552+00:00"
+ },
+ "input_sha_mismatch": [],
+ "input_path_mismatch": [],
+ "historical_self_check": false,
+ "research_record": {
+  "ok": true,
+  "reasons": [],
+  "core_status": "OK"
+ },
+ "previous_decision": {
+  "oracle": "2026-10-15",
+  "core": "2026-10-15"
+ },
+ "facts": {
+  "valid": [],
+  "dropped": []
+ },
+ "c1": {
+  "oracle_open": [
+   [
+    "DELL",
+    "buy"
+   ],
+   [
+    "MU",
+    "buy"
+   ]
+  ],
+  "core_candidates": [
+   [
+    "DELL",
+    "buy"
+   ],
+   [
+    "MU",
+    "buy"
+   ]
+  ],
+  "missing_in_core": [],
+  "extra_in_core": [],
+  "match": true,
+  "prev_unknown_kinds": {}
+ },
+ "diagnostics": {
+  "n": 1,
+  "items": [
+   [
+    "NBIS",
+    "trig:N9",
+    "review",
+    "hit"
+   ]
+  ]
+ },
+ "exposure": {
+  "status": "OK",
+  "equity_s7": 25252.58,
+  "equity_oracle": 25252.58,
+  "total_assets_v6": 25252.58,
+  "total_cash_v6": 12469.19,
+  "total_cash_basis": "ORDER_AVAILABLE",
+  "N_oracle": 1.1407079989450584,
+  "N_unregistered": [],
+  "V_oracle": 1.370427551350654,
+  "V_status": "OK",
+  "N_s7": 1.1407,
+  "V_s7": 1.3704,
+  "E_s7": 1.3704,
+  "E_oracle": 1.370427551350654
+ },
+ "requirements": {
+  "oracle": {
+   "BE": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "DELL": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "LITE": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "MU": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "MVLL": [
+    "ok",
+    "no",
+    "no",
+    "ok",
+    "no"
+   ],
+   "NBIS": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "PWR": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "no"
+   ],
+   "SOXL": [
+    "ok",
+    "no",
+    "ok",
+    "ok",
+    "no"
+   ]
+  },
+  "diffs": []
+ },
+ "tickets": [],
+ "ticket_leaks": [],
+ "c2_item_match": false,
+ "circuit_detail": {
+  "BE": {
+   "role": "watch",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [
+     "BE-SE1"
+    ],
+    "weak_kinds": [
+     "oversold_rebound"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [
+     "BE-SE1"
+    ],
+    "basis_met": true,
+    "new_basis_met": false
+   }
+  },
+  "DELL": {
+   "role": "watch",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [
+     "DELL-SE1"
+    ],
+    "weak_kinds": [
+     "oversold",
+     "oversold_rebound",
+     "static:event_reaction"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "oversold",
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [
+     "DELL-SE1"
+    ],
+    "basis_met": true,
+    "new_basis_met": true
+   }
+  },
+  "LITE": {
+   "role": "watch",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [
+     "LITE-SE1"
+    ],
+    "weak_kinds": [
+     "oversold_rebound",
+     "static:event_reaction"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [
+     "LITE-SE1"
+    ],
+    "basis_met": true,
+    "new_basis_met": false
+   }
+  },
+  "MU": {
+   "role": "watch",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [
+     "MU-SE1"
+    ],
+    "weak_kinds": [
+     "false_breakdown",
+     "oversold_rebound",
+     "static:event_reaction"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "false_breakdown",
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [
+     "MU-SE1"
+    ],
+    "basis_met": true,
+    "new_basis_met": true
+   }
+  },
+  "MVLL": {
+   "role": "held",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [],
+    "weak_kinds": [
+     "pullback_rebound"
+    ],
+    "new_strong": [],
+    "new_kinds": [],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [],
+    "basis_met": false,
+    "new_basis_met": false
+   },
+   "sell": {
+    "strong": [],
+    "weak_kinds": [
+     "trend_break"
+    ],
+    "new_strong": [],
+    "new_kinds": [],
+    "prev_unknown_kinds": [],
+    "card_kinds": [
+     "trend_break"
+    ],
+    "card_defined_kinds": [
+     "trend_break"
+    ],
+    "side": "sell",
+    "official": [],
+    "static_strong": [],
+    "basis_met": false,
+    "new_basis_met": false
+   },
+   "sell_target": false
+  },
+  "NBIS": {
+   "role": "held",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [],
+    "weak_kinds": [
+     "oversold",
+     "oversold_rebound"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [],
+    "basis_met": true,
+    "new_basis_met": false
+   },
+   "sell": {
+    "strong": [],
+    "weak_kinds": [
+     "new_low",
+     "trend_break"
+    ],
+    "new_strong": [],
+    "new_kinds": [],
+    "prev_unknown_kinds": [],
+    "card_kinds": [
+     "trend_break"
+    ],
+    "card_defined_kinds": [
+     "trend_break"
+    ],
+    "side": "sell",
+    "official": [],
+    "static_strong": [],
+    "basis_met": true,
+    "new_basis_met": false
+   },
+   "sell_target": false
+  },
+  "PWR": {
+   "role": "watch",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [
+     "PWR-SE1"
+    ],
+    "weak_kinds": [
+     "static:event_reaction"
+    ],
+    "new_strong": [],
+    "new_kinds": [],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [
+     "PWR-SE1"
+    ],
+    "basis_met": true,
+    "new_basis_met": false
+   }
+  },
+  "SOXL": {
+   "role": "held",
+   "registry": "OK",
+   "status": "OK",
+   "buy": {
+    "strong": [],
+    "weak_kinds": [
+     "oversold",
+     "oversold_rebound"
+    ],
+    "new_strong": [],
+    "new_kinds": [
+     "oversold_rebound"
+    ],
+    "prev_unknown_kinds": [],
+    "card_kinds": [],
+    "card_defined_kinds": [],
+    "side": "buy",
+    "official": [],
+    "static_strong": [],
+    "basis_met": true,
+    "new_basis_met": false
+   },
+   "sell": {
+    "strong": [],
+    "weak_kinds": [
+     "trend_break"
+    ],
+    "new_strong": [],
+    "new_kinds": [],
+    "prev_unknown_kinds": [],
+    "card_kinds": [
+     "trend_break"
+    ],
+    "card_defined_kinds": [
+     "trend_break"
+    ],
+    "side": "sell",
+    "official": [],
+    "static_strong": [],
+    "basis_met": false,
+    "new_basis_met": false
+   },
+   "sell_target": false
+  }
+ },
+ "read_files": {
+  "pages_count": 354,
+  "pages_combined_sha256": "4d473972d766c3427ac367fffc4865519a4a4ad6772e78dc6c4804cbf8c6cde3",
+  "corporate_actions": "e9b6effc900d0f7da539e0ba54a651ad899cfa2bc1703ba0e4bd7a61f4265a31",
+  "s7_review": [
+   "workspace/outputs/auto-core/2026-10-16/s7/2026-10-15/portfolio-exposure-review.20261015T224506373789Z.json",
+   "c9bde7ea68a82dd61ef98b97a43c0a7a1e97cf19937c9bed662d009136ef1568"
+  ],
+  "previous_decision": "580408b3eaa72c2230e9a3463f4ea6cb4df99d8d03b7a92e7c69cfc71cd6ad1a",
+  "research_history": [
+   [
+    "workspace/outputs/research-records/2026-10-13/research-record.json",
+    "917946624d363078ac67dae64c7df61dc3dd2a1f26fd783f035b935f60362395"
+   ],
+   [
+    "workspace/outputs/research-records/2026-10-14/research-record.json",
+    "ddc74f692646b8ecacd0b1ac32a8a5aea86e30bd805f64e0bac6cc5a2d8cc13d"
+   ],
+   [
+    "workspace/outputs/research-records/2026-10-15/research-record.json",
+    "6fab1b147401fa2f173f00e81f893483a391f281f3b8c0f75dff6f2cb9304d66"
+   ],
+   [
+    "workspace/outputs/research-records/2026-10-16/research-record.json",
+    "e7831b1404625a22edf3db5b20887631d5418c4021ce752796208d5227086946"
+   ]
+  ],
+  "m6": [
+   [
+    "docs/claude/m6-relative-comparison-7stock-2026-10-08.md",
+    "f3f56d3d01c1099e602c95d516584eeae4345898fa0dba379ee6ca5ee4f26967"
+   ],
+   [
+    "docs/claude/m6-relative-comparison-7stock-2026-10-17.md",
+    "c4c4a69dd5b4eba7769bc84c0ab79c282231cc3bc783412eea5996e511942b29"
+   ]
+  ]
+ },
+ "c3": {
+  "buy": {
+   "tickets_today": 0,
+   "tickets": [],
+   "matched": [],
+   "today_all_match": false,
+   "confirmed_before": [],
+   "entry_allowed": true
+  },
+  "sell": {
+   "tickets_today": 0,
+   "tickets": [],
+   "matched": [],
+   "today_all_match": false,
+   "confirmed_before": [],
+   "entry_allowed": true
+  },
+  "decision_mode": "compare"
+ }
+}
