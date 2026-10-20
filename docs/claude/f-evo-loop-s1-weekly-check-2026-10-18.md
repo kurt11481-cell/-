@@ -115,3 +115,29 @@ weekly_user_touch: 0 (일회성: .\tools\dev-merge.ps1 evo-s3 1번)
 - 운영 완료 기준(사전 등록 7절)은 아직이다. 10/25 09:20 실행 뒤 WEEKLY_LATEST status OK이고 started_at ≥ 2026-10-25T00:20Z이면 충족이다.
 - 10/20~10/24 08:50 알림 ⑭에 "InvestmentV2-JournalScore: last result …" 줄이 나올 수 있다(10/18 결과가 0이 아니면). 이미 아는 실패다. 조치 없음.
 - Builder 참고(기존 동작, 바꾸지 않음): OK일 때 reason은 null이 아니라 ""로 저장된다. 소비자는 status를 본다.
+
+## 9. 10/20 확인 (2026-10-20 11:3x KST, 사용자 요청 "f-evo-loop 진행 … ① … ②")
+
+| 항목 | 값 | 원문 |
+|---|---|---|
+| ① 10/18 종료 코드 | InvestmentV2-JournalScore: last_run_time 2026-10-18T09:20:00+09:00 · **last_task_result 1** · state Ready · next_run_time 2026-10-25T09:20:00+09:00. task_logon_type WARN 사유 = "last result 0x00000001 at 2026-10-18T09:20…"(Interactive 로그온 줄은 note뿐, WARN 아님) | workspace/outputs/host-status/LATEST.json(generated_at_kst 2026-10-20T05:50:04+09:00) · host_status.ps1 133·139~143행 |
+| ① 판정 | 1 = 잡히지 않은 종료 오류로 끝난 값. 시간 제한 종료(0x41306)가 아니다 → 2절 원인 1 유지, 6절 둘째 줄(1이 아니면 원인 다시) 불충족. 다른 종료 오류일 가능성은 값만으로 배제되지 않지만, 클라우드 재현(같은 증상·종료 1)과 맞는다. 당시 실행기에 catch가 없어 5.1의 정확한 오류 문구는 남지 않았다(확인 불가, 10/25 실행이 OK면 고친 식이 통과한 것) | 같은 파일 · 2절 |
+| ① ⑭ 경로 | 08:50 알림 예약 작업(v2.3) 10/20 실행 SUCCEEDED(fired 2026-10-19T23:50:10Z). 같은 입력으로 지시문 host 블록(auto-core-alert.txt 84~106행)을 그대로 실행 → `H FRESH` · `H STANDING auto_logon` · `H ALERT task_logon_type(WARN: InvestmentV2-JournalScore: last result 0x00000001 at 2026-10-18T09:20:00.0000000)` → ⑭ 한 줄 조건 충족. 예약 본문의 host 블록·⑭ 문구는 저장소 사본과 눈으로 대조해 같음(바이트 해시는 대조 안 함). 실제 푸시 문구는 읽을 수 없음 — 확인 필요(결론 영향 없음) | list_triggers last_run · auto-core-alert.txt 84~106·158행 |
+| ② 결정 commit | 10/20 결정(run_day_kst 2026-10-20, generated_at 2026-10-19T22:45:01Z = 07:45 KST, status OK, mode apply, decision_mode compare) commit_sha **bb1f1f9**(2026-10-19 23:30 KST). `merge-base --is-ancestor`: 55133ae YES · 210e951 YES · 6d4d6f3 YES(rrec-ev4 줄 전제) · 6d4d6f3이 10/17 결정 1259f56에 NO. LATEST_DECISION.json = 2026-10-20/decision.json(sha256 36736afc… 같음) | workspace/outputs/auto-core/LATEST_DECISION.json · git |
+| ② 판정 | 4절 두 줄(first_run_day 2026-10-18)과 10/19 rrec-ev4 줄(2026-10-20)의 전제가 맞다. 6절 셋째 줄 불충족 → 고치지 않음 | gate-rule-epochs.json |
+| 규칙 시기 현황 | **11항목**(10/19 bb1f1f9에서 rrec-ev4 줄 추가. 관제판 "현재 10항목"은 낡은 글자). sha256 bff19a558f2eb74b9b918706a4c6b977aa94dbb3f94468013516caf5cfa1a61e | docs/claude/gate-rule-epochs.json |
+| 그 뒤 병합 | 5190fe2..HEAD(624e9e2) 코드 경로(scripts·schemas·assets) 커밋 = 67e781d(실행기, 관문 아님)·6d4d6f3(줄 있음)뿐. r5-align(624e9e2, 10/20)은 docs/claude만 바꿈: 통합 점검 규칙 파일 v3.12.9·로더. 코어 R5 판정은 이미 S7 사건형이라 코드 변경 0(r5-align-report.md 18~27행, auto_core_rules.py 720~726행, auto_core_tickets.py 248행). 코어는 통합 점검 기록(integrated_check_run)을 compare에만 쓴다(auto_core_decide.py 677행). 채점기는 integrated_check_run·R5를 읽지 않는다(score_decision_journal.py grep 0건) → 파일 설명의 "alters a gate or evidence definition of the auto-core"에 해당 없음 → **줄 추가 안 함** | git log · 위 파일들 |
+
+- ⑭ 줄은 08:50 알림이 도는 화~토 10/20~10/24에 매일 나올 수 있다(7일 창, host_status.ps1 141행). **이미 아는 실패, 조치 없음.** 10/25 실행이 0이면 10/27(화)부터 사라진다.
+- ③ 준비 상태: 고친 실행기(run_journal_score.ps1 82행 `$Object.Keys -ccontains $Name`)가 메인 작업 트리 HEAD 624e9e2에 있고 미커밋 변경 없음. journal-scores에는 10/18 뒤 새 실행 없음.
+
+### 남은 것 (Cowork, 사용자 손 없음)
+- ③ 2026-10-25(일) 09:20 뒤 처음 열리는 Cowork 세션: WEEKLY_LATEST.json **status OK이고 started_at ≥ 2026-10-25T00:20Z**, report_path의 learning 있음 = 운영 완료 기준(사전 등록 7절). 실패(0 아닌 결과)면 10/27(화) 08:50 ⑭가 자동으로 알린다. 아예 안 돈 경우는 ⑭가 못 잡으므로(0절 4) 그 세션이 보고서 폴더 시각으로 본다.
+- ④ 2026-11-07 이후 옛 지시서 4건 1회 판정(사전 등록 11절, 기한 11/21, 없으면 NOT_SCORABLE).
+- 결론은 버킷당 30건부터, 기본 처분 NO_CHANGE. 관문·근거 규칙 병합 확인 때마다 gate-rule-epochs.json 한 줄.
+
+### 바뀔 조건
+- 10/25 실행 결과가 0이 아니거나 WEEKLY_LATEST가 FAIL·RUNNER_EXCEPTION → 고친 실행기의 5.1 경로를 다시 본다(로그 RUNNER_FAIL 줄).
+- 코어 관문이나 채점기가 통합 점검 기록(R5 등)을 읽게 바뀌면 → 통합 점검 규칙 파일 변경도 규칙 시기 줄 대상.
+
+검토 완결: 원문 확인 19/21(확인 필요 2 = 10/20 실제 푸시 문구 · 10/18 5.1 오류 문구, 둘 다 결론 영향 없음) · 내장 재검토 0회(추천·결정 요청·변경 제안 없음 → L1~L6 자기 점검) · 미해결 0 · 자료 시점 PC 상태 점검 2026-10-20 05:50 KST · 결정 2026-10-20 07:45 KST · git HEAD 624e9e2(2026-10-20 10:55 KST) · 바뀔 조건 9절 끝
