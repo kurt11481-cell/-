@@ -13,6 +13,8 @@ param(
 # powercfg is used with query options only. Exit code is always 0 so a check failure never fails the task.
 # Consumer: the 08:50 alert (docs/claude/scheduled-prompts/auto-core-alert.txt).
 # InvestmentV2-JournalScore (weekly, f-evo-loop) uses the same rules: not registered, disabled, or a nonzero last result within 7 days gives WARN.
+# backup_recent reads workspace\outputs\backup\LATEST.json (offsite_backup.ps1, daily 23:50): missing, older than 26 hours,
+# a dry run or a status other than OK gives WARN; unreadable or another schema gives UNKNOWN.
 
 $ErrorActionPreference = "Stop"
 $coreTaskNames = @("InvestmentV2-AutoCore", "InvestmentV2-AutoCoreDecide", "InvestmentV2-JournalScore")
@@ -256,6 +258,56 @@ function Get-SessionCheck {
     return [ordered]@{ state = "OK"; value = $value; note = "reference only" }
 }
 
+function Get-BackupRecentCheck {
+    # The backup runs at 23:50 and this check at 05:50 (normal age 6 hours); one missed night gives about 30 hours.
+    $backupPath = Join-Path $resolvedRepository "workspace\outputs\backup\LATEST.json"
+    if (-not [System.IO.File]::Exists($backupPath)) {
+        return [ordered]@{ state = "WARN"; value = $null; note = "no backup record" }
+    }
+    try {
+        $record = Get-Content -LiteralPath $backupPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        return [ordered]@{ state = "UNKNOWN"; value = $null; note = ("backup record not readable: " + (ConvertTo-OneLine $_.Exception.Message)) }
+    }
+    if ($null -eq $record -or [string]$record.schema -ne "backup-status/v1") {
+        return [ordered]@{ state = "UNKNOWN"; value = $null; note = "backup record schema is not backup-status/v1" }
+    }
+    $value = [ordered]@{
+        generated_at_kst = [string]$record.generated_at_kst
+        push_state = [string]$record.push.state
+        copy_state = [string]$record.copy.state
+        copy_bytes = $record.copy.bytes
+    }
+    $generated = $null
+    if ($record.generated_at -is [DateTime]) {
+        $generated = ([DateTime]$record.generated_at).ToUniversalTime()
+    } else {
+        $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+        $parsed = [DateTime]::MinValue
+        if ([DateTime]::TryParseExact([string]$record.generated_at, "yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+            $generated = $parsed
+        }
+    }
+    if ($null -eq $generated) {
+        return [ordered]@{ state = "UNKNOWN"; value = $value; note = "backup record generated_at not readable" }
+    }
+    $ageHours = [Math]::Round(([DateTime]::UtcNow - $generated).TotalHours, 1)
+    $stateText = "push " + $value.push_state + ", copy " + $value.copy_state
+    if ($ageHours -lt -1) {
+        return [ordered]@{ state = "UNKNOWN"; value = $value; note = ("backup record time is {0}h in the future" -f (-$ageHours)) }
+    }
+    if ($ageHours -gt 26) {
+        return [ordered]@{ state = "WARN"; value = $value; note = ("backup older than 26h ({0}h): {1}" -f $ageHours, $stateText) }
+    }
+    if ($record.dry_run -eq $true) {
+        return [ordered]@{ state = "WARN"; value = $value; note = ("last backup was a dry run: " + $stateText) }
+    }
+    if ([string]$record.status -ne "OK") {
+        return [ordered]@{ state = "WARN"; value = $value; note = ("backup status " + [string]$record.status + ": " + $stateText) }
+    }
+    return [ordered]@{ state = "OK"; value = $value; note = ("backup {0}h old: {1}" -f $ageHours, $stateText) }
+}
+
 try {
     if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
         # Windows PowerShell 5.1 leaves $PSScriptRoot empty inside param defaults of advanced scripts.
@@ -276,6 +328,8 @@ try {
         (Invoke-Check -Id "uptime" -Body { Get-UptimeCheck }),
         (Invoke-Check -Id "session" -Body { Get-SessionCheck })
     )
+    # Added after the seven checks so the existing array lines stay unchanged; the leading comma keeps it one element.
+    $checks += ,(Invoke-Check -Id "backup_recent" -Body { Get-BackupRecentCheck })
     $warnCount = @($checks | Where-Object { $_.state -eq "WARN" }).Count
     $unknownCount = @($checks | Where-Object { $_.state -eq "UNKNOWN" }).Count
     $status = "OK"

@@ -29,7 +29,7 @@ FORBIDDEN_IN_HOST_STATUS = (
 ORDER_NAMES = ("/api/us/ordr", "kiwoom_order", "order_submit", "ust2000", "place_order", "cancel_order")
 ORDER_IDENTIFIER = re.compile(r"order_(?!authority\b)\w+", flags=re.IGNORECASE)
 CHECK_IDS = ("task_logon_type", "auto_logon", "power_sleep", "update_active_hours", "pending_reboot", "uptime",
-             "session")
+             "session", "backup_recent")
 
 
 def read_ascii(path: Path) -> str:
@@ -79,7 +79,8 @@ class HostStatusScriptTests(unittest.TestCase):
                    "Invoke-Check", "Open-LocalMachineKey", "Read-LocalMachineValue", "Test-LocalMachineKey",
                    "Test-ActiveHoursCover", "Read-PowerAcIndex", "Read-ActiveScheme", "Get-CoreTaskCheck",
                    "Get-AutoLogonCheck", "Get-PowerSleepCheck", "Get-UpdateActiveHoursCheck",
-                   "Get-PendingRebootCheck", "Get-UptimeCheck", "Get-SessionCheck"}
+                   "Get-PendingRebootCheck", "Get-UptimeCheck", "Get-SessionCheck", "Get-Content",
+                   "ConvertFrom-Json", "Get-BackupRecentCheck"}
         self.assertEqual(cmdlet_calls(self.text) - allowed, set())
 
     def test_powercfg_uses_query_options_only(self):
@@ -159,6 +160,34 @@ class HostStatusScriptTests(unittest.TestCase):
         self.assertIn("requires logged-on user", task)
         self.assertIn("$now.AddDays(-7)", task)
         self.assertIn("[int64]$info.LastTaskResult -ne 0", task)
+
+    def test_backup_recent_check_reads_the_backup_record(self):
+        self.assertIn("backup-status/v1", self.text)
+        self.assertIn("26", self.text)
+        session = self.text.index("function Get-SessionCheck")
+        backup = self.text.index("function Get-BackupRecentCheck")
+        main = self.text.index("\ntry {\n", session)
+        self.assertLess(session, backup)
+        self.assertLess(backup, main)
+        body = self.text[backup:main]
+        self.assertIn(r'"workspace\outputs\backup\LATEST.json"', body)
+        self.assertIn("[System.IO.File]::Exists($backupPath)", body)
+        self.assertNotIn("Test-Path", body)
+        self.assertIn('note = "no backup record"', body)
+        self.assertIn("Get-Content -LiteralPath $backupPath -Raw -Encoding UTF8 | ConvertFrom-Json", body)
+        self.assertIn('-ne "backup-status/v1"', body)
+        self.assertIn("if ($ageHours -gt 26)", body)
+        self.assertIn("backup older than 26h", body)
+        self.assertIn("if ($record.dry_run -eq $true)", body)
+        self.assertIn('if ([string]$record.status -ne "OK")', body)
+        for field in ("generated_at_kst", "push_state", "copy_state", "copy_bytes"):
+            with self.subTest(field=field):
+                self.assertRegex(body, r"\n\s+%s = " % field)
+        # Missing, stale, dry run and non-OK records are WARN; unreadable records and other schemas are UNKNOWN.
+        self.assertEqual(body.count('state = "OK"'), 1)
+        self.assertEqual(body.count('state = "WARN"'), 4)
+        self.assertEqual(body.count('state = "UNKNOWN"'), 4)
+        self.assertIn('$checks += ,(Invoke-Check -Id "backup_recent" -Body { Get-BackupRecentCheck })', self.text)
 
     def test_task_list_watches_the_weekly_journal_score_task(self):
         match = re.search(r"^\$coreTaskNames = @\((.*)\)$", self.text, flags=re.MULTILINE)
