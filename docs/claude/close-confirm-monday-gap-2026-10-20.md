@@ -23,9 +23,10 @@ consumers: 다음 통합점검 규칙 파일 개정 세션(a 반영), T2 "켜" �
 
 ### e — T2 "켜" 전에 (권한·한도 변경, K3)
 - 내용: 주문표마다 판정이 유지되는 근사 종가 구간을 계산해 대시보드 priceCalc lo~hi를 "근사 종가 ±1%"와 그 구간의 겹침으로 좁힌다. 매수는 범위 밖이면 가격을 보여 주지 않고, 매도는 막지 않고 경고만 띄운다(매수만 막는 원칙).
-- 근거: auto_core_tickets.py 369~385행(loc_price·±1%), dashboard-order-panel-2026-10-07.md 35·84행(범위 밖이면 화면이 막음), auto_core_rules.py 9행(P3: 근사 종가로 판정).
+- 근거: auto_core_tickets.py 376~392행(loc_price·±1%, 3e753f3 기준 — 작성 때 369~385행), dashboard-order-panel-2026-10-07.md 35·84행(범위 밖이면 화면이 막음), auto_core_rules.py 9행(P3: 근사 종가로 판정).
 - 한계: EMA·σ60 재계산으로 판정이 바뀌는 경우는 잡지 못한다.
 - 순서: 권한 변경은 한 번에 하나 — enter-window(경로 때문에 authority) 병합 뒤에 Builder 지시문을 쓴다. 수동 경로(worktree Builder + Opus 독립 Judge).
+- 상태(2026-10-20 23:2x KST): enter-window3 병합(3e753f3) 뒤 Builder 지시문 작성 — docs/claude/close-confirm-e-builder-prompt.md(Opus 내장 재검토 2회 반영). 한계는 "S7 값 고정·다른 종목 영향 없음·화면 배수 mult 그대로"로 바뀜(같은 코드를 그 종목 종가만 바꿔 다시 부르므로 EMA·σ60 재계산도 잡음). 다음: 사용자가 worktree work-close-confirm-e의 Builder 세션에서 실행 → Builder 완료 뒤 Cowork가 Judge 지시문 작성.
 
 ## 3. monday-gap — M1 (월요일 개장 전 점검 v2.2)
 - 바꿀 것:
