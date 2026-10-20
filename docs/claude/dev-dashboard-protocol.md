@@ -10,7 +10,7 @@
 1. **Cowork 세션**에서 작업 상태가 바뀌었을 때만(완료·시작·새 재개 조건) 세션 끝에 **한 번** 갱신한다. 바뀐 작업 문서만 get → update, log 1줄.
 2. 변화가 없는 세션(질문·조회만)은 갱신하지 않는다.
 3. Claude Code(Builder)·Judge·예약 작업은 갱신하지 않는다. Builder 결과는 Cowork가 "Builder 완료" 확인 때 함께 반영한다.
-   - 예외 없음: 예약 작업 "주간 팀장회의"(sch-boardreview, 지시문 v1.3 — 2026-10-19 관제판 주간 점검 v1.2를 바꿔 씀, 같은 점검 R1·R2·R4·R5·R6 포함)도 관제판에 쓰지 않는다. 결과는 docs/claude/ceo-weekly-report.md에 덧붙이고 알림 1줄, 사장용 대시보드 '주간 팀장회의'(https://claude.ai/artifact/GccBmdQcQopX415T5TRFWN)의 자료 파일만 갱신(v1.1~). 설계: docs/claude/company-org-plan-2026-10-19.md, 변경 기록: docs/claude/ceo-weekly-v1-change-2026-10-19.md(이전 설계 dev-board-review-design-2026-10-03.md).
+   - 예외 없음: 예약 작업 "주간 팀장회의"(sch-boardreview, 지시문 v1.4 — 2026-10-19 관제판 주간 점검 v1.2를 바꿔 씀, 같은 점검 R1·R2·R4·R5·R6 포함)도 관제판에 쓰지 않는다. 결과는 docs/claude/ceo-weekly-report.md에 덧붙이고 알림 1줄, 사장용 대시보드 '주간 팀장회의'(https://claude.ai/artifact/GccBmdQcQopX415T5TRFWN)의 자료 파일만 갱신(v1.1~). 설계: docs/claude/company-org-plan-2026-10-19.md, 변경 기록: docs/claude/ceo-weekly-v1-change-2026-10-19.md(이전 설계 dev-board-review-design-2026-10-03.md).
 4. 사용자가 "관제판 갱신" 문구를 보내면 그 세션에서 갱신한다.
 5. 토큰 절약: 전체 컬렉션을 읽지 않는다. 이 문서는 세션당 처음 한 번만 읽는다. 관제판 HTML은 화면을 바꿀 때만 재게시한다.
 

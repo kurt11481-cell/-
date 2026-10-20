@@ -31,6 +31,9 @@ def WDOCS(m):
 def NSD(ns):
     v=sorted(n for n in (ns or []) if re.match(r'^next-sandisk-scan-\d{4}-\d{2}-\d{2}\.md$',str(n)))
     return v[-1] if v else None
+def NSW(ns,a,b):
+    v=sorted((n for n in (ns or []) if re.match(r'^\d{4}-\d{2}-\d{2}(-\d+)?\.md$',str(n)) and a.isoformat()<=n[:10]<=b.isoformat()),key=lambda n:(n[:10],len(n),n))
+    return v[-1] if v else (f'{b.isoformat()}.md' if ns is None else None)
 def PRE(ns,a,b):return sorted(n for n in (ns or []) if re.match(r'^\d{4}-\d{2}-\d{2}-.+\.md$',str(n)) and a.isoformat()<=n[:10]<=b.isoformat())
 RT=[('연구개발',r'judge'),('법률',r'claude-md|agents-md|^artifact-design-rules|^review-stability|policy|constitution|authority|^company-org'),
     ('투자리서치',r'^(watch-card|watchlist|m6-|l2-|dram|buylow|buy-|cpi-|earnings|external-|next-sandisk|market-|scn27h1|event-strategy|card-|holding|thesis|candidate)'),
@@ -86,6 +89,8 @@ if mode=='plan':
     P+=['docs/claude/external-claims-ledger.md','workspace/outputs/save-daily-offline-replay/LATEST_MARKET_ENV_MEMO.md']
     ns=NSD(I.get('nsd_files'))
     if ns:P.append('docs/claude/'+ns)
+    nw_=NSW(I.get('nsdw_files'),sun,sat)
+    if nw_:P.append('workspace/outputs/next-sandisk-weekly/'+nw_)
     P+=['workspace/outputs/pre-open/'+n for n in PRE(I.get('preopen'),sun,sat)][:10]
     P+=['docs/claude/'+n for n in WDOCS(I.get('week_docs'))[:60]]
     P=list(dict.fromkeys(P))
@@ -251,6 +256,25 @@ if mode=='run':
     for o in I.get('oneshots') or []:
         d=kd(o.get('next'))
         if ti<=d<=te:nx.append(f"{d[5:]} 일회성 예약: {o.get('name')}")
+    # v1.4 새로/계속(관제판 결정 paperclip-1019 Q2 a, 2026-10-19): 지난 보고 절들을 최신부터 거슬러 같은 발견(날짜 꼬리 뺀 번호)·관제판 점검 줄(R번호+작업 id)이 몇 주 이어졌는지
+    PH=[];SP_=set()
+    for ch_ in reversed([c_ for c_ in re.split(r'(?m)^(?=## 주간 경영보고 )',pv) if c_.startswith('## 주간 경영보고 ')]):
+        m_=re.match(r'^## 주간 경영보고 \S+ \(기간 (\d{4}-\d{2}-\d{2})~(\d{4}-\d{2}-\d{2})\)',ch_)
+        if not m_ or m_.group(1) in SP_ or m_.group(1)>=PS:continue
+        SP_.add(m_.group(1));s7_=ch_.split('### 7.',1)[1] if '### 7.' in ch_ else ''
+        PH.append((m_.group(1),m_.group(2),{re.sub(r'-\d{4}$','',x_) for x_ in re.findall(r'^- (F-[A-Z]+-[\w-]+) \[',ch_,re.M)},set(re.findall(r'^(R\d \S+)',s7_,re.M)),bool(re.search(r'^RESULT \d+건',s7_,re.M))))
+    PH.sort(key=lambda z:z[0],reverse=True)
+    def STK(k,i):
+        n_=1;ex_=(sun-dt.timedelta(days=1)).isoformat()
+        for ps_,pe_,fs_,bs_,bo_ in PH:
+            if pe_!=ex_:break
+            ex_=(dt.date.fromisoformat(ps_)-dt.timedelta(days=1)).isoformat()
+            if i==1 and not bo_:continue
+            if k in (fs_ if i==0 else bs_):n_+=1
+            else:break
+        return n_
+    SKL=lambda n_:'새로' if n_==1 else f'계속 {n_}주째'
+    BK=[k for k in re.findall(r'^(R\d \S+)',B,re.M) if k!='R1 제외' and not (C.get('docs') is False and k.startswith('R2 '))];bnew=sum(1 for k in BK if STK(k,1)==1)
     # v1.3 받은 결과(팀별) — 자료마다 팀장이 확인 줄을 쓴다(finalize 검증). 자료가 안 왔거나 낡으면 운영관리 발견 F-OPS-6·F-OPS-7-*
     now=dt.datetime.fromisoformat(os.environ['CEO_NOW']) if os.environ.get('CEO_NOW') else dt.datetime.now(K)
     try:now=dt.datetime.fromisoformat(str(I.get('trig_at'))) if I.get('trig_at') else now
@@ -346,8 +370,17 @@ if mode=='run':
         nt_=R('docs/claude/'+nsn);nf=FM(nt_);nd_=nsn[18:28];n0=[]
         m_=re.search(r'(?ms)^## N-0[^\n]*\n(.*?)(?=^## )',(nt_ or '').replace('\r\n','\n'))
         if m_:n0=[NW(re.sub(r'^(-|\d+\.)\s+','',l)).replace('**','') for l in m_.group(1).split('\n') if re.match(r'^(-|\d+\.)\s',l)][:4]
-        ib('S-RES-6','투자리서치','Next 샌디스크 발굴',f"최근 발굴 {nd_}({nf['status'] or '상태 확인 필요'}{', 다음 '+nf['valid'] if nf['valid'] else ''}) — {CLN(nf['sum'],130) if nt_ else '파일 받지 못함'} · 이번 주 새 발굴 {'있음' if inp(nd_) else '없음(월간 발굴 = 매월 첫 토요일, 주간 점검은 파일 없이 푸시만)'}",['결론: '+z for z in n0])
+        ib('S-RES-6','투자리서치','Next 샌디스크 발굴',f"최근 발굴 {nd_}({nf['status'] or '상태 확인 필요'}{', 다음 '+nf['valid'] if nf['valid'] else ''}) — {CLN(nf['sum'],130) if nt_ else '파일 받지 못함'} · 이번 주 새 발굴 {'있음' if inp(nd_) else '없음(월간 발굴 = 매월 첫 토요일)'}",['결론: '+z for z in n0])
     if fsat and (not nsn or nsn[18:28]<fsat[0].isoformat()) and I.get('nsd_files') is not None:fd('F-OPS-7-nsd','운영관리',f'Next 샌디스크 월간 발굴 파일 없음({fsat[0].isoformat()} 예정)')
+    nwn=NSW(I.get('nsdw_files'),sun,sat);nwk=R('workspace/outputs/next-sandisk-weekly/'+nwn) if nwn else None;fsd=[d.isoformat() for d in fsat]
+    for b_ in IB:
+        if b_['id']!='S-RES-6':continue
+        if nwk:
+            f_=FM(nwk);mm_=re.search(r'(?ms)^## 결과\s*\n(.*?)(?=^## |\Z)',nwk.replace('\r\n','\n'))
+            rs_=[NW(l[2:]) for l in (mm_.group(1).split('\n') if mm_ else []) if l.startswith('- ')]
+            b_['sum']=CLN(f"주간 점검 {MDd(nwn[:10])}: {CLN(f_['sum'],110)} · "+b_['sum'],320);b_['items']=([CLN('주간: '+z,170) for z in rs_[:8]]+b_['items'])[:26]
+        elif PE not in fsd:b_['sum']=CLN(f'주간 점검 {MDd(PE)} 결과 파일 없음 · '+b_['sum'],320)
+    if not nwk and PE not in fsd:fd('F-OPS-7-nsdw','운영관리',f'Next 샌디스크 주간 점검 결과 파일 없음({PE}) — 주간 점검이 안 돌았거나 파일을 쓰지 못함')
     pr_=PRE(I.get('preopen'),sun,sat);PI=[]
     for n in pr_:
         tx_=R('workspace/outputs/pre-open/'+n);f_=FM(tx_);q=re.search(r'(?ms)^## 확인 필요\s*\n(.*?)(?=^## |\Z)',(tx_ or '').replace('\r\n','\n'));k_=len([l for l in (q.group(1).split('\n') if q else []) if l.startswith('- ')])
@@ -355,7 +388,7 @@ if mode=='run':
     ib('S-RES-7','투자리서치','개장 전 점검 기록',f"이번 주 {len(pr_)}건" if I.get('preopen') is not None else '개장 전 점검 폴더 목록을 읽지 못함 — 확인 필요',PI)
     mon=(sun+dt.timedelta(days=1)).isoformat()
     if I.get('preopen') is not None and not any(n.startswith(mon+'-monday') for n in pr_):fd('F-OPS-7-pre','운영관리',f'월요일 개장 전 점검 기록 없음({mon})')
-    ib('S-OPS-4','운영관리','개발 관제판 점검(R1~R6)',(f'관제판 점검 발견 {bn}건' if bn is not None else '관제판 점검 끝내지 못함')+(' · '+' · '.join(f'{k} {v}' for k,v in sorted({r_:len(re.findall("^"+r_+" ",B,re.M)) for r_ in ('R1','R2','R4','R5','R6')}.items()) if v) if bn else ''),[l for l in B.split('\n') if re.match(r'^(R\d |미점검 )',l)][:8])
+    ib('S-OPS-4','운영관리','개발 관제판 점검(R1~R6)',(f'관제판 점검 발견 {bn}건' if bn is not None else '관제판 점검 끝내지 못함')+(' · '+' · '.join(f'{k} {v}' for k,v in sorted({r_:len(re.findall("^"+r_+" ",B,re.M)) for r_ in ('R1','R2','R4','R5','R6')}.items()) if v) if bn else ''),[(SKL(STK(' '.join(l.split()[:2]),1))+' · '+l if re.match(r'^R\d ',l) and not l.startswith('R1 제외') else l) for l in B.split('\n') if re.match(r'^(R\d |미점검 )',l)][:8])
     ib('S-OPS-5','운영관리','PC 상태 점검',f'PC 상태 {host}',A[:5])
     STC={};
     for k,v in T.items():STC.setdefault(v.get('status'),[]).append(k)
@@ -375,6 +408,7 @@ if mode=='run':
             if GD[k]:
                 full=[z for z in GD[k] if ': ' in z];nm_=[z for z in GD[k] if ': ' not in z];sh=full[:24]
                 ib(f'S-{code_}-D',k,'이번 주 새로·바뀐 점검·검토 문서',f'{len(GD[k])}건(문서 머리 요약 · 원문은 docs/claude)',sh+([f'요약 생략 {len(full)-len(sh)+len(nm_)}건: '+', '.join([z.split(":")[0] for z in full[24:]]+nm_)] if len(full)>24 or nm_ else []))
+    for f_ in F:f_['weeks']=STK(re.sub(r'-\d{4}$','',f_['id']),0)
     SO={'운영관리':0,'투자리서치':1,'연구개발':2,'법률':3};IB.sort(key=lambda z:(SO[z['team']],z['id'].endswith('-D'),z['id']))
     col='🔴' if red else '🟠' if any(f['sev']=='🟠' for f in F) else '🟢'
     out={'id':'ceo-'+today,'period':[PS,PE],'color':col,'findings':F,'inbox':[f"{b_['id']} [{b_['team']}] {b_['title']} | {b_['sum'][:120]}" for b_ in IB],'prev':{'id':pid,'defaulted':[x['key'] for x in exp],'waiting':[x['key'] for x in wait]},'board_decisions':dec}
@@ -391,12 +425,12 @@ if mode=='run':
     '팀장 제안:','{{PROPOSALS}}',
     '### 3. 감사실 (원문 그대로)',f"- Judge 보고서(이번 주 수정): {' / '.join(jd) or '없음'} · 파이프라인 최근 실행 {dvs}",f"- 독립 대조 일별: {' · '.join(tv)}",f'- C1 누계(관제판 redesign-t2 인용): "{c1}"',
     '### 4. 사장님 결정',f"- 관제판 결정함 대기 {len(dec)}건: {', '.join(dec) or '없음'}",*wl4,'{{DECISIONS}}',
-    '### 5. 알림만',*pl,*[f"- {x['id']} [{x['team']}] {'(참고) ' if x['sev']=='ℹ' else ''}{x['text']}" for x in F],'{{QUEUE}}',
+    '### 5. 알림만',*pl,*[f"- {x['id']} [{x['team']}] {'(참고) ' if x['sev']=='ℹ' else ''}{x['text']} ⟨{SKL(x['weeks'])}⟩" for x in F],'{{QUEUE}}',
     '### 6. 다음 주',*([f'- {x}' for x in sorted(nx)] or ['- 일정 없음(일정표·실적 달력·일회성 예약 기준)']),
     '### 7. 관제판 점검 원문','```text',B,'```',
     '<!-- ceo-state '+json.dumps(NS,ensure_ascii=False)+' -->','']
     TM=os.path.dirname(os.path.abspath(inj));open(TM+'/section.md','w',encoding='utf-8',newline='\n').write('\n'.join(S))
-    json.dump({**out,'inbox':[{'id':b_['id'],'team':b_['team'],'title':b_['title']} for b_ in IB],'prev_D':len([x for x in DL if x['sec']==pid]) if pid else None,'waiting_n':len(wait),'prev_state':PS0,'state':NS,'board_n':bn,'prev_path':fp(RP) if pvb is not None else None,'today':today},open(TM+'/run.json','w',encoding='utf-8'),ensure_ascii=False)
+    json.dump({**out,'bnew':bnew,'inbox':[{'id':b_['id'],'team':b_['team'],'title':b_['title']} for b_ in IB],'prev_D':len([x for x in DL if x['sec']==pid]) if pid else None,'waiting_n':len(wait),'prev_state':PS0,'state':NS,'board_n':bn,'prev_path':fp(RP) if pvb is not None else None,'today':today},open(TM+'/run.json','w',encoding='utf-8'),ensure_ascii=False)
     print(json.dumps(out,ensure_ascii=False));sys.exit()
 if mode=='finalize':
     TM=sys.argv[2];U=json.load(open(TM+'/run.json',encoding='utf-8'));S=open(TM+'/section.md',encoding='utf-8').read();V=[];today=U['today'];td=dt.date.fromisoformat(today)
@@ -484,8 +518,8 @@ if mode=='finalize':
     if not body.startswith(pb):V.append('덧붙이기 검사 실패')
     os.makedirs('/mnt/user-data/outputs',exist_ok=True);open('/mnt/user-data/outputs/ceo-weekly-report.md','wb').write(body)
     d8=today.replace('-','');open(f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','w',encoding='utf-8',newline='\n').write(f"docs(claude): ceo weekly report {today} (weekly team-lead meeting)\ndocs/claude/ceo-weekly-report.md\n")
-    fi=sum(1 for f in U['findings'] if f.get('sev')=='ℹ');fc=len(U['findings'])-fi;bn=U.get('board_n');pre=f'⚠ 이번 주 답 필요 {hot}건 · ' if hot else ''
-    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 발견 {fc}건{f'(참고 {fi}건 별도)' if fi else ''} · 관제판 점검 {str(bn)+'건' if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
+    fi=sum(1 for f in U['findings'] if f.get('sev')=='ℹ');fc=len(U['findings'])-fi;fn=sum(1 for f in U['findings'] if f.get('sev')!='ℹ' and f.get('weeks',1)==1);bn=U.get('board_n');bw=U.get('bnew');pre=f'⚠ 이번 주 답 필요 {hot}건 · ' if hot else ''
+    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 새 발견 {fn}건(계속 {fc-fn}건{f' · 참고 {fi}건 별도' if fi else ''}) · 관제판 점검 {(f'새로 {bw}건(전체 {bn}건)' if bw is not None else str(bn)+'건') if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
     print(json.dumps({'validation':V or 'OK','D':n,'hot':hot,'push':push,'report':'/mnt/user-data/outputs/ceo-weekly-report.md','report_sha256':hashlib.sha256(body).hexdigest(),'pending':f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','pending_name':f'ceo-weekly-{d8}.txt'},ensure_ascii=False))
 if mode=='dash':
     src,out=sys.argv[2:4];tx=open(src,encoding='utf-8',errors='replace').read().replace('\r\n','\n')
@@ -610,7 +644,7 @@ if mode=='dash':
                     if mc:clo+=1;add(w,'closed',f'closed:{len(R)}',title=mc.group(1),due=mc.group(2),plain='답이 없어 현행 유지로 닫음',detail=mc.group(3));continue
                     mf=re.match(r'^- (F-[A-Z]+-[\w-]+) \[(\S+)\] (?:\(참고\) )?(.*)$',ln)
                     if mf:
-                        fid,t_,txt=mf.groups();sv=sevf(fid,txt);fi+=sv=='ℹ';fa+=sv!='ℹ';o=f_team.get(t_,'ok');rk={'ok':0,'info':1,'warn':2,'bad':3}
+                        fid,t_,txt=mf.groups();txt=re.sub(r' ⟨(?:새로|계속 \d+주째)⟩$','',txt);sv=sevf(fid,txt);fi+=sv=='ℹ';fa+=sv!='ℹ';o=f_team.get(t_,'ok');rk={'ok':0,'info':1,'warn':2,'bad':3}
                         st={'🔴':'bad','🟠':'warn','ℹ':'info'}[sv];f_team[t_]=st if rk[st]>rk[o] else o
                         add(w,'find',f'find:{fid}',team=t_,title=fid,plain=pf(fid,txt),detail=txt,state=st,label={'bad':'경고','warn':'주의','info':'참고'}[st]);continue
                     mq=re.match(r'^- 대기열 \[(\S+)\] (.*) — 근거 (.*?) · 순위 (\S+) · (알림만|결정 필요)(?: · 협조 ([^:]+): (.*))?$',ln)
@@ -669,6 +703,32 @@ if mode=='dash':
             bad.append(w);add(w,'head','head:fmt',detail=f'이 주 보고를 대시보드로 옮기지 못함({type(e).__name__}) — 원문 보고 파일을 보세요')
     WS=sorted({r['week'] for r in R})
     fam=lambda f:re.sub(r'-\d{4}$','',f.strip())
+    bkey=lambda r:(r['title'] or '')+' '+((r['detail'] or '').split(' ')[0])
+    PER={r['week']:tuple(r['detail'].split('~')) for r in R if r['key']=='head:period' and '~' in str(r['detail'] or '')}
+    REP={}
+    for w_ in WS:
+        if w_ in PER and PER[w_][0] not in REP or (w_ in PER and w_>REP.get(PER[w_][0],'')):REP[PER[w_][0]]=w_
+    FS={w_:{fam(r['title']) for r in R if r['week']==w_ and r['sec']=='find'} for w_ in WS}
+    BS={w_:{bkey(r) for r in R if r['week']==w_ and r['sec']=='board' and r['title']!='미점검'} for w_ in WS}
+    BO={w_:any(r['week']==w_ and r['key']=='board:head' for r in R) for w_ in WS}
+    def DST(w_,k,i):
+        n_=1;ps_=PER[w_][0];ex_=(dt.date.fromisoformat(ps_)-dt.timedelta(days=1)).isoformat()
+        for p_ in sorted([p for p in REP if p<ps_],reverse=True):
+            wk_=REP[p_]
+            if PER[wk_][1]!=ex_:break
+            ex_=(dt.date.fromisoformat(p_)-dt.timedelta(days=1)).isoformat()
+            if i==1 and not BO[wk_]:continue
+            if k in (FS if i==0 else BS)[wk_]:n_+=1
+            else:break
+        return n_
+    for r in R:
+        if r['week'] not in PER:continue
+        if r['sec']=='find':n_=DST(r['week'],fam(r['title']),0);r['kind']='새로' if n_==1 else f'계속 {n_}주째'
+        if r['sec']=='board' and r['title']!='미점검':n_=DST(r['week'],bkey(r),1);r['kind']='새로' if n_==1 else f'계속 {n_}주째'
+    for w_ in WS:
+        for r in R:
+            if r['week']==w_ and r['key']=='head:find':
+                nn_=sum(1 for x in R if x['week']==w_ and x['sec']=='find' and x['state']!='info' and x['kind']=='새로');r['detail']=f"새로 {nn_}건 · 계속 {(r['n'] or 0)-nn_}건"
     for a_,b_ in zip(WS,WS[1:]):
         now={fam(r['title']) for r in R if r['week']==b_ and r['sec']=='find'}
         for r in [r for r in R if r['week']==a_ and r['sec']=='prop' and r['kind'] in('알림만','결정 필요')]:
