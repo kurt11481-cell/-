@@ -27,6 +27,7 @@ consumers: 다음 통합점검 규칙 파일 개정 세션(a 반영), T2 "켜" �
 - 한계: EMA·σ60 재계산으로 판정이 바뀌는 경우는 잡지 못한다.
 - 순서: 권한 변경은 한 번에 하나 — enter-window(경로 때문에 authority) 병합 뒤에 Builder 지시문을 쓴다. 수동 경로(worktree Builder + Opus 독립 Judge).
 - 상태(2026-10-20 23:2x KST): enter-window3 병합(3e753f3) 뒤 Builder 지시문 작성 — docs/claude/close-confirm-e-builder-prompt.md(Opus 내장 재검토 2회 반영). 한계는 "S7 값 고정·다른 종목 영향 없음·화면 배수 mult 그대로"로 바뀜(같은 코드를 그 종목 종가만 바꿔 다시 부르므로 EMA·σ60 재계산도 잡음). 다음: 사용자가 worktree work-close-confirm-e의 Builder 세션에서 실행 → Builder 완료 뒤 Cowork가 Judge 지시문 작성.
+- 상태(2026-10-21 19:2x KST): **병합 완료.** Builder 보고 close-confirm-e-report.md → 독립 Judge PASS(close-confirm-e-judge-report.md, Windows·리눅스 실행 포함) → 사용자 승인 "결정 close-confirm-e 병합: 승인"(19:13) → 병합 스크립트 close-confirm-e-merge-2026-10-21.ps1(병합 f8d065d, 변경 8193884, 병합 뒤 점검 CCE_DONE). 통합점검 화면 version 24에 판정 유지 구간 표시, dashboard-order-panel 10절·order-instruction-design 9-1·t2-rc 사전 등록 변경 기록·gate-rule-epochs 반영. 남은 확인: 병합 뒤 첫 decide 주문표(있으면)의 hold.status = ok, 매수 lo~hi ⊆ band, hold 계산 시간.
 
 ## 3. monday-gap — M1 (월요일 개장 전 점검 v2.2)
 - 바꿀 것:
