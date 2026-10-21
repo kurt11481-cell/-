@@ -135,7 +135,8 @@ if (-not (Test-Path -LiteralPath $wrapperPath -PathType Leaf)) { throw "WRAPPER_
 $taskExistsBefore = Get-TaskExistence -TaskName $contract.task_name
 
 $powerShellExecutable = (Get-Command powershell.exe -ErrorAction Stop).Source
-$actionArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -RepositoryRoot "{1}"' -f $wrapperPath, $resolvedRepository
+# Hidden window: keyboard Ctrl+C in the visible window stopped the decide run on 2026-10-21.
+$actionArguments = '-WindowStyle Hidden -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -RepositoryRoot "{1}"' -f $wrapperPath, $resolvedRepository
 $action = New-ScheduledTaskAction -Execute $powerShellExecutable -Argument $actionArguments -WorkingDirectory $resolvedRepository
 $triggerA = New-ScheduledTaskTrigger -Weekly -WeeksInterval 1 -DaysOfWeek Monday, Tuesday, Wednesday, Thursday, Friday -At "22:00"
 $triggerB = New-ScheduledTaskTrigger -Weekly -WeeksInterval 1 -DaysOfWeek Tuesday, Wednesday, Thursday, Friday, Saturday -At "12:30"

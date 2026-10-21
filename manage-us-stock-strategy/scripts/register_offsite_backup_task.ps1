@@ -77,7 +77,8 @@ if (-not $timezoneReady) {
 $powerShellExecutable = (Get-Command powershell.exe -ErrorAction Stop).Source
 $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 foreach ($task in $tasks) {
-    $actionArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -RepositoryRoot "{1}"' -f $scriptPath, $resolvedRepository
+    # Hidden window: keyboard Ctrl+C in the visible window stopped the decide run on 2026-10-21.
+    $actionArguments = '-WindowStyle Hidden -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -RepositoryRoot "{1}"' -f $scriptPath, $resolvedRepository
     $action = New-ScheduledTaskAction -Execute $powerShellExecutable -Argument $actionArguments -WorkingDirectory $resolvedRepository
     $trigger = New-ScheduledTaskTrigger -Daily -At $task.TriggerTime
     $settings = New-ScheduledTaskSettingsSet `
