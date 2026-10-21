@@ -25,6 +25,7 @@ sys.path.insert(0, str(TESTS))
 import test_auto_core_decide as decide_fixture  # noqa: E402
 import test_auto_core_risk1r as risk1r  # noqa: E402
 import test_auto_core_tickets as tickets_tests  # noqa: E402
+from test_auto_core_hold_range import revert_hold_view  # noqa: E402  (close-confirm e: priceCalc band/hold off)
 
 tk = tickets_tests.tk
 decide_module = tickets_tests.decide_module
@@ -212,7 +213,7 @@ class GoldenCauseTests(unittest.TestCase):
     def test_the_old_enter_window_gives_the_base_golden(self):
         with mock.patch.object(tk, "enter_window", _old_enter_window):
             old = self.measure()
-        self.assertEqual({name: risk1r._digest(view) for name, view in old.items()}, BASE_GOLDEN)
+        self.assertEqual({name: risk1r._digest(revert_hold_view(view)) for name, view in old.items()}, BASE_GOLDEN)
         new = self.measure()
         measured = {name: risk1r._digest(view) for name, view in new.items()}
         self.assertEqual(measured, risk1r.GOLDEN)

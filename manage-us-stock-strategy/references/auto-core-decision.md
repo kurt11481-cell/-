@@ -158,6 +158,13 @@ journal block, dirty paths, research wait, the S7 review file and id, ticket iss
   (1 - sigma60) cent up; multiplier to 4 decimals in the same direction; dashboard conversion = Kiwoom
   reference close x mult, valid within the approximate close +/- 1%. No emergency, MOC or strength-trigger
   ticket (alerts only). The option layer is not built in T2 (no option field; the screen shows "생략").
+- Hold range (close-confirm e, user decision 2026-10-20): decide gives every ticket `priceCalc.band` (the +/-1%
+  range above) and `priceCalc.hold`, the cent range in which the same judgment comes out when the ticket symbol's
+  own evaluation-session close is replaced by each cent of the band and everything else (S7, the other symbols,
+  the cash) stays fixed (buy: a ticket at a step r not below the ticket's whose quantity still passes G4 at b x
+  mult; sell: a ticket at a step not below). A buy's entry range `lo`-`hi` is narrowed to the hold range and a
+  buy whose range is unverified gets no ticket (`HOLD_RANGE_UNVERIFIED`); a sell keeps `lo`-`hi` = band and
+  carries the range for a warning only, and outcome classification keeps the band.
 - Entry window (r4, enter-window 2026-10-20): the start is the pre-market open of the session's own KST day =
   calendar `core_open_at` in KST - 5h30m (17:00 summer, 18:00 winter; Kiwoom takes a U.S. LOC order from the
   pre-market open to the regular close, user 2026-10-20), never before 07:45 of the issue day; the end stays the open

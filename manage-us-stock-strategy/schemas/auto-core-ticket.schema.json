@@ -26,6 +26,7 @@
     "price": {"type": "number", "minimum": 0},
     "priceRule": {"type": "string", "minLength": 1},
     "priceCalc": {
+      "description": "close-confirm e (user decision 2026-10-20): band = the approximate close +/- 1% (outcome classification keeps it); hold = the cent range where the ticket's judgment holds with only that symbol's evaluation-session close changed (S7 fixed); a buy's lo-hi is hold, a sell's lo-hi stays band; a buy whose hold is unverified gets no ticket; tickets without band and hold (older ones, the replay) stay valid.",
       "type": "object",
       "additionalProperties": false,
       "required": ["mult", "round", "lo", "hi", "label"],
@@ -34,7 +35,28 @@
         "round": {"enum": ["up", "down"]},
         "lo": {"type": "number", "minimum": 0},
         "hi": {"type": "number", "minimum": 0},
-        "label": {"type": "string", "minLength": 1}
+        "label": {"type": "string", "minLength": 1},
+        "band": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lo", "hi"],
+          "properties": {"lo": {"type": "number", "minimum": 0}, "hi": {"type": "number", "minimum": 0}}
+        },
+        "hold": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "lo", "hi", "lo_limit", "hi_limit", "checked", "reason", "basis"],
+          "properties": {
+            "status": {"enum": ["ok", "unverified"]},
+            "lo": {"type": ["number", "null"], "minimum": 0},
+            "hi": {"type": ["number", "null"], "minimum": 0},
+            "lo_limit": {"type": ["string", "null"]},
+            "hi_limit": {"type": ["string", "null"]},
+            "checked": {"type": "integer", "minimum": 0},
+            "reason": {"type": ["string", "null"]},
+            "basis": {"type": "string", "minLength": 1}
+          }
+        }
       }
     },
     "qty": {"type": "integer", "minimum": 1},
