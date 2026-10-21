@@ -642,7 +642,10 @@ def classify_outcome(ticket: dict[str, Any], rows: list[dict[str, Any]]) -> dict
         return {**base, "state": "not_entered"}
     ordered, filled, cancelled, amount = 0, 0, 0, Decimal(0)
     as_ticket = True
-    low, high = Decimal(str(ticket["priceCalc"]["lo"])), Decimal(str(ticket["priceCalc"]["hi"]))
+    # User decision 2026-10-20 (e): "as the ticket" keeps the +/-1% band (a buy's lo-hi is its narrower hold
+    # range; an older ticket without band has the band as lo-hi).
+    band = ticket["priceCalc"].get("band") or ticket["priceCalc"]
+    low, high = Decimal(str(band["lo"])), Decimal(str(band["hi"]))
     mult = Decimal(str(ticket["priceCalc"]["mult"]))
     for row in mine:
         qty, done, cancel = _quantity(row.get("ord_qty")), _quantity(row.get("cntr_qty")), _quantity(row.get("cncl_qty"))
@@ -725,9 +728,7 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
     blocked: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
     tickets: list[dict[str, Any]] = []
-    global_reasons = list(ctx["gate0"]["reasons"]) + list(ctx["gate1"]["reasons"])
-    reduce_items = {item["symbol"]: item for item in (review or {}).get("recommendations", {}).get("reduce") or []}
-    add_symbols = {item["symbol"] for item in (review or {}).get("recommendations", {}).get("add") or []}
+    global_reasons, reduce_items, add_symbols = _circuit_inputs(ctx)
 
     # t2rc-corefix 4: the redeployment candidate is the first ranked one whose sell circuit is not open today
     # (a symbol sold today is one of them), so a sold first-ranked symbol gives way to the next.
@@ -739,38 +740,21 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
 
     # Sells (circuit D5): a held symbol with an S7 reduce item or a card EXIT/TRIM target and sell evidence.
     for symbol in sorted(holdings):
-        check = checks.get(symbol) or {}
-        evidence = ctx["evidence"][symbol]["sell"]
-        gap_sources, trim_missing = _sell_gap_sources(checks, symbol, reduce_items)
-        if trim_missing:
-            blocked.append({"symbol": symbol, "side": "sell", "reasons": ["CARD_TRIM_SIZE_MISSING"]})
-        if not gap_sources or not evidence["basis_met"]:
-            continue
-        source, target = min(gap_sources, key=lambda item: item[1])
-        candidates.append({"symbol": symbol, "side": "sell", "gap_source": source, "target_weight": float(target)})
-        reasons = list(global_reasons) + list(check.get("reasons") or []) + ctx["data_reasons"].get(symbol, [])
-        ticket = _sell_ticket(ctx, symbol, source, target, evidence, check, reasons, blocked)
+        ticket = _plan_sell(ctx, symbol, reduce_items, global_reasons, blocked, candidates)
         if ticket:
             tickets.append(ticket)
 
     # Buys (circuit D5): evidence that appeared today alone meets the basis, or an S7 add + requirement (3).
     for row in ctx["buy_rows"]:
-        symbol = row["code"]
-        evidence = ctx["evidence"][symbol]["buy"]
-        opened = evidence["new_basis_met"] or (symbol in add_symbols and evidence["basis_met"])
-        if not opened:
-            continue
-        candidates.append({"symbol": symbol, "side": "buy", "trigger": "NEW_EVIDENCE" if evidence["new_basis_met"]
-                           else "S7_ADD_RECOMMENDATION"})
-        # r2 R2-1: without an OK research record of the day every buy (index ETFs included) is blocked.
-        research = [f"RESEARCH_RECORD_NOT_OK:{ctx['research_block']}"] if ctx["research_block"] is not None else []
-        reasons = list(global_reasons) + research + list((checks.get(symbol) or {}).get("reasons") or []) + \
-            ctx["data_reasons"].get(symbol, [])
-        ticket = _buy_ticket(ctx, symbol, row, evidence, reasons, blocked)
+        ticket = _plan_buy(ctx, row, add_symbols, global_reasons, blocked, candidates)
         if ticket:
             tickets.append(ticket)
 
     tickets = _limit_daily(tickets, config, blocked)
+    # close-confirm e: the hold range of every ticket left after the count limit (decide only; the replay and the
+    # other callers have no hold_eval and keep priceCalc as before).
+    if ctx.get("hold_eval") is not None:
+        tickets = _with_hold_ranges(ctx, tickets, blocked)
     reduce_plan = list((review or {}).get("recommendations", {}).get("reduce") or [])
     sells = [ticket for ticket in tickets if ticket["side"] == "sell"]
     for ticket in sells:
@@ -789,6 +773,187 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
         top = ["NO_CIRCUIT_OPEN"]
     return {"candidates": candidates, "tickets": tickets, "blocked": blocked,
             "no_action": {"value": no_action, "reasons": top[:5] if no_action else []}}
+
+
+def _circuit_inputs(ctx: dict[str, Any]) -> tuple[list[str], dict[str, Any], set[str]]:
+    """The G0/G1 reasons every ticket carries, the S7 reduce items by symbol and the S7 add symbols (plan() and
+    hold_range read them the same way)."""
+    review = ctx["review"]
+    global_reasons = list(ctx["gate0"]["reasons"]) + list(ctx["gate1"]["reasons"])
+    reduce_items = {item["symbol"]: item for item in (review or {}).get("recommendations", {}).get("reduce") or []}
+    add_symbols = {item["symbol"] for item in (review or {}).get("recommendations", {}).get("add") or []}
+    return global_reasons, reduce_items, add_symbols
+
+
+def _plan_sell(ctx: dict[str, Any], symbol: str, reduce_items: dict[str, Any], global_reasons: list[str],
+               blocked: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """plan()'s sell circuit of one held symbol: its sell ticket or None (blocked and candidates are appended to).
+    close-confirm e: hold_range calls it again with the ctx of another close."""
+    checks = ctx["checks"]
+    check = checks.get(symbol) or {}
+    evidence = ctx["evidence"][symbol]["sell"]
+    gap_sources, trim_missing = _sell_gap_sources(checks, symbol, reduce_items)
+    if trim_missing:
+        blocked.append({"symbol": symbol, "side": "sell", "reasons": ["CARD_TRIM_SIZE_MISSING"]})
+    if not gap_sources or not evidence["basis_met"]:
+        return None
+    source, target = min(gap_sources, key=lambda item: item[1])
+    candidates.append({"symbol": symbol, "side": "sell", "gap_source": source, "target_weight": float(target)})
+    reasons = list(global_reasons) + list(check.get("reasons") or []) + ctx["data_reasons"].get(symbol, [])
+    return _sell_ticket(ctx, symbol, source, target, evidence, check, reasons, blocked)
+
+
+def _plan_buy(ctx: dict[str, Any], row: dict[str, Any], add_symbols: set[str], global_reasons: list[str],
+              blocked: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """plan()'s buy circuit of one buy-requirement row: its buy ticket or None (blocked and candidates are appended
+    to). close-confirm e: hold_range calls it again with the ctx of another close and that ctx's row."""
+    symbol = row["code"]
+    evidence = ctx["evidence"][symbol]["buy"]
+    opened = evidence["new_basis_met"] or (symbol in add_symbols and evidence["basis_met"])
+    if not opened:
+        return None
+    candidates.append({"symbol": symbol, "side": "buy", "trigger": "NEW_EVIDENCE" if evidence["new_basis_met"]
+                       else "S7_ADD_RECOMMENDATION"})
+    # r2 R2-1: without an OK research record of the day every buy (index ETFs included) is blocked.
+    research = [f"RESEARCH_RECORD_NOT_OK:{ctx['research_block']}"] if ctx["research_block"] is not None else []
+    reasons = list(global_reasons) + research + list((ctx["checks"].get(symbol) or {}).get("reasons") or []) + \
+        ctx["data_reasons"].get(symbol, [])
+    return _buy_ticket(ctx, symbol, row, evidence, reasons, blocked)
+
+
+# ---------------------------------------------------------------------------------------------
+# close-confirm e: the hold range of a ticket (user decision 2026-10-20, close-confirm-monday-gap 2 e)
+# ---------------------------------------------------------------------------------------------
+
+HOLD_BASIS = "SYMBOL_CLOSE_ONLY:S7_FIXED"
+HOLD_UNVERIFIED = "HOLD_RANGE_UNVERIFIED"  # a buy without a verified hold range gets no ticket (fail closed)
+# Ticket fields the recomputation at the reference does not reproduce: the number (given after the range), the
+# display-only projection after a sale (hold_eval has no S7 model) and the plan line (written after the range).
+HOLD_SELF_CHECK_SKIP = ("after_sale", "ticket_id")
+
+
+def _hold_ticket(ctx: dict[str, Any], ticket: dict[str, Any], price: Decimal
+                 ) -> tuple[dict[str, Any] | None, str | None]:
+    """The ticket of the same symbol and side when that symbol's evaluation-session close is `price`: plan()'s
+    circuit helper run again on ctx["hold_eval"](symbol, price) with a scratch blocked and candidates list.
+    (ticket, None), or (None, limit code): NO_TICKET:<first blocked reason of that symbol and side, without
+    CARD_TRIM_SIZE_MISSING; CIRCUIT_CLOSED when the circuit does not open> or DATA (no ctx for that close)."""
+    symbol, side = ticket["ticker"], ticket["side"]
+    view = ctx["hold_eval"](symbol, price)
+    if view is None:
+        return None, "DATA"
+    blocked: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
+    global_reasons, reduce_items, add_symbols = _circuit_inputs(view)
+    if side == "sell":
+        again = _plan_sell(view, symbol, reduce_items, global_reasons, blocked, candidates)
+    else:
+        # The row of that close: its requirements (1)-(5) are judged again, not those of the reference.
+        row = next((item for item in view["buy_rows"] if item["code"] == symbol), None)
+        again = None if row is None else _plan_buy(view, row, add_symbols, global_reasons, blocked, candidates)
+    if again:
+        return again, None
+    reasons = [reason for item in blocked if item["symbol"] == symbol and item["side"] == side
+               for reason in item["reasons"] if reason != "CARD_TRIM_SIZE_MISSING"]
+    return None, "NO_TICKET:" + (reasons[0] if reasons else "CIRCUIT_CLOSED")
+
+
+def _hold_break(ctx: dict[str, Any], ticket: dict[str, Any], price: Decimal) -> str | None:
+    """None when the ticket's judgment holds at `price`, else the limit code. Holds: a ticket of that symbol and
+    side comes out with a step r not below the ticket's; for a buy, the ticket's quantity also passes G4 (and G2b
+    when max_buy_ticket_pct_of_equity is set) at the screen price b x mult, cent down as loc_price. A quantity or
+    decision-key difference is not a change of judgment."""
+    again, limit = _hold_ticket(ctx, ticket, price)
+    if again is None:
+        return limit
+    if Fraction(again["evidence"]["r"]) < Fraction(ticket["evidence"]["r"]):
+        return "STEP_DOWN"
+    if ticket["side"] != "buy":
+        return None
+    shown = (price * Decimal(str(ticket["priceCalc"]["mult"]))).quantize(CENT, rounding=ROUND_FLOOR)
+    pct = ctx["config"].get("max_buy_ticket_pct_of_equity")
+    if pct is not None and int(math.floor(ctx["equity"] * Decimal(str(pct)) / shown)) < ticket["qty"]:
+        return "G2B"
+    cash = ctx["cash"]
+    if cash is None or int(math.floor(cash / (shown * (1 + S["CASH_BUFFER"])))) < ticket["qty"]:
+        return "CASH"
+    return None
+
+
+def _hold_self_view(ticket: dict[str, Any]) -> dict[str, Any]:
+    view = {key: value for key, value in ticket.items() if key not in HOLD_SELF_CHECK_SKIP}
+    view["gap"] = {key: value for key, value in (ticket.get("gap") or {}).items() if key != "plan_premise"}
+    return view
+
+
+def hold_range(ctx: dict[str, Any], ticket: dict[str, Any]) -> dict[str, Any]:
+    """close-confirm e: the cent range [lo, hi] around the reference (the evaluation session's approximate close)
+    in which the ticket's judgment holds when that symbol's own evaluation-session close is each cent b of the
+    +/-1% band (priceCalc lo-hi of loc_price). Everything else stays as at the reference: S7 (review, E, equity,
+    weights, proposal evaluations), the other symbols, the cash and the redeployment candidate.
+
+    The recomputation at the reference must give the same ticket (all fields but after_sale, ticket_id and
+    gap.plan_premise), else status unverified (SELF_CHECK_MISMATCH; DATA when its ctx cannot be built;
+    EVAL_ERROR:<exception> when it raises). Up from the cent above the reference to the band's hi, down from the
+    cent below it to the band's lo, one cent at a time, stopping at the first cent where it does not hold (an
+    exception there counts as DATA): hi / lo = the last cent that holds, the reference when the first one does not.
+    Limits: BAND (held to the band's end) | NO_TICKET:<reason> | STEP_DOWN | CASH | G2B | DATA. checked = cents
+    computed, the reference included. Pure: inputs are not changed and no time or machine value is recorded."""
+    out: dict[str, Any] = {"status": "unverified", "lo": None, "hi": None, "lo_limit": None, "hi_limit": None,
+                           "checked": 0, "reason": None, "basis": HOLD_BASIS}
+    checked = 1
+    try:
+        reference = ctx["closes"][ticket["ticker"]]
+        band_lo = Decimal(str(ticket["priceCalc"]["lo"]))
+        band_hi = Decimal(str(ticket["priceCalc"]["hi"]))
+        again, limit = _hold_ticket(ctx, ticket, reference)
+    except Exception as exc:  # noqa: BLE001 - an error never stops decide: the range is unverified
+        return {**out, "checked": checked, "reason": f"EVAL_ERROR:{type(exc).__name__}"}
+    if again is None:
+        return {**out, "checked": checked, "reason": "DATA" if limit == "DATA" else "SELF_CHECK_MISMATCH"}
+    if _hold_self_view(again) != _hold_self_view(ticket):
+        return {**out, "checked": checked, "reason": "SELF_CHECK_MISMATCH"}
+
+    def scan(start: Decimal, step: Decimal, inside: Callable[[Decimal], bool]) -> tuple[Decimal, str]:
+        nonlocal checked
+        last, price = reference, start
+        while inside(price):
+            checked += 1
+            try:
+                stop = _hold_break(ctx, ticket, price)
+            except Exception:  # noqa: BLE001 - a cent that cannot be computed ends the range there
+                stop = "DATA"
+            if stop is not None:
+                return last, stop
+            last, price = price, price + step
+        return last, "BAND"
+
+    up = reference.quantize(CENT, rounding=ROUND_CEILING)
+    down = reference.quantize(CENT, rounding=ROUND_FLOOR)
+    high, high_limit = scan(up + CENT if up == reference else up, CENT, lambda price: price <= band_hi)
+    low, low_limit = scan(down - CENT if down == reference else down, -CENT, lambda price: price >= band_lo)
+    return {**out, "status": "ok", "lo": float(low), "hi": float(high), "lo_limit": low_limit,
+            "hi_limit": high_limit, "checked": checked}
+
+
+def _with_hold_ranges(ctx: dict[str, Any], tickets: list[dict[str, Any]], blocked: list[dict[str, Any]]
+                      ) -> list[dict[str, Any]]:
+    """close-confirm e: priceCalc gains band (the +/-1% lo-hi as before) and hold (hold_range). A buy's entry range
+    lo-hi becomes the hold range (only narrower); a buy whose range is unverified gets no ticket
+    (HOLD_RANGE_UNVERIFIED, blocked; its candidate stays). A sell keeps its ticket and lo-hi = band (the range is
+    carried for a warning only: a sell is never blocked by it)."""
+    kept = []
+    for ticket in tickets:
+        hold = hold_range(ctx, ticket)
+        calc = ticket["priceCalc"]
+        if ticket["side"] == "buy" and hold["status"] != "ok":
+            blocked.append({"symbol": ticket["ticker"], "side": "buy", "reasons": [HOLD_UNVERIFIED]})
+            continue
+        ticket["priceCalc"] = {**calc, "band": {"lo": calc["lo"], "hi": calc["hi"]}, "hold": hold}
+        if ticket["side"] == "buy":
+            ticket["priceCalc"].update(lo=hold["lo"], hi=hold["hi"])
+        kept.append(ticket)
+    return kept
 
 
 def _sell_gap_sources(checks: dict[str, Any], symbol: str, reduce_items: dict[str, Any]

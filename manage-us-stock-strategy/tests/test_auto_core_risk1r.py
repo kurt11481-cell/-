@@ -50,9 +50,10 @@ GOLDEN = {
     # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
     "pwr": "2aabe270157c4d8a401b10d1606874ccba4220a2206e1c7728614653595404c1",
     # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
-    "decide_compare": "2e565c3b7f2d10eb10089c81cce6899b62168bb36a6ede08f78159fcf925bf95",
+    # close-confirm-e: priceCalc band·hold 추가(매수 lo/hi = 판정 유지 구간) — test_auto_core_hold_range HoldCauseTests로 확인
+    "decide_compare": "6d24251698e869aaab0aea56603a1a60adffb63ea278320d540af232bcc550d2",
     # enter-window: enterWindow 시작 문구만 바뀜(test_auto_core_enter_window GoldenCauseTests로 확인)
-    "decide_apply": "d78459cbeb51b2d7ebe70284de3d73ffbae404093fb680c4f7fa1acbe870c43b",
+    "decide_apply": "e4eecf21ef59b01506ee4ba00b8625e3054f39d5867a919f6cd7b02e59303092",
 }
 OK_LINE = "1R(표시만) 무효선 $95.00 · 기준가 대비 -5.0% (2.0σ) · 약 $50 = 자산 0.50% · 자동 매도 없음"
 

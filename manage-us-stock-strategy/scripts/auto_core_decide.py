@@ -661,7 +661,8 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         research={"block": research_block, "sessions": research["sessions"], "damage": research["damage"]},
         input_hashes={"registry": registry.get("sha256"),
                       "research_record": decision["inputs"]["research_record"]["sha256"],
-                      "t1_result": decision["inputs"]["t1_result"]["sha256"]})
+                      "t1_result": decision["inputs"]["t1_result"]["sha256"]},
+        hold_range=True)  # close-confirm e: every ticket carries its hold range (priceCalc band, hold)
     gate1 = session["gate1"]
     decision.update(symbols={symbol: _symbol_view(result) for symbol, result in session["symbols"].items()},
                     evidence=session["evidence"], buy_requirements=session["rows"], tickets=session["planned"]["tickets"],
@@ -893,6 +894,28 @@ def portfolio_accepted_on(accepted_on: dict[str, str | None], holdings: dict[str
     return min(dates) if dates and None not in dates else None
 
 
+def _bars_with_close(item: dict[str, Any] | None, session: str, price: Decimal) -> dict[str, Any] | None:
+    """close-confirm e: a copy of one symbol's load_symbol result whose `session` bar has close = price, high =
+    max(high, price) and low = min(low, price) (None stays None) in both the raw and the adjusted bars (one copy
+    when they are the same object); every other session and field is the input's. The input is not changed (E7).
+    None = it cannot be built: no usable bars (status not OK), no such session, or the session's raw and adjusted
+    closes differ (a split adjustment reaching the evaluation session)."""
+    if item is None or item.get("status") != "OK":
+        return None
+    raw, adjusted = item["raw"], item["adjusted"]
+    raw_bar, adjusted_bar = raw["sessions"].get(session), adjusted["sessions"].get(session)
+    if raw_bar is None or adjusted_bar is None or raw_bar["close"] != adjusted_bar["close"]:
+        return None
+
+    def replaced(daily: dict[str, Any], bar: dict[str, Any]) -> dict[str, Any]:
+        moved = {**bar, "close": price, "high": None if bar["high"] is None else max(bar["high"], price),
+                 "low": None if bar["low"] is None else min(bar["low"], price)}
+        return {**daily, "sessions": {**daily["sessions"], session: moved}}
+
+    raw_b = replaced(raw, raw_bar)
+    return {**item, "raw": raw_b, "adjusted": raw_b if adjusted is raw else replaced(adjusted, adjusted_bar)}
+
+
 def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str, Any], evaluation_session: str,
                      bars: dict[str, dict[str, Any]], holdings: dict[str, int], cash: Decimal | None,
                      deposit: Decimal | None, sectors: dict[str, Any], members: list[str],
@@ -901,7 +924,8 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                      seen_fact_ids: set[str], policy: dict[str, Any], config: dict[str, Any],
                      keys: dict[str, Any], gate0: list[str], gate1: list[str],
                      s7_runner: Callable[[list[dict[str, Any]]], dict[str, Any]],
-                     research: dict[str, Any], input_hashes: dict[str, Any]) -> dict[str, Any]:
+                     research: dict[str, Any], input_hashes: dict[str, Any],
+                     hold_range: bool = False) -> dict[str, Any]:
     """F1 judgments, F4 requirements and gates, F5 tickets for one evaluation session.
 
     decide and auto_core_replay both call this (one implementation). bars are load_symbol outputs for every
@@ -912,6 +936,9 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     those records}.
     cash: the buy cash (order-available). deposit: the USD cash of the total equity behind the rule-file N and V6
     (t2-equity-cash: decide passes equity_cash's choice, the replay its one cash; the keyword name is kept).
+    hold_range (close-confirm e, user decision 2026-10-20): decide passes True, so plan() gets ctx["hold_eval"]
+    and every ticket its hold range (tickets_module.hold_range); False (the replay, the default) keeps the tickets
+    as before.
     """
     sessions = sorted(calendar["sessions"])
     later = [item for item in sessions if item > evaluation_session]
@@ -926,27 +953,34 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
         if bars[symbol]["status"] == "OK" and not bars[symbol]["split_suspects"]:
             series[symbol] = rules.build_series(bars[symbol]["adjusted"], sessions, evaluation_session)
     damage = list(research["damage"])
-    closes_raw = {symbol: bars[symbol]["raw"]["sessions"].get(evaluation_session, {}).get("close")
-                  for symbol in universe if bars[symbol]["status"] == "OK"}
-    nominal = tickets_module.rule_file_nominal(holdings, closes_raw, deposit, multipliers)
-    account = rules.v6_account(nominal.get("total"))
-    symbols_out, evidence, shocks = {}, {}, {}
-    for symbol in sorted(set(holdings) | set(members)):
+
+    # close-confirm e: the per-symbol calls below are shared with hold_eval (the same calls with the same arguments).
+    def raw_closes(by_symbol: dict[str, dict[str, Any]]) -> dict[str, Any]:
+        return {symbol: by_symbol[symbol]["raw"]["sessions"].get(evaluation_session, {}).get("close")
+                for symbol in universe if by_symbol[symbol]["status"] == "OK"}
+
+    def judge(symbol: str, symbol_bars: dict[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any]]:
         held = symbol in holdings
         check = checks[symbol]
         own_facts = None if facts is None else [fact for fact in facts if fact["symbol"] == symbol]
         # Card triggers judge even on a hash mismatch; static evidence counts only when the hash matches.
-        result = rules.evaluate_symbol(symbol=symbol, role="held" if held else "member", bars=bars.get(symbol),
+        result = rules.evaluate_symbol(symbol=symbol, role="held" if held else "member", bars=symbol_bars,
                                        calendar=calendar, evaluation_session=evaluation_session,
                                        registry_entry=check["entry"], held=held, member=symbol in members,
                                        multiplier=multipliers.get(symbol), facts=own_facts,
                                        buy_approved=symbol in tickets_module.APPROVED_BUY)
-        symbols_out[symbol] = result
         official = tickets_module.official_evidence(symbol, facts or [], evaluation_session=evaluation_session,
                                                     previous_session=previous_session, seen_fact_ids=seen_fact_ids)
-        evidence[symbol] = {side: tickets_module.evidence_summary(side=side, result=result, check=check,
-                                                                   official=official, config=config)
-                            for side in ("buy", "sell")}
+        return result, {side: tickets_module.evidence_summary(side=side, result=result, check=check,
+                                                               official=official, config=config)
+                        for side in ("buy", "sell")}
+
+    closes_raw = raw_closes(bars)
+    nominal = tickets_module.rule_file_nominal(holdings, closes_raw, deposit, multipliers)
+    account = rules.v6_account(nominal.get("total"))
+    symbols_out, evidence, shocks = {}, {}, {}
+    for symbol in sorted(set(holdings) | set(members)):
+        symbols_out[symbol], evidence[symbol] = judge(symbol, bars.get(symbol))
     facts_seen = sorted({fact_id for item in evidence.values() for side in item.values()
                          for fact_id in side["official"]} | set(seen_fact_ids))
     # S7 with the buy-target proposals of every symbol whose buy circuit may open (D5): new evidence alone, or the
@@ -983,13 +1017,17 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     # ev-rg1-hyper: a damage fact is cleared only by a later card acceptance (registry accepted.date) - the
     # candidate's own card; for the portfolio the earliest card of the holdings (none if a holding has no date).
     accepted_on = {symbol: card_accepted_on(checks[symbol]) for symbol in symbols_out}
+
+    def shock_of(symbol: str, by_symbol: dict[str, Any]) -> dict[str, Any]:
+        return rules.rrec1(benchmark=by_symbol.get(rules.C["RREC_BENCHMARK"]),
+                           candidate=by_symbol.get(symbol), evaluation_session=evaluation_session,
+                           ev3_user_dates=ev3, thesis_damage=damage,
+                           candidate_symbol=symbol, research_sessions=research["sessions"],
+                           rg2_series=by_symbol.get(rules.rg2_benchmark(sectors.get(symbol))),
+                           card_accepted_on=accepted_on[symbol])
+
     for symbol in sorted(symbols_out):
-        shocks[symbol] = rules.rrec1(benchmark=series.get(rules.C["RREC_BENCHMARK"]),
-                                     candidate=series.get(symbol), evaluation_session=evaluation_session,
-                                     ev3_user_dates=ev3, thesis_damage=damage,
-                                     candidate_symbol=symbol, research_sessions=research["sessions"],
-                                     rg2_series=series.get(rules.rg2_benchmark(sectors.get(symbol))),
-                                     card_accepted_on=accepted_on[symbol])
+        shocks[symbol] = shock_of(symbol, series)
     portfolio_shock = rules.rrec1(benchmark=series.get("SOXX"), candidate=None, evaluation_session=evaluation_session,
                                   ev3_user_dates=ev3, thesis_damage=damage,
                                   research_sessions=research["sessions"],
@@ -1005,18 +1043,25 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     shock = {**portfolio_shock, "by_symbol": {symbol: {"status": item["status"], "open": item["open"], "rg": item["rg"]}
                                               | ({"rg1_damage": item["rg1_damage"]} if "rg1_damage" in item else {})
                                               for symbol, item in shocks.items()}}
+
+    def requirement_row(symbol: str, nominal_of: dict[str, Any], closes_of: dict[str, Any],
+                        evidence_of: dict[str, Any], shock_of_symbol: dict[str, Any]) -> dict[str, Any]:
+        return tickets_module.buy_requirements(
+            symbol=symbol, held=symbol in holdings, s7=s7, nominal=nominal_of, peaks=peaks, earnings=earnings,
+            calendar_sessions=sessions, buy_session=buy_session, evaluation_session=evaluation_session,
+            generated_at=(review.get("inputs") or {}).get("generated_at"), cash=cash, close=closes_of.get(symbol),
+            check=checks[symbol], evidence=evidence_of["buy"],
+            watch_status=(watchlist["members"].get(symbol) or {}).get("cardStatus"),
+            m6=rules.m6_listed(symbol, m6_docs), shock=shock_of_symbol, research_block=research["block"])
+
+    def data_reason(result: dict[str, Any]) -> list[str]:
+        return ([] if result["status"] == "OK" and (result.get("indicators") or {}).get("sigma60")
+                else ["G1_SYMBOL_DATA:" + ",".join(result["reasons"] or ["SIGMA_UNAVAILABLE"])])
+
     rows = []
     for symbol in sorted(symbols_out):
-        rows.append(tickets_module.buy_requirements(
-            symbol=symbol, held=symbol in holdings, s7=s7, nominal=nominal, peaks=peaks, earnings=earnings,
-            calendar_sessions=sessions, buy_session=buy_session, evaluation_session=evaluation_session,
-            generated_at=(review.get("inputs") or {}).get("generated_at"), cash=cash, close=closes_raw.get(symbol),
-            check=checks[symbol], evidence=evidence[symbol]["buy"],
-            watch_status=(watchlist["members"].get(symbol) or {}).get("cardStatus"),
-            m6=rules.m6_listed(symbol, m6_docs), shock=shocks[symbol], research_block=research["block"]))
-    data_reasons = {symbol: ([] if result["status"] == "OK" and (result.get("indicators") or {}).get("sigma60")
-                             else ["G1_SYMBOL_DATA:" + ",".join(result["reasons"] or ["SIGMA_UNAVAILABLE"])])
-                    for symbol, result in symbols_out.items()}
+        rows.append(requirement_row(symbol, nominal, closes_raw, evidence[symbol], shocks[symbol]))
+    data_reasons = {symbol: data_reason(result) for symbol, result in symbols_out.items()}
     equity = _decimal((review.get("equity") or {}).get("closing_equity_usd"))
     weights = {item["symbol"]: item["weight"] for item in review.get("positions") or [] if item.get("weight") is not None}
     adjusted_for_s7 = {symbol: {item: format(bar["close"], "f") for item, bar in bars[symbol]["adjusted"]["sessions"].items()}
@@ -1026,12 +1071,22 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     policy_instruments = set(exposure_policy["card_stock_core"]) | set(exposure_policy["allowed_index_etfs"])
     redeploy_ranked = redeploy_ranking(rows=rows, checks=checks, evidence=evidence, scenarios=scenario,
                                        policy_instruments=policy_instruments)
+
+    def known(closes_of: dict[str, Any]) -> dict[str, Any]:
+        return {symbol: value for symbol, value in closes_of.items() if value is not None}
+
+    def sigma_of(result: dict[str, Any]) -> Any:
+        return (result.get("indicators") or {}).get("sigma60")
+
+    def marks_of(result: dict[str, Any]) -> dict[str, Any]:
+        return {key: (result.get("indicators") or {}).get(key) for key in ("ema20", "atr14")}
+
     ctx = {
         "run_day": day, "mode": mode, "evaluation_session": evaluation_session, "buy_session": buy_session,
         "calendar": calendar, "issued_at": issued_at, "symbols": symbols_out, "checks": checks, "review": review,
         "s7": s7, "holdings": holdings, "equity": equity, "weights": weights, "cash": cash,
-        "closes": {symbol: value for symbol, value in closes_raw.items() if value is not None},
-        "sigmas": {symbol: (item.get("indicators") or {}).get("sigma60") for symbol, item in symbols_out.items()},
+        "closes": known(closes_raw),
+        "sigmas": {symbol: sigma_of(item) for symbol, item in symbols_out.items()},
         "config": config, "gate0": {"ok": not gate0, "reasons": list(gate0)},
         "gate1": {"ok": not gate1, "reasons": gate1}, "evidence": evidence, "buy_rows": rows,
         "data_reasons": data_reasons, "proposal_results": proposal_results,
@@ -1040,9 +1095,40 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
         "input_hashes": {**input_hashes, "s7_review_id": review.get("review_id")},
         "research_block": research["block"],
         # risk1r: evaluation-session EMA20 and ATR14 for the display-only 1R of a buy ticket.
-        "indicators": {symbol: {key: (item.get("indicators") or {}).get(key) for key in ("ema20", "atr14")}
-                       for symbol, item in symbols_out.items()},
+        "indicators": {symbol: marks_of(item) for symbol, item in symbols_out.items()},
     }
+
+    def hold_eval(symbol: str, price: Decimal) -> dict[str, Any] | None:
+        """close-confirm e: plan()'s ctx at the time of the call (a shallow copy) with `symbol`'s evaluation-session
+        close replaced by `price` (_bars_with_close) and that symbol recomputed by the same calls as above: series,
+        F1 and evidence (judge), rule-file N, R-REC1 (shock_of), its buy-requirement row, data reason, sigma60,
+        scenario and 1R marks. S7 (review, s7, equity, weights, proposal evaluations), the other symbols, cash,
+        gates, keys and the redeployment candidate stay; model_for is None (the after-sale projection is display
+        only) and hold_eval None (no recursion). None = the bars of that close cannot be built (DATA)."""
+        changed = _bars_with_close(bars.get(symbol), evaluation_session, price)
+        if changed is None:
+            return None
+        bars_b = {**bars, symbol: changed}
+        series_b = {key: value for key, value in series.items() if key != symbol}
+        if changed["status"] == "OK" and not changed["split_suspects"]:
+            series_b[symbol] = rules.build_series(changed["adjusted"], sessions, evaluation_session)
+        closes_b = raw_closes(bars_b)
+        result, evidence_b = judge(symbol, changed)
+        row = requirement_row(symbol, tickets_module.rule_file_nominal(holdings, closes_b, deposit, multipliers),
+                              closes_b, evidence_b, shock_of(symbol, series_b))
+        view = dict(ctx)
+        scenarios_b = {key: value for key, value in view["scenarios"].items() if key != symbol}
+        if series_b.get(symbol):
+            scenarios_b[symbol] = tickets_module.scenarios(series_b[symbol]["close"])
+        view.update(symbols={**view["symbols"], symbol: result}, evidence={**view["evidence"], symbol: evidence_b},
+                    closes=known(closes_b), sigmas={**view["sigmas"], symbol: sigma_of(result)},
+                    buy_rows=[row if item["code"] == symbol else item for item in view["buy_rows"]],
+                    data_reasons={**view["data_reasons"], symbol: data_reason(result)}, scenarios=scenarios_b,
+                    indicators={**view["indicators"], symbol: marks_of(result)}, model_for=None, hold_eval=None)
+        return view
+
+    if hold_range:
+        ctx["hold_eval"] = hold_eval
     planned = tickets_module.plan(ctx)
     for ticket in planned["tickets"]:
         ticket["mode"] = mode
