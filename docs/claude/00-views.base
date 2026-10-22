@@ -1,0 +1,52 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+views:
+  - type: table
+    name: 최근 바뀐 문서
+    filters:
+      and:
+        - 'file.mtime > now() - "1 week"'
+        - not:
+            - 'file.inFolder("dev-runs")'
+            - 'file.inFolder("_pending")'
+            - 'file.name.startsWith("INDEX-")'
+    order:
+      - file.name
+      - file.mtime
+      - file.folder
+    sort:
+      - property: file.mtime
+        direction: DESC
+    limit: 30
+  - type: table
+    name: 고치지 말 것
+    filters:
+      or:
+        - 'file.name.startsWith("integrated-stock-cards-v1-2026-10-02")'
+        - 'file.name.startsWith("watch-card-LITE-2026-10-03")'
+        - 'file.name.startsWith("watch-card-PWR-2026-10-03")'
+        - 'file.name.startsWith("watch-card-PLTR-2026-10-17")'
+        - 'file.name.startsWith("m6-relative-comparison-7stock-")'
+        - 'file.name.startsWith("recovery-gate-R-REC1-2026-10-09")'
+    order:
+      - file.name
+      - file.mtime
+    sort:
+      - property: file.mtime
+        direction: DESC
+  - type: table
+    name: 운영 규칙
+    filters:
+      or:
+        - 'file.inFolder("playbooks")'
+        - 'file.inFolder("scheduled-prompts")'
+        - 'file.name.startsWith("ops-fixes")'
+        - 'file.name.startsWith("dev-dashboard-protocol")'
+    order:
+      - file.name
+      - file.folder
+      - file.mtime
+    sort:
+      - property: file.mtime
+        direction: DESC
