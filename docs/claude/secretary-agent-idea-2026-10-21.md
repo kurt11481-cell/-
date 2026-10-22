@@ -153,3 +153,4 @@ consumer: 사장 결정(결정 secretary-1021) 받는 Cowork 세션 → 결정 �
 - 반영: ① Projects 미노출 → 대안 진행: 예약 작업 "비서 제안 v1"(월~토 09:25 KST) 지시문 초안 docs/claude/scheduled-prompts/pending-secretary/secretary-daily.txt(sha256 20b13bfd…, LF). 등록은 사장 승인 뒤("결정 secretary-daily: 승인"), 등록 조건: 컴퓨터 연결·코덱스저장소 폴더·자동 승인. 결과 파일 workspace/outputs/secretary/<날짜>.md(소비자 = 비서실 대화, 주간 팀장회의 다음 개정). ② Projects가 열리면(사장이 알려 줌) 8-1 조건으로 도입 진행 — 사장 지시로 기록, 도입 전 Claude Code 쪽 키움 주문 게이트 확인이 첫 단계.
 - 사람 손: 일회성 승인 1번. 일상 0(알림 읽기는 선택, 제안 실행은 사장이 고를 때만).
 - 답: 결정 secretary-daily: 승인 (2026-10-21 20:23 KST) → 예약 작업 생성 trig_01QL11yZhnxCJx7FXfCnRMT4(월~토 09:25, 첫 실행 10/22, 자동 승인·폴더 1개·컴퓨터 연결 확인, 모델 Opus 5.5 표시).
+- 첫 실행 확인 (2026-10-22 13:20 KST, Cowork): 10/22 09:26 실행 성공. 결과 workspace/outputs/secretary/2026-10-22.md 있음 · 제안 2건(≤3) · 실행 시간대 저장소 쓰기는 그 파일 1개뿐(금지 위반 없음) · 예약 작업 모델은 현재 claude-sonnet-5-5. 휴대폰 알림 도착 여부는 확인 필요. 관제판 secretary-daily → done.
