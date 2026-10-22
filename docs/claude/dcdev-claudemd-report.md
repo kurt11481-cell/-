@@ -14,3 +14,10 @@ Decision: "결정 dc-dev: Q1 a, Q2 a" (2026-10-22 15:17 KST), procedure docs/cla
 - Line endings: each edit kept CRLF; count of bare LF unchanged in both files (python check at write time).
 - Sizes: CLAUDE.md 17,498 -> 18,028 B (sha256 bb8e44b066c1...), README 10,882 -> 11,003 B (2a49004eece6...).
 - Unchanged on purpose: "Claude Code sessions never run dev-run/dev-merge/dev-queue", settings deny/ask rules, all safety/order/reconciliation/journal rules.
+
+## Fix round 1 (after Judge PASS with findings, 2026-10-22 15:4x)
+- Judge finding 1 (important): -ApproveAuthority and the authority approval now require the user's decision stated in the current conversation (CLAUDE.md Change classes; README step 4 and NEEDS_APPROVAL row) — never from an older record or memory.
+- Judge finding 2: Manual route line now also says the merge waits for the user's decision.
+- Judge finding 5: stale "user runs dev-merge" wording fixed in tools/dev_pipeline/builder-rules.md and docs/claude/dev-dashboard-protocol.md. tools/dev-merge.ps1 header comment left as is (script file, comment only — not worth touching a protected script).
+- Judge finding 4: docs/claude/dc-dev-2026-10-22.md is untracked in the main checkout and is committed by the 23:30 docs commit (adding it to this branch would block the fast-forward merge).
+- Judge finding 6: recorded in dc-dev-2026-10-22.md section 3 by Cowork (headless Builder cannot edit ask-protected paths; settings change needs a separate user decision).

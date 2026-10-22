@@ -55,10 +55,11 @@ are labeled 비교 중 and are not entered.
   `.\tools\dev-merge.ps1 <id>` on the PC itself via Desktop Commander and reports the result, never with -ApproveAuthority
   (user decision dc-dev Q1 a, 2026-10-22, docs/claude/dc-dev-2026-10-22.md). Docs-only changes need no Judge.
 - Authority/limit change (old K3: order stage, order tools, budget/ceiling/caps, approved products, reconciliation
-  invariants, kill switch): stop, user approval, independent Judge (manual route). After the user's approval Cowork may launch
+  invariants, kill switch): stop, user approval, independent Judge (manual route). After the user's approval stated in the current conversation Cowork may launch
   the manual-route Builder (worktree) and a separate read-only Judge session on the PC (dc-dev Q2 a); the merge still waits for
   the user's decision. If the pipeline escalates a run to authority,
-  dev-merge needs -ApproveAuthority, used only after the user's decision.
+  dev-merge needs -ApproveAuthority, used only after the user's decision stated in the current conversation (never from an older
+  record or memory).
 - Kiwoom acceptance pin: retired by redesign T1 (merged 510961a). manage-us-stock-strategy/assets/kiwoom-acceptance-pin-scope.json
   has status RETIRED and is kept as the list of formerly pinned files. Editing one of them no longer invalidates an
   acceptance; instead every auto-core run records the git commit SHA and dirty paths, and in apply mode an uncommitted edit to a guarded
@@ -110,7 +111,7 @@ are labeled 비교 중 and are not entered.
 - Before multi-file edits, present a plan first (or ask the user to press Shift+Tab for plan mode).
 - Manual route (authority/limit changes, pipeline-protected paths such as tools/**, .claude/**, CLAUDE.md, AGENTS.md, .gitignore, or a
   stopped pipeline run): Builder in a worktree (claude --worktree <name>), then a Judge in a separate session that never edits files.
-  Cowork may start both on the PC via Desktop Commander after the user's approval (dc-dev Q2 a).
+  Cowork may start both on the PC via Desktop Commander after the user's approval (dc-dev Q2 a); the merge still waits for the user's decision.
   Claude Code sessions never run dev-run/dev-merge/dev-queue and never edit .claude/settings*.json (deny); Cowork makes settings
   changes with user approval.
 - Talk to the user in Korean, one step at a time, giving the exact command to type.

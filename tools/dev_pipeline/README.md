@@ -8,7 +8,7 @@
 1. Cowork: `docs/claude/<id>-builder-prompt.md`(아래 dev-run 블록 포함) + `docs/claude/_pending/<id>.txt`(지시문 커밋 목록) + 큐 파일 `docs/claude/_dev-queue/<id>.txt`.
 2. Windows 작업 `InvestmentV2-DevQueue`(5분마다) → `tools/dev-queue.ps1`: 잠금 확인 → 가장 오래된 큐 1개를 `workspace/outputs/dev-runs/_taken/`으로 옮김 → 지시문이 커밋돼 있지 않으면 `commit-docs.ps1` 1번 → `tools/dev-run.ps1 <id>`.
 3. dev-run: preflight(경로 길이 포함) → 기준선 임시 worktree 준비(같은 base SHA·python·방식이면 캐시) → 헤드리스 Builder(`claude -p --worktree <id>`)와 기준선 전체 스위트를 **동시에** → Builder 끝 → 기준선 끝을 기다림 → 메인 체크아웃 비교 → 스크립트 판정(범위·보호 경로·위생·테스트·스키마) → 헤드리스 Judge(Read·Grep·Glob만) → 실패면 같은 worktree에서 수정 1회 → 결과.
-4. Cowork: `.\tools\dev-merge.ps1 <id>` (authority면 사장 결정 뒤 `-ApproveAuthority`).
+4. Cowork: `.\tools\dev-merge.ps1 <id>` (authority면 이 대화에 사장 결정 문구가 있을 때만 `-ApproveAuthority`).
 5. Windows 작업 `InvestmentV2-DocsCommit`(매일 23:30): `tools/run-docs-commit.ps1` → `commit-docs.ps1` (결과 요약 `docs/claude/dev-runs/<id>.md`도 이때 커밋된다).
 
 ## 지시문 (`docs/claude/<id>-builder-prompt.md`)
@@ -67,7 +67,7 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 | status | 뜻 | 다음 |
 |---|---|---|
 | READY_TO_MERGE | 테스트·Judge PASS, general | Cowork가 `.\tools\dev-merge.ps1 <id>` 실행 후 알림 |
-| NEEDS_APPROVAL | PASS지만 authority | 사장 결정 → Cowork가 `.\tools\dev-merge.ps1 <id> -ApproveAuthority` |
+| NEEDS_APPROVAL | PASS지만 authority | 이 대화의 사장 결정 → Cowork가 `.\tools\dev-merge.ps1 <id> -ApproveAuthority` |
 | FAIL | 수정 1회 뒤에도 테스트 실패 또는 Judge FAIL | Cowork가 새 id로 다시 쓰거나 중단 |
 | BLOCKED | Builder가 BLOCKED.md를 씀(판단 필요) | Cowork가 이유를 보고 결정 |
 | JUDGE_ERROR / TIMEOUT | Judge 출력을 못 읽음 / 시간 초과 | 재시도 없음. 새 id로 |
