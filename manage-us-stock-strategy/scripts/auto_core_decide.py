@@ -449,6 +449,9 @@ def decide(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CON
     except Exception as exc:  # noqa: BLE001 - a scheduled run must always leave a FAIL record
         decision["status"] = "FAIL"
         decision["reasons"].append(f"UNEXPECTED_ERROR:{type(exc).__name__}:{str(exc)[:200]}")
+    except KeyboardInterrupt:  # decide-gap2: an interrupted run leaves a FAIL record too
+        decision["status"] = "FAIL"
+        decision["reasons"].append("INTERRUPTED:KeyboardInterrupt")
     return _finish(decision, output_root, output_directory, carry)
 
 
@@ -470,16 +473,24 @@ def _empty_decision(day: str, now: datetime) -> dict[str, Any]:
 
 def _wait_for_research(research_root: Path, day: str, clock: Callable[[], datetime],
                        sleeper: Callable[[float], None]) -> dict[str, Any]:
+    """decide-gap2: a KeyboardInterrupt during the wait only ends the wait (interrupted true); the run goes on as
+    without the record (buys blocked, sells and no-action judged as usual)."""
     started = clock()
     waited = 0
+    interrupted = False
     while not inputs.research_record_exists(research_root, day):
         current = clock().astimezone(KST)
         if current.time() >= RESEARCH_WAIT_UNTIL or current.date().isoformat() != day:
             break
-        sleeper(RESEARCH_POLL_SECONDS)
+        try:
+            sleeper(RESEARCH_POLL_SECONDS)
+        except KeyboardInterrupt:
+            interrupted = True
+            break
         waited += RESEARCH_POLL_SECONDS
     return {"found": inputs.research_record_exists(research_root, day), "waited_seconds": waited,
-            "started_at": started.isoformat(), "until_kst": RESEARCH_WAIT_UNTIL.strftime("%H:%M")}
+            "started_at": started.isoformat(), "until_kst": RESEARCH_WAIT_UNTIL.strftime("%H:%M"),
+            "interrupted": interrupted}
 
 
 def _calendar(now: datetime) -> dict[str, Any]:
