@@ -1,0 +1,26 @@
+== 실제 관제판 TODAY 2026-10-22 입력 49 건(옛 판은 planned·paused 안 읽음)
+ 가 같음 ['duet-judg', 'duet-sec']
+ 다 같음 []
+ 라 같음 []
+ 마 같음 []
+ 바 옛=[]
+    새=['e-new', 'redesign-t2']
+== 실제 관제판 TODAY 2026-10-23 입력 49 건(옛 판은 planned·paused 안 읽음)
+ 가 같음 ['duet-judg', 'duet-sec']
+ 다 같음 ['decide-research-gap', 'iv-c1c2', 'r-wd-1022']
+ 라 같음 []
+ 마 같음 []
+ 바 옛=[]
+    새=['e-new', 'redesign-t2']
+== 가짜 사례 입력 11 건(옛 판은 planned·paused 안 읽음)
+ 가 같음 []
+ 다 옛=['X10', 'X8']
+    새=[]
+ 라 같음 []
+ 마 같음 []
+ 바 옛=[]
+    새=['X1', 'X3', 'X5']
+== 측정: 갱신 없다고 가정한 ㉳ 건수(새 판)
+  2026-10-26 8 ['c-hwm-review', 'cashflow-api-gap', 'e-new', 'f-ifixai-audit', 'f-openshell', 'fx6-legacy-cash-min', 'redesign-t2', 'redesign-t5']
+  2026-10-29 12 ['c-hwm-review', 'cashflow-api-gap', 'close-confirm', 'devpipe-merge-lock', 'e-new', 'f-ifixai-audit', 'f-openshell', 'fx6-legacy-cash-min', 'redesign-t2', 'redesign-t5', 'swap-soxl-pwr', 't2-rc']
+  2026-11-05 15 ['c-hwm-review', 'cashflow-api-gap', 'close-confirm', 'devpipe-merge-lock', 'duet-obs', 'duet-trial', 'e-new', 'f-ifixai-audit', 'f-openshell', 'fx6-legacy-cash-min', 'redesign-t2', 'redesign-t5', 'secretary-projects', 'swap-soxl-pwr', 't2-rc']

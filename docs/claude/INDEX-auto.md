@@ -7,13 +7,14 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 
 # docs/claude 자동 목록
 
-- 문서(md) 358개 · 머리말 없음 101개 · 기타 파일 78개 · 하위 폴더 10개
+- 문서(md) 373개 · 머리말 없음 103개 · 기타 파일 78개 · 하위 폴더 11개
 - 찾는 법: 이 파일에서 키워드 검색 → 파일 열기. 상태(status)가 비어 있으면 머리말에 없다는 뜻(현행 여부 확인 필요).
 
 ## 문서
 
 | 파일 | 날짜 | id | 상태 | 요약·제목 | 비고 |
 |---|---|---|---|---|---|
+| 00-home.md | 2026-10-22 | 00-home | current | "Obsidian으로 docs/claude를 열 때 첫 화면 — 고치면 안 되는 파일, 지금 상태 보는 곳, 찾는 곳. 입구일 뿐 원본이 아님(원본은 각 파일·관제판)." |  |
 | analysis-library-design-2026-10-03.md | 2026-10-03 | analysis-library-design-202… | draft # 사용자 승… | 라이브러리화는 부분 타당 — 먼저 통합 점검의 카드 전체 읽기를 줄이고(REMOVE), 기존 원장·명단·SAVE 메모를 재사용, 색인만 최소 추가. 아카이브·DB·새 예약 작업은 하지 않음. |  |
 | analysis-linkage-map-2026-10-05.md | 2026-10-05 (202… | analysis-linkage-map | current | 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는지의 지도와, 새 작업을 만들 때 지켜야 할 연결 규칙(사용자 상시 지시 2026-10-05). |  |
 | artifact-design-rules-2026-10-14.md | 2026-10-14 | artifact-design-rules-2026-… | active (2026-… | 투자_V2 화면(아티팩트) HTML을 고치거나 재게시할 때 투자_V2 디자인 시스템의 색·글자·누르는 요소 크기 규칙을 유지한다. 표시 전용 규칙이며 권한·정책·상태·주문과 무관하다. |  |
@@ -62,13 +63,21 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | crash-exception-review-2026-10-09.md | 2026-10-09 02:5… | crash-exception-review-2026… | 위원회 Full 3인 전… | 장중 급락(뉴스 2건) 중 현금으로 사기 위한 노출 한도 일시 초과 요청을 검토. 지금 E 약 1.87(창 근사, 공식 약 1.84) → PWR 3주 1.91 · 6주 1.96 · 13주 2.06… |  |
 | dashboard-design-ops-review-2026-10-05.md | 2026-10-05 | dashboard-design-ops-review… | draft # 사용자 승… | 대시보드 디자인·운영 사례(Few, Shneiderman, Grafana, Kanban, SRE, WCAG, 데이터 신선도)와 두 대시보드를 대조. 구조는 대부분 사례 원칙과 맞음. 새 후보 G1… |  |
 | dashboard-order-panel-2026-10-07.md | 2026-10-07 | dashboard-order-panel-2026-… | applied (2026… | 통합점검 대시보드 맨 위에 "주문 지시" 칸을 추가했다. 저장소 컬렉션 orders(Cowork가 지시서 공개·발행 뒤 기록)를 키움 입력 순서(종목·구분·유형·가격·수량·검산)로 보여 준다. 예… |  |
+| dc-dev-2026-10-22.md | 2026-10-22 | dc-dev | current | Desktop Commander로 개발 파이프라인 사람 손 줄이기 — 병합(Q1)·수동 경로 실행(Q2) |  |
+| dcdev-claudemd-builder-prompt.md |  |  |  | Builder: dcdev-claudemd — record decision dc-dev in CLAUDE.md and the dev pipeline README | 머리말 없음 |
+| dcdev-claudemd-report.md |  |  |  | dcdev-claudemd Builder report (2026-10-22) | 머리말 없음 |
 | decide-gap-builder-prompt.md | 2026-10-21 | decide-gap-builder-prompt |  | decide 대기 중 Ctrl+C로 끊겨도 판정 기록(매도·무행동)을 남기게 한다 (관제판 작업 ID decide-research-gap) |  |
+| decide-gap2-builder-prompt.md | 2026-10-21 | decide-gap2-builder-prompt |  | decide 대기 중 Ctrl+C로 끊겨도 판정 기록(매도·무행동)을 남기게 한다 (관제판 작업 ID decide-research-gap) |  |
+| decide-gap2-report.md | 2026-10-22 | decide-gap2-report |  | decide 대기 중 Ctrl+C 처리 — Builder 보고 (관제판 작업 ID decide-research-gap) |  |
 | decision-receipt-m6v2-spec-2026-10-05.md | 2026-10-05 | decision-receipt-m6v2-spec-… | current | 4가지 질문(위원회·근거/후회/리스크·현금 부족 기회비용) 적용안을 재검토한 결과. 10/8 M6 v2 카드에 1단계(보유·관심·현금 한 표, 막힘 원인, 보유 유지 비용, 후회 2줄, 반대 1줄… |  |
 | delegation-loop-review-2026-10-22.md | 2026-10-22 | pb-1022 |  | "AI 위임 루프(매뉴얼로 일 넘기기)" 글 분석 → 투자_V2 뼈대 개편안(플레이북) |  |
 | dev-board-review-design-2026-10-03.md | 2026-10-03 |  |  | 개발 관제판 주간 점검 설계 (2026-10-03, 초안 v1) | 머리말 없음 |
 | dev-dashboard-protocol.md |  |  |  | 투자_V2 개발 관제판 — 갱신 규칙 (2026-10-03) | 머리말 없음 |
 | dram-candidate-review-2026-10-16.md | 2026-10-16 |  |  | DRAM 매수 후보 추가 검토 (2026-10-16) | 머리말 없음 |
 | dual-ai-review-2026-10-20.md | 2026-10-20 11:2… | dual-ai-review-2026-10-20 | 결정 완료 — Q2 a(… | AI 2개(Claude 메인 + 다른 회사 AI 서브 검수) 검토 — 가장 큰 이익은 다른 회사 AI의 교차 검수(아직 가설). 사용자가 Codex를 10/18까지 쓰고 있어 ChatGPT를 권장… |  |
+| duet-cleanup-judgments-2026-10-22.md | "2026-10-22" | duet-cleanup-judgments-2026… | "R3f·추가 확인 = … | "duet-1022 Q1 R3c·R3f 판단안 — 오래 보류·대기 작업 6건 + 추가 확인 1건" |  |
+| duet-interface-contract-2026-10-22.md | "2026-10-22" | duet-interface-contract-202… | "current — Du… | "Claude Duet 접속면 계약 + 열린 뒤 1주 시험 (duet-1022 Q3 a)" |  |
+| duet-redesign-2026-10-22.md | "2026-10-22" | duet-redesign-2026-10-22 | "결정됨 — duet-1… | "Duet은 사장과 말하는 창구일 뿐 실행층(PC 자동 코어)을 대신하지 못하고, 현행 규칙으로는 결정(일지 확인·대조 코드·권한 병합 승인)도 받을 수 없다(현재 Cowork 대화의 사장 메시지… |  |
 | e-filing-feed-k2-builder-prompt-2026-10-05.md | 2026-10-05 |  |  | e-filing-feed K2 Builder 지시문 — SEC 섀도 수집기 감시 명단 교체 (2026-10-05) | 머리말 없음 |
 | e-filing-feed-k2-builder-report-2026-10-05.md | 2026-10-05 |  |  | e-filing-feed K2 Builder 보고 — SEC 섀도 수집기 감시 명단 교체 (2026-10-05) | 머리말 없음 |
 | e-filing-feed-review-2026-10-05.md | 2026-10-05 |  |  | 공식 공시 자동 수집 경로 검토 (관제판 e-filing-feed, 2026-10-05) | 머리말 없음 |
@@ -177,6 +186,7 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | kiwoom-token-reuse-judge-prompt-2026-10-06.md | 2026-10-06 |  |  | 키움 토큰 재사용 K3 Judge 지시문 (2026-10-06) | 머리말 없음 |
 | kiwoom-token-reuse-review-2026-10-06.md | 2026-10-06 | kiwoom-token-reuse-review-2… | current | 대조·수동 분석이 실행마다 키움 토큰을 새로 받아 kiwoomcli(MCP) 토큰을 무효로 만드는 원인 진단과 수정안. 수정 대상 kiwoom_runtime_bridge.py는 키움 accepta… |  |
 | l2-full-review-2026-10-17.md | 2026-10-17 (평가 … | l2-full-review-2026-10-17 | draft v3 (미수락… | S7 L2(10/16) 전면 재검토 초안 v3. 세 종목 모두 HOLD(확신도 낮음). v2의 SOXL·MVLL TRIM은 철회 — 근거로 쓴 원가 손실 한도는 사용자가 10/1 D4로 폐지했고,… |  |
+| library.md | 2026-10-22 | library | current | "투자_V2 문서·자료 찾기 입구 — 어떤 기록이 어디 있는지. 목록 자체는 자동 목록·각 원장이 원본." |  |
 | loss-limit-review-s0-dollar-comparison-2026-09-30.md | 2026-09-30 |  |  | 손실한도·전략 전면 재검토 — S0 후보 한도 금액 환산 (2026-09-30) | 머리말 없음 |
 | loss-limit-review-s1-decisions-2026-09-30.md | 2026-09-30 |  |  | 손실한도·전략 전면 재검토 — S1 결정 메모 (2026-09-30) | 머리말 없음 |
 | loss-limit-review-s3-crash-recovery-signals-2026-09-30.md | 2026-09-30 |  |  | 손실한도·전략 전면 재검토 — S3 급락 탈출·회복 재진입 신호 아이디어 (2026-09-30) | 머리말 없음 |
@@ -194,6 +204,8 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | next-sandisk-discovery-design-2026-10-04.md | 2026-10-04 | next-sandisk-discovery-desi… | current | "Next 샌디스크" 발굴 프로세스 설계(2026-10-04 사용자 결정: B 단계형). 새 서브시스템 없이 '병목 씨앗'(N절)을 발굴 결과 문서(next-sandisk-scan-*.md, 17… |  |
 | next-sandisk-lens-v2-review-2026-10-04.md | 2026-10-04 | next-sandisk-lens-v2-review… | current | Next 샌디스크 판별 기준(N-렌즈 v1) 재검토 — 기존 자료 + 위원회 Lite, 새 조사 없음. 창의 관점 7개 → 변경안 6개 → 위원회 판정. 지금 추천은 v1.1(① 관찰을 'G2 포… |  |
 | next-sandisk-scan-2026-10-04.md | 2026-10-04 | next-sandisk-scan-2026-10-04 | current | Next 샌디스크 수시 발굴 1회차(2026-10-04). 씨앗 0 · 점화 0 · 관찰 4(CIEN·HWM·CRS·SOLS) · 제외 1(GFS, X2 내부통제) · 미달 5. 증설이 2027~… |  |
+| obsidian-ops-review-2026-10-22.md | "2026-10-22" | obsidian-ops-review-2026-10… | "결정은 duet-102… | "Obsidian 앱이나 노트를 운영 엔진·원본으로 삼는 것은 불합리. 이미 모든 작업이 쓰는 docs/claude를 Obsidian으로도 여는 창은 합리적. 원본은 제자리에 두고 볼트 안 입구·… |  |
+| obsidian-vault-design-2026-10-22.md | 2026-10-22 | obsidian-vault-design-2026-… | 대체됨 — obsidia… | Obsidian은 원본을 옮기지 않는 "한곳에서 읽고·찾고·잇는 창". 저장소 문서·종목 분석·외부자료 PDF는 한 방향 사본으로 넣고(정션·저장소 볼트는 버림), 무료 핵심 기능만 쓴다. 개발 … |  |
 | official-source-alt-paths-2026-10-04.md | 2026-10-04 |  |  | 공식 원문 대체 경로 검토 (관제판 e-official, 2026-10-04) | 머리말 없음 |
 | offsite-bak-builder-prompt.md | 2026-10-20 | offsite-bak-builder-prompt |  | PC 밖 백업 — 코드·문서 매일 원격 push + git 밖 기록 파일 매일 OneDrive 압축 사본 |  |
 | offsite-bak-report.md |  |  |  | offsite-bak Builder 보고 (2026-10-20) | 머리말 없음 |
@@ -276,6 +288,7 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | risk1r-builder-prompt.md | 2026-10-12 | risk1r-builder-prompt |  | 자동 코어 매수 주문표에 1R(무효선까지 손실) 표시·기록 + 채점기 R 배수 |  |
 | risk1r2-builder-prompt.md | 2026-10-12 | risk1r2-builder-prompt |  | 자동 코어 매수 주문표에 1R(무효선까지 손실) 표시·기록 + 채점기 R 배수 |  |
 | risk1r2-report.md |  |  |  | risk1r2 Builder 보고 (2026-10-12) | 머리말 없음 |
+| roadmap.md | 2026-10-22 | roadmap | current | "투자_V2 개발·운영 로드맵 한 장 — 단계와 다음 순번. 세부 진행의 원본은 개발 관제판, 이 노트는 단계가 바뀔 때만 Cowork가 고친다(T4 정본 SYSTEM.md의 첫 판)." |  |
 | rrec-ev4-anchor-preregistration-2026-10-18.md | 2026-10-18 | rrec-ev4-anchor-preregistra… | 고정(2026-10-18… | R-REC1 EV4 사건 시작 1회 — 사전 등록 |  |
 | rrec-ev4-anchor-replay-results-2026-10-18.md | 2026-10-18 | rrec-ev4-anchor-replay-resu… | 계산·독립 대조 완료 —… | R-REC1 EV4 사건 시작 1회 — 리플레이 결과 (2026-10-18) |  |
 | rrec-ev4-remove-builder-prompt.md | 2026-10-19 | rrec-ev4-remove-builder-pro… |  | R-REC1 EV4(계좌 총액 사건) 제거 — 코어·리플레이·독립 계산기 동반 수정 |  |
@@ -319,7 +332,9 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | score-fix-builder-prompt.md | 2026-10-12 | score-fix-builder-prompt |  | 채점 시작가를 '결정 뒤 첫 실행 가능 종가'로 고치고, 자동 코어 주문표 성과 채점을 추가 |  |
 | score-fix-report.md |  |  |  | score-fix Builder 보고 (2026-10-12) | 머리말 없음 |
 | secretary-agent-idea-2026-10-21.md | 2026-10-21 | secretary-1021 |  | 비서 에이전트(사장 ↔ 비서 ↔ Claude 팀) 운영 아이디어 |  |
+| secretary-v11-change-2026-10-22.md | "2026-10-22" | secretary-v11-change-2026-1… | "교체함 — 사장 \"결… | "비서 제안 v1 → v1.1 (멈춤 의심 표시) 교체안 + 변경 전 결정론 시험(H1)" |  |
 | sell-size-scenario-table-2026-10-03.md | 2026-10-03 |  |  | MVLL 매도 규모 시나리오 표 (초안, 2026-10-03) | 머리말 없음 |
+| skeleton-review-2026-10-22.md | "2026-10-22" | skeleton-review-2026-10-22 | "대체됨 — duet-r… | "한계는 기능 부족이 아니라 뼈대 3가지에서 나온다 — ① 막는 규칙이 검증 전에도 하드 관문으로 쌓임(매수 요건 63행 중 통과 0, R-REC1 후보가 63행 모두 막음) ② 모든 변경이 사장… |  |
 | skill-token-review-2026-10-02.md | 2026-10-02 |  |  | 설치된 스킬 전체 재검토: 토큰 최적화 (2026-10-02) | 머리말 없음 |
 | soxl-nbis-holding-cards-2026-10-01.md | 2026-10-01 | soxl-nbis-holding-cards-202… | superseded | SOXL·NBIS 보유 카드(트리거 표 포함). 현행은 integrated-stock-cards-v1-2026-10-02.md 3·4절(2026-10-04 사용자 결정으로 대체 표시). |  |
 | soxl-vs-lite-2026-10-21.md | 2026-10-21 21:3… |  | 표시용 · 결정 없음 ·… | SOXL vs LITE 현재 시점 비교 (질의 응답 기록) |  |
@@ -379,14 +394,15 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 |---|---|
 | __pycache__/ | 3 |
 | _dev-queue/ | 0 |
-| _pending/ | 6 |
+| _pending/ | 4 |
 | _to_delete/ | 6 |
 | c1-keep-2026-10-20/ | 3 |
-| dev-runs/ | 28 |
+| ceo-inbox/ | 1 |
+| dev-runs/ | 29 |
 | library/ | 24 |
 | order-instructions/ | 6 |
 | playbooks/ | 1 |
-| scheduled-prompts/ | 61 |
+| scheduled-prompts/ | 68 |
 
 ## 기타 파일
 
@@ -401,7 +417,7 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | dev-board-review-prompt-v1-draft-2026-10-03.txt | 2026-10-03 |
 | dev-board-review-prompt-v1.1-draft-2026-10-03.txt | 2026-10-03 |
 | earnings-anchors.json | 2026-10-14 |
-| ev-rg1-hyper-merge-2026-10-18.ps1 | 2026-10-17 |
+| ev-rg1-hyper-merge-2026-10-18.ps1 | 2026-10-18 |
 | event-calendar-today.py | 2026-10-13 |
 | event-calendar.json | 2026-10-13 |
 | f-evo-loop-s1-preregistration-2026-10-16.sha256 | 2026-10-16 |
@@ -413,9 +429,9 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | hwm-fix-merge-2026-10-17.ps1 | 2026-10-17 |
 | integrated-check-prompt-v3.10-reconstructed-2026-10-05.txt | 2026-10-05 |
 | integrated-check-prompt-v3.11-draft-2026-10-05.txt | 2026-10-08 |
-| integrated-check-prompt-v3.12-2026-10-09.txt | 2026-10-08 |
-| integrated-check-prompt-v3.12-L-loader-2026-10-09.txt | 2026-10-08 |
-| integrated-check-prompt-v3.12.1-2026-10-09.txt | 2026-10-08 |
+| integrated-check-prompt-v3.12-2026-10-09.txt | 2026-10-09 |
+| integrated-check-prompt-v3.12-L-loader-2026-10-09.txt | 2026-10-09 |
+| integrated-check-prompt-v3.12.1-2026-10-09.txt | 2026-10-09 |
 | integrated-check-prompt-v3.12.1-L-loader-2026-10-09.txt | 2026-10-09 |
 | integrated-check-prompt-v3.12.10-2026-10-22.txt | 2026-10-22 |
 | integrated-check-prompt-v3.12.2-2026-10-09.txt | 2026-10-09 |
@@ -424,27 +440,27 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | integrated-check-prompt-v3.12.3-L-loader-2026-10-09.txt | 2026-10-09 |
 | integrated-check-prompt-v3.12.4-2026-10-14.txt | 2026-10-14 |
 | integrated-check-prompt-v3.12.5-2026-10-14.txt | 2026-10-14 |
-| integrated-check-prompt-v3.12.6-2026-10-15.txt | 2026-10-14 |
-| integrated-check-prompt-v3.12.7-2026-10-18.txt | 2026-10-17 |
+| integrated-check-prompt-v3.12.6-2026-10-15.txt | 2026-10-15 |
+| integrated-check-prompt-v3.12.7-2026-10-18.txt | 2026-10-18 |
 | integrated-check-prompt-v3.12.8-2026-10-19.txt | 2026-10-19 |
-| integrated-check-prompt-v3.12.9-2026-10-20.txt | 2026-10-19 |
+| integrated-check-prompt-v3.12.9-2026-10-20.txt | 2026-10-20 |
 | integrated-check-prompt-v3.4-baseline-2026-10-02.txt | 2026-10-02 |
 | integrated-check-prompt-v3.5-draft-2026-10-02.txt | 2026-10-02 |
-| integrated-check-prompt-v3.6-draft-2026-10-02.txt | 2026-10-02 |
-| integrated-check-prompt-v3.7-draft-2026-10-03.txt | 2026-10-02 |
+| integrated-check-prompt-v3.6-draft-2026-10-02.txt | 2026-10-03 |
+| integrated-check-prompt-v3.7-draft-2026-10-03.txt | 2026-10-03 |
 | integrated-check-prompt-v3.8-draft-2026-10-03.txt | 2026-10-03 |
 | integrated-check-prompt-v3.9-draft-2026-10-05.txt | 2026-10-05 |
 | make-index.py | 2026-10-22 |
 | merge-cmpfix2-ust21100-2026-10-13.ps1 | 2026-10-13 |
 | merge-ust21100-fix2-2026-10-13.ps1 | 2026-10-13 |
-| monday-preopen-prompt-v2.1-2026-10-09.txt | 2026-10-08 |
+| monday-preopen-prompt-v2.1-2026-10-09.txt | 2026-10-09 |
 | monday-preopen-prompt-v2.2-2026-10-09.txt | 2026-10-09 |
-| r-rec1-gate-preregistration-2026-10-09.sha256 | 2026-10-08 |
+| r-rec1-gate-preregistration-2026-10-09.sha256 | 2026-10-09 |
 | r-rec1-r3-preregistration-2026-10-16.sha256 | 2026-10-16 |
-| r-rec1-x-preregistration-2026-10-09.sha256 | 2026-10-08 |
+| r-rec1-x-preregistration-2026-10-09.sha256 | 2026-10-09 |
 | redesign-t1-policy-proposals.json | 2026-10-10 |
 | redesign-t2-compare-explained.json | 2026-10-17 |
-| redesign-t2-firstrun-2026-10-13.ps1 | 2026-10-12 |
+| redesign-t2-firstrun-2026-10-13.ps1 | 2026-10-13 |
 | redesign-t2-measurements-2026-10-10.json | 2026-10-10 |
 | redesign-t2-merge-2026-10-12.ps1 | 2026-10-12 |
 | redesign-t2-policy-proposals.json | 2026-10-12 |
@@ -453,9 +469,9 @@ summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치�
 | rrec-ev4-remove-merge-2026-10-19.ps1 | 2026-10-19 |
 | rrec-rg1-merge-2026-10-13.ps1 | 2026-10-13 |
 | runner-fix-merge-retry-2026-10-13.ps1 | 2026-10-13 |
-| s7-builder-baseline-test-failures-2026-10-01.txt | 2026-10-01 |
-| s7-builder-stage4-test-failures-2026-10-01.txt | 2026-10-01 |
-| save-memo-prompt-v2.1-2026-10-09.txt | 2026-10-08 |
+| s7-builder-baseline-test-failures-2026-10-01.txt | 2026-10-02 |
+| s7-builder-stage4-test-failures-2026-10-01.txt | 2026-10-02 |
+| save-memo-prompt-v2.1-2026-10-09.txt | 2026-10-09 |
 | scn27h1-triggers.py | 2026-10-09 |
 | st1014-firstrun-check.py | 2026-10-14 |
 | t2-equity-cash-merge-2026-10-13.ps1 | 2026-10-13 |
