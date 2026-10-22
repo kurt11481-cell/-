@@ -1,4 +1,4 @@
-[투자_V2 · 자동 운영 코어 결과 알림 v2.4 (offsite-bak 2026-10-21, 사용자 결정 "dual-ai-1020: Q2 a" 후속: PC 상태 점검의 8번째 항목 backup_recent를 EXP에 넣고, 백업 이상(WARN·UNKNOWN·누락)은 코어 경고와 섞지 않고 ⑮ 한 줄로 따로 알림. 그 밖은 v2.3 그대로 / v2.3 (c1-host 2026-10-18 사용자 결정 "c1-host-status: a": 05:50 PC 상태 점검 host-status LATEST.json 읽기 — 점검이 안 돌았거나 이상이 있을 때만 ⑭ 한 줄, 자동 로그인 꺼짐 단독 WARN은 알리지 않음. 그 밖은 v2.2 그대로 / v2.2 (t2-rc M3, 2026-10-15 독립 Judge 지적 반영: 새 세션 없음 날 넘어온 주문표도 확인 검사, 독립 대조 결과는 같은 decision(generated_at)일 때만 씀 — 독립 대조 t2rc-check 읽기: 불일치·오류 푸시 1줄, 기록 모드에서 확인 기록 없는 방향의 첫 주문표는 "주문표 확인 대기 — 입력 금지". 그 밖은 v2.1 그대로 / v2.1 2026-10-13 사용자 승인 — 첫 운영일 실패 수정: device_bash 대신 device_list_dir·device_stage_files로 읽기, 날짜는 한국 날짜 계산값만 / v2 2026-10-12 재설계 T2 배포 / v1 2026-10-10 재설계 T1 Judge 조건 R1) — 읽기 + 대시보드 옮기기. 무인 실행: 질문하지 말고 진행, 한국어, 5줄 이내.]
+[투자_V2 · 자동 운영 코어 결과 알림 v2.5 (pb-1022 R1 2026-10-22, 사용자 결정 "결정 pb-1022: Q1 a": 지시문 안 스크립트 read·host·core를 저장소 파일로 옮김 — 내용은 v2.4와 바이트 동일, sha256 고정. 그 밖은 v2.4 그대로 / 이전 판(v2.4~v1) 변경 내용: docs/claude/scheduled-prompts/README.md 변경 기록) — 읽기 + 대시보드 옮기기. 무인 실행: 질문하지 말고 진행, 한국어, 5줄 이내.]
 
 목적: 06:15 Windows 작업 InvestmentV2-AutoCore(daily)와 07:45 InvestmentV2-AutoCoreDecide(decide, 연구 기록을 08:30까지 기다림), 08:40 InvestmentV2-T2rcCheck(독립 대조, docs/claude/t2rc-oracle.py)와 05:50 InvestmentV2-HostStatus(PC 상태 점검, 읽기 전용, docs/claude/c1-host2-report.md — 전날 23:50 InvestmentV2-OffsiteBackup(GitHub push + OneDrive 압축 사본, docs/claude/offsite-bak-report.md)의 결과도 backup_recent 항목으로 담음)가 쓴 결과 파일을 읽어 사람이 알아야 할 때만 한 줄 알리고, decide가 만든 대시보드 묶음을 통합점검 대시보드에 그대로 옮긴다. 판단·계산·매매 의견 없음, 새 수치를 만들지 않는다(order_authority=false). 지금은 비교 모드(decision_mode compare)라 주문표는 "비교 중(입력 대상 아님)"이고 대시보드 orders에 쓰지 않는다.
 
@@ -11,138 +11,25 @@ PC 상태 점검 폴더 HD = E:\사업\##금동한\코덱스저장소\workspace\
    목록에 TODAY 이름의 폴더가 있으면 device_list_dir(path R\<TODAY>)로 decision.rerun-*.json 파일 이름을 찾는다(없으면 없음).
    device_list_dir(path HD)도 한 번 부른다(PC 상태 점검 파일 LATEST.json이 있는지). 이 호출이 실패하거나 LATEST.json이 없으면 H는 없음으로 두고 계속한다(⑭에서 알린다 — 위 "알림 불가" 종료 조건에는 넣지 않는다).
 
-2) 받기: device_stage_files 한 번. paths = 목록에 있는 것만: R\LATEST.json, R\LATEST_DECISION.json, R\LATEST_T2RC_CHECK.json, R\<TODAY>\decision.rerun-*.json(최대 5개), HD\LATEST.json. 결과의 stagedPath를 적어 둔다(받지 못한 파일은 "-").
+2) 받기: device_stage_files 한 번. paths = 목록에 있는 것만: R\LATEST.json, R\LATEST_DECISION.json, R\LATEST_T2RC_CHECK.json, R\<TODAY>\decision.rerun-*.json(최대 5개), HD\LATEST.json, 그리고 스크립트 3개 S\read.py, S\host.py, S\core.py(S = E:\사업\##금동한\코덱스저장소\docs\claude\scheduled-prompts\auto-core-alert, 항상 넣는다). 결과의 stagedPath를 적어 둔다(받지 못한 파일은 "-").
 
-3) 읽기: 클라우드 Bash에서 mkdir -p /tmp/ac 후 아래 read를 /tmp/ac/read.py로 그대로 저장(heredoc, 수정 금지)하고
+2-1) 스크립트 확인(실행 전, 수정 금지): 클라우드 Bash에서 mkdir -p /tmp/ac 후 받은 세 파일을 줄 끝 CR을 지우며 옮긴다 — tr -d '\r' < <read.py stagedPath> > /tmp/ac/read.py (host.py·core.py도 같게). 그다음 sha256sum /tmp/ac/read.py /tmp/ac/host.py /tmp/ac/core.py 값이 아래와 모두 같아야 한다.
+   read.py a1eb9a756e33e4065492fb082c91950138ea376f9015c1a110f634380659f08c
+   host.py 1d5162d1d4c7601ab4bc3cd61c405663a6a17da3ab9a5436343b5aa925b64da5
+   core.py c033e4a80b84a5f2cfdf60b96396ec3d16f6a227b5e77a3082e90774810b0cc2
+   하나라도 다르거나 받지 못했으면 스크립트를 실행하지 않고(옛 스크립트를 기억으로 다시 적지도 않는다) PushNotification 한 줄 "자동 운영 코어 <TODAY의 MM/DD>: 알림 스크립트 확인 실패(<파일·사유>) — 오늘 결과 알림 불가, Cowork 확인"을 보내고 끝낸다.
+
+3) 읽기: 2-1)에서 확인한 /tmp/ac/read.py로
    python3 /tmp/ac/read.py <TODAY> <LATEST stagedPath 또는 -> <LATEST_DECISION stagedPath 또는 -> <LATEST_T2RC_CHECK stagedPath 또는 -> [rerun stagedPath ...]
    를 실행한다. 받은 파일이 "NO_FILE"로 나오면 sleep 5 뒤 한 번만 다시 실행한다(받기 직후 파일이 늦게 보일 수 있다).
------ read -----
-import json,os,sys,datetime as T
-K=T.timezone(T.timedelta(hours=9));today=sys.argv[1];lp=sys.argv[2];dp=sys.argv[3];tp=sys.argv[4];rr=sys.argv[5:]
-now=T.datetime.now(K).date().isoformat()
-print('TODAY',today,'OK' if today==now else 'MISMATCH '+now)
-def load(p):
-    if p=='-':return None
-    try:return json.load(open(p,encoding='utf-8'))
-    except Exception:return None
-d=load(lp)
-if d is None:print('T1 NO_FILE')
-else:
-    g=d.get('generated_at') or ''
-    try:t=T.datetime.fromisoformat(g.replace('Z','+00:00')).astimezone(K)
-    except Exception:t=None
-    c=d.get('compare') or {}
-    print('T1','FRESH' if t and t.date().isoformat()==today else 'STALE',t.isoformat() if t else g)
-    print('T1 STATUS',d.get('status'),'MODE',d.get('mode'),'APPLIED',bool(d.get('applied')),'STREAK',c.get('streak'))
-    print('T1 REASONS',' | '.join(str(x) for x in (d.get('reasons') or [])[:2]))
-    print('T1 WARNINGS',' | '.join(str(x) for x in (d.get('warnings') or [])[:2]))
-    print('T1 NEXT',d.get('next_action_for_user') or '')
-x=load(dp)
-if x is None or x.get('run_day_kst')!=today:print('D NO_FILE' if x is None else 'D STALE '+str(x.get('run_day_kst')))
-else:
-    r=(x.get('inputs') or {}).get('research_record') or {};c=x.get('compare') or {}
-    print('D FRESH STATUS',x.get('status'),'MODE',x.get('decision_mode'),'NO_NEW_SESSION',x.get('no_new_session'),'SESSION',x.get('evaluation_session'))
-    print('D REASONS',' | '.join(str(y) for y in (x.get('reasons') or [])[:2]))
-    print('D RESEARCH',r.get('status'),' | '.join(str(y) for y in (r.get('reasons') or [])[:1]))
-    print('D COMPARE',c.get('status'),'STREAK',c.get('streak'),'/',c.get('required'),'UNEXPLAINED',len(c.get('unexplained') or []))
-    print('D TICKETS',len(x.get('tickets') or []),'ORDERS',len((x.get('dashboard') or {}).get('orders') or []))
-    P=[a.get('line') for a in (x.get('alerts') or []) if a.get('push')]
-    k=load(tp);c3=(k or {}).get('c3') if (k or {}).get('day_kst')==today and ((k or {}).get('decision') or {}).get('generated_at')==x.get('generated_at') else None
-    def allow(t):
-        c=(c3 or {}).get(t.get('side')) or {}
-        return bool(c.get('confirmed_before')) or t.get('ticket_id') in (c.get('matched') or [])
-    E=[{'ticket_id':t.get('ticket_id'),'side':t.get('side'),'ticker':t.get('ticker')} for t in x.get('tickets') or []]
-    I={e['ticket_id'] for e in E}
-    E+=[{'ticket_id':o.get('id'),'side':o.get('side'),'ticker':o.get('ticker')} for o in (x.get('dashboard') or {}).get('orders') or [] if o.get('id') not in I]
-    H={}
-    if x.get('decision_mode')=='apply':
-        for t in E:
-            if not allow(t):H.setdefault(str(t.get('side')),[]).append(str(t.get('ticker')))
-    B=[c for v in H.values() for c in v]
-    P=[l for l in P if not any(c in str(l) for c in B)]
-    for l in P[:3]:print('D PUSH',l)
-    if len(P)>3:print('D PUSH 외',len(P)-3,'건')
-    for s,v in sorted(H.items()):print('D HOLD',{'buy':'매수','sell':'매도'}.get(s,s),','.join(v))
-    n=x.get('next_action_for_user') or ''
-    if B and n:
-        m=len(E)-len(B)
-        n='주문표 %d건 — 저녁 키움 입력 (확인 대기 %d건은 입력 금지)'%(m,len(B)) if m>0 else ''
-    print('D NEXT_USER',n)
-    print('D NEXT_COWORK',x.get('next_action_for_cowork') or '')
-k=load(tp)
-if k is None:print('R NO_FILE')
-elif k.get('day_kst')!=today:print('R STALE',k.get('day_kst'))
-else:
-    c=k.get('c1') or {}
-    print('R FRESH VERDICT',k.get('verdict'),'REASON',k.get('reason') or '-','C1',c.get('match'),'MISSING',len(c.get('missing_in_core') or []),'EXTRA',len(c.get('extra_in_core') or []),'LEAKS',len(k.get('ticket_leaks') or []),'TICKETS_MATCH',sum(1 for t in k.get('tickets') or [] if t.get('match')),'/',len(k.get('tickets') or []))
-for p in sorted(rr):
-    for a in [a for a in ((load(p) or {}).get('alerts') or []) if a.get('push')][:1]:print('D RERUN',os.path.basename(p),a.get('line'))
------ 끝 -----
 
-3-1) PC 상태: 아래 host를 /tmp/ac/host.py로 그대로 저장(heredoc, 수정 금지)하고 python3 /tmp/ac/host.py <TODAY> <HD\LATEST.json의 stagedPath 또는 -> 를 실행한다. stagedPath가 있는데도 NO_FILE이면 sleep 5 뒤 한 번만 다시 실행한다. 읽기만 하며 3)의 read와 별개다.
------ host -----
-import json,sys,datetime as T
-K=T.timezone(T.timedelta(hours=9));today=sys.argv[1];hp=sys.argv[2]
-EXP=['task_logon_type','auto_logon','power_sleep','update_active_hours','pending_reboot','uptime','session','backup_recent']
-STANDING={'auto_logon'}
-BACKUP={'backup_recent'}
-try:h=json.load(open(hp,encoding='utf-8')) if hp!='-' else None
-except Exception:print('H FAIL');sys.exit(0)
-if not isinstance(h,dict) or h.get('schema')!='host-status/v1':print('H NO_FILE');sys.exit(0)
-g=h.get('generated_at') or ''
-try:t=T.datetime.fromisoformat(g.replace('Z','+00:00')).astimezone(K)
-except Exception:t=None
-print('H','FRESH' if t and t.date().isoformat()==today else 'STALE',t.isoformat() if t else g)
-cs={c.get('id'):c for c in h.get('checks') or [] if isinstance(c,dict)}
-A=[]
-for i in EXP:
-    c=cs.get(i)
-    if i in BACKUP:continue
-    if c is None:A.append(i+'(누락)');continue
-    s=c.get('state')
-    if s=='OK':continue
-    if i in STANDING and s=='WARN':continue
-    A.append('%s(%s: %s)'%(i,s,str(c.get('note') or '')[:80]))
-print('H STATUS',h.get('status'),'WARN',h.get('warn_count'),'UNKNOWN',h.get('unknown_count'))
-print('H STANDING',','.join(i for i in sorted(STANDING) if (cs.get(i) or {}).get('state')=='WARN') or '-')
-print('H ALERT',' | '.join(A) if A else '-')
-b=cs.get('backup_recent')
-print('H BACKUP','누락' if b is None else ('-' if b.get('state')=='OK' else '%s(%s)'%(b.get('state'),str(b.get('note') or '')[:80])))
------ 끝 -----
+3-1) PC 상태: 2-1)에서 확인한 /tmp/ac/host.py로 python3 /tmp/ac/host.py <TODAY> <HD\LATEST.json의 stagedPath 또는 -> 를 실행한다. stagedPath가 있는데도 NO_FILE이면 sleep 5 뒤 한 번만 다시 실행한다. 읽기만 하며 3)의 read와 별개다.
 
 4) 대시보드 옮기기(3)에 "D FRESH"가 있을 때만):
- a. 아래 core를 /tmp/ac/core.py로 그대로 저장(heredoc, 수정 금지)하고 python3 /tmp/ac/core.py <LATEST_DECISION stagedPath> /tmp/ac <LATEST_T2RC_CHECK stagedPath 또는 -> 를 실행한다(CORE_READY 줄).
+ a. 2-1)에서 확인한 /tmp/ac/core.py로 python3 /tmp/ac/core.py <LATEST_DECISION stagedPath> /tmp/ac <LATEST_T2RC_CHECK stagedPath 또는 -> 를 실행한다(CORE_READY 줄).
  b. 통합점검 대시보드 https://claude.ai/artifact/DuS4d8Fa9qZWceBJWjTU6d 저장소: ArtifactData action get, collection runs, doc_id = TODAY. 문서가 없으면 건너뛰고 출력에 "대시보드 core 건너뜀(오늘 runs 문서 없음)"만 적는다. 있으면 action update, collection runs, doc_id 같음, file_path /tmp/ac/core.json, if_version = 읽은 version(문서의 core 칸만 바뀐다). 버전 충돌이면 다시 읽고 한 번만 재시도.
  c. /tmp/ac/orders/ 에 파일이 있으면(기록 모드 주문표만 생김): 파일마다 doc_id = 파일 이름에서 .json을 뺀 것으로 collection orders를 get하고, 없을 때만 set(file_path 그 파일, if_version 없이)한다. 이미 있는 문서는 바꾸지 않는다.
  d. 4)의 실패는 출력에 한 줄만 적고 알림 조건에 넣지 않는다.
------ core -----
-import json,os,sys
-x=json.load(open(sys.argv[1],encoding='utf-8'));W=sys.argv[2];os.makedirs(W+'/orders',exist_ok=True)
-try:k=json.load(open(sys.argv[3],encoding='utf-8')) if len(sys.argv)>3 and sys.argv[3]!='-' else None
-except Exception:k=None
-c3=(k or {}).get('c3') if (k or {}).get('day_kst')==x.get('run_day_kst') and ((k or {}).get('decision') or {}).get('generated_at')==x.get('generated_at') else None
-def allow(t):
-    c=(c3 or {}).get(t.get('side')) or {}
-    return bool(c.get('confirmed_before')) or t.get('ticket_id') in (c.get('matched') or [])
-b=x.get('dashboard') or {}
-E=[{'ticket_id':t.get('ticket_id'),'side':t.get('side'),'ticker':t.get('ticker')} for t in x.get('tickets') or []]
-I={e['ticket_id'] for e in E}
-E+=[{'ticket_id':o.get('id'),'side':o.get('side'),'ticker':o.get('ticker')} for o in b.get('orders') or [] if o.get('id') not in I]
-S={str(t.get('ticker'))+'|'+str(t.get('side')) for t in E if allow(t)}
-Hd=[str(t.get('ticker'))+'|'+str(t.get('side')) for t in E if not allow(t)]
-c=x.get('compare') or {};r=(x.get('inputs') or {}).get('research_record') or {}
-core={**(b.get('runCore') or {}),'meta':{'source':'auto-core','status':x.get('status'),'mode':x.get('decision_mode'),'generatedAt':x.get('generated_at'),'session':x.get('evaluation_session'),'noNewSession':x.get('no_new_session'),'reasons':(x.get('reasons') or [])[:3],'research':r.get('status'),'compare':{'status':c.get('status'),'streak':c.get('streak'),'required':c.get('required'),'unexplained':len(c.get('unexplained') or [])}}}
-if x.get('decision_mode')=='apply' and Hd:
-    core['meta']['ticketHold']=[h+' 주문표 확인 대기 — 입력 금지' for h in Hd]
-    for t in core.get('tickets') or []:
-        if isinstance(t,dict) and str(t.get('ticker'))+'|'+str(t.get('side')) in Hd:t['hold']='주문표 확인 대기 — 입력 금지'
-json.dump({'core':core},open(W+'/core.json','w',encoding='utf-8'),ensure_ascii=False)
-n=0
-if x.get('decision_mode')=='apply' and x.get('status')!='FAIL':
-    for o in b.get('orders') or []:
-        if o.get('id') and str(o.get('ticker'))+'|'+str(o.get('side')) in S:json.dump(o,open(W+'/orders/'+o['id']+'.json','w',encoding='utf-8'),ensure_ascii=False);n+=1
-print('CORE_READY',x.get('run_day_kst'),'orders',n,'bytes',os.path.getsize(W+'/core.json'))
------ 끝 -----
 
 5) 알림(PushNotification 한 번, 한 줄): 아래 해당 항목을 " / "로 이어 "자동 운영 코어 <TODAY의 MM/DD>: …"로 보낸다. 해당 없으면 보내지 않는다.
  ⓪ TODAY 줄이 MISMATCH → "날짜 계산 불일치 — 확인 필요"(그 뒤 항목도 함께)
