@@ -1,4 +1,4 @@
-[투자_V2 · 관심 명단 주간 재채점·자동 교체 v3.3(자동 모드 + 유지 보호 ⑧, 사용자 결정 A6 a 2026-10-10 / 매주 커밋 목록, 사용자 결정 wl-snap-commit: a 2026-10-17 / 분할 종목 수정주가, 사용자 결정 2026-10-17 / 수락 카드 재사용, 사용자 요청 2026-10-17 "카드 재사용 작업 시작") — 분석 + 명단 파일·새 카드 초안 기록. 무인 실행: 질문하지 말고 아래대로 진행, 결과는 한국어, 결론 먼저, 짧게.]
+[투자_V2 · 관심 명단 주간 재채점·자동 교체 v3.4(자동 모드 + 유지 보호 ⑧, 사용자 결정 A6 a 2026-10-10 / 매주 커밋 목록, 사용자 결정 wl-snap-commit: a 2026-10-17 / 전 종목 수정주가 일봉, 사장 결정 split-weekly-general: 승인 2026-10-23 / 수락 카드 재사용, 사용자 요청 2026-10-17 "카드 재사용 작업 시작") — 분석 + 명단 파일·새 카드 초안 기록. 무인 실행: 질문하지 말고 아래대로 진행, 결과는 한국어, 결론 먼저, 짧게.]
 
 목적: 관심(미보유) 명단 5칸을 고정 점수표 R2.1로 매주 다시 채점하고 교체 규칙을 적용해 결과를 명단 파일에 바로 반영한다(자동 모드). 사용자에게는 결과만 알린다. 근거 문서: 저장소 docs/claude/watchlist-rotation-design-2026-10-03.md(3-2 R2.1, 3-3 교체 규칙, 3-4 주간 작업). 이 지시문 본문과 아래 python 3개가 현행 규칙 전부다 — 설계 문서·발굴 문서·점수 비교 문서는 실행 때 읽지 않는다.
 자동 모드(사용자 결정 A6 a, 2026-10-10 — 점수표 R2.1·교체 규칙은 그대로, 결과만 알림): 규칙이 편입·교체·제외를 정하면 아래 python이 명단 파일 members에 바로 반영하고 history에 add·swap·remove 1건(mode "auto", by "weekly")을 더한다. 실행당 최대 1건. 바꿀 것이 없거나 판단 보류면 members·candidates·history를 바꾸지 않는다. 이번 실행의 상태(점수, 가장 약한 관심 종목, 보호 상태, 알림 여부)는 weeklyRun 한 칸에 덮어쓰고, mode는 python이 "auto"로 적는다. 바뀐 관심 칸 밖의 기존 관심 칸(종목·순서·카드·편입일·점수 칸)은 한 글자도 바꾸지 않는다. 교체로 나간 종목은 후보 끝에, 철회 기준으로 나간 종목은 excluded에, 보유로 바뀐 종목은 어디에도 넣지 않는다. 되돌리기는 사용자 지시로 Cowork가 한다(history by "user"). 관심 편입은 매수 승인이 아니다 — 새 관심 종목 카드는 python이 쓰는 '자동 작성 초안(미수락)'이라 통합 점검이 가격·트리거만 표시하고 매수 요건 ③을 '확인 필요(카드 미수락)'로 둔다. 예외(v3.3): 1)의 REUSE에 있는 종목은 사용자가 이미 수락한 카드를 그대로 쓰고 cardStatus를 '수락(<수락일>, 수락 카드 재사용 — <TODAY> 자동 편입)'으로 둔다 — 매수는 여전히 상품 승인·노출·R-REC1 등 다른 요건을 모두 거친다. 카드 없는 종목은 편입하지 않는다(규칙 ⑥).
@@ -81,7 +81,7 @@ else:
 json.dump(ctx,open(W+'/ctx.json','w',encoding='utf-8'),ensure_ascii=False);print('CTX',json.dumps(ctx,ensure_ascii=False))
 PY
 
-4) 키움 일봉(읽기 전용): 아래 24개를 한 종목씩 순서대로 조회한다 — kiwoom_query(command_path "overseas candles stock-daily", options {exchange, code, adjusted "raw", "fx-applied" "no", pages 3, format "json"}). from은 쓰지 않는다. 수정주가 종목(사용자 결정 2026-10-17): CRWD(2026-07-01 4:1 분할)만 adjusted "adjusted"로 조회한다(키움 수정주가 일봉은 끊김 없음, 2026-10-17 300봉 확인). 그 밖의 종목은 raw 그대로. 거래소: NASDAQ = MU, LITE, AAOI, AMD, AXTI, ALAB, CRDO, PLTR, CRWD, SOXX, GRID / NYSE = BE, DELL, PWR, ETN, COHR, HUBB, ANET, GEV, FN, VRT, CIEN, S, VLO(S·VLO 키움 NYSE 조회 성공 2026-10-10). 명단(REG)에 이 목록에 없는 종목(새로 들어온 관심·후보)이 있으면 NASDAQ → NYSE 순서로 시도한다(1903 오류 = 거래소 틀림). 결과는 보통 "출력이 커서 파일로 저장됨" 문구와 함께 경로가 나온다 — 그때마다 클라우드 Bash로 `cp "<그 경로>" /tmp/wk/<CODE>.json; sleep 2` 를 실행한다(429 방지). 결과 원문을 읽거나 붙이지 않는다. 결과가 화면에 바로 나오거나 오류면 그 종목은 파일을 만들지 않는다(python이 "가격 실패"로 처리). 한국 시간 10:00 전에 실행 중이면 출력 (g)에 "최신 종가 잠정(시간외 혼입 가능)"을 적는다.
+4) 키움 일봉(읽기 전용): 아래 24개를 한 종목씩 순서대로 조회한다 — kiwoom_query(command_path "overseas candles stock-daily", options {exchange, code, adjusted "adjusted", "fx-applied" "no", pages 3, format "json"}). from은 쓰지 않는다. 수정주가(사장 결정 split-weekly-general: 승인 2026-10-23): 모든 종목을 adjusted "adjusted"로 조회한다 — 분할 없는 종목은 raw와 같고(ETN·VLO 299봉 일치, 배당 조정 없음) 분할 종목은 끊김이 없다(CRWD 2026-07-02 4:1, 2026-10-17 300봉 확인). 측정 docs/claude/split-weekly-general-measure-2026-10-23.md. 거래소: NASDAQ = MU, LITE, AAOI, AMD, AXTI, ALAB, CRDO, PLTR, CRWD, SOXX, GRID / NYSE = BE, DELL, PWR, ETN, COHR, HUBB, ANET, GEV, FN, VRT, CIEN, S, VLO(S·VLO 키움 NYSE 조회 성공 2026-10-10). 명단(REG)에 이 목록에 없는 종목(새로 들어온 관심·후보)이 있으면 NASDAQ → NYSE 순서로 시도한다(1903 오류 = 거래소 틀림). 결과는 보통 "출력이 커서 파일로 저장됨" 문구와 함께 경로가 나온다 — 그때마다 클라우드 Bash로 `cp "<그 경로>" /tmp/wk/<CODE>.json; sleep 2` 를 실행한다(429 방지). 결과 원문을 읽거나 붙이지 않는다. 결과가 화면에 바로 나오거나 오류면 그 종목은 파일을 만들지 않는다(python이 "가격 실패"로 처리). 한국 시간 10:00 전에 실행 중이면 출력 (g)에 "최신 종가 잠정(시간외 혼입 가능)"을 적는다.
 
 5) 공식 확인(WebSearch 합계 최대 10회 — 5)에서는 9회까지만 쓰고 1회는 6)의 규칙 ⑥ 카드 단계에 남긴다. 관심 종목 먼저, 그다음 후보 점수 높은 순. WebFetch가 막히면 우회하지 않고 "확인 필요"):
  ㉮ DUE 종목마다 1회: 마지막 실적 반응일 뒤에 새 분기 실적 공식 발표(회사 보도자료·SEC 8-K)가 있었는지. 없으면 아무것도 하지 않는다(저장값 유지). 있으면 /tmp/wk/fund.json에 {"<CODE>": {...}}로 적는다: newQuarter true · yoy(최신 분기 매출 전년 대비 %, 공식 수치로 계산) · prevYoy(직전 분기 같은 기준) · guideRaised(위 S2 둘째 조건이면 true, 아니면 false, 확인 못 하면 false) · s1("강"/"약"/"없음", 위 S1 기준) · s1Basis(URL과 수치 한 줄, 못 찾으면 빈 문자열) · reactDate(첫 반응 세션 YYYYMMDD: 장전 발표면 발표일, 장후 발표면 다음 세션) · pe(stockanalysis Forward PE, 못 얻으면 null). 확인 못 한 값은 null 또는 빈 문자열 — 0점이 된다. 횟수가 모자라 못 본 DUE 종목은 저장값 유지 + 출력에 "다음 주 재확인".
@@ -245,14 +245,14 @@ if act in('add','swap','remove'):
          f"| 테제·실적/가이던스 | {ce.get('s1Basis') or '확인 필요'} · 최신 분기 매출 YoY {g('yoy')}%(직전 {g('prevYoy')}%) · 가이던스 상향 {'예' if ce.get('inputs',{}).get('guideRaised') is True else '아니오·확인 필요'} · {ck.get('thesis','')} | {ce.get('inputs',{}).get('s1') or '확인 필요'} | 공식 출처는 4절 |",
          f"| 밸류에이션 | 예상 PER {g('peNow')}(외부 참고, 종가 비율 환산) | 확인 필요 | stockanalysis 참고값 |",
          f"| 이벤트 반응 | 실적 반응일 {g('reactDate')}: 발표 직전 종가 대비 10세션 {g('drift10')}%{'(잠정)' if d.get('s7prov') else ''} | S7 {it['S7']}/2 | 키움 일봉 |",
-         f"| 기술 신호 | 종가 {g('close')}({g('closeDate')}), EMA50 대비 {g('closeVsEma50')}%, 252세션 고점 대비 {g('fromHi252')}%, 60세션 {g('r60')}% vs {d.get('bm','SOXX')} {g('b60')}% | S3 {it['S3']}/2 · S5 {it['S5']}/1 | 키움 일봉(raw) |",
+         f"| 기술 신호 | 종가 {g('close')}({g('closeDate')}), EMA50 대비 {g('closeVsEma50')}%, 252세션 고점 대비 {g('fromHi252')}%, 60세션 {g('r60')}% vs {d.get('bm','SOXX')} {g('b60')}% | S3 {it['S3']}/2 · S5 {it['S5']}/1 | 키움 일봉(수정주가) |",
          '| 상대 비교(Champion vs Challenger vs Cash) | 미작성 | - | ADD 판정 전 필수(M6) |\n',
          '## 2. 카드\n','| 칸 | 내용 |','|---|---|',
          f"| 규칙 결과 | 미보유. R2.1 {ce['score']}/10 (S1 {it['S1']} · S2 {it['S2']} · S3 {it['S3']} · S4 {it['S4']} · S5 {it['S5']} · S7 {it['S7']}), 가격 기준 {last} 키움 일봉 종가. 신규 매수 상품 승인 없음. |",
          '| 판단 | WATCH(자동 편입) · ADD 판정 아님 · 확신도 낮음. 사용자 수락 전 초안. |',
          f"| kill(관심 철회) 기준 | 자동 초안(D, 사용자 수락 전): {' '.join(ck['kill'])} |",
          '| 다음 이벤트 | 다음 실적일: 확인 필요 |',
-         '| 데이터 상태 | 키움 일봉 300개(raw) · 회사 공식 자료(4절) · 예상 PER 외부 참고. 자동 작성 — 사람 검토 전. |\n',
+         '| 데이터 상태 | 키움 일봉 300개(수정주가) · 회사 공식 자료(4절) · 예상 PER 외부 참고. 자동 작성 — 사람 검토 전. |\n',
          f'## 3. {i_} 트리거 표 (W 공통 틀, 자동 초안, D등급, 미검증)\n','| # | 구분 | 조건 | 발생 시 | 강도 |','|---|---|---|---|---|']+['| '+' | '.join(r)+' |' for r in tw]+['\n## 4. 출처\n']+[f'- {u}' for u in ck.get('src',[]) if str(u).startswith('http')])+'\n'
     else:ms.pop(k)
     if act=='swap':
