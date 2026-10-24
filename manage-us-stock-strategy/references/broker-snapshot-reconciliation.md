@@ -212,9 +212,10 @@ One read, all read-only through the account bridge (profile alias from
 `kiwoom-readonly-policy.json`, the shared token, one recovery, no reissue on 8005):
 holdings `ust21070`, deposit `ust21110`, deposit detail `ust21160`, open orders
 `ust21050`, fills `ust21510`, realized P&L `ust21630` (display), daily order fills
-`ust21150` for every KST order day from the day before the last record through
-today, day trades `ust21610` for each U.S. session with a fill after the last
-record, and transaction history `ust21100` for the evidence period. The dated
+`ust21150` for every order day (`ord_dt`, the U.S. ET order day) from the day
+before the last record's KST day through today's KST day, day trades
+`ust21610` for each U.S. session with a fill after the last record, and
+transaction history `ust21100` for the evidence period. The dated
 reads take only `YYYYMMDD` dates (`DATED_PARAMETERS`); nothing else reaches a
 request body.
 
@@ -228,9 +229,17 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
 | I4 | state hash and revision equal the last ledger entry; ledger hash chain intact | `STATE_CHANGED_OUTSIDE_LEDGER`, `LEDGER_INTEGRITY_FAILED`, `LEDGER_MISSING` |
 | I5 | the write would change no field other than holdings, average cost, cost basis, cash and the broker record; the state is hashed again just before writing | `NEVER_TOUCHED_FIELD_CHANGED:<field>` |
 
-- Fills come only from broker fill records. A fill's KST time is its order day
-  plus `cntr_time` (the next day when `cntr_time` is earlier than `ord_time`);
-  only fills after the last record's `as_of_timestamp` count. Average cost is the
+- Fills come only from broker fill records. `ord_dt` is the U.S. (ET) order
+  day D (observed 2026-10-21/22: after-hours fills at 06:13-06:40 KST on 10/22
+  carry 20261021; the Kiwoom spec names no time zone). A fill's KST time is
+  `cntr_time` on the KST day D or D+1 that puts it within D 04:00-20:00 ET
+  (zoneinfo, so the KST bounds move with daylight saving time); its session is
+  D. `ord_time` is placed the same way after D-1 20:00 ET and not after the
+  fill. A fill outside that window (`FILL_TIME_OUTSIDE_US_SESSION`, e.g. a
+  Kiwoom day-session fill, never observed), an order time that fits nowhere
+  (`FILL_TIME_INVALID`) or a fill later than the snapshot
+  (`FILL_AFTER_SNAPSHOT`) holds. Only fills after the last record's
+  `as_of_timestamp` count. Average cost is the
   broker's `frgn_stk_book_uv` and is not part of the explanation.
 - I3 baseline (broker to broker): the order-available cash and `generated_at` of
   the snapshot behind the last record. An auto-core ledger line names it

@@ -1409,9 +1409,10 @@ class DailyTests(Workspace):
     def test_day_held_only_for_an_unseen_settlement_keeps_the_streak(self):
         # C4 (b): AAA 3 sold in the after-hours of the U.S. 10/14 session (KST 10/15 07:07, after that day's
         # run), settling KST 10/16. The 10/16 run has no earlier read of it.
+        # ord_dt is the U.S. (ET) order day, so the fill is keyed 20261014, not the KST date 20261015.
         late = dict(holdings=[holding("AAA", 7, settled=10), holding("BBB", 5)], ord_cash="1329.17",
                     pymn_cash="1000.00",
-                    fills={"20261015": [fill("AAA", SELL, 3, "110.0000", order_no="0007", ord_time="06:50:00",
+                    fills={"20261014": [fill("AAA", SELL, 3, "110.0000", order_no="0007", ord_time="06:50:00",
                                              cntr_time="07:07:00")]},
                     day_trades={"20261014": [day_trade("AAA", sold=3, sell_amount="330.00", fees="0.83")]},
                     detail={"d1_setl_dt": "20261019", "d1_usd_sell_excta": "0.00", "d1_usd_buy_excta": "0.00"})
