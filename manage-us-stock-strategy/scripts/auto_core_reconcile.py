@@ -89,6 +89,10 @@ FLOW_IN, FLOW_OUT = "\uc785\uae08", "\ucd9c\uae08"  # Korean memo words: money i
 EXTERNAL_CLASSES = ("DEPOSIT", "WITHDRAWAL", "FX")
 SIGNED_BY_MEMO_CLASSES = ("DIVIDEND", "FEE_TAX_INTEREST", "CORPORATE_ACTION")
 CLOCK = re.compile(r"([01]\d|2[0-3]):?([0-5]\d):?([0-5]\d)")
+# recon-dt: ust21150 ord_dt is the U.S. (ET) order day (observed 2026-10-21/22; the Kiwoom spec names no time
+# zone). Its fills lie within that day's 04:00-20:00 ET (pre-market to after-hours); zoneinfo moves the KST
+# bounds with daylight saving time.
+US_DAY_OPEN, US_DAY_CLOSE = time(4, 0), time(20, 0)
 RESULT_SCHEMA_VERSION = "auto-core-reconcile-1.0"
 
 
@@ -182,7 +186,9 @@ def evidence_period_start(ledger_blocks: list[Any], activation_date: str | None)
 
 
 def plan_reads(*, recorded_at: datetime, evidence_from: date, now: datetime) -> dict[str, Any]:
-    """Dates of the dated reads. Fills are read from the KST day before the last record through today."""
+    """Dates of the dated reads. Fills are read for every order day (ust21150 ord_dt, the U.S. ET order day)
+    from the day before the last record's KST day through today's KST day: a fill falls on its order day or the
+    next KST day, so every fill after the record is in one of them."""
     today = now.astimezone(KST).date()
     record_day = recorded_at.astimezone(KST).date()
     fill_from = record_day - timedelta(days=1)
@@ -240,9 +246,22 @@ def invariant_i1(snapshot_results: list[dict[str, Any]], dated_results: list[dic
 # Fills (ust21150 quantities and times; ust21610 amounts and fees)
 # ---------------------------------------------------------------------------------------------
 
+def _kst_moment(clock: time, order_day: date, low: datetime, high: datetime, *, low_open: bool = False
+                ) -> datetime | None:
+    """The moment with this KST clock on the KST day order_day or the next that lies within [low, high]
+    ((low, high] when low_open); None when neither does. The two candidates are 24 hours apart and the bounds
+    at most 24 hours, so the answer is at most one."""
+    found = [moment for offset in (0, 1)
+             if (moment := datetime.combine(order_day + timedelta(days=offset), clock, tzinfo=KST)) <= high
+             and (low < moment if low_open else low <= moment)]
+    return found[0] if len(found) == 1 else None
+
+
 def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
-    """Every filled order row, with its KST fill time. ord_dt is the KST order day; a fill clock earlier
-    than the order clock is on the next KST day (a U.S. session ends after midnight KST)."""
+    """Every filled order row, with its KST fill time. ord_dt is the U.S. (ET) order day D: the fill clock is
+    on the KST day D or D+1 that puts it within D 04:00-20:00 ET (else FILL_TIME_OUTSIDE_US_SESSION, e.g. a
+    Kiwoom day-session fill), and the order clock on the KST day that puts it after D-1 20:00 ET and not after
+    the fill (else FILL_TIME_INVALID)."""
     fills: dict[tuple[str, str], dict[str, Any]] = {}
     errors: list[str] = []
     for result in dated_results:
@@ -283,11 +302,21 @@ def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any
             if ordered_at is None or filled_at is None:
                 errors.append(f"FILL_TIME_INVALID:{label}")
                 continue
-            fill_day = order_day + timedelta(days=1) if filled_at < ordered_at else order_day
-            moment = datetime.combine(fill_day, filled_at, tzinfo=KST)
+            moment = _kst_moment(filled_at, order_day, datetime.combine(order_day, US_DAY_OPEN, tzinfo=ET),
+                                 datetime.combine(order_day, US_DAY_CLOSE, tzinfo=ET))
+            if moment is None:
+                errors.append(f"FILL_TIME_OUTSIDE_US_SESSION:{label}")
+                continue
+            if _kst_moment(ordered_at, order_day, datetime.combine(order_day - timedelta(days=1), US_DAY_CLOSE,
+                                                                   tzinfo=ET), moment, low_open=True) is None:
+                errors.append(f"FILL_TIME_INVALID:{label}")
+                continue
+            if moment.astimezone(ET).date() != order_day:
+                errors.append(f"FILL_SESSION_DATE_MISMATCH:{label}")
+                continue
             item = {"order_date": _ymd(order_day), "ticker": ticker, "side": side, "quantity": filled,
                     "price": str(price), "filled_at_kst": moment.isoformat(),
-                    "session_date": moment.astimezone(ET).date().isoformat()}
+                    "session_date": order_day.isoformat()}
             key = (_ymd(order_day), order_number)
             if key in fills and fills[key] != item:
                 errors.append(f"FILL_ROW_DUPLICATE_CONFLICT:{label}")
@@ -295,6 +324,12 @@ def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any
             fills[key] = item
     ordered = sorted(fills.values(), key=lambda item: (item["filled_at_kst"], item["ticker"], item["side"]))
     return ordered, errors
+
+
+def fills_after_snapshot(fills: list[dict[str, Any]], snapshot_at: datetime) -> list[str]:
+    """A fill later than the snapshot cannot have been read by it: its day was read wrong (HOLD)."""
+    return [f"FILL_AFTER_SNAPSHOT:{item['order_date']}:{item['ticker']}:{item['side']}"
+            for item in fills if datetime.fromisoformat(item["filled_at_kst"]) > snapshot_at]
 
 
 def fills_after(fills: list[dict[str, Any]], moment: datetime) -> list[dict[str, Any]]:
@@ -967,6 +1002,7 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
     needed = day_trade_requests(fills_after(fills, earliest))
     day_results = reader(needed, runtime=runtime, policy=rate_policy) if needed else []
     generated_at = now().isoformat()
+    fill_errors += fills_after_snapshot(fills, datetime.fromisoformat(generated_at))
     snapshot = normalize_snapshot(snapshot_results, snapshot_role="POST_CLOSE_BROKER_SNAPSHOT",
                                   generated_at=generated_at,
                                   maximum_age_seconds=int(broker_policy["maximum_age_seconds"]))
