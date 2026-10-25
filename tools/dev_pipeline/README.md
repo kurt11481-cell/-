@@ -8,7 +8,7 @@
 1. Cowork: `docs/claude/<id>-builder-prompt.md`(아래 dev-run 블록 포함) + `docs/claude/_pending/<id>.txt`(지시문 커밋 목록) + 큐 파일 `docs/claude/_dev-queue/<id>.txt`.
 2. Windows 작업 `InvestmentV2-DevQueue`(5분마다) → `tools/dev-queue.ps1`: 잠금 확인 → 가장 오래된 큐 1개를 `workspace/outputs/dev-runs/_taken/`으로 옮김 → 지시문이 커밋돼 있지 않으면 `commit-docs.ps1` 1번 → `tools/dev-run.ps1 <id>`.
 3. dev-run: preflight(경로 길이 포함) → 기준선 임시 worktree 준비(같은 base SHA·python·방식이면 캐시) → 헤드리스 Builder(`claude -p --worktree <id>`)와 기준선 전체 스위트를 **동시에** → Builder 끝 → 기준선 끝을 기다림 → 메인 체크아웃 비교 → 스크립트 판정(범위·보호 경로·위생·테스트·스키마) → 헤드리스 Judge(Read·Grep·Glob만) → 실패면 같은 worktree에서 수정 1회 → 결과.
-4. Cowork: `.\tools\dev-merge.ps1 <id>`. authority면 이 대화에 사장 결정 문구가 있을 때만, 사장이 직접 연 PowerShell 창에서 `-ApproveAuthority`로 실행하고 id를 한 번 더 입력한다(hnd-check: 입력·출력이 리다이렉트됐거나 ConsoleHost가 아니면 `STOP_NOT_INTERACTIVE`, id가 다르면 `STOP_ID_NOT_CONFIRMED`. Cowork는 `-ApproveAuthority`를 붙이지 않는다).
+4. Cowork: `.\tools\dev-merge.ps1 <id>`. authority면 이 대화에 사장 결정 문구가 있을 때만, 사장이 직접 연 대화형 PowerShell 창에서 `-ApproveAuthority`로 직접 실행하고, 안내가 나오면 Enter를 한 번 누른다(hnd-check·hnd-check2: 입력·출력이 리다이렉트됐거나(NUL 포함) ConsoleHost가 아니거나 두 표준 핸들이 콘솔이 아니면(GetConsoleMode) `STOP_NOT_INTERACTIVE`. 수정 1: 그 검사를 모두 통과한 뒤 Enter 한 번 — 입력 내용은 비교하지 않고, 입력 끝·오류면 같은 `STOP_NOT_INTERACTIVE`. id 재입력은 없다. Cowork는 `-ApproveAuthority`를 붙이지 않는다).
 5. Windows 작업 `InvestmentV2-DocsCommit`(매일 23:30): `tools/run-docs-commit.ps1` → `commit-docs.ps1` (결과 요약 `docs/claude/dev-runs/<id>.md`도 이때 커밋된다).
 
 ## 지시문 (`docs/claude/<id>-builder-prompt.md`)
@@ -41,7 +41,7 @@
 | commit_message | ASCII 한 줄(200자 이하). dev-merge가 `Dev-Run: <id> base=… judge=…` 꼬리를 붙인다 |
 
 - 알 수 없는 키·빠진 키는 거절. 보고 파일(예: `docs/claude/<id>-report.md`)도 allowed_paths에 **정확한 파일 경로**로 넣는다(`docs/claude/` 같은 디렉터리는 지시문 자신을 덮어서 거절된다). 테스트 파일도 정확한 경로로 쓴다(`manage-us-stock-strategy/tests/` 디렉터리는 파이프라인 자체 테스트를 덮어서 거절된다).
-- **authority 작업은 사용자 결정 기록이 있을 때만 큐에 넣는다.** 그래도 병합은 `-ApproveAuthority` 1번이 더 필요하다. 수동 경로 권한 병합 스크립트(`docs/claude/<id>-merge-*.ps1`)도 같은 검사(`[Console]::IsInputRedirected`·`[Console]::IsOutputRedirected`·`$Host.Name -eq 'ConsoleHost'` + id 재입력)를 넣는다.
+- **authority 작업은 사용자 결정 기록이 있을 때만 큐에 넣는다.** 그래도 병합은 `-ApproveAuthority` 1번이 더 필요하다. 수동 경로 권한 병합 스크립트(`docs/claude/<id>-merge-*.ps1`)도 같은 콘솔 확인(`[Console]::IsInputRedirected`·`[Console]::IsOutputRedirected`·`$Host.Name -eq 'ConsoleHost'`·`[Environment]::UserInteractive` + 두 표준 핸들의 GetConsoleMode, 만들기·호출 실패도 중단)과 그 뒤 Enter 한 번(`[Console]::ReadLine()`이 `$null`이거나 예외면 중단, 입력 내용은 비교하지 않음)을 넣는다. id 재입력은 요구하지 않는다.
 
 ## 큐 파일 (`docs/claude/_dev-queue/<id>.txt`, git 무시)
 
@@ -67,7 +67,7 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 | status | 뜻 | 다음 |
 |---|---|---|
 | READY_TO_MERGE | 테스트·Judge PASS, general | Cowork가 `.\tools\dev-merge.ps1 <id>` 실행 후 알림 |
-| NEEDS_APPROVAL | PASS지만 authority | 이 대화의 사장 결정 → 사장이 대화형 PowerShell 창에서 `.\tools\dev-merge.ps1 <id> -ApproveAuthority` + id 재입력 |
+| NEEDS_APPROVAL | PASS지만 authority | 이 대화의 사장 결정 → 사장이 대화형 PowerShell 창에서 `.\tools\dev-merge.ps1 <id> -ApproveAuthority`를 직접 실행하고 Enter 한 번 |
 | FAIL | 수정 1회 뒤에도 테스트 실패 또는 Judge FAIL | Cowork가 새 id로 다시 쓰거나 중단 |
 | BLOCKED | Builder가 BLOCKED.md를 씀(판단 필요) | Cowork가 이유를 보고 결정 |
 | JUDGE_ERROR / TIMEOUT | Judge 출력을 못 읽음 / 시간 초과 | 재시도 없음. 새 id로 |

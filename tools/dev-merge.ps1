@@ -1,7 +1,8 @@
 # dev-merge.ps1 - the user's one step after a dev-run: merge a READY_TO_MERGE task (redesign T3).
 #
 # Usage (Windows PowerShell, main checkout):  .\tools\dev-merge.ps1 <id> [-ApproveAuthority]
-# -ApproveAuthority works only in an interactive console (ConsoleHost, nothing redirected); type the id again.
+# -ApproveAuthority works only in an interactive console (ConsoleHost, nothing redirected, console handles),
+# then waits for Enter once.
 #
 # Trusts only workspace\outputs\dev-runs\<id>\result.json in the main checkout (files inside the worktree
 # are not evidence). tools\dev_pipeline\devpipe.py recomputes every condition before anything changes:
@@ -36,21 +37,52 @@ if ($Id -cnotmatch $IdPattern) {
 }
 
 if ($ApproveAuthority) {
-    # hnd-check: an authority merge only from a person at an interactive console who types the id again. This
-    # stops piped, redirected and headless runs; it is not proof of a person: a pseudo console or automation
-    # typing into a real console window still passes.
+    # hnd-check: an authority merge only when run by hand at an interactive console. This stops piped,
+    # redirected and headless runs; it is not proof of a person: a pseudo console, or automation typing into
+    # a real or a new console window (which waits at the Enter step below), still passes.
     if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected -or $Host.Name -ne 'ConsoleHost' -or
             -not [Environment]::UserInteractive) {
         Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')
         exit 2
     }
-    # Korean for "Authority merge. To approve, type the id '<id>' exactly: " (escaped: this file is ASCII only).
-    $ask = [regex]::Unescape('\uad8c\ud55c \ubcc0\uacbd \ubcd1\ud569\uc785\ub2c8\ub2e4. ') +
-        [regex]::Unescape('\uc2b9\uc778\ud558\ub824\uba74 id ''') + $Id +
-        [regex]::Unescape('''\ub97c \uadf8\ub300\ub85c \uc785\ub825\ud558\uc138\uc694: ')
-    Write-Host -NoNewline $ask
-    if ([Console]::ReadLine() -cne $Id) {
-        Write-Output ('DEV-MERGE ' + $Id + ' STOP_ID_NOT_CONFIRMED')
+    # hnd-check2: both standard handles must also be console handles (GetConsoleMode; a pipe, a file or NUL
+    # fails it). If the check cannot be built or run, it stops the same way (fail closed).
+    $consoleHandles = $false
+    try {
+        Add-Type -TypeDefinition @'
+            using System;
+            using System.Runtime.InteropServices;
+            public static class DevMergeConsoleHandles {
+                [DllImport("kernel32.dll")]
+                static extern IntPtr GetStdHandle(int which);
+                [DllImport("kernel32.dll")]
+                static extern bool GetConsoleMode(IntPtr handle, out uint mode);
+                public static bool Both() {
+                    uint mode;
+                    return GetConsoleMode(GetStdHandle(-10), out mode) && GetConsoleMode(GetStdHandle(-11), out mode);
+                }
+            }
+'@
+        $consoleHandles = [DevMergeConsoleHandles]::Both()
+    } catch {
+        $consoleHandles = $false
+    }
+    if ($consoleHandles -ne $true) {
+        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')
+        exit 2
+    }
+    # hnd-check2 fix 1: after every check above, the person at the keyboard presses Enter once. What is typed
+    # is not compared. A new console window nobody types into waits here; the end of input ($null) or any
+    # error stops the same way (fail closed).
+    $entered = $null
+    try {
+        Write-Host -NoNewline 'Authority merge. Press Enter to continue (Ctrl+C cancels): '
+        $entered = [Console]::ReadLine()
+    } catch {
+        $entered = $null
+    }
+    if ($null -eq $entered) {
+        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')
         exit 2
     }
 }
