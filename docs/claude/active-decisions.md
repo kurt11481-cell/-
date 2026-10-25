@@ -38,6 +38,7 @@ source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레�
 | **pb-1022 Q1 a · Q2 a** + E1·E2 도입 · 2026-10-22 06:04 | 플레이북 표준(H1/H2 포함) 채택 + 입력 출력칸·반복 실패 처리 2개 | Munder Difflin 도입 안 함. 사장 인터뷰 1회(주제 카드 수락 기준) | 플레이북, 예약 지시문 | delegation-loop-review-2026-10-22.md:83-102 · playbooks/README.md:1 |
 | **secretary-1021 a / secretary-daily 승인** · 2026-10-21 20:19/20:23 | 비서 제안 예약(월~토 09:25) 생성, 쓰기 = workspace/outputs/secretary/<날짜>.md 1개 | Projects/Duet 비서 자리와 겹치는 확장은 위 board-merge '하지 않음' | secretary-daily | secretary-agent-idea-2026-10-21.md:153-155 · scheduled-prompts/README.md:62 |
 | **skel-1022** (기한 2026-10-29) | Q1 S2+S4+S6 / Q2 S1 사전 등록부터 — **사장 답 기록을 못 찾음** | 무응답 = 전부 NO_CHANGE | 뼈대 후보 | skeleton-review-2026-10-22.md:64-67 · 답 **확인 필요** |
+| **yt-dlp 자막 시험 승인** · 2026-10-25 (사장 스레드 직접 입력) | 코덱스저장소 밖 `%USERPROFILE%\yt-dlp-test` venv에 yt-dlp==2026.8.19만 설치, 공개 영상 자막만 받는 1회 시험 — 성공 | 쿠키·로그인·키움·주문·다른 패키지·전역 설치 금지. 시험 외 사용은 별도 승인 | 자막 수집 | yt-dlp-subtitle-procedure-2026-10-25.md |
 
 ## B. 승인·창구·규칙(CLAUDE.md) 쪽
 
