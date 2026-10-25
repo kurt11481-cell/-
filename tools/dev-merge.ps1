@@ -1,6 +1,7 @@
 # dev-merge.ps1 - the user's one step after a dev-run: merge a READY_TO_MERGE task (redesign T3).
 #
 # Usage (Windows PowerShell, main checkout):  .\tools\dev-merge.ps1 <id> [-ApproveAuthority]
+# -ApproveAuthority works only in an interactive console (ConsoleHost, nothing redirected); type the id again.
 #
 # Trusts only workspace\outputs\dev-runs\<id>\result.json in the main checkout (files inside the worktree
 # are not evidence). tools\dev_pipeline\devpipe.py recomputes every condition before anything changes:
@@ -32,6 +33,26 @@ function Get-AsciiText([string]$Text) {
 if ($Id -cnotmatch $IdPattern) {
     Write-Output ('DEV-MERGE ' + (Get-AsciiText $Id) + ' STOP_ID_FORMAT')
     exit 2
+}
+
+if ($ApproveAuthority) {
+    # hnd-check: an authority merge only from a person at an interactive console who types the id again. This
+    # stops piped, redirected and headless runs; it is not proof of a person: a pseudo console or automation
+    # typing into a real console window still passes.
+    if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected -or $Host.Name -ne 'ConsoleHost' -or
+            -not [Environment]::UserInteractive) {
+        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')
+        exit 2
+    }
+    # Korean for "Authority merge. To approve, type the id '<id>' exactly: " (escaped: this file is ASCII only).
+    $ask = [regex]::Unescape('\uad8c\ud55c \ubcc0\uacbd \ubcd1\ud569\uc785\ub2c8\ub2e4. ') +
+        [regex]::Unescape('\uc2b9\uc778\ud558\ub824\uba74 id ''') + $Id +
+        [regex]::Unescape('''\ub97c \uadf8\ub300\ub85c \uc785\ub825\ud558\uc138\uc694: ')
+    Write-Host -NoNewline $ask
+    if ([Console]::ReadLine() -cne $Id) {
+        Write-Output ('DEV-MERGE ' + $Id + ' STOP_ID_NOT_CONFIRMED')
+        exit 2
+    }
 }
 
 $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path

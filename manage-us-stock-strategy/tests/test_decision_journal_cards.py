@@ -287,8 +287,10 @@ class CardApplyTests(JournalCardTestCase):
         self.assertEqual(code, 0)
         newest = sorted(output_root.glob("*/journal_proposal.json"), key=lambda item: item.stat().st_mtime)[-1]
         user_code = json.loads(newest.read_text(encoding="utf-8"))["confirm_code"]
-        self.assertEqual(run("apply", "--proposal", str(newest), "--confirm", user_code, "--confirmed-via",
-                             "USER_TERMINAL", "--journal", str(self.path))[0], 0)
+        # hnd-check: no console here; the terminal check passes (tested in test_approval_human_check.py).
+        with mock.patch.object(journal_module, "user_terminal_rejection", return_value=None):
+            self.assertEqual(run("apply", "--proposal", str(newest), "--confirm", user_code, "--confirmed-via",
+                                 "USER_TERMINAL", "--journal", str(self.path))[0], 0)
         code, output = run("verify", "--journal", str(self.path))
         self.assertEqual((code, json.loads(output)["status"], json.loads(output)["entry_count"]), (0, "OK", 3))
 

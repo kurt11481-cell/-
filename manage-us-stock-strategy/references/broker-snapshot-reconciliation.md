@@ -177,6 +177,11 @@ python manage-us-stock-strategy/scripts/reconcile_broker_state.py show
 python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via USER_TERMINAL
 ```
 
+This works only in an interactive console (a PowerShell or cmd window: stdin and stdout are the terminal,
+not a pipe, redirect or headless shell), and apply asks for the code once more, which must equal
+`--confirm` (hnd-check, 2026-10-25). It stops piped and headless runs, not automation typing into a real
+console, so agents still never run apply.
+
 ### 4. S5 cash-flow declaration (R6, optional inputs of propose)
 
 After the S5 activation record exists, every reconciliation should carry the

@@ -1293,6 +1293,32 @@ class StaticScriptTests(unittest.TestCase):
         self.assertIn("($DevRunLimitMinutes * 60)", queue)
         self.assertNotRegex(queue, r"2>&1'\) \d+")
 
+    def test_merge_authority_needs_an_interactive_console(self):
+        # hnd-check: only -ApproveAuthority is checked, right after the id format check and before anything runs.
+        text = self.read("dev-merge.ps1").decode("ascii")
+        block = re.search(r"^if \(\$ApproveAuthority\) \{\r\n(.*?)^\}\r$", text, re.S | re.M).group(1)
+        for word in ("if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected -or $Host.Name -ne "
+                     "'ConsoleHost' -or\r\n            -not [Environment]::UserInteractive) {\r\n"
+                     "        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')\r\n        exit 2\r\n",
+                     "if ([Console]::ReadLine() -cne $Id) {\r\n"
+                     "        Write-Output ('DEV-MERGE ' + $Id + ' STOP_ID_NOT_CONFIRMED')\r\n        exit 2\r\n",
+                     "Write-Host -NoNewline $ask"):
+            self.assertIn(word, block)
+        self.assertLess(text.index("STOP_ID_FORMAT')"), text.index("if ($ApproveAuthority) {"))
+        self.assertLess(text.index("if ($ApproveAuthority) {"), text.index("$repo = "))
+        self.assertEqual(text.count("$ApproveAuthority"), 3)  # param, this check, '--approve-authority'
+        # The prompt is the Korean line of the builder prompt, written as \u escapes (ASCII-only file).
+        parts = [part.replace("''", "'").encode("ascii").decode("unicode_escape")
+                 for part in re.findall(r"\[regex\]::Unescape\('((?:[^']|'')*)'\)", block)]
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0] + parts[1] + "<id>" + parts[2],
+                         "권한 변경 병합입니다. 승인하려면 id '<id>'를 그대로 입력하세요: ")
+        # No way around it: no new parameter, environment variable or test-only branch.
+        self.assertEqual(re.findall(r"\$(\w+)", re.search(r"^param\((.*?)^\)", text, re.S | re.M).group(1)),
+                         ["true", "Id", "ApproveAuthority"])
+        self.assertEqual(set(re.findall(r"\$env:(\w+)", text)), {"ComSpec", "SystemRoot"})
+        self.assertNotRegex(block.lower(), r"test|bypass|skip|\$env:")
+
     def test_merge_is_fast_forward_only(self):
         source = (PIPELINE / "devpipe.py").read_text(encoding="utf-8")
         self.assertIn('git(repo, "merge", "--ff-only"', source)
@@ -1461,6 +1487,73 @@ class StaticScriptTests(unittest.TestCase):
         lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
         self.assertIn("workspace/outputs/dev-runs/", lines)
         self.assertIn("docs/claude/_dev-queue/", lines)
+
+
+FAKE_DEVPIPE = """import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+with (ROOT / "devpipe-calls.jsonl").open("a", encoding="utf-8") as handle:
+    handle.write(json.dumps(sys.argv[1:]) + "\\n")
+code = int((ROOT / "fake-exit.txt").read_text(encoding="ascii"))
+print("DEV-MERGE demo " + {0: "MERGED", 3: "NEEDS_APPROVAL"}.get(code, "STOP_FAKE"))
+sys.exit(code)
+"""
+
+
+@unittest.skipUnless(os.name == "nt" and shutil.which("powershell.exe"), "Windows PowerShell is not available")
+class MergeCopyConsoleTests(unittest.TestCase):
+    """hnd-check: runs a copy of tools/dev-merge.ps1 in a temporary folder whose devpipe.py is a fake.
+
+    Only the copy runs: the repository's dev-merge.ps1 and devpipe.py never do, and no git command runs.
+    Every run here has redirected stdin and stdout, as an agent shell with pipes does."""
+
+    def setUp(self):
+        self._temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary.cleanup)
+        self.root = Path(self._temporary.name).resolve()
+        (self.root / "tools" / "dev_pipeline").mkdir(parents=True)
+        self.script = self.root / "tools" / "dev-merge.ps1"
+        shutil.copyfile(ROOT / "tools" / "dev-merge.ps1", self.script)
+        (self.root / "tools" / "dev_pipeline" / "devpipe.py").write_text(FAKE_DEVPIPE, encoding="ascii")
+        self.calls = self.root / "devpipe-calls.jsonl"
+
+    def run_copy(self, *arguments, piped=None, fake_exit=0):
+        self.assertTrue(self.script.resolve().is_relative_to(self.root))
+        self.assertFalse(self.script.resolve().is_relative_to(ROOT.resolve()))
+        (self.root / "fake-exit.txt").write_text(str(fake_exit), encoding="ascii")
+        environment = dict(os.environ)
+        environment["PATH"] = str(Path(sys.executable).parent) + os.pathsep + environment.get("PATH", "")
+        stdin = {"stdin": subprocess.DEVNULL} if piped is None else {"input": piped}
+        result = subprocess.run(
+            [shutil.which("powershell.exe"), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-File", str(self.script), *arguments],
+            cwd=str(self.root), env=environment, capture_output=True, timeout=180, **stdin)
+        lines = result.stdout.decode("ascii", "replace").splitlines()
+        return result.returncode, (lines[0] if lines else ""), result
+
+    def recorded_calls(self):
+        if not self.calls.exists():
+            return []
+        return [json.loads(line) for line in self.calls.read_text(encoding="utf-8").splitlines()]
+
+    def test_general_merge_without_the_switch_is_unchanged(self):
+        for fake_exit, line in ((0, "DEV-MERGE demo MERGED"), (3, "DEV-MERGE demo NEEDS_APPROVAL")):
+            with self.subTest(fake_exit=fake_exit):
+                code, first, result = self.run_copy("demo", fake_exit=fake_exit)
+                self.assertEqual((code, first), (fake_exit, line), result.stderr)
+        calls = self.recorded_calls()
+        self.assertEqual([call[:2] + call[3:] for call in calls], [["merge", "--repo", "--id", "demo"]] * 2)
+        self.assertEqual({Path(call[2]).resolve() for call in calls}, {self.root})
+
+    def test_authority_switch_without_a_console_stops(self):
+        for piped in (None, b"demo\r\n"):  # nothing on stdin, or an agent piping the right id
+            with self.subTest(piped=piped):
+                code, first, result = self.run_copy("demo", "-ApproveAuthority", piped=piped)
+                self.assertEqual((code, first), (2, "DEV-MERGE demo STOP_NOT_INTERACTIVE"), result.stderr)
+        self.assertEqual(self.recorded_calls(), [])  # devpipe never ran
+        self.assertFalse((self.root / "workspace").exists())  # stopped before the run folder
 
 
 if __name__ == "__main__":
