@@ -5,8 +5,9 @@ propose  Read the Kiwoom account (read-only), build one proposal, never write st
 show     Render the proposal difference table for the user (deterministic).
 apply    Write the proposal to portfolio state only with the user's confirmation code.
          Run apply only in Cowork after the user typed "confirm <code>" in that conversation,
-         or from the user's own terminal (--confirmed-via USER_TERMINAL). Agents, scheduled
-         tasks, Claude Code, Codex and Judge sessions never run it.
+         or from the user's own terminal (--confirmed-via USER_TERMINAL: an interactive console
+         only, the code typed once more). Agents, scheduled tasks, Claude Code, Codex and Judge
+         sessions never run it.
 auto     Redesign T1 F4 (run by the auto-core Windows task): the same read plus transaction history,
          daily fills and day trades, judged by invariants I1-I5 (auto_core_reconcile.py). In mode
          "compare" (workspace/policies/auto_core.json) it never writes and records would_apply; in mode
@@ -282,6 +283,15 @@ def cmd_show(args: argparse.Namespace) -> int:
 def cmd_apply(args: argparse.Namespace) -> int:
     messages = _messages()
     try:
+        if args.confirmed_via == "USER_TERMINAL":
+            from portfolio_review_journal import TERMINAL_NOT_INTERACTIVE, user_terminal_rejection
+
+            rejection = user_terminal_rejection(args.confirm, messages["apply_terminal_retype"])
+            if rejection == TERMINAL_NOT_INTERACTIVE:
+                print(messages["apply_terminal_not_interactive"])
+                return 2
+            if rejection is not None:
+                raise ValueError(rejection)
         proposal_path = resolve_proposal_path(args.proposal, args.output_root)
         proposal = load_json(proposal_path)
         if not isinstance(proposal, dict) or proposal.get("schema_version") != PROPOSAL_SCHEMA_VERSION:

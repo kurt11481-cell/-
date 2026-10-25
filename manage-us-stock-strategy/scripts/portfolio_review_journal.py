@@ -14,8 +14,8 @@ propose-user-decision   the user's own decision on a recorded card decision (a c
 show    render the proposal for the user
 apply   append the entry. Run apply only in Cowork after the user typed "confirm <code>" for that
         proposal in the current conversation, or from the user's own terminal
-        (--confirmed-via USER_TERMINAL). Agents, scheduled tasks, Claude Code, Codex and Judge
-        sessions never run it, and never type or guess the code.
+        (--confirmed-via USER_TERMINAL: an interactive console only, the code typed once more). Agents,
+        scheduled tasks, Claude Code, Codex and Judge sessions never run it, and never type or guess the code.
 verify  check the journal hash chain
 
 Redesign T2 F7: in recording mode the auto-core appends core_decision, order_ticket and ticket_outcome
@@ -65,6 +65,10 @@ JOURNAL_CARD_USER_DECISION = "card_user_decision"
 S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
 CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
+# hnd-check: refusals of user_terminal_rejection (USER_TERMINAL apply here and in reconcile_broker_state.py).
+TERMINAL_NOT_INTERACTIVE = "USER_TERMINAL_NOT_INTERACTIVE"
+TERMINAL_CODE_NOT_RETYPED = "USER_TERMINAL_CODE_NOT_RETYPED"
+TERMINAL_RETYPE_PROMPT = "Type the confirmation code again: "
 # Redesign T2 F7: entries the auto-core appends in recording mode (never through propose/apply above).
 JOURNAL_CORE_DECISION = "core_decision"
 JOURNAL_ORDER_TICKET = "order_ticket"
@@ -795,9 +799,34 @@ def cmd_propose_user_decision(args: argparse.Namespace) -> int:
     return 0
 
 
+def user_terminal_rejection(confirm_code: str, prompt: str = TERMINAL_RETYPE_PROMPT) -> str | None:
+    """hnd-check: a USER_TERMINAL confirmation counts only when typed by hand in an interactive console.
+
+    stdin and stdout must both be a terminal (no pipe, redirect or headless shell); then the code is typed
+    once more and must equal --confirm (both stripped, upper case). Returns None to go on, else the refusal.
+    It only adds refusals. It stops piped and headless runs but is not proof of a person (automation typing
+    into a real console still passes), so agents, scheduled tasks and Judge sessions still never run apply.
+    """
+    try:
+        interactive = sys.stdin.isatty() is True and sys.stdout.isatty() is True
+    except (AttributeError, OSError, ValueError):  # no stream (pythonw) or a closed one
+        interactive = False
+    if not interactive:
+        return TERMINAL_NOT_INTERACTIVE
+    try:
+        typed = input(prompt)
+    except EOFError:  # nothing to read, e.g. NUL, which Windows reports as a terminal
+        return TERMINAL_CODE_NOT_RETYPED
+    return None if typed.strip().upper() == confirm_code.strip().upper() else TERMINAL_CODE_NOT_RETYPED
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     messages = _messages()
     try:
+        if args.confirmed_via == "USER_TERMINAL":
+            rejection = user_terminal_rejection(args.confirm)
+            if rejection is not None:
+                raise JournalError(rejection)
         proposal = load_json(args.proposal)
         if not isinstance(proposal, dict):
             raise JournalError("JOURNAL_PROPOSAL_NOT_OBJECT")

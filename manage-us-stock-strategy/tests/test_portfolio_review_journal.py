@@ -12,6 +12,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL_ROOT / "scripts"))
@@ -223,8 +224,10 @@ class JournalTests(unittest.TestCase):
         code, output = run("apply", "--proposal", str(proposal_path), "--confirm", confirm_code, "--confirmed-via",
                            "COWORK_CHAT_USER_MESSAGE", "--journal", str(self.path))
         self.assertEqual(code, 2)  # Cowork confirmation needs the user's message
-        code, output = run("apply", "--proposal", str(proposal_path), "--confirm", "DEADBEEF", "--confirmed-via",
-                           "USER_TERMINAL", "--journal", str(self.path))
+        # hnd-check: no console here; the terminal check passes (tested in test_approval_human_check.py).
+        with mock.patch.object(journal_module, "user_terminal_rejection", return_value=None):
+            code, output = run("apply", "--proposal", str(proposal_path), "--confirm", "DEADBEEF", "--confirmed-via",
+                               "USER_TERMINAL", "--journal", str(self.path))
         self.assertEqual((code, self.path.exists()), (2, False))
         code, output = run("apply", "--proposal", str(proposal_path), "--confirm", confirm_code, "--confirmed-via",
                            "COWORK_CHAT_USER_MESSAGE", "--user-message", f"확인 {confirm_code}", "--journal",

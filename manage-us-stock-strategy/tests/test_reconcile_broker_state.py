@@ -754,6 +754,11 @@ class CliTests(TempStateCase):
             self.policies[name] = path
         self.state = base_state()
         self.original = self.write_state(self.state)
+        # hnd-check: these runs have no console. The interactive-terminal check is tested in
+        # test_approval_human_check.py; here it passes so the code checks keep their meaning.
+        terminal = mock.patch("portfolio_review_journal.user_terminal_rejection", return_value=None)
+        terminal.start()
+        self.addCleanup(terminal.stop)
 
     def run_cli(self, argv, reader=None):
         output = io.StringIO()
