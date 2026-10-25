@@ -2,7 +2,7 @@
 id: cashflow-proof-options-2026-10-23
 title: "출금(외부 유출) 증명 방법 검토 — recon-dt (b) / cashflow-api-gap"
 date: "2026-10-23"
-status: "방향 결정됨 B2-N(2026-10-23 09:25) · 착수 승인은 recon-dt 병합 뒤 착수하는 날 다시 받음(S7)"
+status: "병합됨 b2cd42e(2026-10-25 12:3x) · 첫 실제 확인 10/27(화) 06:15 대조"
 class: "권한·한도(K3) — 대조 불변 조건 I3가 받아들이는 현금 흐름 증거. 한 번에 권한 작업 1개: recon-dt (a) 병합 뒤 착수"
 authority: "order_authority=false · 이 문서는 읽기 전용 검토"
 consumers: "cashflow-api-gap · recon-dt · deposit-interest-i3 · S7 HWM · 비서실"
@@ -75,4 +75,7 @@ consumers: "cashflow-api-gap · recon-dt · deposit-interest-i3 · S7 HWM · 비
 
 ## 10. 결정 기록
 - 사장 원문 "결정 cashflow-proof: B2-N"(2026-10-23 09:25 KST, 투자_V2 비서실 — 직접 입력). 방향 결정. 착수(Builder·Judge) 승인은 recon-dt 병합 뒤 착수하는 날 다시 받는다(S7 같은 날 규칙). 10/30(금)까지 병합 못 하면 그날 B3 질의.
+- 착수: 사장 원문 "결정 cashflow-proof 착수: 승인"(2026-10-25 08:12 KST). Builder 1차 중단(프로세스 사라짐, 원인 확인 필요) → 이어서 실행 → 최소 수정 1회(고정 시험 2개에 새 조회) → Judge 1차 PASS → 비서실 발견(실제 ust21132 응답은 won_entr가 본문 최상위 — 그대로면 운영에서 B2-N이 한 번도 통과 못 함) → 최소 수정 2회 → Judge 2차 PASS. 기록 docs/claude/cf-b2n-judge-report.md.
+- 병합: 사장 원문 "결정 cf-b2n 병합: 승인"(2026-10-25 12:29 KST, 비서실 직접 입력 — 바로 앞 제안 cf-b2n). docs/claude/cf-b2n-merge-2026-10-25.ps1: CHECKS_OK → worktree 커밋 9bfc7f42 → main b2cd42e → test_auto_core* 529건 실패 1(알려진 PLTR) · 스키마 errors [] · 고정 시험 2파일 59건 OK.
+- 다음: 10/27(화) 06:15 대조 reconcile.json — I3 PASS + warnings UNVERIFIED_EXTERNAL_OUTFLOW:82.93 + 신고 NO_EXTERNAL_FLOW, 상태 기록 성공. 막히면 I3 사유로 원인(ust21132 06:15 가용성·요청 본문·won_entr 표기) 확인.
 
