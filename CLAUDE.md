@@ -39,8 +39,9 @@ are labeled 비교 중 and are not entered.
 - Missing or stale data stays visible and fails closed. Deterministic rules outrank LLM output.
 - The only LLM input to the auto-core is the research record written by the 06:40 integrated check
   (workspace/outputs/research-records/<KST date>/research-record.json, schema auto-core-research-record). A missing or
-  invalid record blocks every buy ticket, never sells. An interactive session that changes or accepts a card updates
-  docs/claude/card-evidence-registry.json in the same session (otherwise that symbol gets no ticket).
+  invalid record blocks every buy ticket, never sells. An interactive session (never a Judge session, scheduled task
+  or subagent) that changes or accepts a card updates docs/claude/card-evidence-registry.json in the same session
+  (otherwise that symbol gets no ticket).
 
 ## Kiwoom query rules (standing user rule 2026-10-07)
 - Every read-only `kiwoom_query` call (Cowork, Claude Code, Codex, scheduled tasks, Manual runs) must pass options `"profile": "실전계좌"` and `"mode": "real"`. Without the profile the call uses an old token and fails with 8005. Bridge code reads the same alias from policy key `token_profile_alias` in workspace/policies/kiwoom-readonly-policy.json.
