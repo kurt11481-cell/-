@@ -21,6 +21,51 @@ HOOK = ROOT / ".claude" / "hooks" / "kiwoom_order_block.py"
 CURRENT_SETTINGS = ROOT / ".claude" / "settings.json"
 PROPOSED_SETTINGS = ROOT / "docs" / "claude" / "kiwoom-block-settings-proposed.json"
 
+# fix3: .claude/settings.json at base 7f98f28 (before the kiwoom-block merge), copied from
+# `git show 7f98f28:.claude/settings.json`. The proposed file is compared with this fixed base, so the
+# invariants hold both before and after the merge copies the proposed file over the live settings.
+BASE_SETTINGS = {
+    "effortLevel": "medium",
+    "permissions": {
+        "ask": [
+            "Edit(/tools/**)",
+            "Edit(/CLAUDE.md)",
+            "Edit(/AGENTS.md)",
+            "Edit(/.gitignore)",
+            "Edit(stock-strategy-system/**)",
+            "Edit(workspace/policies/**)",
+            "Bash(git commit:*)",
+            "Bash(git push:*)",
+        ],
+        "deny": [
+            "Bash(*dev-run.ps1*)",
+            "PowerShell(*dev-run.ps1*)",
+            "Bash(*dev-merge.ps1*)",
+            "PowerShell(*dev-merge.ps1*)",
+            "Bash(*dev-queue.ps1*)",
+            "PowerShell(*dev-queue.ps1*)",
+            "Edit(/.claude/settings.json)",
+            "Edit(/.claude/settings.local.json)",
+            "Read(./.env)",
+            "Read(./.env.*)",
+            "mcp__*__kiwoom_order_submit",
+            "Bash(*reconcile_broker_state.py apply*)",
+            "PowerShell(*reconcile_broker_state.py apply*)",
+            "Bash(*auto_core" + ".py*)",
+            "PowerShell(*auto_core" + ".py*)",
+            "Bash(*reconcile_broker_state.py auto*)",
+            "PowerShell(*reconcile_broker_state.py auto*)",
+            "Edit(/stock-strategy-system/portfolio_state.json)",
+            "Edit(/stock-strategy-system/reconciliation_ledger.jsonl)",
+            "Edit(/stock-strategy-system/backups/**)",
+            "Bash(*portfolio_review_journal.py apply*)",
+            "PowerShell(*portfolio_review_journal.py apply*)",
+            "Edit(/stock-strategy-system/decision_journal.json)",
+        ],
+    },
+    "worktree": {"baseRef": "head"},
+}
+
 ALLOWED_DENY_ADDITIONS = (
     "mcp__*__kiwoom_order_preview",
     "Bash(*overseas orders*)",
@@ -286,8 +331,22 @@ class HookFileShape(unittest.TestCase):
 class ProposedSettingsOnlyAdd(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.current = json.loads(CURRENT_SETTINGS.read_text(encoding="utf-8"))
+        cls.current = BASE_SETTINGS
         cls.proposed = json.loads(PROPOSED_SETTINGS.read_text(encoding="utf-8"))
+
+    def test_base_constant_has_the_base_shape(self):
+        self.assertEqual(set(BASE_SETTINGS), {"effortLevel", "permissions", "worktree"})
+        self.assertEqual(set(BASE_SETTINGS["permissions"]), {"ask", "deny"})
+        self.assertEqual(len(BASE_SETTINGS["permissions"]["deny"]), 23)
+        self.assertEqual(len(set(BASE_SETTINGS["permissions"]["deny"])), 23)
+        self.assertEqual(len(BASE_SETTINGS["permissions"]["ask"]), 8)
+
+    def test_live_settings_are_the_base_or_exactly_the_proposed_file(self):
+        # Before the merge the live file equals the base; the merge copies the proposed file byte for byte.
+        raw = CURRENT_SETTINGS.read_bytes()
+        if raw == PROPOSED_SETTINGS.read_bytes():
+            return
+        self.assertEqual(json.loads(raw.decode("utf-8")), BASE_SETTINGS)
 
     def test_existing_deny_and_ask_entries_are_kept_in_order(self):
         current_deny = self.current["permissions"]["deny"]
