@@ -18,7 +18,7 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식
 | 카드 원장 · 관심 명단 | card-evidence-registry.json · watchlist-registry.json | 자동 코어가 읽음 |
 | 외부자료 주장 원장 | [external-claims-ledger.md](external-claims-ledger.md) | 주간 보고가 읽음 |
 | 종목·옵션·기술 분석, 외부 PDF, SAVE 리포트 | E:\사업\##금동한\chatgpt_종목분석결과 (저장소 밖) | 자동 목록 INDEX-research-auto.md는 관제판 duet-idx에서 만듦 |
-| 지식 문서 3개(헌법·종목 프로토콜·옵션 프로토콜) | claude.ai 프로젝트 "투자_V2" | 사본을 두지 않음(두 번째 원본이 생겨서) |
+| 지식 문서 3개(헌법·종목 프로토콜·옵션 프로토콜) | 원본 = 옛 프로젝트 백업 E:\사업\##금동한\투자_V2_옛프로젝트_백업_2026-10-25\knowledge\ (옛 claude.ai 프로젝트는 2026-10-25 보관) | 헌법만 읽기용 사본 [constitution-v1.3.0-readonly-copy.md](constitution-v1.3.0-readonly-copy.md) (Revision 1.3.0, sha256 f1859d93…059a87 = 백업과 바이트 동일, 2026-10-25 사장 D7 a). 고치지 않음. 원본이 바뀌면 사본을 새로 뜬다 |
 | 결정 기록 | 각 결정 문서(*-YYYY-MM-DD.md) + 관제판 log | 결정 원장 K-1이 생기면 그쪽(관제판 duet-k1) |
 | 막혔다 푼 방법 | [ops-fixes.md](ops-fixes.md) | 프로젝트 문서 claude/ops-fixes.md는 사본 |
 | 일 매뉴얼(플레이북) | [playbooks/README.md](playbooks/README.md) | 새 예약 작업부터 |
