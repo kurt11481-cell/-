@@ -1,0 +1,59 @@
+{
+  "effortLevel": "medium",
+  "permissions": {
+    "ask": [
+      "Edit(/tools/**)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/AGENTS.md)",
+      "Edit(/.gitignore)",
+      "Edit(stock-strategy-system/**)",
+      "Edit(workspace/policies/**)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(*dev-run.ps1*)",
+      "PowerShell(*dev-run.ps1*)",
+      "Bash(*dev-merge.ps1*)",
+      "PowerShell(*dev-merge.ps1*)",
+      "Bash(*dev-queue.ps1*)",
+      "PowerShell(*dev-queue.ps1*)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "mcp__*__kiwoom_order_submit",
+      "Bash(*reconcile_broker_state.py apply*)",
+      "PowerShell(*reconcile_broker_state.py apply*)",
+      "Bash(*auto_core.py*)",
+      "PowerShell(*auto_core.py*)",
+      "Bash(*reconcile_broker_state.py auto*)",
+      "PowerShell(*reconcile_broker_state.py auto*)",
+      "Edit(/stock-strategy-system/portfolio_state.json)",
+      "Edit(/stock-strategy-system/reconciliation_ledger.jsonl)",
+      "Edit(/stock-strategy-system/backups/**)",
+      "Bash(*portfolio_review_journal.py apply*)",
+      "PowerShell(*portfolio_review_journal.py apply*)",
+      "Edit(/stock-strategy-system/decision_journal.json)",
+      "mcp__*__kiwoom_order_preview",
+      "Bash(*overseas orders*)",
+      "PowerShell(*overseas orders*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|PowerShell|Monitor|mcp__.*[Kk][Ii][Ww][Oo][Oo][Mm].*|mcp__.*(device_bash|start_process|interact_with_process))$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/kiwoom_order_block.py\"",
+            "timeout": 30,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": { "baseRef": "head" }
+}

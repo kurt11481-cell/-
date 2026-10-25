@@ -34,7 +34,25 @@
       "Edit(/stock-strategy-system/backups/**)",
       "Bash(*portfolio_review_journal.py apply*)",
       "PowerShell(*portfolio_review_journal.py apply*)",
-      "Edit(/stock-strategy-system/decision_journal.json)"
+      "Edit(/stock-strategy-system/decision_journal.json)",
+      "mcp__*__kiwoom_order_preview",
+      "Bash(*overseas orders*)",
+      "PowerShell(*overseas orders*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|PowerShell|Monitor|mcp__.*[Kk][Ii][Ww][Oo][Oo][Mm].*|mcp__.*(device_bash|start_process|interact_with_process))$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/kiwoom_order_block.py\"",
+            "timeout": 30,
+            "onFailure": "block"
+          }
+        ]
+      }
     ]
   },
   "worktree": { "baseRef": "head" }
