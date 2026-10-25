@@ -123,11 +123,13 @@ Grep `kiwoomcli|kiwoom_cli|kiwoom-cli`(대소문자 무시)의 결과는 63개 �
 2. 새 Claude Code 세션에서 `echo ust20000`을 실행해 달라고 합니다. **거절되면** 훅 형식이 맞는 것입니다. 그냥 실행되면 후보 2 형식으로 바꿔야 합니다. 이 명령은 화면에 글자를 찍을 뿐 키움과 무관합니다.
 3. (fix1) 새 Claude Code 세션에서 **Monitor 도구로** `echo ust20000`을 실행해 달라고 합니다. **거절되면 정상**입니다. 그냥 실행되면 matcher의 `Monitor` 이름이나 훅 입력 형태가 실제와 다른 것이니 알려 주세요. 이 명령도 화면에 글자를 찍을 뿐 키움과 무관합니다.
 4. 원격 장치 스레드에서 같은 시험을 해 보면 발동 여부를 알 수 있습니다(지금은 확인 필요).
+5. (fix3) fix3 병합 뒤 메인에서 세 테스트 묶음을 돌립니다. 기대값은 모두 OK, 실패 0, skip 0입니다: `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_kiwoom_order_block_hook.py"` → Ran 25 · `-p "test_dev_pipeline*"` → Ran 126 · `-p "test_approval_human_check*"` → Ran 28. (훅 테스트가 23개에서 25개가 된 것은 fix3가 settings 시험 2개를 더했기 때문입니다.) fix3 병합 전 메인(c9c0877)에서는 이 중 3건이 실패합니다(아래 "fix3 반영").
 
 # 한계
 - **훅이 `mcp__remote-devices__*` 도구와 Cowork 세션에서 발동하는지는 확인 필요다.** 하위 에이전트의 문서 요약(code.claude.com/docs/en/settings.md, desktop.md)에서도 문서화되지 않았다고 했다. 이 세션은 읽기만 했기 때문에 증명할 수 없다. 클라우드 "프로젝트 스레드"에서는 저장소 `.claude/settings.json`의 훅과 권한이 적용되지 않는다는 요약도 있었다(원문 대조는 확인 필요).
 - 훅 matcher와 command 형식이 Windows에서 실제로 발동하는지는 병합 전에 증명할 수 없다(병합 뒤 확인 2).
 - 훅은 도구 입력 문자열만 본다. 다음은 못 막는다(fix1 전·후 모두): PowerShell `-EncodedCommand`(base64), 변수로 이어 붙인 문자열(`$a='kiwoom'+'cli'`), bash brace 확장(`--confi{rm,rm}`), 명령 치환(`$(…)`), 변수 확장(`${x}`), 파일 쓰기 도구로 스크립트를 쓴 뒤 `python x.py`로 실행하기, 환경변수 간접 참조. deny 패턴도 같은 한계가 있다. **키움 스위치 `0`(①)은 이 CLI 경로를 막지 않는다.** `kiwoom_cli`와 런타임 패키지는 `KIWOOM_MCP_ALLOW_ORDERS`를 읽지 않는다(grep 0건, 근거 줄은 아래 "fix1 반영" 절과 guard 문서 결론 4). 스위치 ①은 MCP 주문 도구만 막는다. CLI 경로를 막는 것은 deny `overseas orders` 2줄 + 이 훅 + 지침뿐이고, 위 우회들에서는 지침만 남는다.
+- (fix3, 2차 Judge F10) **인용·`$'…'`를 여러 개로 쪼갠 변형 가운데 세 검사 형태(원문, 따옴표만 지운 것, 넓게 지운 것) 어느 것으로도 표지가 되지 않는 계열이 있다.** 넓게 지운 형태에서 `$'\0'`이 `0`으로 남아 `--confirm` 뒤 경계에 막히거나(`--con\firm$'\0'`, `--con$''firm$'\0'`, `--con""fi$'r'm$'\0'`), `$'…'` 안의 이스케이프가 풀리지 않기 때문이다(`$'--con\x66irm'`). 같은 이유로 bash brace 확장(`--confi{rm,}`), 변수 확장(`--con${x}rm`, `x=fi`), 명령 치환(`--con$(printf fi)rm`)도 통과한다. fix3 세션에서 이 7개를 `python -m kiwoom_cli domestic orders buy <값>` 꼴의 Bash 합성 입력으로 현재 훅(sha256 2818d79f…)에 넣었더니 모두 종료 코드 0(통과)이었다. Git Bash `printf '[%s]\n' <값>`으로는 7개 모두 `--confirm`이 됐다(brace는 `--confirm`·`--confi` 두 단어). 이 계열을 막는 코드 보강은 이번 범위 밖이다(기본값 NO_CHANGE). 이 경우 셸 경로에 남는 방어는 지침뿐이다(해외 주문은 deny `overseas orders` 2줄도 남음).
 - 문서 사실(matcher 의미, `onFailure`, 시간 초과 fail open, 쉘 종류)은 하위 에이전트가 가져온 요약이라 이 세션에서 원문을 열지 않았다. Judge가 원문을 대조하기 전까지는 확인 필요로 둔다.
 
 # 남은 위험
@@ -363,7 +365,7 @@ fix1 값(2차 Judge가 본 값): 훅 375206d7b9bb9699d23af747c4c50127bdec1749d3a
 - 거짓 음성 변형 목록을 시험 함수 안 튜플에서 모듈 상수 `FALSE_NEGATIVE_VARIANTS`로 옮겼다. 두 시험이 같이 쓰기 위해서다. 기존 23개 문자열은 그대로다(ast로 옛 튜플과 새 튜플 앞 23개가 같음을 확인). 끝에 회귀 사례 2개를 더했다: `"python -m kiwoom_cli domestic orders buy --con\"\"firm$'\\0'"`, `"python -m kiwoom_cli domestic orders buy --con''firm$'\\x00'"`. 값은 셸에 쓰는 글자 그대로(백슬래시 한 개 + `0` / `x00`)이며 ast로 확인했다.
 - `TARGET_TOOLS`에 `"Monitor"`를 더하고 `SHELL_FAMILIES = ("Bash", "PowerShell", "Monitor", "device_bash")`를 두었다. 거짓 음성 시험은 이제 4개 도구 모두에서 거절을 확인한다(기존 3개 + Monitor). `test_every_text_marker_is_refused_on_every_target_family`도 `TARGET_TOOLS` 전체를 돌기 때문에 Monitor를 함께 확인하게 됐다. 단언을 더한 것이지 약화한 것이 아니다.
 - 새 시험 `test_everything_refused_before_fix1_is_still_refused`: 입력은 `FALSE_NEGATIVE_VARIANTS`, 경계 사례 3개(`--con"firm\-x"`, `--con""firm\<줄바꿈>-x`, `python -c "f(a\con'firm'=True)"`), `TEXT_MARKERS` 값 6개다. 참조 구현 `refused_before_fix1`은 원문과 따옴표만 지운 정리본만 검사한다. 표지 목록은 훅 모듈의 `MARKERS`를 importlib로 읽어 재사용하고, 새 표지는 만들지 않았다. 참조가 거절하는 모든 입력이 4개 셸 도구에서 현재 훅에 거절되는지 subprocess로 확인한다. 시험이 헛돌지 않도록 회귀 2개와 경계 3개가 참조 거절 목록에 들어 있는지도 먼저 단언한다.
-- 변이 확인(같은 두 시험을 다른 훅 파일에 돌림): fix1 처음 판에 돌리면 정확히 회귀 2개와 경계 3개 × 4 도구 = 28건이 실패한다. 재구성한 fix1 전 판에 돌리면 Monitor 줄(fix1 전에는 대상 아님)과 fix1이 새로 잡은 백슬래시 변형 4개에서만 실패한다. 즉 fix1 전 판은 Bash·PowerShell·device_bash에서 회귀 2개와 경계 3개를 모두 거절한다. 현재 판에서는 실패 0이다. 참조 구현과 실제 fix1 전 훅의 판정은 무작위 입력 5만 개에서 모두 같았다.
+- 변이 확인(같은 두 시험을 다른 훅 파일에 돌림): fix1 처음 판에 돌리면 정확히 8건(2×4) + 20건(5×4) = 28건이 실패한다. 거짓 음성 시험에서 회귀 2개 × 4 도구 = 8건, fix1 전 회귀 시험에서 (회귀 2개 + 경계 3개) × 4 도구 = 20건이다(fix3 정정: 처음 문구 "회귀 2개와 경계 3개 × 4 도구 = 28건"은 계산이 틀렸다. fix3 세션에서 fix1 처음 판을 다시 만들어 sha256 375206d7…을 맞춘 뒤 실패한 subTest를 다시 셌다). 재구성한 fix1 전 판에 돌리면 Monitor 줄(fix1 전에는 대상 아님)과 fix1이 새로 잡은 백슬래시 변형 4개에서만 실패한다. 즉 fix1 전 판은 Bash·PowerShell·device_bash에서 회귀 2개와 경계 3개를 모두 거절한다. 현재 판에서는 실패 0이다. 참조 구현과 실제 fix1 전 훅의 판정은 무작위 입력 5만 개에서 모두 같았다.
 - 지시문보다 더 한 것(거절 확인만 늘림): Monitor를 `TARGET_TOOLS`에 넣어 텍스트 표지 시험에도 Monitor가 들어간 것, 일반 회귀 시험 입력에 `TEXT_MARKERS` 값을 넣은 것, 헛돌기 방지 단언. 빼려면 `TARGET_TOOLS`의 Monitor 줄과 해당 입력을 지우면 된다.
 
 ## 테스트 결과 (이 세션, 2026-10-25)
@@ -382,3 +384,68 @@ fix1 값(2차 Judge가 본 값): 훅 375206d7b9bb9699d23af747c4c50127bdec1749d3a
 | R3 이전 합성 입력(거절·통과) 결과 불변 | 기존 거절·통과 시험이 단언 변경 없이 모두 통과. 거짓 음성 목록은 내용 그대로 옮겼고 Monitor 확인이 더해짐 |
 | R6 테스트 전부 통과 | 23 / 126 / 28 OK |
 | R1 변경이 F6~F8 범위뿐 | 예. 훅(F6), 테스트(F7), 보고서(F8) 3개 파일. 제안 settings·guard 문서 sha256 불변 |
+
+# fix3 반영 (2026-10-25, 병합 c9c0877 뒤 2차 Judge 수정안 F9~F11)
+지시문: docs/claude/kiwoom-block-fix3-prompt.md (출처: 2차 Judge judge-2.txt 108~113행, 원문 workspace/outputs/manual-bj/kiwoom-block/judge-2.txt). 작업 위치는 새 워크트리 `worktree-kiwoom-block-fix3`(기준 main c9c0877, 미커밋)이다. 위의 원래 결론, fix1·fix2 절은 지우지 않았다. 이 보고서에서 고친 곳은 "병합 뒤 확인" 5번, "한계"의 fix3 항목, fix2 절 "F7 테스트 변경"의 변이 확인 문장(28건 계산), 그리고 이 절이다.
+
+## 결론
+1. **병합 뒤 실패 3건을 재현했고, 고친 뒤 병합 전·병합 뒤 두 상태에서 모두 통과한다.** 훅·`.claude/settings.json`·deny·제안 settings·guard 문서는 바꾸지 않았다(sha256 아래 표).
+2. **단언은 약해지지 않았다.** deny가 줄거나, 임의의 줄이 늘거나, 중복이 생기거나, `hooks`가 빠지면 최소 한 시험이 실패한다(아래 변이 확인).
+3. **28건 계산을 다시 셌다.** 8건(2×4) + 20건(5×4) = 28건이 맞다.
+4. **F10 우회 계열 7개를 실제로 확인했다.** 현재 훅은 7개 모두 통과시키고, bash에서는 모두 `--confirm`이 된다. 코드 보강은 이번 범위 밖이다(NO_CHANGE, "한계" fix3 항목).
+
+## 재현된 실패 (수정 전, c9c0877 그대로)
+- `test_dev_pipeline.StaticScriptTests.test_settings_json_p9`: `AssertionError: 26 != 23`(1496행). `-p "test_dev_pipeline*"` → Ran 126, FAILED (failures=1).
+- `test_kiwoom_order_block_hook.ProposedSettingsOnlyAdd.test_added_deny_entries_come_from_the_approved_list`: `0 not greater than or equal to 3`(304행).
+- `test_kiwoom_order_block_hook.ProposedSettingsOnlyAdd.test_only_the_hooks_key_is_added_and_other_keys_are_unchanged`: `Items in the second set but not the first: 'hooks'`(313행). `-p "test_kiwoom_order_block_hook.py"` → Ran 23, FAILED (failures=2).
+- `-p "test_approval_human_check*"` → Ran 28, OK(영향 없음).
+
+## 바꾼 줄
+- `manage-us-stock-strategy/tests/test_dev_pipeline.py`
+  - 1225~1226행(새): 주석 1줄과 `KIWOOM_BLOCK_DENY = {"mcp__*__kiwoom_order_preview", "Bash(*overseas orders*)", "PowerShell(*overseas orders*)"}`. 값은 지금 `.claude/settings.json` deny 24~26번째 줄과 글자까지 같다.
+  - `test_settings_json_p9`: `assertEqual(len(deny), len(OLD_DENY | P9_DENY))` 한 줄을 다음 세 줄로 바꿨다. `deny = permissions["deny"]`, `assertEqual(len(deny), len(set(deny)))`(중복 없음), `assertIn(set(deny) - (OLD_DENY | P9_DENY), (set(), KIWOOM_BLOCK_DENY))`(추가된 줄은 없음 또는 정확히 그 3줄). 포함 단언 `set(deny) >= OLD_DENY | P9_DENY`와 ask 개수 단언은 그대로다. 그래서 deny는 23줄(병합 전) 또는 26줄(병합 뒤)일 때만 통과한다.
+- `manage-us-stock-strategy/tests/test_kiwoom_order_block_hook.py`
+  - 24~67행(새): `BASE_SETTINGS` 상수. `git show 7f98f28:.claude/settings.json`의 내용을 그대로 옮겼다(deny 23줄·ask 8줄·키 effortLevel/permissions/worktree, 순서 그대로). 이 세션에서 git blob을 JSON으로 읽어 상수와 `==`임을 확인했다. `auto_core.py` 두 줄은 test_dev_pipeline.py의 `OLD_DENY`처럼 `"auto_core" + ".py"`로 나눠 적었다.
+  - `ProposedSettingsOnlyAdd.setUpClass`: `cls.current`를 살아 있는 settings.json 대신 `BASE_SETTINGS`로 바꿨다. 기존 6개 시험의 단언은 한 글자도 바꾸지 않았다.
+  - 새 시험 `test_live_settings_are_the_base_or_exactly_the_proposed_file`: 실제 `.claude/settings.json`이 제안 파일과 바이트까지 같으면 통과, 아니면 JSON으로 읽은 값이 `BASE_SETTINGS`와 같아야 한다.
+  - 새 시험 `test_base_constant_has_the_base_shape`(지시문보다 더 한 것): 상수 자체가 키 3개, permissions 키 {ask, deny}, deny 23줄(중복 없음), ask 8줄인지 확인한다. 상수가 실수로 바뀌는 것을 막는다. 빼려면 이 시험만 지우면 된다.
+  - 그래서 훅 테스트 수는 23개에서 25개가 됐다.
+
+## 변이 확인 (스크래치 사본에서만, 실제 파일 수정 0)
+스크래치 폴더에 settings 사본을 만들고 테스트 모듈의 경로 상수(`test_dev_pipeline.ROOT`, 훅 테스트의 `CURRENT_SETTINGS`·`PROPOSED_SETTINGS`)만 사본으로 돌려 `test_settings_json_p9`와 `ProposedSettingsOnlyAdd` 8개를 돌렸다. 기준 사본은 git blob(LF)을 체크아웃 형태(CRLF)로 바꾼 것이고, sha256 f793271f…(1384바이트)가 위 155행의 병합 전 값과 같다.
+| 상태 | p9 | ProposedSettingsOnlyAdd에서 실패한 시험 |
+|---|---|---|
+| 실제=기준(병합 전) | 통과 | 없음 |
+| 실제=제안 파일(병합 뒤) | 통과 | 없음 |
+| 실제에서 deny 한 줄 삭제(`Read(./.env)`) | 실패 | live_settings |
+| 실제에서 키움 deny 한 줄 삭제(`Bash(*overseas orders*)`) | 실패 | live_settings |
+| 실제에 이상한 deny 한 줄 추가(`Bash(*harmless-extra*)`) | 실패 | live_settings |
+| 실제에 deny 중복 한 줄 | 실패 | live_settings |
+| 실제에서 `hooks` 삭제 | 통과(p9는 hooks를 보지 않음) | live_settings |
+| 제안 파일에서 deny 한 줄 삭제 (실제=기준 / 실제=같은 사본) | 통과 / 실패 | added_deny, existing_deny_and_ask (두 경우 모두) |
+| 제안 파일에서 키움 deny 삭제 / 이상한 줄 추가 / 중복 (같은 두 경우) | 통과 / 실패 | added_deny (모든 경우) |
+| 제안 파일에서 `hooks` 삭제 (같은 두 경우) | 통과 / 통과 | hook_entry, only_the_hooks_key (두 경우 모두) |
+
+모든 변이가 최소 한 시험에서 실패한다. `hooks` 삭제는 p9가 아니라 훅 테스트가 잡는다(p9는 원래 dev 파이프라인 권한 줄만 본다).
+
+## 28건 재계산 (F11)
+현재 훅에서 F6 diff(위 340~359행)를 거꾸로 적용해 fix1 처음 판을 다시 만들었다. sha256 375206d7…(5793바이트)가 위 154행 값과 같다. 그 파일에 거짓 음성 시험과 fix1 전 회귀 시험을 돌렸다. 실패한 subTest는 `test_false_negative_variants_are_still_refused` 8건(글자열 2개), `test_everything_refused_before_fix1_is_still_refused` 20건(글자열 5개), 합계 28건이다.
+
+## 테스트 결과 (이 세션, 2026-10-25, 수정 뒤, 워크트리 = c9c0877 + fix3)
+- `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_kiwoom_order_block_hook.py"` → Ran 25, OK.
+- `-p "test_dev_pipeline*"` → Ran 126, OK. `-p "test_approval_human_check*"` → Ran 28, OK.
+- 새 실패 0, skip 0. 병합 전 상태(실제=기준)는 위 변이 확인 첫 줄로 확인했다.
+- 두 테스트 파일은 CRLF(맨 LF 0)다. 훅 테스트는 ASCII다. test_dev_pipeline.py는 원래 비ASCII 바이트 271개(한글 문자열)가 있었고 fix3 뒤에도 271개다. 더한 줄은 모두 ASCII다.
+
+## 파일 sha256 (CRLF 그대로)
+| 파일 | fix3 전 (c9c0877 체크아웃) | fix3 뒤 |
+|---|---|---|
+| manage-us-stock-strategy/tests/test_dev_pipeline.py | 5e113544c249284cb1cc147899fa36d822409216d19a651795b4255150b490eb (96940) | eff5db3ac07e04e263095ec3d6a1133f7500c0499d3bd3b8389c8bce7ba3ac61 (97262) |
+| manage-us-stock-strategy/tests/test_kiwoom_order_block_hook.py | 859b57e8d91cb8f18fa6353252021f893d580c37af40a7e409cc4fcfb8f5a30b (19507) | 87c055b7d9c651239e359def8bb2e752c032425560c02dc26c300a588a9f0f5f (22208) |
+| docs/claude/kiwoom-block-builder-report.md | 58bd0cef162f23187c260edde869f985338696a1283125688a9c82b83492964b (52065) | (자기 자신은 적을 수 없음 — docs/claude/kiwoom-block-fix3-report.md에 적음) |
+| .claude/settings.json | 459cd04f0dee5aa915fafc0397af2369b9348aab19632505df953d466ea36942 (1952) | 변경 없음 |
+| .claude/hooks/kiwoom_order_block.py | 2818d79fcdd5ee2083be65c888447ea84a04f75188ca35376a5b2038c87cc81f (5971) | 변경 없음 |
+| docs/claude/kiwoom-block-settings-proposed.json | 459cd04f…(위 settings와 같음) | 변경 없음 |
+
+## 하지 않은 것 (fix3)
+훅·`.claude/settings.json`·deny·제안 settings·guard 문서·CLAUDE.md·tools/**·키움 패키지 수정 0건. 키움 도구·CLI 실행 0건. 비밀 접근 0건. 커밋·push·병합 0건. 우회 계열 코드 보강 0건(NO_CHANGE). docs/claude/_pending 파일과 관제판 갱신은 허용 파일 밖이라 하지 않았다. BLOCKED.md 없음.

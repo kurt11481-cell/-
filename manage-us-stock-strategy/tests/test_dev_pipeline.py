@@ -1222,6 +1222,8 @@ P9_DENY = {
     "Bash(*dev-queue.ps1*)", "PowerShell(*dev-queue.ps1*)", "Edit(/.claude/settings.json)",
     "Edit(/.claude/settings.local.json)",
 }
+# K3 kiwoom-block (merged c9c0877) added exactly these deny lines; before that merge none of them is present.
+KIWOOM_BLOCK_DENY = {"mcp__*__kiwoom_order_preview", "Bash(*overseas orders*)", "PowerShell(*overseas orders*)"}
 OLD_ASK = {"Edit(stock-strategy-system/**)", "Edit(workspace/policies/**)", "Bash(git commit:*)", "Bash(git push:*)"}
 P9_ASK = {"Edit(/tools/**)", "Edit(/CLAUDE.md)", "Edit(/AGENTS.md)", "Edit(/.gitignore)"}
 
@@ -1493,7 +1495,9 @@ class StaticScriptTests(unittest.TestCase):
         permissions = settings["permissions"]
         self.assertTrue(set(permissions["deny"]) >= OLD_DENY | P9_DENY)
         self.assertTrue(set(permissions["ask"]) >= OLD_ASK | P9_ASK)
-        self.assertEqual(len(permissions["deny"]), len(OLD_DENY | P9_DENY))
+        deny = permissions["deny"]
+        self.assertEqual(len(deny), len(set(deny)))
+        self.assertIn(set(deny) - (OLD_DENY | P9_DENY), (set(), KIWOOM_BLOCK_DENY))
         self.assertEqual(len(permissions["ask"]), len(OLD_ASK | P9_ASK))
         self.assertNotIn("allow", permissions)
         self.assertEqual(settings["effortLevel"], "medium")
