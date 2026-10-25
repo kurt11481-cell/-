@@ -24,6 +24,7 @@ GOLDEN_OTHER_BODIES = {
     "account_daily_fills_read": {"ord_dt": "", "query_tp": "1", "slby_tp": "0", "stex_tp": "", "stk_cd": "",
                                  "oppo_trde_tp": "%", "fr_ord_no": ""},
     "account_day_trades_read": {"base_dt": "", "qry_tp": "1", "fc_krw_tp": "0"},
+    "account_deposit_by_date_read": {"base_dt": ""},
 }
 
 

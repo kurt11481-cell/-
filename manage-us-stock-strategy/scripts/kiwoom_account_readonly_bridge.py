@@ -29,6 +29,8 @@ ACCOUNT_APIS = {
     "account_transaction_history_read": ("ust21100", "/api/us/acnt"),
     "account_daily_fills_read": ("ust21150", "/api/us/acnt"),
     "account_day_trades_read": ("ust21610", "/api/us/acnt"),
+    # cf-b2n (B2-N): deposit by currency on one U.S. trading day, read only when I3 is an outflow candidate.
+    "account_deposit_by_date_read": ("ust21132", "/api/us/acnt"),
 }
 ACCOUNT_BODIES = {
     "account_deposit_read": {},
@@ -45,12 +47,15 @@ ACCOUNT_BODIES = {
     "account_daily_fills_read": {"ord_dt": "", "query_tp": "1", "slby_tp": "0", "stex_tp": "", "stk_cd": "",
                                  "oppo_trde_tp": "%", "fr_ord_no": ""},
     "account_day_trades_read": {"base_dt": "", "qry_tp": "1", "fc_krw_tp": "0"},
+    # Only the date is known to be required (not yet measured live: a wrong body fails the read and I3 holds).
+    "account_deposit_by_date_read": {"base_dt": ""},
 }
 # The only request parameters any operation accepts: YYYYMMDD dates for these body fields.
 DATED_PARAMETERS = {
     "account_transaction_history_read": ("strt_dt", "end_dt"),
     "account_daily_fills_read": ("ord_dt",),
     "account_day_trades_read": ("base_dt",),
+    "account_deposit_by_date_read": ("base_dt",),
 }
 DATE_PARAMETER = re.compile(r"20\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])")
 SAFE_FIELDS = {
@@ -91,6 +96,7 @@ SAFE_FIELDS = {
         "stk_cd", "tdy_buyq", "tdy_buy_amt", "tdy_avg_buy_uv", "tdy_sellq", "tdy_sell_amt", "tdy_avg_sell_uv",
         "cmsn_altx",
     ),
+    "account_deposit_by_date_read": ("crnc_code", "fx_entr", "won_entr"),
 }
 
 # Existing account/transport classifications only; Worker strings are untrusted.
@@ -294,7 +300,12 @@ def _read_pages(session: dict[str, Any], operation: str,
         if operation == "account_open_items" and any(not isinstance(item, dict) for item in raw):
             raise BridgeError("KIWOOM_SCHEMA_MISMATCH")
         fields = SAFE_FIELDS[operation]
-        rows.extend({field: item.get(field) for field in fields} for item in raw if isinstance(item, dict))
+        page_rows = [{field: item.get(field) for field in fields} for item in raw if isinstance(item, dict)]
+        if operation == "account_deposit_by_date_read":
+            # ust21132 returns the KRW deposit at the top of the body, not in the currency rows (cf-b2n).
+            for row in page_rows:
+                row["won_entr"] = response.body.get("won_entr")
+        rows.extend(page_rows)
         pages = page_index
         next_cont, next_value = _continuation(response)
         if operation == "account_open_items":
