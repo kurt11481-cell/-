@@ -12,7 +12,7 @@ are labeled 비교 중 and are not entered.
   order ticket -> journal -> exception alert). LLMs work at the edge (research, explanation, development) and
   their failure never blocks the core. The user receives results only.
 - If an automation design is blocked or a routine step needs the user, treat it as a severe defect and fix it by
-  removing human steps, not adding them. Read-only work Cowork can do itself is done, not handed to the user.
+  removing human steps, not adding them. Read-only work the session can do itself is done, not handed to the user.
 - Routine user touches target 0, except Kiwoom order entry until order stage 2.
 
 ## Hard safety
@@ -39,7 +39,7 @@ are labeled 비교 중 and are not entered.
 - Missing or stale data stays visible and fails closed. Deterministic rules outrank LLM output.
 - The only LLM input to the auto-core is the research record written by the 06:40 integrated check
   (workspace/outputs/research-records/<KST date>/research-record.json, schema auto-core-research-record). A missing or
-  invalid record blocks every buy ticket, never sells. A Cowork session that changes or accepts a card updates
+  invalid record blocks every buy ticket, never sells. An interactive session that changes or accepts a card updates
   docs/claude/card-evidence-registry.json in the same session (otherwise that symbol gets no ticket).
 
 ## Kiwoom query rules (standing user rule 2026-10-07)
@@ -103,25 +103,21 @@ are labeled 비교 중 and are not entered.
 - Decision journal: when a holding-card position decision (ADD/HOLD/TRIM/EXIT, or the user's own action on it) is accepted in Cowork, record the S7b entry in the same session as described in Hard safety (no separate confirmation code). A watch-card (non-held) acceptance is recorded in docs/claude/card-evidence-registry.json (accepted) and watchlist-registry.json (cardStatus), not in the journal; new buys of non-held symbols are journaled by the auto-core (order_ticket/ticket_outcome, recording mode) and issued tickets are scored by score_decision_journal.py; watchlist R2.1 scores are post-scored against later returns by docs/claude/watchlist_forward_score.py.
 - Default disposition (user decision 2026-10-09 Q1, docs/claude/ops-dev-touch-reduction-2026-10-09.md R4): every replay, review or rule candidate pre-registers its default outcome. Criterion not met, or no user answer by the stated deadline → NO_CHANGE (current rule and policy kept); Cowork records it and only notifies. Ask the user only when the result proposes a change. A default never raises exposure, budget or authority; changes to policy, state, authority or orders still need explicit approval.
 - Review stability (user 2026-10-13, docs/claude/review-stability-2026-10-13.md; Cowork and interactive Claude Code only: pipeline/manual-route Builder and Judge, scheduled tasks and all subagents keep their own output contracts, and subagent output is a pointer): a first review must leave nothing for a re-review to find. Before a review or analysis concludes: (V1) every claim cites a source opened in this session (file:line, query time, commit, or the user's words/tool output in a chat turn opened in this session), including the definition lines of terms it relies on; notes, board text, summaries, earlier answers, memory and subagent output only point to sources; check what is checkable read-only and recompute numbers; what stays unreachable is shown as "확인 필요" and anything resting on it fails closed (trading: blocks buys, never sells; rules/dev: NO_CHANGE); (V2) use the most precise reachable data (bars over a one-time quote, final over provisional) with as-of; (V3) dev/rule reviews walk NO_CHANGE→REMOVE/SIMPLIFY→REUSE→REPLACE→ADD; check every block both as rule application and as a defect; resolve in-scope items that need no policy, state, scheduled-task, authority, order or code change (code goes through the change classes); (V4) name the evidence that would change each conclusion; (V5) if it recommends, asks for a decision, defers or proposes a change, run the section 3-1 re-review subagent (non-Haiku; Opus for authority/limit/K3), re-verify each finding at its source and fix the draft; if a conclusion changed, run one more round on the changes only; leftovers are 미해결 under default disposition (notify only); other reviews do the L1-L6 check in-session. End with "검토 완결: 원문 확인 n/m · 내장 재검토 r회(반영 k건) · 미해결 j · 자료 시점 … · 바뀔 조건 …". On a user re-review, read the earlier record first, re-check changed inputs and run L1-L6 on the earlier record against its sources (no fresh analysis from scratch); change a conclusion only for changed input, a factual error shown from the source, a first-pass omission or new user information (else "유지 — 새 근거 없음"); report 처음 판단 | 재검토 | 이유 | 원문 and log the missed lens in section 2.
-- Touch budget (2026-10-09 Q2, superseded 2026-10-10 by Goal): routine user touches target 0 except order entry. Every proposal states its weekly user-touch cost and may not add a routine touch. At most 3 active development tasks and 1 authority/limit change in progress at a time.
-- Doc-only commits (user decision 2026-10-09 Q5, automated by redesign T3 2026-10-10): when a Cowork session leaves docs/claude/ changes, write docs/claude/_pending/<task-id>.txt (line 1 = commit message, then one repo-relative path per line, docs/claude/ only). Windows task InvestmentV2-DocsCommit commits them daily at 23:30 (dev-queue also runs commit-docs before a run); do not ask the user to run it. Files outside docs/claude/ still get an explicit commit block.
+- Concurrency cap: At most 3 active development tasks and 1 authority/limit change in progress at a time.
+- Doc-only commits (user decision 2026-10-09 Q5, automated by redesign T3 2026-10-10): when an interactive session leaves docs/claude/ changes, write docs/claude/_pending/<task-id>.txt (line 1 = commit message, then one repo-relative path per line, docs/claude/ only). Windows task InvestmentV2-DocsCommit commits them daily at 23:30 (dev-queue also runs commit-docs before a run); do not ask the user to run it. Files outside docs/claude/ still get an explicit commit block.
 - Artifact page design (user 2026-10-14): before editing or republishing the HTML of 미국주식 현황판, 개발 관제판 or 통합점검, read the live version and keep the 투자_V2 design-system colors, type and touch sizes in docs/claude/artifact-design-rules-2026-10-14.md. Display only: no data, rule or authority change; the 통합점검 order panel keeps Kiwoom buy red / sell blue (--buy/--sell), separate from price up green / down red.
 
 ## Session hygiene (투자_V2 setup guide, apply automatically)
-- At task start, state the recommended model/effort in one line: simple = low, routine = medium,
-  analysis/dev = high, cross-file design / K3 / Judge = Opus xhigh. Ask the user to restart only when authority/limit
+- Model and effort: Ask the user to restart only when authority/limit
   or Judge work runs on a non-Opus model; otherwise proceed (redesign 2026-10-10). Never suggest switching model
   mid-session (it rebuilds the prompt cache). Effort may change mid-session only in Claude Code on Opus 5.5 /
   Sonnet 5.5 (`/effort`, cache kept); elsewhere restart (docs/claude/prompt-caching-review-2026-10-09.md).
-- When the topic changes, tell the user to run /clear; if the task continues but context is long,
-  suggest /compact at a natural stopping point.
 - Before multi-file edits, present a plan first (or ask the user to press Shift+Tab for plan mode).
 - Manual route (authority/limit changes, pipeline-protected paths such as tools/**, .claude/**, CLAUDE.md, AGENTS.md, .gitignore, or a
   stopped pipeline run): Builder in a worktree (claude --worktree <name>), then a Judge in a separate session that never edits files.
   Cowork may start both on the PC via Desktop Commander after the user's approval (dc-dev Q2 a); the merge still waits for the user's decision.
   Claude Code sessions never run dev-run/dev-merge/dev-queue and never edit .claude/settings*.json (deny); Cowork makes settings
   changes with user approval.
-- Talk to the user in Korean, one step at a time, giving the exact command to type.
 - Cowork 세션 또는 사장과 대화 중인 사장실 회사PC 스레드(대화형 Claude Code)에서 작업 상태가 바뀌었으면(완료·시작·새 재개 조건), 세션 끝에 한 번 docs/claude/dev-dashboard-protocol.md대로 관제판의 바뀐 작업만 갱신한다. 변화가 없으면 갱신하지 않는다. Judge·예약 작업·하위 에이전트는 갱신하지 않는다.
 - Shared docs (design, rules files, cards, OI): record sha256 before editing and re-check just before saving; if it changed, re-read and merge.
 
