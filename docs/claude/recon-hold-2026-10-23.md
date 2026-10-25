@@ -65,4 +65,6 @@ HOLD는 안전하게 막힌 것(상태 불변)이고, 기다려도 풀리지 않
 - 실행(dc-dev Q2 a 수동 경로): Builder 지시문 docs/claude/recon-dt-builder-prompt.md → 회사PC `claude -p --worktree recon-dt --model opus --effort high`(acceptEdits, permission-prompts none, 허용 = unittest·git 읽기만, 커밋 없음), 실행 파일 workspace/outputs/dev-runs/recon-dt/run-builder.cmd, 출력 builder-2.json.
 - 사고 기록(08:48): 첫 실행을 PowerShell 한 줄로 넘기다 따옴표가 깨져 허용 목록이 잘못 넘어간 Builder(PID 5152, 허용 칸에 맨 "Bash")가 1분쯤 돌았다 → 즉시 종료(자식 bash·python 포함). 그 사이 실행된 것은 읽기 전용뿐: worktree에서 기준선 시험(unittest test_auto_core*), 저장소 밖 폴더에서 git status/diff/log(실패). worktree 변경 0 확인. 재실행은 .cmd 파일로(인자 확인 뒤 08:5x).
 - 다음: Builder 완료 → 별도 읽기 전용 Judge(Opus xhigh, Read·Grep·Glob) → 사장 병합 결정 → 커밋 2개로 병합.
+- 병합(2026-10-25 08:1x KST): 사장 원문 "결정 recon-dt 병합: 승인"(10/25 08:06, 비서실 직접 입력) → docs/claude/recon-dt-merge-2026-10-25.ps1 실행: CHECKS_OK(작업 잠금·예약 작업 실행 없음, Judge PASS, 본 저장소는 base e33756c 뒤 docs/claude만 이동, 5개 경로 sha256 = Judge 전 측정값) → worktree 커밋 e8217667 → --no-ff 병합 main 5a289b8 → 병합 뒤 test_auto_core* 505건 실패 1(알려진 PLTR만)·스키마 계약 errors [] → RDT_DONE.
+- 다음 확인: 10/27(화) 06:15 대조 reconcile.json — I2 PASS, I3 사유가 현금 잔차(출금 −82.93) 하나만 남는지. 그다음 cashflow-api-gap(B2-N).
 
