@@ -14,8 +14,9 @@ propose-user-decision   the user's own decision on a recorded card decision (a c
 show    render the proposal for the user
 apply   append the entry. Run apply only in Cowork after the user typed "confirm <code>" for that
         proposal in the current conversation, or from the user's own terminal
-        (--confirmed-via USER_TERMINAL: an interactive console only, the code typed once more). Agents,
-        scheduled tasks, Claude Code, Codex and Judge sessions never run it, and never type or guess the code.
+        (--confirmed-via USER_TERMINAL: run by hand in an interactive console only, no pipe or NUL, then
+        Enter pressed once). Agents, scheduled tasks, Claude Code, Codex and Judge sessions never run it,
+        and never type or guess the code.
 verify  check the journal hash chain
 
 Redesign T2 F7: in recording mode the auto-core appends core_decision, order_ticket and ticket_outcome
@@ -65,10 +66,13 @@ JOURNAL_CARD_USER_DECISION = "card_user_decision"
 S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
 CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
-# hnd-check: refusals of user_terminal_rejection (USER_TERMINAL apply here and in reconcile_broker_state.py).
+# hnd-check: the refusal of user_terminal_rejection (USER_TERMINAL apply here and in reconcile_broker_state.py).
 TERMINAL_NOT_INTERACTIVE = "USER_TERMINAL_NOT_INTERACTIVE"
-TERMINAL_CODE_NOT_RETYPED = "USER_TERMINAL_CODE_NOT_RETYPED"
-TERMINAL_RETYPE_PROMPT = "Type the confirmation code again: "
+# hnd-check2 fix 1: the one Enter asked for after the console checks (what is typed is not compared).
+TERMINAL_ENTER_PROMPT = "Press Enter to apply (Ctrl+C cancels): "
+# hnd-check2: GetStdHandle ids of the Windows standard input and output, (DWORD)-10 and (DWORD)-11.
+STD_INPUT_HANDLE = 0xFFFFFFF6
+STD_OUTPUT_HANDLE = 0xFFFFFFF5
 # Redesign T2 F7: entries the auto-core appends in recording mode (never through propose/apply above).
 JOURNAL_CORE_DECISION = "core_decision"
 JOURNAL_ORDER_TICKET = "order_ticket"
@@ -799,32 +803,64 @@ def cmd_propose_user_decision(args: argparse.Namespace) -> int:
     return 0
 
 
-def user_terminal_rejection(confirm_code: str, prompt: str = TERMINAL_RETYPE_PROMPT) -> str | None:
-    """hnd-check: a USER_TERMINAL confirmation counts only when typed by hand in an interactive console.
+def standard_handles_are_console() -> bool:
+    """hnd-check2: on Windows, GetConsoleMode must succeed on both the standard input and output handle.
 
-    stdin and stdout must both be a terminal (no pipe, redirect or headless shell); then the code is typed
-    once more and must equal --confirm (both stripped, upper case). Returns None to go on, else the refusal.
-    It only adds refusals. It stops piped and headless runs but is not proof of a person (automation typing
-    into a real console still passes), so agents, scheduled tasks and Judge sessions still never run apply.
+    A pipe, a file or NUL fails it (isatty alone is not enough: Windows reports NUL as a terminal); so does
+    a missing handle or any error. Off Windows there is no such call and isatty is the whole check.
+    """
+    if os.name != "nt":
+        return True
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:
+        return False
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetStdHandle.argtypes = (wintypes.DWORD,)
+        kernel32.GetStdHandle.restype = wintypes.HANDLE
+        kernel32.GetConsoleMode.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+        kernel32.GetConsoleMode.restype = wintypes.BOOL
+        mode = wintypes.DWORD()
+        for which in (STD_INPUT_HANDLE, STD_OUTPUT_HANDLE):
+            succeeded = kernel32.GetConsoleMode(kernel32.GetStdHandle(which), ctypes.byref(mode))
+            if not isinstance(succeeded, int) or succeeded == 0:
+                return False
+    except (AttributeError, OSError, TypeError, ValueError, ctypes.ArgumentError):
+        return False
+    return True
+
+
+def user_terminal_rejection() -> str | None:
+    """hnd-check: a USER_TERMINAL confirmation counts only when run by hand in an interactive console.
+
+    stdin and stdout must both be a terminal (no pipe, redirect or headless shell) and, on Windows, both
+    standard handles must be console handles (hnd-check2, standard_handles_are_console). Then Enter is
+    pressed once (hnd-check2 fix 1): what is typed is not compared and the end of input is refused, so a
+    new console window nobody types into waits here. The code is not typed again: the library checks it
+    as before. Returns None to go on, else the refusal. It only adds refusals. It stops piped, redirected
+    and headless runs but is not proof of a person (a pseudo console, or keys injected into a real or a
+    new console, still pass), so agents, scheduled tasks and Judge sessions still never run apply.
     """
     try:
         interactive = sys.stdin.isatty() is True and sys.stdout.isatty() is True
     except (AttributeError, OSError, ValueError):  # no stream (pythonw) or a closed one
         interactive = False
-    if not interactive:
+    if not interactive or standard_handles_are_console() is not True:
         return TERMINAL_NOT_INTERACTIVE
     try:
-        typed = input(prompt)
-    except EOFError:  # nothing to read, e.g. NUL, which Windows reports as a terminal
-        return TERMINAL_CODE_NOT_RETYPED
-    return None if typed.strip().upper() == confirm_code.strip().upper() else TERMINAL_CODE_NOT_RETYPED
+        input(TERMINAL_ENTER_PROMPT)
+    except EOFError:  # the end of input: nobody pressed Enter
+        return TERMINAL_NOT_INTERACTIVE
+    return None
 
 
 def cmd_apply(args: argparse.Namespace) -> int:
     messages = _messages()
     try:
         if args.confirmed_via == "USER_TERMINAL":
-            rejection = user_terminal_rejection(args.confirm)
+            rejection = user_terminal_rejection()
             if rejection is not None:
                 raise JournalError(rejection)
         proposal = load_json(args.proposal)

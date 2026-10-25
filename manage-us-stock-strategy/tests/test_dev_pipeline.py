@@ -1295,24 +1295,40 @@ class StaticScriptTests(unittest.TestCase):
 
     def test_merge_authority_needs_an_interactive_console(self):
         # hnd-check: only -ApproveAuthority is checked, right after the id format check and before anything runs.
+        # hnd-check2: the id is not typed again; both standard handles must also be console handles.
+        # hnd-check2 fix 1: then Enter once; what is typed is not compared, the end of input or an error stops.
         text = self.read("dev-merge.ps1").decode("ascii")
         block = re.search(r"^if \(\$ApproveAuthority\) \{\r\n(.*?)^\}\r$", text, re.S | re.M).group(1)
-        for word in ("if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected -or $Host.Name -ne "
-                     "'ConsoleHost' -or\r\n            -not [Environment]::UserInteractive) {\r\n"
-                     "        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')\r\n        exit 2\r\n",
-                     "if ([Console]::ReadLine() -cne $Id) {\r\n"
-                     "        Write-Output ('DEV-MERGE ' + $Id + ' STOP_ID_NOT_CONFIRMED')\r\n        exit 2\r\n",
-                     "Write-Host -NoNewline $ask"):
+        stop = "        Write-Output ('DEV-MERGE ' + $Id + ' STOP_NOT_INTERACTIVE')\r\n        exit 2\r\n"
+        redirected = ("if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected -or $Host.Name -ne "
+                      "'ConsoleHost' -or\r\n            -not [Environment]::UserInteractive) {\r\n" + stop)
+        build = "    $consoleHandles = $false\r\n    try {\r\n        Add-Type -TypeDefinition @'\r\n"
+        decide = ("        $consoleHandles = [DevMergeConsoleHandles]::Both()\r\n    } catch {\r\n"
+                  "        $consoleHandles = $false\r\n    }\r\n    if ($consoleHandles -ne $true) {\r\n" + stop)
+        enter = ("    $entered = $null\r\n    try {\r\n"
+                 "        Write-Host -NoNewline 'Authority merge. Press Enter to continue (Ctrl+C cancels): '\r\n"
+                 "        $entered = [Console]::ReadLine()\r\n    } catch {\r\n        $entered = $null\r\n    }\r\n"
+                 "    if ($null -eq $entered) {\r\n" + stop + "    }\r\n")
+        for word in (redirected, build, decide, enter):
             self.assertIn(word, block)
+        self.assertLess(block.index(redirected), block.index(build))
+        self.assertLess(block.index(build), block.index(decide))
+        self.assertLess(block.index(decide), block.index(enter))
+        self.assertTrue(block.endswith(enter))  # the Enter step is the last one before anything runs
+        self.assertEqual(block.count("STOP_NOT_INTERACTIVE"), 3)
+        # The C# asks GetConsoleMode for the standard input (-10) and output (-11) handle; both must succeed.
+        source = re.search(r"@'\r\n(.*?)\r\n'@\r\n", block, re.S).group(1)
+        self.assertIn("return GetConsoleMode(GetStdHandle(-10), out mode) && GetConsoleMode(GetStdHandle(-11), "
+                      "out mode);", source)
+        self.assertEqual(source.count('[DllImport("kernel32.dll")]'), 2)
+        # The one read is the Enter step: its line is kept only to see the end of input ($null) and is never
+        # compared (the id retype, its -cne comparison and STOP_ID_NOT_CONFIRMED stay gone).
+        self.assertEqual((text.count("ReadLine"), text.count("Write-Host"), text.count("$entered")), (1, 1, 4))
+        for word in ("-cne", "-ceq", "Read-Host", "STOP_ID_NOT_CONFIRMED", "Unescape"):
+            self.assertNotIn(word, text)
         self.assertLess(text.index("STOP_ID_FORMAT')"), text.index("if ($ApproveAuthority) {"))
         self.assertLess(text.index("if ($ApproveAuthority) {"), text.index("$repo = "))
         self.assertEqual(text.count("$ApproveAuthority"), 3)  # param, this check, '--approve-authority'
-        # The prompt is the Korean line of the builder prompt, written as \u escapes (ASCII-only file).
-        parts = [part.replace("''", "'").encode("ascii").decode("unicode_escape")
-                 for part in re.findall(r"\[regex\]::Unescape\('((?:[^']|'')*)'\)", block)]
-        self.assertEqual(len(parts), 3)
-        self.assertEqual(parts[0] + parts[1] + "<id>" + parts[2],
-                         "권한 변경 병합입니다. 승인하려면 id '<id>'를 그대로 입력하세요: ")
         # No way around it: no new parameter, environment variable or test-only branch.
         self.assertEqual(re.findall(r"\$(\w+)", re.search(r"^param\((.*?)^\)", text, re.S | re.M).group(1)),
                          ["true", "Id", "ApproveAuthority"])
@@ -1519,18 +1535,22 @@ class MergeCopyConsoleTests(unittest.TestCase):
         (self.root / "tools" / "dev_pipeline" / "devpipe.py").write_text(FAKE_DEVPIPE, encoding="ascii")
         self.calls = self.root / "devpipe-calls.jsonl"
 
-    def run_copy(self, *arguments, piped=None, fake_exit=0):
-        self.assertTrue(self.script.resolve().is_relative_to(self.root))
-        self.assertFalse(self.script.resolve().is_relative_to(ROOT.resolve()))
+    def run_copy(self, *arguments, piped=None, fake_exit=0, nul=False, script=None):
+        script = self.script if script is None else script
+        self.assertTrue(script.resolve().is_relative_to(self.root))
+        self.assertFalse(script.resolve().is_relative_to(ROOT.resolve()))
         (self.root / "fake-exit.txt").write_text(str(fake_exit), encoding="ascii")
         environment = dict(os.environ)
         environment["PATH"] = str(Path(sys.executable).parent) + os.pathsep + environment.get("PATH", "")
-        stdin = {"stdin": subprocess.DEVNULL} if piped is None else {"input": piped}
+        if nul:  # hnd-check2: NUL as stdin and stdout, as `< NUL > NUL` gives (the output is lost)
+            streams = {"stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE}
+        else:
+            streams = {"capture_output": True, **({"stdin": subprocess.DEVNULL} if piped is None else {"input": piped})}
         result = subprocess.run(
             [shutil.which("powershell.exe"), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-             "-File", str(self.script), *arguments],
-            cwd=str(self.root), env=environment, capture_output=True, timeout=180, **stdin)
-        lines = result.stdout.decode("ascii", "replace").splitlines()
+             "-File", str(script), *arguments],
+            cwd=str(self.root), env=environment, timeout=180, **streams)
+        lines = (result.stdout or b"").decode("ascii", "replace").splitlines()
         return result.returncode, (lines[0] if lines else ""), result
 
     def recorded_calls(self):
@@ -1548,12 +1568,68 @@ class MergeCopyConsoleTests(unittest.TestCase):
         self.assertEqual({Path(call[2]).resolve() for call in calls}, {self.root})
 
     def test_authority_switch_without_a_console_stops(self):
-        for piped in (None, b"demo\r\n"):  # nothing on stdin, or an agent piping the right id
+        for piped in (None, b"demo\r\n", b"\r\n"):  # nothing on stdin, an agent piping the right id or an Enter
             with self.subTest(piped=piped):
                 code, first, result = self.run_copy("demo", "-ApproveAuthority", piped=piped)
                 self.assertEqual((code, first), (2, "DEV-MERGE demo STOP_NOT_INTERACTIVE"), result.stderr)
         self.assertEqual(self.recorded_calls(), [])  # devpipe never ran
         self.assertFalse((self.root / "workspace").exists())  # stopped before the run folder
+
+    def test_authority_switch_with_nul_stops(self):
+        # hnd-check2: the output line goes to NUL, so the proof is exit 2, no devpipe call and no run folder.
+        code, _, result = self.run_copy("demo", "-ApproveAuthority", nul=True)
+        self.assertEqual((code, result.stderr), (2, b""))
+        self.assertEqual(self.recorded_calls(), [])
+        self.assertFalse((self.root / "workspace").exists())
+        # The same NUL run without the switch reaches the fake devpipe: the stop above is the console check.
+        code, _, result = self.run_copy("demo", nul=True)
+        self.assertEqual(code, 0, result.stderr)
+        self.assertEqual(len(self.recorded_calls()), 1)
+
+    def test_console_handle_check_builds_and_refuses_redirected_handles(self):
+        # hnd-check2: every run above stops before GetConsoleMode, so the C# of the check, taken from the copy as
+        # written, is built and called here: it must compile in Windows PowerShell and answer False for
+        # redirected handles (a console window answers True; measured, docs/claude/hnd-check2-report.md).
+        text = self.script.read_bytes().decode("ascii")
+        add_type = re.search(r"^        Add-Type -TypeDefinition @'\r\n.*?^'@\r\n", text, re.S | re.M).group(0)
+        probe = self.root / "tools" / "probe-console-handles.ps1"
+        probe.write_text("param([string]$Out)\r\n$ErrorActionPreference = 'Stop'\r\n" + add_type +
+                         "[System.IO.File]::WriteAllText($Out, [string][DevMergeConsoleHandles]::Both())\r\n",
+                         encoding="ascii", newline="")
+        answer = self.root / "answer.txt"
+        for nul in (False, True):
+            with self.subTest(nul=nul):
+                answer.unlink(missing_ok=True)
+                code, _, result = self.run_copy("-Out", str(answer), nul=nul, script=probe)
+                self.assertEqual(code, 0, result.stderr)
+                self.assertEqual(answer.read_text(encoding="ascii"), "False")
+        self.assertEqual(self.recorded_calls(), [])
+
+    def test_enter_step_goes_on_for_any_line_and_stops_at_the_end_of_input(self):
+        # hnd-check2 fix 1: every run above stops before the Enter step, so the step, taken from the copy as
+        # written, runs here on its own with the stdin given: Enter or any line goes on (nothing is compared);
+        # NUL or an empty pipe (the end of input) stops with STOP_NOT_INTERACTIVE, exit 2. A new console window
+        # nobody types into waits at this read (measured, docs/claude/hnd-check2-report.md).
+        text = self.script.read_bytes().decode("ascii")
+        step = re.search(r"^    \$entered = \$null\r\n.*?^    if \(\$null -eq \$entered\) \{\r\n.*?^    \}\r\n", text,
+                         re.S | re.M).group(0)
+        probe = self.root / "tools" / "probe-enter-step.ps1"
+        probe.write_text("param([string]$Id)\r\n$ErrorActionPreference = 'Stop'\r\n" + step +
+                         "Write-Output ('CONTINUED ' + $Id + ' [' + $entered + ']')\r\nexit 0\r\n",
+                         encoding="ascii", newline="")
+        prompt = "Authority merge. Press Enter to continue (Ctrl+C cancels): "
+        for piped, line in ((b"\r\n", "CONTINUED demo []"), (b"anything at all\r\n", "CONTINUED demo [anything at all]"),
+                            (b"first\r\nsecond\r\n", "CONTINUED demo [first]")):
+            with self.subTest(piped=piped):
+                code, first, result = self.run_copy("demo", piped=piped, script=probe)
+                self.assertEqual((code, first), (0, prompt + line), result.stderr)
+        for piped in (None, b""):  # NUL, an empty pipe
+            with self.subTest(piped=piped):
+                code, first, result = self.run_copy("demo", piped=piped, script=probe)
+                self.assertEqual((code, first), (2, prompt + "DEV-MERGE demo STOP_NOT_INTERACTIVE"), result.stderr)
+        code, _, result = self.run_copy("demo", nul=True, script=probe)
+        self.assertEqual((code, result.stderr), (2, b""))
+        self.assertEqual(self.recorded_calls(), [])
 
 
 if __name__ == "__main__":

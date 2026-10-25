@@ -49,7 +49,6 @@
     "apply_success": "revision {before} → {after} 적용. 백업: {backup}",
     "apply_rejected": "적용하지 않았습니다: {reason}",
     "apply_user_message_required": "적용하지 않았습니다: Cowork 확인에는 사용자가 보낸 확인 메시지 원문(--user-message)이 필요합니다.",
-    "apply_terminal_not_interactive": "적용하지 않았습니다: 사장 터미널에서 직접 실행해야 합니다(대화형 콘솔 아님 — 입력이나 출력이 파이프·리다이렉트·헤드리스 셸입니다).",
-    "apply_terminal_retype": "확인 코드를 한 번 더 입력하세요: "
+    "apply_terminal_not_interactive": "적용하지 않았습니다: 사장 터미널에서 직접 실행하고 Enter를 한 번 눌러야 합니다(대화형 콘솔 아님 — 입력이나 출력이 파이프·리다이렉트·헤드리스 셸이거나, Enter 없이 입력이 끝났습니다)."
   }
 }

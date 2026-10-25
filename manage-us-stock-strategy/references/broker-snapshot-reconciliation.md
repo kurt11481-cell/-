@@ -177,10 +177,14 @@ python manage-us-stock-strategy/scripts/reconcile_broker_state.py show
 python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via USER_TERMINAL
 ```
 
-This works only in an interactive console (a PowerShell or cmd window: stdin and stdout are the terminal,
-not a pipe, redirect or headless shell), and apply asks for the code once more, which must equal
-`--confirm` (hnd-check, 2026-10-25). It stops piped and headless runs, not automation typing into a real
-console, so agents still never run apply.
+Run it by hand in an interactive console (a PowerShell or cmd window) and press Enter once when asked:
+stdin and stdout must be the terminal and, on Windows, console handles (GetConsoleMode), so a pipe, a
+redirect, NUL or a headless shell is refused; then apply waits for one Enter (what is typed is not
+compared; the end of input is refused) before it reads the proposal (hnd-check, hnd-check2 and its fix 1,
+2026-10-25). The code is not typed again. It stops piped, redirected and headless runs, not a hidden new
+console, a pseudo console or injected keystrokes; a new console window does wait at the Enter, so a program
+that opens one passes only by injecting a key (the same strength as the earlier retype). Agents still never
+run apply.
 
 ### 4. S5 cash-flow declaration (R6, optional inputs of propose)
 
