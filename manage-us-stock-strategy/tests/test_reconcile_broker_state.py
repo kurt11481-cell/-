@@ -175,10 +175,10 @@ class AccountReturnCodeTests(unittest.TestCase):
         self.assertEqual(caught.exception.status, "KIWOOM_API_RESPONSE_ERROR")
 
     def test_account_routes_are_read_only(self):
-        # T1 F2 adds three read-only account inquiries: ust21100, ust21150, ust21610.
+        # T1 F2 adds three read-only account inquiries: ust21100, ust21150, ust21610; cf-b2n adds ust21132 (read-only).
         self.assertEqual({api for api, _ in bridge.ACCOUNT_APIS.values()},
                          {"ust21110", "ust21160", "ust21070", "ust21050", "ust21510", "ust21630",
-                          "ust21100", "ust21150", "ust21610"})
+                          "ust21100", "ust21150", "ust21610", "ust21132"})
         for api_id, path in bridge.ACCOUNT_APIS.values():
             self.assertEqual(path, "/api/us/acnt")
             self.assertFalse(any(term in f"{api_id} {path}".lower() for term in BLOCKED_TERMS))

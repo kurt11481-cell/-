@@ -225,7 +225,7 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
 |---|---|---|
 | I1 | every required read above returned `return_code` 0 (the measured no-data declarations of open orders, transaction history, daily order fills and day trades count as zero rows) | `REQUIRED_READ_NOT_PASS:<read>` |
 | I2 | per ticker, held quantity now = recorded quantity + broker fills (buy - sell) filled after the last record; new and vanished tickers included | `QUANTITY_CHANGE_NOT_EXPLAINED_BY_FILLS:<ticker>`, `FILL_*` |
-| I3 | order-available now = order-available of the last record's own snapshot + actual settlement amounts of the fills after that snapshot + classified transaction-history rows processed after it, within 1.00 USD; open orders reserve cash and hold | `BASELINE_ORDER_AVAILABLE_UNKNOWN:<why>`, `CASH_CHANGE_NOT_EXPLAINED:<usd>`, `FILL_SOURCES_DISAGREE`, `SETTLEMENT_*`, `FLOW_ROW_*`, `OPEN_ORDERS_PRESENT` |
+| I3 | order-available now = order-available of the last record's own snapshot + actual settlement amounts of the fills after that snapshot + classified transaction-history rows processed after it, within 1.00 USD; open orders reserve cash and hold. Exception (B2-N): an external outflow missing from the transaction history passes only as an unverified external outflow (see below) | `BASELINE_ORDER_AVAILABLE_UNKNOWN:<why>`, `CASH_CHANGE_NOT_EXPLAINED:<usd>`, `FILL_SOURCES_DISAGREE`, `SETTLEMENT_*`, `FLOW_ROW_*`, `OPEN_ORDERS_PRESENT`, `UNVERIFIED_OUTFLOW_*` |
 | I4 | state hash and revision equal the last ledger entry; ledger hash chain intact | `STATE_CHANGED_OUTSIDE_LEDGER`, `LEDGER_INTEGRITY_FAILED`, `LEDGER_MISSING` |
 | I5 | the write would change no field other than holdings, average cost, cost basis, cash and the broker record; the state is hashed again just before writing | `NEVER_TOUCHED_FIELD_CHANGED:<field>` |
 
@@ -279,6 +279,28 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
   explained by the fills; deposits, withdrawals and FX use the reviewed table's
   sign; dividends, fees, taxes, interest and corporate-action cash take their sign
   from the memo (`입금` +, `출금` -). Anything else holds.
+- Unverified external outflow (B2-N, user decision cashflow-proof 2026-10-23/25;
+  Kiwoom has no withdrawal or FX record inquiry and `ust21100` shows no
+  withdrawal). Only when the residual R is an outflow (R < -1.00; an inflow such
+  as a deposit or interest is never admitted here) and `CASH_CHANGE_NOT_EXPLAINED`
+  is the only I3 reason, the run reads `ust21132` (deposit by currency on one U.S.
+  trading day, operation `account_deposit_by_date_read`, `base_dt` only; not an
+  I1 read) for base_before and base_after: the last U.S. sessions closed by the
+  baseline snapshot and by this snapshot (operating calendar). I3 passes only if
+  both reads have a readable USD `fx_entr` and `won_entr` (a failed read or a "no
+  records" answer holds), every counted fill's session lies in (base_before,
+  base_after], L = fx_entr(after) - fx_entr(before) - the same fill settlement
+  cash - the same classified flows is below -1.00 and within 0.05 of R, the
+  outflow (-R) is at most the baseline order-available cash, and `won_entr` did
+  not rise; otherwise it holds with `UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE`,
+  `UNVERIFIED_OUTFLOW_SPAN_MISMATCH`, `UNVERIFIED_OUTFLOW_NOT_MATCHED:<R>:<L>`,
+  `UNVERIFIED_OUTFLOW_ABOVE_BASELINE_CASH` or `UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE`
+  after `CASH_CHANGE_NOT_EXPLAINED`. A pass keeps `unexplained_usd`, adds
+  `invariants.I3.unverified_outflow_usd` and `unverified_outflow_basis`, and one
+  warning `UNVERIFIED_EXTERNAL_OUTFLOW:<usd>`. ust21132 reads the same balance as
+  the snapshot through another inquiry, so this allows the record; it does not
+  prove a withdrawal. The cash-flow declaration stays as it is (no new status), so
+  the HWM is not adjusted and the outflow stays a loss.
 - Cash-flow evidence (F3): the period starts on the last recorded evidence
   `period_to` (that day is covered again so rows processed later that day are
   never skipped; counted rows are deduplicated by key) or the S5 activation date,

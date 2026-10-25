@@ -9,7 +9,8 @@ I2  per ticker, the held-quantity change since the last record equals the broker
 I3  the order-available cash change since the snapshot of the last record (broker to broker) equals the
     actual settlement amounts of the fills since then (pending: cash-detail dN excta by settlement date;
     settled: transaction-history trade rows fc_exct_amt) plus the classified transaction-history rows
-    (deposit, withdrawal, dividend, tax, fee, FX), within 1.00 USD
+    (deposit, withdrawal, dividend, tax, fee, FX), within 1.00 USD; B2-N: an outflow missing from the
+    transaction history passes only when the ust21132 deposit by U.S. trading day shows the same residual
 I4  the state hash and revision equal the last ledger entry and the ledger hash chain is intact
 I5  no field other than holdings, cash and cost basis would change
 
@@ -93,6 +94,12 @@ CLOCK = re.compile(r"([01]\d|2[0-3]):?([0-5]\d):?([0-5]\d)")
 # zone). Its fills lie within that day's 04:00-20:00 ET (pre-market to after-hours); zoneinfo moves the KST
 # bounds with daylight saving time.
 US_DAY_OPEN, US_DAY_CLOSE = time(4, 0), time(20, 0)
+# cf-b2n (B2-N, user decisions 2026-10-23/25): an outflow missing from the transaction history (withdrawal, FX)
+# passes I3 only when the snapshot residual equals the residual of the ust21132 deposit by U.S. trading day.
+LEDGER_OPERATION = "account_deposit_by_date_read"
+OUTFLOW_MATCH_USD = Decimal("0.05")
+OUTFLOW_UNAVAILABLE = "UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE"
+OUTFLOW_SPAN_MISMATCH = "UNVERIFIED_OUTFLOW_SPAN_MISMATCH"
 RESULT_SCHEMA_VERSION = "auto-core-reconcile-1.0"
 
 
@@ -717,6 +724,102 @@ def write_evidence(evidence: dict[str, Any], root: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------------------------
+# B2-N: an unverified external outflow (ust21132 deposit by U.S. trading day)
+# ---------------------------------------------------------------------------------------------
+
+def production_calendar(now: datetime) -> dict[str, Any]:
+    """The ACTIVE operating calendar, read the way the decide run reads it."""
+    from regular_session_close_history import calendar_from_snapshot, load_production_snapshot
+
+    snapshot, failure = load_production_snapshot(now)
+    if snapshot is None:
+        raise ValueError(f"SESSION_CALENDAR_UNAVAILABLE:{failure}")
+    return calendar_from_snapshot(snapshot)
+
+
+def ledger_days(calendar: dict[str, Any], *, baseline_at: datetime, snapshot_at: datetime) -> tuple[date, date] | str:
+    """(base_before, base_after): the last U.S. trading days closed by the baseline snapshot and by this snapshot
+    (operating calendar), or why they are not known. The calendar must cover both moments."""
+    from run_portfolio_exposure_review import expected_completed_session
+
+    identity = calendar.get("identity") or {}
+    start, end = str(identity.get("coverage_start") or ""), str(identity.get("coverage_end") or "")
+    if not start or not end or not (start <= baseline_at.astimezone(ET).date().isoformat()
+                                    and snapshot_at.astimezone(ET).date().isoformat() <= end):
+        return f"{OUTFLOW_UNAVAILABLE}:CALENDAR_COVERAGE"
+    before = expected_completed_session(calendar, baseline_at)
+    after = expected_completed_session(calendar, snapshot_at)
+    if before is None or after is None:
+        return f"{OUTFLOW_UNAVAILABLE}:NO_COMPLETED_SESSION"
+    if before >= after:
+        return f"{OUTFLOW_SPAN_MISMATCH}:NO_SESSION_BETWEEN:{before}"
+    return date.fromisoformat(before), date.fromisoformat(after)
+
+
+def ledger_balance(results: list[dict[str, Any]], day: date) -> tuple[dict[str, Decimal] | None, str | None]:
+    """The USD row of the ust21132 read of this U.S. trading day: fx_entr (USD deposit after that day's trades,
+    unsettled buys already taken off) and won_entr (KRW deposit). A failed read, a "no records" answer (the
+    bridge has no no-data rule for ust21132) or a missing or unreadable USD row is unavailable."""
+    label = f"{OUTFLOW_UNAVAILABLE}:{_ymd(day)}"
+    matches = [item for item in results if item.get("operation") == LEDGER_OPERATION
+               and (item.get("request_params") or {}).get("base_dt") == _ymd(day)]
+    if len(matches) != 1 or not _read_passed(matches[0]):
+        return None, label
+    rows = [row for row in matches[0].get("data") or []
+            if isinstance(row, dict) and str(row.get("crnc_code") or "").strip().upper() == "USD"]
+    if len(rows) != 1:
+        return None, f"{label}:USD_ROW"
+    usd, krw = _decimal(rows[0].get("fx_entr")), _decimal(rows[0].get("won_entr"))
+    if usd is None or krw is None:
+        return None, f"{label}:VALUE"
+    return {"fx_entr": usd, "won_entr": krw}, None
+
+
+def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Decimal, flows: Decimal,
+                       window: list[dict[str, Any]], ledger: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
+    """B2-N (cf-b2n): (outflow, []) when the I3 residual is an outflow that the ust21132 ledger shows too, else
+    (None, [why it holds]).
+
+    The caller has already found that the only I3 reason is CASH_CHANGE_NOT_EXPLAINED with residual R below
+    -1.00 (an inflow is never admitted here). ledger is {"days": (base_before, base_after), "results": the
+    ust21132 reads of those days} or {"reason": why they are unknown}. Every fill counted by I3 must belong to a
+    U.S. session in (base_before, base_after]; the ledger residual L = fx_entr(base_after) - fx_entr(base_before)
+    - the same fill settlement cash (fees included) - the same classified flows must be below -1.00 and within
+    0.05 of R; the outflow (-R) may not exceed the baseline order-available cash; and the KRW deposit may not
+    have risen (an FX inflow). Both reads are the same balance through two inquiries: this allows the record,
+    it does not prove a withdrawal. The cash-flow declaration is untouched, so the HWM is not adjusted.
+    """
+    if "reason" in ledger:
+        return None, [ledger["reason"]]
+    before, after = ledger["days"]
+    outside = sorted({item["session_date"] for item in window
+                      if not before.isoformat() < item["session_date"] <= after.isoformat()})
+    if outside:
+        return None, [f"{OUTFLOW_SPAN_MISMATCH}:" + ",".join(outside)]
+    balances = {}
+    for day in (before, after):
+        balance, reason = ledger_balance(ledger["results"], day)
+        if reason:
+            return None, [reason]
+        balances[day] = balance
+    ledger_residual = balances[after]["fx_entr"] - balances[before]["fx_entr"] - trades - flows
+    if ledger_residual >= -CASH_TOLERANCE_USD or abs(residual - ledger_residual) > OUTFLOW_MATCH_USD:
+        return None, [f"UNVERIFIED_OUTFLOW_NOT_MATCHED:{_money(residual)}:{_money(ledger_residual)}"]
+    amount = -residual
+    if amount > baseline_cash:
+        return None, [f"UNVERIFIED_OUTFLOW_ABOVE_BASELINE_CASH:{_money(amount)}:{_money(baseline_cash)}"]
+    if balances[after]["won_entr"] > balances[before]["won_entr"]:
+        return None, [f"UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:{balances[before]['won_entr']}:{balances[after]['won_entr']}"]
+    return {"unverified_outflow_usd": _money(amount), "unverified_outflow_basis": {
+        "base_before": before.isoformat(), "base_after": after.isoformat(),
+        "fx_entr_before_usd": _money(balances[before]["fx_entr"]), "fx_entr_after_usd": _money(balances[after]["fx_entr"]),
+        "won_entr_before": str(balances[before]["won_entr"]), "won_entr_after": str(balances[after]["won_entr"]),
+        "sessions": sorted({item["session_date"] for item in window}), "fill_cash_usd": _money(trades),
+        "flow_cash_usd": _money(flows), "ledger_residual_usd": _money(ledger_residual),
+        "snapshot_residual_usd": _money(residual)}}, []
+
+
+# ---------------------------------------------------------------------------------------------
 # Invariants I2-I5
 # ---------------------------------------------------------------------------------------------
 
@@ -725,7 +828,8 @@ def explain_change(*, baseline_holdings: Any, baseline_time: datetime, cash_base
                    fill_errors: list[str], day_trade_results: list[dict[str, Any]],
                    rows: list[dict[str, Any]], slots: list[dict[str, Any]], slot_errors: list[str],
                    open_order_count: int, now: datetime, table: dict[str, Any],
-                   carried: dict[date, dict[str, Any]] | None = None) -> dict[str, Any]:
+                   carried: dict[date, dict[str, Any]] | None = None,
+                   outflow_ledger: Callable[[datetime], dict[str, Any]] | None = None) -> dict[str, Any]:
     """I2 and I3 for one baseline (the last record, or the previous run's would_apply).
 
     cash_baseline is {"cash": Decimal | None, "at": datetime | None, "reason": unknown-baseline code,
@@ -734,6 +838,8 @@ def explain_change(*, baseline_holdings: Any, baseline_time: datetime, cash_base
     When today's settlement is left open (T1 r3 C4 b), the cash residual is that settlement: it must lie within
     the fee range of the sessions put on today (one 0.50 per side, plus the 1.00 tolerance), else
     SETTLEMENT_D0_OUTSIDE_FEE_RANGE. The run holds either way; the open date never makes I3 pass.
+    B2-N (cf-b2n): when the only I3 reason is CASH_CHANGE_NOT_EXPLAINED for an outflow, outflow_ledger(cash
+    baseline time) gives the ust21132 reads and unverified_outflow decides; it is called in no other case.
     """
     window = fills_after(fills, baseline_time)
     net = fill_net(window)
@@ -781,6 +887,13 @@ def explain_change(*, baseline_holdings: Any, baseline_time: datetime, cash_base
                 i3_reasons.append(f"SETTLEMENT_D0_OUTSIDE_FEE_RANGE:{unseen['settlement_date']}:{_money(off)}")
         elif abs(difference) > CASH_TOLERANCE_USD:
             i3_reasons.append(f"CASH_CHANGE_NOT_EXPLAINED:{_money(difference)}")
+    outflow = None
+    if outflow_ledger is not None and difference is not None and difference < -CASH_TOLERANCE_USD \
+            and i3_reasons == [f"CASH_CHANGE_NOT_EXPLAINED:{_money(difference)}"]:
+        outflow, outflow_reasons = unverified_outflow(
+            residual=difference, baseline_cash=baseline_cash, trades=trades, flows=flows, window=cash_window,
+            ledger=outflow_ledger(cash_at))
+        i3_reasons = [] if outflow is not None else i3_reasons + outflow_reasons
     return {
         "I2": {"status": "FAIL" if i2_reasons else "PASS", "reasons": i2_reasons,
                "fills_counted": len(window)},
@@ -790,7 +903,7 @@ def explain_change(*, baseline_holdings: Any, baseline_time: datetime, cash_base
                "broker_cash_usd": _money(broker_cash), "fills_counted": len(cash_window),
                "fill_cash_usd": _money(trades), "settlements": settlements,
                "flow_cash_usd": _money(flows), "unexplained_usd": _money(difference) if difference is not None else None,
-               "flows": flow_items},
+               "flows": flow_items, **(outflow or {})},
         "holdings_change": changes, "fills": window,
     }
 
@@ -962,11 +1075,14 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
              now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
              evidence_root: Path | None = None, table: dict[str, Any] | None = None,
              config_path: Path | None = None,
-             provenance_source: Callable[[], dict[str, Any]] | None = None) -> dict[str, Any]:
+             provenance_source: Callable[[], dict[str, Any]] | None = None,
+             calendar_loader: Callable[[datetime], dict[str, Any]] | None = None) -> dict[str, Any]:
     """One auto reconciliation. Writes only reconcile outputs, evidence, and (apply mode) the state.
 
     previous_run is the latest earlier reconcile.json (T1 r3 C4 a). config_path and provenance_source are what
     apply_auto_core reads again just before a write (T1 r3 C1; defaults: the policy file and git).
+    calendar_loader (default production_calendar) gives the operating calendar for the B2-N ust21132 dates; it
+    and those reads are used only when I3 is an outflow candidate, outside I1.
     """
     if mode not in ("compare", "apply"):
         raise AutoReconcileError("AUTO_CORE_MODE_INVALID")
@@ -1048,6 +1164,25 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
     open_order_count = len(snapshot.get("open_orders") or [])
     slots, slot_errors = settlement_slots(snapshot_results)
     carried = carried_settlements(previous_run, plan["today"])
+    ledger_reads: dict[tuple[date, date], list[dict[str, Any]]] = {}
+
+    def outflow_ledger(baseline_at: datetime) -> dict[str, Any]:
+        # B2-N: never an I1 read; any failure here only keeps the I3 hold.
+        try:
+            days = ledger_days((calendar_loader or production_calendar)(started), baseline_at=baseline_at,
+                               snapshot_at=datetime.fromisoformat(generated_at))
+        except (ImportError, ValueError, KeyError, TypeError, OSError, RuntimeError):
+            return {"reason": f"{OUTFLOW_UNAVAILABLE}:CALENDAR"}
+        if isinstance(days, str):
+            return {"reason": days}
+        if days not in ledger_reads:
+            try:
+                ledger_reads[days] = reader([{"operation": LEDGER_OPERATION, "params": {"base_dt": _ymd(day)}}
+                                             for day in days], runtime=runtime, policy=rate_policy)
+            except (ValueError, KeyError, TypeError, OSError, RuntimeError):
+                return {"reason": f"{OUTFLOW_UNAVAILABLE}:READ_FAILED"}
+        return {"days": days, "results": ledger_reads[days]}
+
     explained: dict[str, Any] = {"holdings_change": [], "fills": []}
     if broker_holdings is None or broker_cash is None or invariants["I1"]["status"] != "PASS":
         reason = "BROKER_SNAPSHOT_UNUSABLE" if invariants["I1"]["status"] == "PASS" else "I1_FAILED"
@@ -1059,7 +1194,8 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
             cash_baseline=baseline_snapshot(state, ledger_path),
             broker_holdings=broker_holdings, broker_cash=broker_cash, fills=fills, fill_errors=fill_errors,
             day_trade_results=day_results, rows=rows, slots=slots, slot_errors=slot_errors,
-            open_order_count=open_order_count, now=now(), table=table, carried=carried)
+            open_order_count=open_order_count, now=now(), table=table, carried=carried,
+            outflow_ledger=outflow_ledger)
         invariants["I2"], invariants["I3"] = explained["I2"], explained["I3"]
     invariants["I4"] = invariant_i4(state, ledger_path)
     invariants["I5"] = invariant_i5(state, proposal)
@@ -1077,7 +1213,8 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
                                              "source": "PREVIOUS_RUN_WOULD_APPLY"}},
                 broker_holdings=broker_holdings, broker_cash=broker_cash, fills=fills, fill_errors=fill_errors,
                 day_trade_results=day_results, rows=rows, slots=slots, slot_errors=slot_errors,
-                open_order_count=open_order_count, now=now(), table=table, carried=carried)
+                open_order_count=open_order_count, now=now(), table=table, carried=carried,
+                outflow_ledger=outflow_ledger)
             compare = {"explained": check["I2"]["status"] == "PASS" and check["I3"]["status"] == "PASS",
                        "reasons": check["I2"]["reasons"] + check["I3"]["reasons"]}
 
@@ -1106,11 +1243,14 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
     elif file_hash(state_path) != before:
         raise AutoReconcileError("PORTFOLIO_STATE_MUTATION_DETECTED")
     status = "HOLD" if reasons else "OK"
+    warnings = proposal_warnings(proposal)
+    if invariants["I3"].get("unverified_outflow_usd") is not None:
+        warnings.append(f"UNVERIFIED_EXTERNAL_OUTFLOW:{invariants['I3']['unverified_outflow_usd']}")
     return {
         "schema_version": RESULT_SCHEMA_VERSION, "generated_at": generated_at, "mode": mode,
         "status": status, "reasons": reasons, "kill_switch": kill_switch,
         # Never a reason to hold: shown so a record with warnings reaches the 06:40 check (T1 r3 C3).
-        "warnings": proposal_warnings(proposal),
+        "warnings": warnings,
         "fill_window": {"days": len(plan["fill_dates"]), "maximum_days": FILL_WINDOW_MAXIMUM_DAYS},
         "invariants": invariants,
         "cash_flow_evidence": {
