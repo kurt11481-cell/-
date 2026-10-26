@@ -17,7 +17,7 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③"
 |---|---|---|---|
 | T0 | 결정·지침 교체·관제판 정리 | 끝(10/10) | — |
 | T1 | 코어 v1: 수집·자동 대조·노출 | 끝 — 기록 모드 켜짐(10/15). **10/22~10/24 대조 HOLD**(체결 날짜 해석·출금 증거, recon-hold-2026-10-23.md). 수정 병합 5a289b8·b2cd42e(10/25), 첫 확인 10/27 06:15 | recon-dt · cashflow-api-gap |
-| T2 | 판정·주문표·일지 자동 | 병합(10/12), **비교 모드**(auto_core.json decision_mode compare). "켜" 조건 전부: R1 리플레이 통과 · R2 비교 5거래일 연속(10/24 기준 0/5) · C1 독립 계산기 일치 10세션(MATCH 4, 10/22~24 오류 — eqnone4 c1a6a6e로 수정) · C2 매수 주문표 1건 일치(0) · R3 사장 "켜"(redesign-t2-builder-prompt-2026-10-10.md 46-48행, t2-rc-preregistration-2026-10-14.md 22·25행) | redesign-t2 · t2-rc |
+| T2 | 판정·주문표·일지 자동 | 병합(10/12), **비교 모드**(auto_core.json decision_mode compare). "켜" 조건 전부: R1 리플레이 통과 · R2 비교 차이 전부 분류(10/26 t2-gate REMOVE-v2로 "5거래일 연속" 대신 — C1 창 COMPARED 5일 이상, trig: 4건 미분류) · 대조 OK 연속 5회(0/5) · CORE_BUG 해소 커밋 목록(없음) · C1 독립 계산기 일치 10세션(공식 셈 2/10 — 사전 등록 53행, 10/22~24 오류 — eqnone4 c1a6a6e로 수정) · C2 매수 주문표 1건 일치(0) · R3 사장 "켜"(redesign-t2-builder-prompt-2026-10-10.md 46-48행, t2-rc-preregistration-2026-10-14.md 22·25행) | redesign-t2 · t2-rc |
 | T3 | 개발 파이프라인·문서 자동 커밋 | 끝(10/10~), Cowork가 일반 변경 병합(dc-dev 10/22) | — |
 | T4 | 옛 경로 은퇴·docs/claude → archive/·정본 3개(SYSTEM·RUNBOOK·DECISIONS) | T2 뒤 대기 | redesign-t4 |
 | T5 | 주문 2단계(코어가 키움 주문 대기 → 사장 승인 1번) | 조건 미충족 | redesign-t5 |
@@ -31,7 +31,7 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③"
 - Duet 열린 뒤: 1주 시험([계약 문서](duet-interface-contract-2026-10-22.md)) → 통과하면 창구 정리(duet-redesign 3-2). 실행층(PC 자동 코어)은 그대로.
 
 ## 3. 다음 순번
-- **맨 앞(자동 운영 막힘 — 헌법 §3 141-157행)**: 대조 HOLD 해소 확인(10/27 06:15, 안 풀리면 11/03 전 결정 — 조회 창 14일) → t2rc 독립 계산기 재실행 확인 → "켜" 관문 R2 제거(t2-gate: REMOVE 10/26, 독립 Judge PASS 뒤 효력) · SPY 벤치마크 공급(d10: REUSE 10/26, 개발 큐 d10-spy + 사장 정책 1줄). 근거 roadmap-fix-decisions-2026-10-26.md.
+- **맨 앞(자동 운영 막힘 — 헌법 §3 141-157행)**: 대조 HOLD 해소 확인(10/27 06:15, 안 풀리면 11/03 전 결정 — 조회 창 14일) → t2rc 독립 계산기 재실행 확인 → "켜" 관문 R2 연속 셈 제거(t2-gate: REMOVE-v2 10/26 16:07 → Judge 2차 PASS, 효력 — 남은 일: trig: 차이 4건 분류·CORE_BUG 해소 커밋 목록) · SPY 벤치마크 공급(d10: REUSE 10/26, 개발 큐 d10-spy + 사장 정책 1줄). 근거 roadmap-fix-decisions-2026-10-26.md.
 - 개발 자리(진행 3개 상한): 비서 v1.1(duet-sec) → 일지 확인 코드 제거(duet-r3a) → 연구 자료 자동 목록(duet-idx) → 결정 원장 K-1(duet-k1, CLAUDE.md 정리 묶음).
 - 권한·한도 자리(한 번에 1개, 착수 조건이 먼저 채워지는 순): 2027 달력(cal-2027) · 자동 코어 입력 문서 보호(duet-q4-coreinput) → 대조 확인 코드 경로 판단(duet-q4-recon).
 - 평가일: 플레이북 11/07(pb-1022) · 주간 팀장회의 2단계 = 보고 4회 뒤(org-setup).
