@@ -26,8 +26,9 @@ Rules (same point-in-time rule as the sidecar forward outcomes, which are not to
   - only finished sessions count: the target session's core close must be <= evaluation_as_of;
   - closes are the verified Kiwoom 30-minute-bar approximate closes of regular_session_close_history.
     A close with unverified reasons is labelled REFERENCE_ONLY;
-  - SPY is outside the Kiwoom scope: its closes come from an optional reference file
-    <closes_root>/reference-closes/SPY.json and are always labelled REFERENCE_ONLY;
+  - SPY closes come from an optional reference file <closes_root>/reference-closes/SPY.json; only when that file
+    is absent, from the auto-core history/SPY.close-history.json (verified sessions only, source
+    KIWOOM_CLOSE_HISTORY). They are always labelled REFERENCE_ONLY;
   - corporate actions (splits) are applied from <closes_root>/corporate-actions.json; an invalid file or an
     unexplained jump in the window makes the result NOT_SCORABLE instead of a wrong number;
   - a failure is a status, never an exception: PENDING (with the sessions left), NOT_SCORABLE (with a reason).
@@ -70,6 +71,7 @@ HORIZONS = (5, 20, 60)
 BENCHMARK_SYMBOL = "SPY"
 REFERENCE_CLOSES_DIR = "reference-closes"
 REFERENCE_CLOSES_VERSION = "reference-closes-1.0"
+BENCHMARK_HISTORY_SOURCE = "KIWOOM_CLOSE_HISTORY"
 MIN_SCORED_FOR_CONCLUSION = 30
 LONG_ACTIONS = ("ADD", "HOLD")
 REDUCE_ACTIONS = ("TRIM", "EXIT")
@@ -147,6 +149,30 @@ def load_reference_closes(closes_root: Path, symbol: str = BENCHMARK_SYMBOL) -> 
     if errors:
         return {"status": "INVALID", "closes": {}, "errors": errors[:5]}
     return {"status": "OK", "closes": closes, "errors": []}
+
+
+def load_benchmark_closes(closes_root: Path, calendar: dict[str, Any] | None, load_close_histories: Any,
+                          symbol: str = BENCHMARK_SYMBOL) -> dict[str, Any]:
+    """Benchmark closes: reference-closes/<SYMBOL>.json wins unchanged; only when that file is absent the
+    auto-core history/<SYMBOL>.close-history.json is read through load_close_histories (same checks as the
+    stock closes). A failed history, or a session it marks unverified, gives no benchmark close (fail closed)."""
+    reference = load_reference_closes(closes_root, symbol)
+    if reference["status"] != "MISSING" or calendar is None:
+        return reference
+    closes, unverified, report = load_close_histories([symbol], closes_root, calendar)
+    entry = report.get(symbol) or {"status": "MISSING"}
+    if entry["status"] == "MISSING":
+        return reference
+    if entry["status"] != "OK":
+        return {"status": "INVALID", "closes": {}, "errors": list(entry.get("errors") or [])[:5],
+                "source": BENCHMARK_HISTORY_SOURCE}
+    skipped = unverified.get(symbol) or {}
+    verified = {session: value for session, value in (closes.get(symbol) or {}).items()
+                if session not in skipped and _decimal(value) is not None}
+    if not verified:
+        return {"status": "INVALID", "closes": {}, "errors": ["CLOSE_HISTORY_NO_VERIFIED_SESSIONS"],
+                "source": BENCHMARK_HISTORY_SOURCE}
+    return {"status": "OK", "closes": verified, "errors": [], "source": BENCHMARK_HISTORY_SOURCE}
 
 
 def _split_suspect(closes: dict[str, str], window: list[str]) -> bool:
@@ -579,7 +605,8 @@ def score_journal(journal: dict[str, Any], *, calendar: dict[str, Any] | None, c
         "corporate_actions": {"status": corporate_actions["status"], "sha256": corporate_actions.get("sha256"),
                               "errors": list(corporate_actions.get("errors") or [])},
         "benchmark": {"symbol": BENCHMARK_SYMBOL, "label": "REFERENCE_ONLY", "status": benchmark["status"],
-                      "errors": list(benchmark.get("errors") or [])},
+                      "errors": list(benchmark.get("errors") or []),
+                      **({"source": benchmark["source"]} if "source" in benchmark else {})},
         "horizons": list(HORIZONS), "results": [],
         "ticket_results": [],
         "ticket_sources": {"journal_tickets": 0, "compare_tickets": 0, "duplicates_skipped": 0, "errors": []},
@@ -789,7 +816,7 @@ def load_inputs(*, tickers: list[str], closes_root: Path, calendar_path: Path | 
         corporate = load_corporate_actions(closes_root, sorted(calendar["sessions"]))
     return {"calendar": calendar, "calendar_failure": failure, "closes": closes, "unverified": unverified,
             "close_histories": histories, "corporate_actions": corporate,
-            "benchmark": load_reference_closes(closes_root)}
+            "benchmark": load_benchmark_closes(closes_root, calendar, load_close_histories)}
 
 
 def load_compare_tickets(decisions_root: Path) -> dict[str, Any]:
