@@ -54,6 +54,7 @@ source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레�
 | **projects-1025** (기한 2026-11-01) | Q1 Projects 운영·Q2 Mods — **사장 답 없음**(Q2 미답) | 무응답 = Q1 c·Q2 c 현행 유지(설치된 모드 없음) | Projects, Mods | projects-mods-adoption-2026-10-25.md:5 · 95-103 · projects-handoff-2026-10-25.md:26 |
 | **projects 이사 지시** · 2026-10-25 09:11~09:35 | "새 판: a" — 실행층·점검층 그대로, 소통층·규칙층만 Projects 기준으로. 모든 권한 승인이지만 주문·키움 주문 도구 금지는 불변. 키움 MCP는 사장이 켜 두기로 결정(지침 v1.2) | K3 병합은 Judge 결과를 본 뒤 사장 한 줄 | 소통층 | projects-handoff-2026-10-25.md:12-15 · 23 |
 | **자동 코어 5·8번 근거 결정** (아래 C와 겹침) | CLAUDE.md Change classes 항목 전체가 현행 규칙 | — | 개발 변경 등급 | CLAUDE.md:52-71 (Change classes) |
+| **관제판 완료 표시 (키움 주문 차단 보강 4건)** · 2026-10-26 11:40 | 키움 주문 차단 보강 4건 완료(병합 c9c0877·5cf97e3, 훅 시험 Bash·Monitor 거절). 확인 필요: 원격 스레드·Cowork 발동 여부 | 훅은 약화하지 않음. 개발 큐 Builder 막힘의 원인은 훅이 아니라 지시문(builder-blocked-diagnosis-2026-10-26.md) | 키움 주문 차단 | kiwoom-block-hook-test-2026-10-26.md:12-24 |
 
 ## C. 운영 규칙·정책(자동 코어) — 지금도 유효한 것
 
@@ -72,6 +73,8 @@ source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레�
 | **키움 규칙(상시)** · 2026-10-07 | 읽기 조회는 `profile 실전계좌`+`mode real`, 8005면 인증·토큰 재발급 금지 | — | 모든 키움 조회 | CLAUDE.md "Kiwoom query rules" |
 | **상시 사용자 규칙 묶음** | 검토 안정성(2026-10-13) · Haiku 하위 에이전트는 기계 작업만(2026-10-08) · 동시 개발 3 + 권한·한도 1 · docs 변경은 _pending 목록 · 대시보드 HTML 수정 전 라이브판 읽고 디자인 규칙(2026-10-14) · 연결 원칙(2026-10-05) | — | 작업 방식 | CLAUDE.md "Working rules" (87-110행) · artifact-design-rules-2026-10-14.md |
 | **예약 지시문 교체 이력**(현행판 원본) | 통합 점검 v3.12.10-L+R2(iv-r1 2026-10-22) · 자동 코어 알림 v2.5(pb-r1) · 월요일 점검 v2.2(monday-gap M1 2026-10-20) · 관심 명단 재채점 v3.4(split-weekly-general 2026-10-23) · Next 샌디스크 v3.2 · 주간 팀장회의 v1.4 · 비서 제안 v1.1 | 현행 해시·모델은 표가 원본 | 예약 작업 | scheduled-prompts/README.md:12-24 (표) · 53-67 (기록) |
+| **t2-gate: REMOVE** · 2026-10-26 15:33 KST (사장 스레드 직접 입력) | T2 "켜" 조건에서 R2(코어=LLM 판정 5일 연속)를 빼고 "대조 OK 연속 5회"를 넣음. R1·C1·C2·C3·C5·R3(사장 "켜") 그대로, CORE_BUG 미해결이면 판정 보류 | **효력은 독립 Judge PASS 뒤**(제약 완화 H2). FAIL·무응답 = 이전 조건. decision_mode·노출·권한 불변 | T2 "켜" 판정 | roadmap-fix-decisions-2026-10-26.md 1절 · t2-gate-judge-prompt.md |
+| **d10: REUSE** · 2026-10-26 15:33 KST (사장 스레드 직접 입력) | SPY 벤치마크 = auto_core.json symbols_extra에 SPY 추가(사장 실행) + 채점기가 수집 이력에서 SPY를 읽는 일반 변경(개발 큐 d10-spy) | SPY는 REFERENCE_ONLY(매매 근거·관문 입력 아님). 키움이 SPY 30분봉을 안 주면 다시 결정 | 주간 채점, 자동 코어 수집 | roadmap-fix-decisions-2026-10-26.md 2절 · d10-spy-builder-prompt.md |
 
 ## D. 아직 열린 결정(답 없음 = 기본값)
 
