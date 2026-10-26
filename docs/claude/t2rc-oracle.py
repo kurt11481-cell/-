@@ -1726,6 +1726,8 @@ def diagnostics(dec, detail, ctx):
 def weights_now(env):
     ctx, ev, s7 = env["ctx"], env["dec"]["evaluation_session"], env["s7"]
     eq = fnum(s7["equity"]["closing_equity_usd"])
+    if eq is None:
+        return None, eq
     w = {}
     for sym, q in env["held"].items():
         ser = ctx.ser.get(sym)
@@ -2021,6 +2023,8 @@ def ticket_check(env, t):
     out["items"]["price"] = {"oracle": str(price), "core": t.get("price"),
                              "match": t.get("price") is not None and Decimal(str(t.get("price"))) == price}
     w, eq = weights_now(env)
+    if eq is None:
+        out["match"] = False; out["should_exist"] = False; out["not_recomputed"].append("EQUITY_MISSING"); return out
     cash_avail = fnum(env["snap"]["cash"].get("order_available_cash"))
     d = env["detail"].get(sym) or {}
     evd = d.get(side) or {}
