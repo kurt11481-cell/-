@@ -300,10 +300,14 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
   records" answer holds), every counted fill's session lies in (base_before,
   base_after], L = fx_entr(after) - fx_entr(before) - the same fill settlement
   cash - the same classified flows is below -1.00 and within 0.05 of R, the
-  outflow (-R) is at most the baseline order-available cash, and `won_entr` did
-  not rise; otherwise it holds with `UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE`,
-  `UNVERIFIED_OUTFLOW_SPAN_MISMATCH`, `UNVERIFIED_OUTFLOW_NOT_MATCHED:<R>:<L>`,
-  `UNVERIFIED_OUTFLOW_ABOVE_BASELINE_CASH` or `UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE`
+  outflow (-R) is at most the baseline order-available cash plus max(0, the
+  same fill settlement cash + the same classified flows) (the cash that could
+  have been in the account over the span; a net buy span neither lowers nor
+  raises it), and `won_entr` did not rise; otherwise it holds with
+  `UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE`, `UNVERIFIED_OUTFLOW_SPAN_MISMATCH`,
+  `UNVERIFIED_OUTFLOW_NOT_MATCHED:<R>:<L>`,
+  `UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:<outflow>:<limit>` or
+  `UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE`
   after `CASH_CHANGE_NOT_EXPLAINED`. A pass keeps `unexplained_usd`, adds
   `invariants.I3.unverified_outflow_usd` and `unverified_outflow_basis`, and one
   warning `UNVERIFIED_EXTERNAL_OUTFLOW:<usd>`. ust21132 reads the same balance as

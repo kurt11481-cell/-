@@ -185,8 +185,10 @@ class OutflowRuleTests(unittest.TestCase):
                                  (None, [f"UNVERIFIED_OUTFLOW_SPAN_MISMATCH:{session}"]))
 
     def test_outflow_above_the_baseline_order_available_cash_holds(self):
-        self.assertEqual(self.judge(residual="-1200.00", baseline="1000.00", after="129.18"),
-                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_BASELINE_CASH:1200.00:1000.00"]))
+        # recon-cap3: the limit is the baseline cash plus the net fill cash of the span, 1000.00 + 329.17.
+        # L = 0.00 - 1000.01 - 329.17 = -1329.18, within 0.05 of R = -1329.20.
+        self.assertEqual(self.judge(residual="-1329.20", baseline="1000.00", after="0.00"),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:1329.20:1329.17"]))
 
     def test_krw_deposit_rise_holds(self):
         self.assertEqual(self.judge(won_after="120000"), (None, ["UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:0:120000"]))
@@ -420,6 +422,63 @@ class BridgeReadTests(unittest.TestCase):
                                now=base.NOW)
         self.assertNotIn(core.LEDGER_OPERATION, {request["operation"] for request in core.dated_requests(plan)})
         self.assertNotIn(core.LEDGER_OPERATION, core.I1_SNAPSHOT_OPERATIONS + core.SNAPSHOT_OPERATIONS)
+
+
+class AvailableCashLimitTests(unittest.TestCase):
+    """recon-cap3 (user decision recon-cap REPLACE 2026-10-27): the outflow may not exceed the baseline
+    order-available cash plus max(0, fill settlement cash + classified flows) of the same span."""
+
+    DAYS = (date(2026, 10, 12), date(2026, 10, 13))
+
+    @staticmethod
+    def judge(*, residual, baseline, trades, flows, before, after, days=DAYS, session="2026-10-13"):
+        return core.unverified_outflow(
+            residual=Decimal(residual), baseline_cash=Decimal(baseline), trades=Decimal(trades),
+            flows=Decimal(flows), window=[{"session_date": session}],
+            ledger={"days": days, "results": [ledger_read(days[0].strftime("%Y%m%d"), [ledger_row(before)]),
+                                              ledger_read(days[1].strftime("%Y%m%d"), [ledger_row(after)])]})
+
+    def test_oct27_two_withdrawals_out_of_the_sale_cash_pass(self):
+        # 2026-10-27: record cash 82.93, the 10/21 session settles +150.03, withdrawals 82.93 and 90.72 (R -173.64);
+        # ust21132 USD 82.94 -> 59.30, L = 59.30 - 82.94 - 150.03 = -173.67. The old limit (82.93) held it.
+        days = (date(2026, 10, 20), date(2026, 10, 26))
+        values = dict(baseline="82.93", trades="150.03", flows="0", before="82.94", days=days, session="2026-10-21")
+        outflow, reasons = self.judge(residual="-173.64", after="59.30", **values)
+        self.assertEqual(reasons, [])
+        self.assertEqual(outflow["unverified_outflow_usd"], "173.64")
+        basis = outflow["unverified_outflow_basis"]
+        self.assertEqual((basis["fill_cash_usd"], basis["ledger_residual_usd"], basis["snapshot_residual_usd"]),
+                         ("150.03", "-173.67", "-173.64"))
+        # Above 82.93 + 150.03 = 232.96 it holds, the ledger agreeing (L = 0.00 - 82.94 - 150.03 = -232.97).
+        self.assertEqual(self.judge(residual="-232.97", after="0.00", **values),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:232.97:232.96"]))
+
+    def test_outflow_equal_to_the_limit_passes_and_one_cent_more_holds(self):
+        values = dict(baseline="1000.00", trades="329.17", flows="0", before="1000.01")
+        self.assertEqual(self.judge(residual="-1329.17", after="0.01", **values)[0]["unverified_outflow_usd"],
+                         "1329.17")
+        self.assertEqual(self.judge(residual="-1329.18", after="0.00", **values),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:1329.18:1329.17"]))
+
+    def test_net_buy_span_keeps_the_baseline_cash_as_the_limit(self):
+        # trades -300.00: the limit is 1000.00, neither lowered to 700.00 nor raised.
+        values = dict(baseline="1000.00", trades="-300.00", flows="0", before="2000.00")
+        self.assertEqual(self.judge(residual="-1000.00", after="700.00", **values)[0]["unverified_outflow_usd"],
+                         "1000.00")
+        self.assertEqual(self.judge(residual="-1000.01", after="699.99", **values),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:1000.01:1000.00"]))
+
+    def test_classified_inflows_count_toward_the_limit(self):
+        # A dividend of 50.00 with no fills: limit 100.00 + 50.00.
+        values = dict(baseline="100.00", trades="0", flows="50.00", before="100.01")
+        self.assertEqual(self.judge(residual="-150.00", after="0.01", **values)[0]["unverified_outflow_usd"], "150.00")
+        self.assertEqual(self.judge(residual="-150.01", after="0.00", **values),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:150.01:150.00"]))
+        # Fills -50.00 and flows +80.00 net +30.00: limit 130.00.
+        mixed = dict(baseline="100.00", trades="-50.00", flows="80.00", before="100.01")
+        self.assertEqual(self.judge(residual="-130.00", after="0.01", **mixed)[0]["unverified_outflow_usd"], "130.00")
+        self.assertEqual(self.judge(residual="-130.01", after="0.00", **mixed),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:130.01:130.00"]))
 
 
 if __name__ == "__main__":

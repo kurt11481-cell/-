@@ -785,8 +785,9 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
     ust21132 reads of those days} or {"reason": why they are unknown}. Every fill counted by I3 must belong to a
     U.S. session in (base_before, base_after]; the ledger residual L = fx_entr(base_after) - fx_entr(base_before)
     - the same fill settlement cash (fees included) - the same classified flows must be below -1.00 and within
-    0.05 of R; the outflow (-R) may not exceed the baseline order-available cash; and the KRW deposit may not
-    have risen (an FX inflow). Both reads are the same balance through two inquiries: this allows the record,
+    0.05 of R; the outflow (-R) may not exceed the baseline order-available cash plus the net cash that came in
+    over the same span (max(0, fill settlement cash + classified flows): a net outflow of fills neither lowers nor
+    raises it); and the KRW deposit may not have risen (an FX inflow). Both reads are the same balance through two inquiries: this allows the record,
     it does not prove a withdrawal. The cash-flow declaration is untouched, so the HWM is not adjusted.
     """
     if "reason" in ledger:
@@ -806,8 +807,9 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
     if ledger_residual >= -CASH_TOLERANCE_USD or abs(residual - ledger_residual) > OUTFLOW_MATCH_USD:
         return None, [f"UNVERIFIED_OUTFLOW_NOT_MATCHED:{_money(residual)}:{_money(ledger_residual)}"]
     amount = -residual
-    if amount > baseline_cash:
-        return None, [f"UNVERIFIED_OUTFLOW_ABOVE_BASELINE_CASH:{_money(amount)}:{_money(baseline_cash)}"]
+    available = baseline_cash + max(Decimal("0"), trades + flows)
+    if amount > available:
+        return None, [f"UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:{_money(amount)}:{_money(available)}"]
     if balances[after]["won_entr"] > balances[before]["won_entr"]:
         return None, [f"UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:{balances[before]['won_entr']}:{balances[after]['won_entr']}"]
     return {"unverified_outflow_usd": _money(amount), "unverified_outflow_basis": {
