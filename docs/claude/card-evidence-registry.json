@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-10-19",
-  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음",
+  "updated_at": "2026-10-27",
+  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -430,16 +430,16 @@
       ]
     },
     "BE": {
-      "role": "watch",
-      "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
-      "card_section": "### 5-1. BE (Bloom Energy, NYSE) 관심 카드",
-      "section_sha256": "ff632222d54a9dd1c94a37c001f80c44b2b7c8a781903af4ec956d32a2425f0f",
+      "role": "holding",
+      "card_doc": "docs/claude/holding-cards-BE-LITE-2026-10-27.md",
+      "card_section": "## 1. BE 보유 카드 (Bloom Energy, NYSE)",
+      "section_sha256": "07624f4143942493f495350b2233079c7943d7b43b1990c63864d0f1049723f6",
       "accepted": {
-        "text": "cardStatus 수락(2026-10-02)",
+        "text": "2026-10-27 보유 카드 수락(사장 결정 카드 '수락 — 비율만 남김', 14:33 KST, 판단 HOLD; 훼손 무관이라 date 유지 — 관심 카드 cardStatus 수락 2026-10-02)",
         "date": "2026-10-02",
-        "source": "docs/claude/watchlist-registry.json:103"
+        "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:16"
       },
-      "card_action": "WATCH",
+      "card_action": "HOLD",
       "trim_target_weight": null,
       "trigger_set": "BE",
       "sector": "A1 전력(온사이트)",
@@ -554,11 +554,11 @@
       "kill_refs": [
         {
           "id": "BE2",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:222"
+          "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:54"
         },
         {
           "id": "BE-KILL",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:209"
+          "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:41"
         }
       ],
       "known_events": [
@@ -997,16 +997,16 @@
       ]
     },
     "LITE": {
-      "role": "watch",
-      "card_doc": "docs/claude/watch-card-LITE-2026-10-03.md",
-      "card_section": "# LITE (Lumentum Holdings, NASDAQ) 관심 카드 v1 (2026-10-03, 신규, 미보유)",
-      "section_sha256": "f4cde54f98f1b29f6ac2205543a2f8f5f9866232c75d1afb0e1acf9aadf5748e",
+      "role": "holding",
+      "card_doc": "docs/claude/holding-cards-BE-LITE-2026-10-27.md",
+      "card_section": "## 2. LITE 보유 카드 (Lumentum Holdings, NASDAQ)",
+      "section_sha256": "f38a01f4964b894c7ebf60b97cf26ab3016e32c1cddcc5a2b10dad1f2edaefb4",
       "accepted": {
-        "text": "cardStatus 수락(2026-10-03)",
+        "text": "2026-10-27 보유 카드 수락(사장 결정 카드 '수락 — 비율만 남김', 14:33 KST, 판단 HOLD; 훼손 무관이라 date 유지 — 관심 카드 cardStatus 수락 2026-10-03)",
         "date": "2026-10-03",
-        "source": "docs/claude/watchlist-registry.json:275"
+        "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:16"
       },
-      "card_action": "WATCH",
+      "card_action": "HOLD",
       "trim_target_weight": null,
       "trigger_set": "LT",
       "sector": "A3 광부품",
@@ -1112,11 +1112,11 @@
       "kill_refs": [
         {
           "id": "LT3",
-          "source": "docs/claude/watch-card-LITE-2026-10-03.md:52"
+          "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:94"
         },
         {
           "id": "LITE-KILL",
-          "source": "docs/claude/watch-card-LITE-2026-10-03.md:40"
+          "source": "docs/claude/holding-cards-BE-LITE-2026-10-27.md:80"
         }
       ],
       "known_events": [
