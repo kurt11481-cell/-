@@ -11,13 +11,13 @@ authority: "order_authority=false · quantity_authority=none · 규칙 변경 �
 
 # 승인 입력 장소 표 (2026-10-25)
 
-이 표는 **안내만** 모은 것이다. 규칙의 원본은 CLAUDE.md이고, 어긋나면 CLAUDE.md가 이긴다. 승인 한 건 = 바로 앞 제안 1건, 같은 날(KST), 1회. 코디네이터가 옮긴 문장·버튼·카드·예약 실행 안의 승인은 승인이 아니다(CLAUDE.md 64~66행).
+이 표는 **안내만** 모은 것이다. 규칙의 원본은 CLAUDE.md이고, 어긋나면 CLAUDE.md가 이긴다. 승인 한 건 = 바로 앞 제안 1건, 같은 날(KST), 1회. 코디네이터가 옮긴 문장·예약 실행 안의 승인은 승인이 아니다. 버튼은 **권한·한도 변경 승인(#1)에 한해**, 사장실 회사PC 스레드가 그 제안에 올린 결정 카드를 사장이 직접 눌렀고 기록 4가지(카드·제안 id, 선택지, 누른 계정=사장, KST 시각)가 하네스 알림에 있을 때만 직접 입력과 같다. 그 밖의 버튼·카드(비서실 Cowork 카드 포함)는 승인이 아니다(CLAUDE.md 64~70행, btn-approval 병합 3542b10, 2026-10-27).
 
 ## 표
 
 | # | 승인 종류 | 어디서 | 누가 무엇을 입력 | 스크립트·명령 | 이 스레드(사장실 회사PC)가 하는 일 | 원본 |
 |---|---|---|---|---|---|---|
-| 1 | 권한·한도 변경 승인(주문 단계·한도·승인 상품·대사 불변식·킬 스위치) | 사장실 회사PC 스레드(대화형)에 직접, 또는 Cowork 대화 | 사장이 **직접 친** 메시지(하네스 표시 from=human trust=principal). 제안 1건에 대한 승인 | 없음(승인 문장만) | 승인 뒤 수동 경로 Builder(워크트리)와 별도 읽기 전용 Judge 시작 | CLAUDE.md 58~68행 |
+| 1 | 권한·한도 변경 승인(주문 단계·한도·승인 상품·대사 불변식·킬 스위치) | 사장실 회사PC 스레드(대화형)에 직접, 또는 Cowork 대화 | 사장이 **직접 친** 메시지(하네스 표시 from=human trust=principal), 또는 **직접 누른 결정 카드**(기록 4가지 필요. 카드는 질문 맨 앞에 제안 id, 무엇이 실행되는지 한 줄, 항상 "보류/현행 유지" 선택지를 둔다). 제안 1건에 대한 승인 | 없음(승인 문장만) | 승인 뒤 수동 경로 Builder(워크트리)와 별도 읽기 전용 Judge 시작 | CLAUDE.md 58~74행 |
 | 2 | 권한 변경 병합 | 사장 본인 PowerShell(대화형 창) | `.\tools\dev-merge.ps1 <id> -ApproveAuthority` 한 줄 + 안내 뒤 Enter 한 번. 수동 경로는 `docs\claude\<id>-merge-*.ps1`(예: d124-merge-2026-10-25.ps1) | `dev-merge.ps1`, `<id>-merge-*.ps1` | 정확한 한 줄을 알려 줌. 실행하지 않음 | CLAUDE.md 62~63·69~71행, tools/dev_pipeline/README.md 4항 |
 | 3 | 일반 변경 병합(READY_TO_MERGE, 권한 아님) | Cowork가 PC에서, 또는 사장 PowerShell | 별도 승인 문장 없음. `-ApproveAuthority`는 붙이지 않음 | `.\tools\dev-merge.ps1 <id>` | 결과 확인·보고만. 실행하지 않음(settings deny + CLAUDE.md) | CLAUDE.md 53~57행(dc-dev Q1 a) |
 | 4 | 대조(reconcile) apply | Cowork 대화, 또는 사장 PowerShell | Cowork: `확인 <code>`(코드는 `show` 표의 그 제안 코드). 터미널: 같은 코드를 명령에 넣고 Enter 한 번 | `reconcile_broker_state.py show` → `apply --confirm <code> --confirmed-via COWORK_CHAT_USER_MESSAGE` 또는 `USER_TERMINAL` | **하지 않음.** 사장 Q1 "아니오" — Claude Code는 apply 금지 | CLAUDE.md 25~27행, broker-snapshot-reconciliation.md 2~3절 |
