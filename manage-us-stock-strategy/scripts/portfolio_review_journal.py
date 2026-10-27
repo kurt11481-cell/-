@@ -17,6 +17,9 @@ apply   append the entry. Run apply only in Cowork after the user typed "confirm
         (--confirmed-via USER_TERMINAL: run by hand in an interactive console only, no pipe or NUL, then
         Enter pressed once). Agents, scheduled tasks, Claude Code, Codex and Judge sessions never run it,
         and never type or guess the code.
+        journal-venue: --confirmed-via PROJECT_THREAD_USER_DECISION is run by the CEO-office company-PC
+        project thread in the session where the user typed the decision or tapped that thread's decision card;
+        user_message is "<message or card id> | <account id> | <KST time> | <verbatim text or card option>" (no code).
 verify  check the journal hash chain
 
 Redesign T2 F7: in recording mode the auto-core appends core_decision, order_ticket and ticket_outcome
@@ -65,7 +68,10 @@ JOURNAL_CARD_DECISION = "card_decision"
 JOURNAL_CARD_USER_DECISION = "card_user_decision"
 S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
 CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
-CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
+# journal-venue: the user's decision in the CEO-office company-PC project thread (typed message or that thread's
+# card tap) is the confirmation itself; its user_message holds the four harness fields instead of the code.
+PROJECT_THREAD_METHOD = "PROJECT_THREAD_USER_DECISION"
+CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", PROJECT_THREAD_METHOD)
 # hnd-check: the refusal of user_terminal_rejection (USER_TERMINAL apply here and in reconcile_broker_state.py).
 TERMINAL_NOT_INTERACTIVE = "USER_TERMINAL_NOT_INTERACTIVE"
 # hnd-check2 fix 1: the one Enter asked for after the console checks (what is typed is not compared).
@@ -178,7 +184,12 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
     code = entry["confirm_code"]
     if not isinstance(code, str) or not isinstance(entry["user_message"], str):
         return "CONFIRMATION_FIELDS_INVALID"
-    if code not in entry["user_message"].upper():
+    if entry["confirmation_method"] == PROJECT_THREAD_METHOD:
+        if entry_type not in CARD_ENTRY_TYPES:
+            return "PROJECT_THREAD_ENTRY_TYPE_INVALID"
+        if not project_thread_message_valid(entry["user_message"]):
+            return "PROJECT_THREAD_MESSAGE_INVALID"
+    elif code not in entry["user_message"].upper():
         return "CONFIRM_CODE_NOT_IN_USER_MESSAGE"
     expected_fields = CARD_DECISION_FIELDS if entry_type == JOURNAL_CARD_DECISION else PAYLOAD_FIELDS[entry_type]
     if sorted(payload) != sorted(expected_fields):
@@ -224,6 +235,15 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
                 payload["effective_session"] < decision["decision_session"]):
             return "USER_DECISION_SESSION_INCONSISTENT"
     return None
+
+
+def project_thread_message_valid(message: Any) -> bool:
+    """journal-venue: "<message or card id> | user_<account> | <time> KST | <verbatim text>", no empty field."""
+    if not isinstance(message, str):
+        return False
+    fields = [field.strip() for field in message.split("|", 3)]
+    return (len(fields) == 4 and all(fields) and fields[1].startswith("user_")
+            and fields[2].endswith("KST"))
 
 
 def _auto_core_inconsistency(entry: dict[str, Any]) -> str | None:
@@ -533,7 +553,12 @@ def apply_proposal_entries(*, journal_path: Path, proposal: dict[str, Any], conf
     if confirmation.get("confirmation_method") not in CONFIRMATION_METHODS:
         raise JournalError("CONFIRMATION_METHOD_INVALID")
     message = confirmation.get("user_message")
-    if not isinstance(message, str) or proposal["confirm_code"] not in message.upper():
+    if confirmation["confirmation_method"] == PROJECT_THREAD_METHOD:
+        if proposal["entry_type"] not in CARD_ENTRY_TYPES:
+            raise JournalError("PROJECT_THREAD_ENTRY_TYPE_INVALID")
+        if not project_thread_message_valid(message):
+            raise JournalError("PROJECT_THREAD_MESSAGE_INVALID")
+    elif not isinstance(message, str) or proposal["confirm_code"] not in message.upper():
         raise JournalError("USER_CONFIRMATION_MESSAGE_REQUIRED")
     # Expiry and the recorded time use the real clock; a caller's now can only move time forward.
     real_now = datetime.now(timezone.utc)
@@ -866,7 +891,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         proposal = load_json(args.proposal)
         if not isinstance(proposal, dict):
             raise JournalError("JOURNAL_PROPOSAL_NOT_OBJECT")
-        if args.confirmed_via == "COWORK_CHAT_USER_MESSAGE" and not (args.user_message or "").strip():
+        if args.confirmed_via in ("COWORK_CHAT_USER_MESSAGE", PROJECT_THREAD_METHOD) and not (
+                args.user_message or "").strip():
             raise JournalError("USER_CONFIRMATION_MESSAGE_REQUIRED")
         code = args.confirm.strip().upper()
         entries = apply_proposal_entries(

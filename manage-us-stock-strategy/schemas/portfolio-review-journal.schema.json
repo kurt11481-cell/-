@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Decision journal: human confirmations only (stock-strategy-system/decision_journal.json)",
-  "description": "Hash-chained entries appended by portfolio_review_journal.py apply after the user's confirmation code. HWM, line breaches and pauses are recomputed and never stored here. Card entries (card_decision, card_user_decision) are records to score later, never orders: for them review_id is the card sha256 and evaluation_session is the decision session. Scores are never stored here. Redesign T2 F7: the auto-core appends core_decision, order_ticket and ticket_outcome entries in recording mode with confirmation_method AUTO_CORE, confirm_code null and user_message null (review_id = the decide record's canonical hash, user_confirmed_at = the write time); portfolio_review_journal.py checks that a null code and message appear only on AUTO_CORE entries.",
+  "description": "Hash-chained entries appended by portfolio_review_journal.py apply after the user's confirmation code. HWM, line breaches and pauses are recomputed and never stored here. Card entries (card_decision, card_user_decision) are records to score later, never orders: for them review_id is the card sha256 and evaluation_session is the decision session. Scores are never stored here. Redesign T2 F7: the auto-core appends core_decision, order_ticket and ticket_outcome entries in recording mode with confirmation_method AUTO_CORE, confirm_code null and user_message null (review_id = the decide record's canonical hash, user_confirmed_at = the write time); portfolio_review_journal.py checks that a null code and message appear only on AUTO_CORE entries. journal-venue: PROJECT_THREAD_USER_DECISION entries are the user's decision in the CEO-office company-PC project thread; their user_message is '<message or card id> | <account id> | <KST time> | <verbatim text>' and need not contain the confirm_code.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "journal_type", "order_authority", "quantity_authority", "entries"],
@@ -26,7 +26,7 @@
           "sequence": {"type": "integer", "minimum": 1},
           "previous_entry_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "confirm_code": {"type": ["string", "null"], "pattern": "^[0-9A-F]{8}$"},
-          "confirmation_method": {"enum": ["COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", "AUTO_CORE"]},
+          "confirmation_method": {"enum": ["COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", "PROJECT_THREAD_USER_DECISION", "AUTO_CORE"]},
           "user_message": {"type": ["string", "null"], "minLength": 1},
           "user_confirmed_at": {"type": "string", "format": "date-time"},
           "review_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},

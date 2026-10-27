@@ -396,5 +396,116 @@ class LastEntryRecomputeTests(unittest.TestCase):
         self.assertIn("JOURNAL_ENTRY_INCONSISTENT:6:USER_DECISION_REFERENCE_INVALID", trigger["reasons"])
 
 
+
+class ProjectThreadDecisionTests(unittest.TestCase):
+    """journal-venue: the user's decision in the 사장실 회사PC thread is the confirmation (no code in the message)."""
+
+    MESSAGE = "cmsg_TEST | user_TEST | 2026-10-27 15:27:32 KST | 카드 탭: 기록"
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="review_journal_thread_"))
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.path = self.tmp / "decision_journal.json"
+        card, pack = make_card()
+        self.proposal = journal_module.build_card_proposal(
+            card=card, fact_pack=pack, journal=journal_module.load_journal(self.path), now=NOW)
+        self.count = len(self.proposal["payload"]["decisions"])
+
+    def apply(self, message, *, method: str = journal_module.PROJECT_THREAD_METHOD, code: str | None = None) -> dict:
+        return journal_module.apply_proposal(journal_path=self.path, proposal=self.proposal, confirmation={
+            "confirm_code": self.proposal["confirm_code"] if code is None else code,
+            "confirmation_method": method, "user_message": message})
+
+    def test_thread_decision_without_code_is_recorded_and_verifies(self) -> None:
+        self.assertNotIn(self.proposal["confirm_code"], self.MESSAGE.upper())
+        entry = self.apply(self.MESSAGE)
+        self.assertEqual((entry["confirmation_method"], entry["confirm_code"], entry["user_message"]),
+                         ("PROJECT_THREAD_USER_DECISION", self.proposal["confirm_code"], self.MESSAGE))
+        self.assertEqual((entry["order_authority"], entry["quantity_authority"]), (False, "none"))
+        loaded = journal_module.load_journal(self.path)
+        self.assertEqual((loaded["status"], len(loaded["entries"])), ("OK", self.count))
+        self.assertEqual({item["entry_type"] for item in loaded["entries"]}, {"card_decision"})
+
+    def test_non_card_proposal_is_rejected(self) -> None:
+        review = not_activated_review()
+        self.proposal = journal_module.build_proposal(
+            entry_type="s5_activation", payload=journal_module.activation_payload(review), review=review,
+            journal=journal_module.load_journal(self.path), now=NOW)
+        with self.assertRaisesRegex(journal_module.JournalError, "PROJECT_THREAD_ENTRY_TYPE_INVALID"):
+            self.apply(self.MESSAGE)
+        self.assertFalse(self.path.exists())
+
+    def test_bad_account_or_time_field_is_rejected(self) -> None:
+        for message in ("cmsg_TEST | TEST | 2026-10-27 15:27:32 KST | 기록",
+                        "cmsg_TEST | acct_TEST | 2026-10-27 15:27:32 KST | 기록",
+                        "cmsg_TEST | user_TEST | 2026-10-27 15:27:32 | 기록",
+                        "cmsg_TEST | user_TEST | 2026-10-27 15:27:32 UTC | 기록",
+                        "cmsg_TEST | 2026-10-27 15:27:32 KST | user_TEST | 기록"):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(journal_module.JournalError, "PROJECT_THREAD_MESSAGE_INVALID"):
+                    self.apply(message)
+        self.assertFalse(self.path.exists())
+
+    def test_missing_or_empty_fields_are_rejected(self) -> None:
+        for message in ("", "   ", None, "cmsg_TEST | user_TEST | 2026-10-27 15:27:32 KST",
+                        "cmsg_TEST | | 2026-10-27 15:27:32 KST | 기록", " | user_TEST | 2026-10-27 KST | 기록",
+                        "cmsg_TEST | user_TEST | 2026-10-27 KST |  "):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(journal_module.JournalError, "PROJECT_THREAD_MESSAGE_INVALID"):
+                    self.apply(message)
+        self.assertFalse(self.path.exists())
+
+    def test_wrong_code_is_still_rejected(self) -> None:
+        with self.assertRaisesRegex(journal_module.JournalError, "CONFIRM_CODE_MISMATCH"):
+            self.apply(self.MESSAGE, code="DEADBEEF")
+        self.assertFalse(self.path.exists())
+
+    def test_other_methods_still_need_the_code_in_the_message(self) -> None:
+        for method in ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL"):
+            with self.subTest(method=method):
+                with self.assertRaisesRegex(journal_module.JournalError, "USER_CONFIRMATION_MESSAGE_REQUIRED"):
+                    self.apply(self.MESSAGE, method=method)
+        with self.assertRaisesRegex(journal_module.JournalError, "CONFIRMATION_METHOD_INVALID"):
+            self.apply(self.MESSAGE, method="AUTO_CORE")
+        self.assertFalse(self.path.exists())
+
+    def test_hand_edited_thread_entry_is_corrupt(self) -> None:
+        self.apply(self.MESSAGE)
+        text = self.path.read_text(encoding="utf-8")
+        for mutate, reason in (
+                (lambda entry: entry.update(user_message="cmsg_TEST | user_TEST | 기록"), "PROJECT_THREAD_MESSAGE_INVALID"),
+                (lambda entry: entry.update(user_message="cmsg_TEST | TEST | 2026-10-27 15:27:32 KST | 기록"),
+                 "PROJECT_THREAD_MESSAGE_INVALID"),
+                (lambda entry: entry.update(entry_type="s5_activation"), "PROJECT_THREAD_ENTRY_TYPE_INVALID"),
+                (lambda entry: entry.update(confirmation_method="COWORK_CHAT_USER_MESSAGE"),
+                 "CONFIRM_CODE_NOT_IN_USER_MESSAGE")):
+            with self.subTest(reason=reason):
+                document = json.loads(text)
+                mutate(document["entries"][-1])
+                self.path.write_text(json.dumps(document), encoding="utf-8")
+                loaded = journal_module.load_journal(self.path)
+                self.assertEqual((loaded["status"], loaded["errors"]),
+                                 ("CORRUPT", [f"JOURNAL_ENTRY_INCONSISTENT:{self.count}:{reason}"]))
+
+    def test_cli_apply_with_thread_decision_and_verify(self) -> None:
+        proposal_path = self.tmp / "journal_proposal.json"
+        proposal_path.write_text(json.dumps(self.proposal), encoding="utf-8")
+
+        def run(*argv: str) -> tuple[int, str]:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                code = journal_module.main(list(argv))
+            return code, buffer.getvalue()
+
+        base = ("apply", "--proposal", str(proposal_path), "--confirm", self.proposal["confirm_code"],
+                "--confirmed-via", "PROJECT_THREAD_USER_DECISION", "--journal", str(self.path))
+        self.assertEqual(run(*base)[0], 2)  # the thread decision text is required
+        self.assertEqual(run(*base, "--user-message", "cmsg_TEST | user_TEST | 기록")[0], 2)
+        self.assertFalse(self.path.exists())
+        self.assertEqual(run(*base, "--user-message", self.MESSAGE)[0], 0)
+        code, output = run("verify", "--journal", str(self.path))
+        self.assertEqual((code, json.loads(output)["status"], json.loads(output)["entry_count"]), (0, "OK", self.count))
+
+
 if __name__ == "__main__":
     unittest.main()
