@@ -68,6 +68,21 @@ Judge 원문: 저장소 루트 t2-gate-judge-1.txt(UTF-16, 2026-10-26 15:52 KST,
 기록 연결: 사전 등록 변경 기록 55행 추가(t2-rc-preregistration-2026-10-14.md), active-decisions.md t2-gate 행·roadmap.md T2 행 갱신.
 "켜"(decision_mode apply)는 여전히 사장 별도 결정(R3).
 
+## 1-3. 효력 조건 이행 기록 (2026-10-28 KST, 읽기 작업)
+
+**trig: 차이 4건 — 모두 "표기 차이"(조건 5)**: t2rc-check.json diagnostics 2026-10-17 [NBIS trig:N9, SOXL trig:S6, SOXL trig:S8], 2026-10-20 [NBIS trig:N9], 형식 [종목, 항목, 코어, 계산기] = […, "review", "hit"]. 세 규칙 모두 side "alert"(같은 날 decision.json). 코어는 alert 쪽 hit를 "review"로 바꿔 적는다(auto_core_rules.py 582-585행, 순위 rank hit=review=5, 598행). 판정은 같고 이름만 다르다 → 표기 차이. 미분류 0.
+
+**CORE_BUG 8건 해소 커밋 목록(조건 3)** — 출처 redesign-t2-compare-explained.json, git log:
+| 날짜 · 항목 | 원인 | 해소 커밋 |
+|---|---|---|
+| 10-13·10-14 MU:rebound_fail, MU:pullback_rebound (4건) | C6 반등·눌림 조건 없음 | 1a2b7d6 (c6-fix2, 10-14 14:37 KST) |
+| 10-13 BE:false_breakout | 대조 모듈 사건일 여유 | 9f554fc (cmp-fix2, 10-13 11:09) |
+| 10-13 exposure:caps | 대조 모듈 문자열 비교 | 9f554fc (cmp-fix2) |
+| 10-13 exposure:N | 총자산 현금 | 73e18b4 (t2-equity-cash 병합, 10-13 14:06) |
+| 10-13 RREC:RG1 | 총자산 현금(EV4) + 연구 기록 공백 unk | 73e18b4 + da5d85e (cmp-fix3, 공백 unk를 사전 등록 B4로 분류, 10-13 16:14) — **해소로 볼지 Judge 확인 필요**(Judge 2차 d는 이 항목이 조건 3에 걸린다고 봄) |
+
+모두 C1 창(10-17 실행분) 전에 병합됨 → C1 초기화에 영향 없음. 남은 "켜" 조건: 대조 OK 0/5(별도 스레드), C1 2/10, C2 0, 비교일 COMPARED 수 확인, RG1 해소 판단.
+
 ## 2. d10: REUSE (SPY 벤치마크 공급) — 정책 1줄 + 일반 변경 1건
 
 - **정책(사장 실행)**: workspace/policies/auto_core.json symbols_extra에 "SPY" 추가. 자동 코어가 SOXX·GRID처럼 30분봉 종가를 받아 workspace/outputs/regular-session-closes/history/SPY.close-history.json에 쌓는다(auto_core.py 93-110·348행).

@@ -17,7 +17,7 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③"
 |---|---|---|---|
 | T0 | 결정·지침 교체·관제판 정리 | 끝(10/10) | — |
 | T1 | 코어 v1: 수집·자동 대조·노출 | 끝 — 기록 모드 켜짐(10/15). **10/22~10/24 대조 HOLD**(체결 날짜 해석·출금 증거, recon-hold-2026-10-23.md). 수정 병합 5a289b8·b2cd42e(10/25), 첫 확인 10/27 06:15 | recon-dt · cashflow-api-gap |
-| T2 | 판정·주문표·일지 자동 | 병합(10/12), **비교 모드**(auto_core.json decision_mode compare). "켜" 조건 전부: R1 리플레이 통과 · R2 비교 차이 전부 분류(10/26 t2-gate REMOVE-v2로 "5거래일 연속" 대신 — C1 창 COMPARED 5일 이상, trig: 4건 미분류) · 대조 OK 연속 5회(0/5) · CORE_BUG 해소 커밋 목록(없음) · C1 독립 계산기 일치 10세션(공식 셈 2/10 — 사전 등록 53행, 10/22~24 오류 — eqnone4 c1a6a6e로 수정) · C2 매수 주문표 1건 일치(0) · R3 사장 "켜"(redesign-t2-builder-prompt-2026-10-10.md 46-48행, t2-rc-preregistration-2026-10-14.md 22·25행) | redesign-t2 · t2-rc |
+| T2 | 판정·주문표·일지 자동 | 병합(10/12), **비교 모드**(auto_core.json decision_mode compare). "켜" 조건 전부: R1 리플레이 통과 · R2 비교 차이 전부 분류(10/26 t2-gate REMOVE-v2로 "5거래일 연속" 대신 — C1 창 COMPARED 5일 이상, trig: 4건은 10/28 표기 차이로 분류) · 대조 OK 연속 5회(0/5) · CORE_BUG 해소 커밋 목록(10/28 작성, RG1 1건 Judge 확인 필요 — 결정 문서 1-3절) · C1 독립 계산기 일치 10세션(공식 셈 2/10 — 사전 등록 53행, 10/22~24 오류 — eqnone4 c1a6a6e로 수정) · C2 매수 주문표 1건 일치(0) · R3 사장 "켜"(redesign-t2-builder-prompt-2026-10-10.md 46-48행, t2-rc-preregistration-2026-10-14.md 22·25행) | redesign-t2 · t2-rc |
 | T3 | 개발 파이프라인·문서 자동 커밋 | 끝(10/10~), Cowork가 일반 변경 병합(dc-dev 10/22) | — |
 | T4 | 옛 경로 은퇴·docs/claude → archive/·정본 3개(SYSTEM·RUNBOOK·DECISIONS) | T2 뒤 대기 | redesign-t4 |
 | T5 | 주문 2단계(코어가 키움 주문 대기 → 사장 승인 1번) | 조건 미충족 | redesign-t5 |
