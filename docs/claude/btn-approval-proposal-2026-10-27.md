@@ -1,7 +1,7 @@
 ---
 id: btn-approval-proposal-2026-10-27
 type: proposal
-status: "제안 (사장 결정 대기 · 적용 안 함)"
+status: "병합 완료 2026-10-27 (3542b10) · 문서 정리 완료"
 date: 2026-10-27
 class: "K3 (승인 장소 변경 · 보호 경로 CLAUDE.md → 수동 경로)"
 authority: "order_authority=false · quantity_authority=none · Hard safety·주문 금지 불변"
@@ -27,9 +27,9 @@ basis: "사장 지시 2026-10-27 10:15 KST '전부 버튼 승인으로 해줘. �
   (harness mark from=human trust=principal), or the user's own tap on a decision card (request_decision) that the same thread posted for
   that proposal. A tap counts only when the thread's decision record shows, taken from the harness wake for that card (not a summary):
   the card's message id and the proposal id it names, the option label chosen, the tapping member's account id equal to the project
-  owner's, and the KST time of the tap. Quotes relayed by a coordinator or another Claude, a card closed by Claude (close_decision), a card
-  posted in another thread or on an earlier day, summaries and scheduled turns are not approval. One approval covers only the
-  immediately preceding proposal, the same day, once.
+  owner's, and the KST time of the tap. Quotes relayed by a coordinator or another Claude, any other button or card (including a card
+  closed by Claude with close_decision or posted in another thread or on an earlier day), summaries and scheduled turns are not
+  approval. One approval covers only the immediately preceding proposal, the same day, once.
 ```
 뜻(한국어): 버튼 승인 = ① 같은 스레드가 그 제안에 대해 올린 카드 ② 그 카드 id로 온 하네스 알림에서 읽은 기록 ③ 누른 사람 계정 id = 사장 계정 id ④ 누른 시각(KST)과 고른 선택지 문구. 하나라도 없으면 승인 아님. Claude가 닫은 카드·다른 스레드 카드·전날 카드·코디네이터 전달·요약·예약 턴은 승인 아님.
 
@@ -43,10 +43,10 @@ basis: "사장 지시 2026-10-27 10:15 KST '전부 버튼 승인으로 해줘. �
 ## 5. 하지 않음 (어떤 버튼으로도)
 주문·정정·취소·예약, 키움 주문 도구·kiwoom_commands, reconcile/일지 apply(Claude Code 금지 유지), 정책·상태 파일 쓰기, .claude 설정 수정, dev-run·dev-merge·dev-queue 실행, -ApproveAuthority 입력(사장 터미널 한 줄 그대로).
 
-## 6. 뒤따르는 문서 정리 (병합 뒤, 문서만)
-- approval-venue-table-2026-10-25.md 14행·20행·26행(예약 작업)에 "또는 직접 누른 버튼(기록 조건 4가지)" 추가.
-- active-decisions.md에 btn-approval 한 줄, sc-1022 S4 줄에 "카드 금지 부분은 btn-approval로 대체" 표시.
-- 프로젝트 지침 v2.0 4절의 "CLAUDE.md가 직접 입력을 요구하는 승인" 예외는 Change classes에 대해선 사라짐(Hard safety 항목은 그대로 직접 입력).
+## 6. 뒤따르는 문서 정리 (병합 뒤, 문서만 · Judge 수정안 2로 좁힘)
+- approval-venue-table-2026-10-25.md는 14행(머리 문장)과 20행(#1 권한·한도 변경 승인의 착수)만 고친다. 26행(#7 예약 작업)과 25행(#6 정책·상태)은 손대지 않는다(예약 작업에 버튼을 넣으려면 지침 4절 변경으로 따로 제안, 기본값 NO_CHANGE). #1 줄에 카드 작성 규칙(질문 맨 앞에 제안 id, 무엇이 실행되는지 한 줄, 항상 "보류/현행 유지" 선택지)을 적는다.
+- active-decisions.md에 btn-approval 한 줄. sc-1022 S4 줄에는 이렇게만 적는다: "권한·한도 작업 착수에 한해, 사장실 회사PC 스레드가 그 제안에 올린 request_decision 카드를 사장이 직접 누르고 기록 4가지가 있으면 직접 입력과 같다. 비서실(Cowork) 카드는 여전히 승인이 아니다. 일지 apply·확인 <코드>·정책/상태·decision_mode·병합·-ApproveAuthority·보호 경로 병합·.claude·예약 지시문·기억 쓰기는 지금처럼 직접 입력 또는 사장 터미널."
+- 프로젝트 지침 v2.0 4절의 "CLAUDE.md가 직접 입력을 요구하는 승인" 예외는 Change classes 권한·한도 착수에 대해서만 사라진다(Hard safety 항목은 그대로 직접 입력).
 
 ## 7. 위험과 대처
 | 위험 | 대처 |
@@ -62,6 +62,13 @@ basis: "사장 지시 2026-10-27 10:15 KST '전부 버튼 승인으로 해줘. �
 ## 9. 결정 (사장)
 - 지금 CLAUDE.md:65가 "버튼은 승인 아님"이라서, **K3 착수 승인은 이번에 한해 사장이 직접 치는 한 줄**(`btn-approval 착수 승인`)이 필요하다. 카드는 T0 시험과 방향 확인용.
 - 기본값(무응답): NO_CHANGE(현행 유지).
+
+## 결정 기록
+- 방향 카드 · 제안 btn-approval · 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9QzD97qSFcoo5JQN8WUpCLQ · 선택 "방향 맞음, 시험(T0)부터" · 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH (= 사장) · 2026-10-27 10:22:09 KST (출처: 하네스 wake decision-chosen, 플랫폼이 사장 본인 클라이언트 탭으로 검증했다고 표시)
+- **착수 승인 · 직접 입력** `btn-approval 착수 승인` · 사장 user_01KuMGKfZu1SBYxtMmg4vAiH · 2026-10-27 10:20:10 KST (이 스레드, from=human trust=principal). 지금 규칙상 버튼은 승인이 아니므로 이 승인은 카드가 아니라 이 직접 입력이다.
+- **T0 결과: 통과(알림 4칸 모두 있음)** — 카드 id(decision_id), 선택지 문구, 누른 계정 id(actor_account_id), 시각(sent-at 01:22:09Z = 10:22:09 KST). 제안 id는 카드 질문 문구("btn-approval")에서 읽음. 한계: 알림에 제안 id 전용 필드는 없고 질문 문구에만 있음 → Judge 항목 5에서 이 점을 판단.
+- **Judge 결과: PASS_WITH_FIX** · 2026-10-27 13:27 KST 전후 사장 전달(Judge 세션 계획 원문). 항목 1·2·4(문장)·5·6 PASS, 항목 3 PASS_WITH_FIX. Hard safety 해시 8ee8d497… 변경 없음. 수정안 1: CLAUDE.md 68~69행을 "any other button or card (including …)"로 바꿔 일반 금지 되살리기(Builder 세션이 워크트리에서 수행, 3절 문장에 반영). 수정안 2: 위 6절로 좁힘. 조건: 이 문서·지시문·Builder 보고서를 `_pending/btn-approval2.txt`로 등록.
+- **병합 완료** · 2026-10-27 13:49 KST 전후 사장 PowerShell(사장 보고 "병합 완료"). 본 저장소 확인: HEAD 3542b10 "Merge btn-approval", CLAUDE.md sha256 460ac219…, Hard safety 8ee8d497…, 130줄 CRLF 130. 문서 정리: 승인 장소 표 14·20행, active-decisions 3곳.
 
 동시 실행 한도(권한 작업 1건) — 지금 진행 중인 권한 작업 수: **확인 필요**(worktree 목록에 locked 4개: d10-spy·kiwoom-block-fix3·t2rc-eqnone3·t2rc-eqnone4, 등급은 확인 안 함).
 
