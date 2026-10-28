@@ -1,0 +1,14 @@
+{
+  "collected_at_kst": "2026-10-28",
+  "collector": "사장실 회사PC 스레드(매도·매수 신호 전략 검토), read-only kiwoom_query via 키움증권 OpenAPI Exec MCP — 사장 직접 요청(2026-10-28 07:36 KST '키움 soxx 일봉 이력 조회해', 07:38 KST 'qqq도 해')",
+  "command_path": "overseas candles stock-daily",
+  "api_id": "usa06012",
+  "common_options": {"adjusted": "1", "pages": 0, "format": "json", "profile": "실전계좌", "mode": "real"},
+  "save_method": "Responses exceeded the tool output limit and were saved verbatim by the tool harness to a file; that file was copied byte-for-byte (cp -p, cmp identical) to these paths. No value was retyped. The response JSON does not echo the ticker, so the ticker label comes from the call order (SOXX first, QQQ second) and was cross-checked against the SOXX level in the 2026-10-27 research record (SOXX ~492).",
+  "purpose": "walk_forward_activation_gate required_raw_history_start_on_or_before 2018-08-01 (alert_policy.json 617) — broker-grade SOXX and QQQ daily history; gate recognition is a separate K3 question",
+  "files": [
+    {"ticker": "SOXX", "exchange": "NASDAQ", "called_kst": "2026-10-28 07:38", "file": "SOXX_kiwoom_usa06012_daily_adj1_20261028.json", "sha256": "a5d7ef7f8864ccd22d3a80fdb81059a4148f2d85bfedc9e04cf0def024ecc8db", "bytes": 910792, "rows": 4031, "first": "2010-10-18", "last": "2026-10-27", "checks": "no zero-volume rows, no OHLC outliers (low < 0.9*min(open,close) or high > 1.1*max(open,close)), no calendar gap > 5 days"},
+    {"ticker": "QQQ", "exchange": "NASDAQ", "called_kst": "2026-10-28 07:38", "file": "QQQ_kiwoom_usa06012_daily_adj1_20261028.json", "sha256": "a9e5bba1277fd3aa0de4f4701389c7acbaac014ee4754dd8fc4c3603652e41b1", "bytes": 904019, "rows": 3921, "first": "2011-03-25", "last": "2026-10-27", "checks": "no zero-volume rows, no calendar gap > 5 days; 2 OHLC outliers: 2015-08-24 low 84.74 (flash-crash day, plausible) and 2026-10-27 low 606.09 vs close 721.63 (likely bad print — 확인 필요)"}
+  ],
+  "note": "Kiwoom history starts 2010-10-18 (SOXX) and 2011-03-25 (QQQ), not at fund inception. Earlier Kiwoom SOXL file: stock-strategy-system/backtests/fx5b_inputs_2026-10-09/kiwoom_raw/ (2010-04-05~2026-10-08)."
+}
