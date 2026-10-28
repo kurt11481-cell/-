@@ -1,0 +1,4 @@
+raw_sha256 0ee872597aa386c127262fab8f91e3f7616b6e67ceeb1adc0a748fb2a158f654  docs/claude/rule1028-a3-preregistration-2026-10-28.md
+lf_sha256 0ee872597aa386c127262fab8f91e3f7616b6e67ceeb1adc0a748fb2a158f654
+runner_sha256 35207bf554173f894982e31b9f263c91579ba2fb330e2dc299a377ec7a0b9695  stock-strategy-system/backtests/rule1028_a3_2026-10-28.py
+fixed_at 2026-10-28T10:15:00+09:00 (rule-1028 a, 2026-10-28 08:44 KST 사장 결정 카드; 계산 전 고정, 독립 검토 1회 + 스크립트 대조 재검토 반영)
