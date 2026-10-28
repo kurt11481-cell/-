@@ -141,3 +141,28 @@ weekly_user_touch: 0 (일회성: .\tools\dev-merge.ps1 evo-s3 1번)
 - 코어 관문이나 채점기가 통합 점검 기록(R5 등)을 읽게 바뀌면 → 통합 점검 규칙 파일 변경도 규칙 시기 줄 대상.
 
 검토 완결: 원문 확인 19/21(확인 필요 2 = 10/20 실제 푸시 문구 · 10/18 5.1 오류 문구, 둘 다 결론 영향 없음) · 내장 재검토 0회(추천·결정 요청·변경 제안 없음 → L1~L6 자기 점검) · 미해결 0 · 자료 시점 PC 상태 점검 2026-10-20 05:50 KST · 결정 2026-10-20 07:45 KST · git HEAD 624e9e2(2026-10-20 10:55 KST) · 바뀔 조건 9절 끝
+
+## 10. 10/28 확인 (2026-10-28 10:4x KST, 사장실 회사PC 스레드 "비서 제안 2건 실행")
+
+| 항목 | 값 | 원문 |
+|---|---|---|
+| ③ 10/25 주간 실행 | WEEKLY_LATEST.json status **OK** · exit_code 0 · started_at 2026-10-25T00:20:00.85Z(≥ 00:20Z) · learning_present true · learning_failed false. 로그 끝 `RUNNER_END exit=0 status=OK` | workspace/outputs/journal-scores/WEEKLY_LATEST.json · logs/20261025T002000Z.log |
+| 보고서 | learning counts {days 10, eligible 10, excluded 0, preservation_broken 0, buckets 7, conclusion_allowed 0} · epochs OK 12 · 모든 버킷 n_scored 0(채점 기간 미도래) | 20261025T002001Z/journal-scores.json |
+| PC 상태 점검 | InvestmentV2-JournalScore last_task_result 0 (2026-10-25 09:20), next 2026-11-01 09:20 | host-status/LATEST.json (2026-10-28 05:50 KST) |
+| 판정 | **운영 완료 기준(사전 등록 7절) 충족.** 9절 바뀔 조건(FAIL·0 아닌 결과) 불충족 | — |
+
+- 규칙 시기: 10/20 이후 코드 병합 중 관문 판정에 닿는 것은 대조(reconcile) 4건이다. 결정이 HOLD인 날 채점기는 그날 사유(G1_RECONCILE_NOT_OK 등)를 모든 단위에 붙인다(score_decision_journal.py 1421~1422행). 그래서 G1_RECONCILE_NOT_OK가 언제 나는지를 바꾸는 병합은 규칙 시기 줄 대상이다. gate-rule-epochs.json에 4줄 추가(12 → 16항목): e821766(recon-dt)·9bfc7f4(cf-b2n) 첫 결정일 2026-10-27(035e8f3, 10/24 4ea2b12에는 없음) · 93beae2 2026-10-28(6840416) · d82dc15 2026-10-29(아직 결정 없음, 10/29 commit_sha로 확인 필요). sha256 고치기 전 ea139a51…6993, 고친 뒤 43e82abd…5914.
+- 줄을 안 더한 병합: 3e753f3(주문표 입력 시간창, 관문 사유 추가 없음) · 5d6943c(조사 기록 대기 중단 처리, 관문 정의 불변) · a9e653a(채점기 자신) · 4fe10b3·4797161·2aa1535·d65d388·feaff3c(코어 관문 아님).
+- G1_STATE_NOT_EQUAL_BROKER도 대조 결과에 따라 달라질 수 있지만 범위를 넓히면 발견이 줄어드는 쪽이라 이번엔 G1_RECONCILE_NOT_OK만 적었다(바뀔 조건 아래).
+- 코어 결정은 10/22~10/28 5회 연속 HOLD(G1_RECONCILE_NOT_OK). 채점 단위는 쌓이지만 HOLD 날 단위는 모두 G1 관문이 섞여 binding이 거의 없다. 결론은 버킷당 30건부터, 기본 NO_CHANGE.
+
+### 남은 것
+- ④ 2026-11-07 이후 옛 지시서 4건 1회 판정(사전 등록 11절, 기한 11/21, 없으면 NOT_SCORABLE).
+- 10/29 결정 commit_sha에 d82dc15가 있는지 merge-base로 확인(읽기 전용).
+- 다음 주간 실행 2026-11-01 09:20. 실패하면 11/03(화) 08:50 ⑭가 자동으로 알린다.
+
+### 바뀔 조건
+- 10/29 결정에 d82dc15가 없으면 → 그 줄의 first_run_day를 실제 첫 결정일로 고친다.
+- 채점기가 G1_STATE_NOT_EQUAL_BROKER를 단독 관문으로 묶는 버킷을 만들면 → 같은 4건을 그 scope로도 적는다.
+
+검토 완결: 원문 확인 9/10(확인 필요 1 = d82dc15 첫 결정일) · 내장 재검토 0회(추천·결정 요청 없음, 표시 전용 장부 → L1~L6 자기 점검) · 미해결 0 · 자료 시점 주간 실행 2026-10-25 09:20 KST · PC 상태 점검 10/28 05:50 KST · git HEAD d82dc15
