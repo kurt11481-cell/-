@@ -79,9 +79,9 @@ Judge 원문: 저장소 루트 t2-gate-judge-1.txt(UTF-16, 2026-10-26 15:52 KST,
 | 10-13 BE:false_breakout | 대조 모듈 사건일 여유 | 9f554fc (cmp-fix2, 10-13 11:09) |
 | 10-13 exposure:caps | 대조 모듈 문자열 비교 | 9f554fc (cmp-fix2) |
 | 10-13 exposure:N | 총자산 현금 | 73e18b4 (t2-equity-cash 병합, 10-13 14:06) |
-| 10-13 RREC:RG1 | 총자산 현금(EV4) + 연구 기록 공백 unk | 73e18b4 + da5d85e (cmp-fix3, 공백 unk를 사전 등록 B4로 분류, 10-13 16:14) — **해소로 볼지 Judge 확인 필요**(Judge 2차 d는 이 항목이 조건 3에 걸린다고 봄) |
+| 10-13 RREC:RG1 | 총자산 현금(EV4) + 연구 기록 공백 unk | 원인 1: 73e18b4 · 원인 2: 55803bf / 병합 f8c0a8a (rrec-rg1-bootstrap B, 10-13 20:38, 10-14 실행부터 코어 RG1 ok·B1) · 분류 보조: da5d85e (cmp-fix3) — **독립 Judge RESOLVED**(저장소 루트 rg1-judge.txt, 2026-10-28 18:25 KST) |
 
-모두 C1 창(10-17 실행분) 전에 병합됨 → C1 초기화에 영향 없음. 남은 "켜" 조건: 대조 OK 0/5(별도 스레드), C1 2/10, C2 0, 비교일 COMPARED 수 확인, RG1 해소 판단.
+모두 C1 창(10-17 실행분) 전에 병합됨 → C1 초기화에 영향 없음. 남은 "켜" 조건: 대조 OK 0/5(별도 스레드), C1 2/10, C2 0, 비교일 COMPARED 수 확인, 10-27·10-28 RREC:RG1 B7 2건은 **LLM_ERROR로 분류**(2026-10-28 읽기 진단, explained.json 29·30번째 항목 — EV2는 세션마다 판정하는 조건이라 SOXX가 문턱 아래인 동안 가장 최근 이벤트가 매 세션 당일, 코어가 규칙 문구 그대로).
 
 ## 2. d10: REUSE (SPY 벤치마크 공급) — 정책 1줄 + 일반 변경 1건
 
