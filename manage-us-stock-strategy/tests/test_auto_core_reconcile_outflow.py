@@ -481,5 +481,113 @@ class AvailableCashLimitTests(unittest.TestCase):
                          (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:130.01:130.00"]))
 
 
+class FallbackLedgerTests(unittest.TestCase):
+    """recon-fallback (user card 2026-10-28): when the base_after ust21132 read passed with no USD row, the row of
+    the session just before it may take its place; every other case keeps the base_after hold."""
+
+    DAYS = (date(2026, 10, 20), date(2026, 10, 27))
+    FALLBACK = date(2026, 10, 26)
+    NO_ROW = "UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE:20261027:USD_ROW"
+
+    def judge(self, *, residual="-173.64", baseline="82.93", after_rows=(), after_status="PASS",
+              fallback_rows=(ledger_row("59.30"),), fallback_status="PASS", fallback=FALLBACK,
+              sessions=("2026-10-21",)):
+        # 2026-10-27: record cash 82.93, the 10/21 session settles +150.03, withdrawals 82.93 and 90.72.
+        results = [ledger_read("20261020", [ledger_row("82.94")]),
+                   ledger_read("20261027", list(after_rows), status=after_status)]
+        if fallback_rows is not None:
+            results.append(ledger_read("20261026", list(fallback_rows), status=fallback_status))
+        ledger = {"days": self.DAYS, "results": results}
+        if fallback is not None:
+            ledger["fallback"] = fallback
+        return core.unverified_outflow(
+            residual=Decimal(residual), baseline_cash=Decimal(baseline), trades=Decimal("150.03"),
+            flows=Decimal("0"), window=[{"session_date": session} for session in sessions], ledger=ledger)
+
+    def test_oct27_replay_passes_on_the_previous_trading_day_row(self):
+        # L = 59.30 - 82.94 - 150.03 = -173.67, within 0.05 of R = -173.64; limit 82.93 + 150.03 = 232.96.
+        outflow, reasons = self.judge()
+        self.assertEqual(reasons, [])
+        self.assertEqual(outflow["unverified_outflow_usd"], "173.64")
+        self.assertEqual(outflow["unverified_outflow_basis"], {
+            "base_before": "2026-10-20", "base_after": "2026-10-26", "fx_entr_before_usd": "82.94",
+            "fx_entr_after_usd": "59.30", "won_entr_before": "0", "won_entr_after": "0",
+            "sessions": ["2026-10-21"], "fill_cash_usd": "150.03", "flow_cash_usd": "0.00",
+            "ledger_residual_usd": "-173.67", "snapshot_residual_usd": "-173.64"})
+        # The same keys as without a fallback.
+        plain, _ = self.judge(after_rows=[ledger_row("59.30")], fallback=None, fallback_rows=None)
+        self.assertEqual(set(outflow["unverified_outflow_basis"]), set(plain["unverified_outflow_basis"]))
+
+    def test_base_after_row_present_is_used_even_with_a_fallback(self):
+        outflow, reasons = self.judge(after_rows=[ledger_row("59.31")])
+        self.assertEqual(reasons, [])
+        basis = outflow["unverified_outflow_basis"]
+        self.assertEqual((basis["base_after"], basis["fx_entr_after_usd"], basis["ledger_residual_usd"]),
+                         ("2026-10-27", "59.31", "-173.66"))
+
+    def test_fill_session_after_the_fallback_day_holds(self):
+        self.assertEqual(self.judge(sessions=("2026-10-21", "2026-10-27")), (None, [self.NO_ROW]))
+
+    def test_failed_base_after_read_is_not_a_fallback_reason(self):
+        self.assertEqual(self.judge(after_status="KIWOOM_API_RESPONSE_ERROR"),
+                         (None, ["UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE:20261027"]))
+
+    def test_two_base_after_usd_rows_hold(self):
+        self.assertEqual(self.judge(after_rows=[ledger_row("59.31"), ledger_row("59.32")]), (None, [self.NO_ROW]))
+
+    def test_unusable_fallback_row_holds(self):
+        cases = {"no fallback read": dict(fallback_rows=None), "no row": dict(fallback_rows=[]),
+                 "KRW row only": dict(fallback_rows=[ledger_row("1.00", currency="KRW")]),
+                 "two USD rows": dict(fallback_rows=[ledger_row("59.30"), ledger_row("59.30")]),
+                 "unreadable value": dict(fallback_rows=[ledger_row("")]),
+                 "failed read": dict(fallback_status="KIWOOM_API_RESPONSE_ERROR"),
+                 "no fallback key": dict(fallback=None)}
+        for name, changes in cases.items():
+            with self.subTest(name):
+                self.assertEqual(self.judge(**changes), (None, [self.NO_ROW]))
+
+    def test_fallback_outside_the_ledger_days_holds(self):
+        for fallback in (date(2026, 10, 19), date(2026, 10, 20), date(2026, 10, 27), date(2026, 10, 28)):
+            with self.subTest(fallback=fallback):
+                self.assertEqual(self.judge(fallback=fallback), (None, [self.NO_ROW]))
+
+    def test_outflow_after_the_fallback_day_does_not_match(self):
+        # A further 10.00 left after 10/26: it is in R but not in the 10/26 row.
+        self.assertEqual(self.judge(residual="-183.64"),
+                         (None, ["UNVERIFIED_OUTFLOW_NOT_MATCHED:-183.64:-173.67"]))
+
+    def test_limit_and_krw_rules_hold_on_the_fallback_row(self):
+        self.assertEqual(self.judge(baseline="10.00"),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:173.64:160.03"]))
+        self.assertEqual(self.judge(fallback_rows=[ledger_row("59.30", "120000")]),
+                         (None, ["UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:0:120000"]))
+
+
+class FallbackRunTests(base.Workspace):
+    """The third ust21132 read through the auto run. Synthetic calendar: 10/12 closes after the record, so
+    base_before is 10/09, base_after 10/13 and the session before 10/13 is 10/12."""
+
+    def setUp(self):
+        super().setUp()
+        late = calendar("2026-10-09", "2026-10-13")
+        late["sessions"]["2026-10-12"] = {"session_date": "2026-10-12", "core_close_at": "2026-10-13T08:00:00-04:00"}
+        patcher = mock.patch.object(core, "production_calendar", return_value=late)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_third_read_only_when_base_after_has_no_usd_row(self):
+        request = lambda day: {"operation": core.LEDGER_OPERATION, "params": {"base_dt": day}}  # noqa: E731
+        broker = withdrawal_broker(ledger={"20261009": [ledger_row("1000.01")], "20261012": [ledger_row("1246.25")]})
+        result = self.auto(broker)
+        self.assertEqual(broker.ledger_requests(), [request("20261009"), request("20261013"), request("20261012")])
+        # The 10/13 fill is after the fallback day: the base_after hold stays.
+        self.assertEqual(result["invariants"]["I3"]["reasons"],
+                         ["CASH_CHANGE_NOT_EXPLAINED:-82.93", "UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE:20261013:USD_ROW"])
+        broker = withdrawal_broker(ledger={"20261009": [ledger_row("1000.01")], "20261013": [ledger_row("1246.25")]})
+        result = self.auto(broker)
+        self.assertEqual(result["status"], "OK", result["reasons"])
+        self.assertEqual(broker.ledger_requests(), [request("20261009"), request("20261013")])
+
+
 if __name__ == "__main__":
     unittest.main()

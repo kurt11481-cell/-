@@ -314,6 +314,23 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
   the snapshot through another inquiry, so this allows the record; it does not
   prove a withdrawal. The cash-flow declaration stays as it is (no new status), so
   the HWM is not adjusted and the outflow stays a loss.
+  Previous-trading-day fallback (recon-fallback, user card 2026-10-28; at 06:15
+  KST `ust21132` may answer the base_after day with no USD row): only when the
+  base_after read passed and has no USD row (a failed read, two USD rows or an
+  unreadable value still hold), the run makes one more `ust21132` read for the
+  session just before base_after (operating calendar), and only if that session
+  is after base_before; otherwise there are two reads as before, and none more
+  when base_after has its row. That row takes base_after's place only if
+  base_before < fallback < base_after, every counted fill's session lies in
+  (base_before, fallback], and the fallback read is readable (one passed read,
+  exactly one USD row, readable `fx_entr` and `won_entr`); otherwise it holds with
+  base_after's `UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE:<base_after>:USD_ROW`. L,
+  the 0.05 match, the limit and the `won_entr` rule then use the fallback row,
+  and `unverified_outflow_basis` keeps its keys with `base_after`,
+  `fx_entr_after_usd` and `won_entr_after` taken from the fallback day (that is
+  how the use shows; no new key or warning). This relaxes the evidence needed:
+  an outflow or inflow after the fallback day is in R but not in L, so it holds
+  as `UNVERIFIED_OUTFLOW_NOT_MATCHED`.
 - Cash-flow evidence (F3): the period starts on the last recorded evidence
   `period_to` (that day is covered again so rows processed later that day are
   never skipped; counted rows are deduplicated by key) or the S5 activation date,

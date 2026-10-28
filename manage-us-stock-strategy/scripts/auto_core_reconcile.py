@@ -775,6 +775,24 @@ def ledger_balance(results: list[dict[str, Any]], day: date) -> tuple[dict[str, 
     return {"fx_entr": usd, "won_entr": krw}, None
 
 
+def ledger_read_without_usd_row(results: list[dict[str, Any]], day: date) -> bool:
+    """True only when the one ust21132 read of this U.S. trading day passed and carries no USD row (recon-fallback:
+    the only case where B2-N may use the previous trading day's row). A failed, missing or doubled read, or one
+    with a USD row (however many), is never this case."""
+    matches = [item for item in results if item.get("operation") == LEDGER_OPERATION
+               and (item.get("request_params") or {}).get("base_dt") == _ymd(day)]
+    if len(matches) != 1 or not _read_passed(matches[0]):
+        return False
+    return not any(isinstance(row, dict) and str(row.get("crnc_code") or "").strip().upper() == "USD"
+                   for row in matches[0].get("data") or [])
+
+
+def previous_session(calendar: dict[str, Any], day: date) -> date | None:
+    """The latest session of the operating calendar before this U.S. trading day, or None."""
+    earlier = [text for text in calendar["sessions"] if text < day.isoformat()]
+    return date.fromisoformat(max(earlier)) if earlier else None
+
+
 def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Decimal, flows: Decimal,
                        window: list[dict[str, Any]], ledger: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
     """B2-N (cf-b2n): (outflow, []) when the I3 residual is an outflow that the ust21132 ledger shows too, else
@@ -789,6 +807,13 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
     over the same span (max(0, fill settlement cash + classified flows): a net outflow of fills neither lowers nor
     raises it); and the KRW deposit may not have risen (an FX inflow). Both reads are the same balance through two inquiries: this allows the record,
     it does not prove a withdrawal. The cash-flow declaration is untouched, so the HWM is not adjusted.
+    recon-fallback (user card 2026-10-28): ledger may also carry "fallback", the session just before base_after,
+    with its read in results. Its row takes the place of base_after's only when all hold: the base_after read
+    passed with no USD row; base_before < fallback < base_after; every fill session is in (base_before,
+    fallback]; and the fallback row is readable (one passed read, exactly one USD row, readable values). The
+    rest is unchanged (L, the 0.05 match, the limit, the KRW rule on the fallback row) and the basis shows the
+    fallback date as base_after. Otherwise the base_after reason holds as before. An outflow or inflow after the
+    fallback day is in R but not in L, so it holds as NOT_MATCHED.
     """
     if "reason" in ledger:
         return None, [ledger["reason"]]
@@ -797,6 +822,12 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
                       if not before.isoformat() < item["session_date"] <= after.isoformat()})
     if outside:
         return None, [f"{OUTFLOW_SPAN_MISMATCH}:" + ",".join(outside)]
+    fallback = ledger.get("fallback")
+    if (isinstance(fallback, date) and before < fallback < after
+            and ledger_read_without_usd_row(ledger["results"], after)
+            and all(before.isoformat() < item["session_date"] <= fallback.isoformat() for item in window)
+            and ledger_balance(ledger["results"], fallback)[1] is None):
+        after = fallback
     balances = {}
     for day in (before, after):
         balance, reason = ledger_balance(ledger["results"], day)
@@ -1166,24 +1197,36 @@ def run_auto(*, mode: str, kill_switch: bool, state_path: Path, journal_activati
     open_order_count = len(snapshot.get("open_orders") or [])
     slots, slot_errors = settlement_slots(snapshot_results)
     carried = carried_settlements(previous_run, plan["today"])
-    ledger_reads: dict[tuple[date, date], list[dict[str, Any]]] = {}
+    # Keyed by the ledger days; the value is the whole ledger (with "fallback" only when its third read was made).
+    ledger_reads: dict[tuple[date, date], dict[str, Any]] = {}
 
     def outflow_ledger(baseline_at: datetime) -> dict[str, Any]:
         # B2-N: never an I1 read; any failure here only keeps the I3 hold.
         try:
-            days = ledger_days((calendar_loader or production_calendar)(started), baseline_at=baseline_at,
-                               snapshot_at=datetime.fromisoformat(generated_at))
+            calendar = (calendar_loader or production_calendar)(started)
+            days = ledger_days(calendar, baseline_at=baseline_at, snapshot_at=datetime.fromisoformat(generated_at))
         except (ImportError, ValueError, KeyError, TypeError, OSError, RuntimeError):
             return {"reason": f"{OUTFLOW_UNAVAILABLE}:CALENDAR"}
         if isinstance(days, str):
             return {"reason": days}
         if days not in ledger_reads:
             try:
-                ledger_reads[days] = reader([{"operation": LEDGER_OPERATION, "params": {"base_dt": _ymd(day)}}
-                                             for day in days], runtime=runtime, policy=rate_policy)
+                results = reader([{"operation": LEDGER_OPERATION, "params": {"base_dt": _ymd(day)}}
+                                  for day in days], runtime=runtime, policy=rate_policy)
+                # recon-fallback: one more read, of the session just before base_after, only when the base_after
+                # read passed with no USD row and that session is after base_before.
+                fallback = previous_session(calendar, days[1]) \
+                    if ledger_read_without_usd_row(results, days[1]) else None
+                if fallback is not None and fallback > days[0]:
+                    results = list(results) + reader(
+                        [{"operation": LEDGER_OPERATION, "params": {"base_dt": _ymd(fallback)}}],
+                        runtime=runtime, policy=rate_policy)
+                    ledger_reads[days] = {"days": days, "results": results, "fallback": fallback}
+                else:
+                    ledger_reads[days] = {"days": days, "results": results}
             except (ValueError, KeyError, TypeError, OSError, RuntimeError):
                 return {"reason": f"{OUTFLOW_UNAVAILABLE}:READ_FAILED"}
-        return {"days": days, "results": ledger_reads[days]}
+        return ledger_reads[days]
 
     explained: dict[str, Any] = {"holdings_change": [], "fills": []}
     if broker_holdings is None or broker_cash is None or invariants["I1"]["status"] != "PASS":
