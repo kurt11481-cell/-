@@ -1,9 +1,9 @@
 ---
 id: recon-fallback-2026-10-28
 type: proposal
-status: "제안 — 사장 승인 전. 권한·한도(K3, 대조 불변 조건 I3 B2-N), 제약 완화(H2)"
+status: "착수 승인(10/28 08:23 KST) → dev-run recon-fb NEEDS_APPROVAL(Judge PASS, 새 실패 0) → 병합 승인 카드(10/28 09:22 KST), 병합 = 사장 PowerShell. 권한·한도(K3, 대조 불변 조건 I3 B2-N), 제약 완화(H2)"
 date: 2026-10-28
-authority: "order_authority=false · quantity_authority=none · execution_quantity=null. 이 문서는 읽기 진단과 제안이며 아무것도 적용하지 않았다"
+authority: "order_authority=false · quantity_authority=none · execution_quantity=null. 이 문서는 진단·제안·결정 기록이며 병합 전까지 아무것도 적용하지 않았다"
 consumers: "사장(승인 카드) · 승인 시 개발 큐 authority Builder 지시문 · Judge(Opus)"
 ---
 
@@ -39,3 +39,8 @@ consumers: "사장(승인 카드) · 승인 시 개발 큐 authority Builder 지
 2. 목표: 11/03 전, 가능하면 10/29~30 병합.
 
 검토 완결: 원문 확인 5/6 (result.json 10/28·reconcile.json cash_flow_evidence, auto_core_reconcile.py 727-905행, 키움 ust21132 조회 3건, recon-i3-2026-10-27.md, 로드맵 스레드 인계 메모) · 내장 재검토 0회 · 미해결 2 (행 생성 시각, 겨울 시간 영향) · 자료 시점 2026-10-28 08:3x KST · 바뀔 조건: 위 3절
+
+## 결정 기록
+- 2026-10-28 08:23 KST 사장 결정 카드 "착수 승인"(사장실 회사PC 스레드 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9Dp5L8zK87C48ngGqFy7yKi, 제안 recon-fallback-2026-10-28, 계정=사장, 바로 앞 제안 1건·같은 날·1회). 근거 규칙 CLAUDE.md 64~70행.
+- 2026-10-28 08:58 KST dev-run recon-fb NEEDS_APPROVAL: Judge 1회차 PASS(class_ok=false), 테스트 3406→3416, 새 실패 0, diff_hash 42e388ed7c1c4777c1d59ef1ab22cea67573865d33d1b3246af4beea5170c98e (docs/claude/dev-runs/recon-fb.md).
+- 2026-10-28 09:22 KST 사장 결정 카드 "병합 승인"(카드 cmsg_0137MRzn9nuDvvQmVxm6WeX93wcDcZ3tuArBSEh1AXykeR, 계정=사장). 병합은 사장이 자기 PowerShell에서 `.\tools\dev-merge.ps1 recon-fb -ApproveAuthority` + Enter 한 번. 병합 확인과 첫 적용(10/29 06:15) 결과는 병합 뒤 이 문서에 덧붙인다.
