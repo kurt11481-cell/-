@@ -98,6 +98,9 @@ US_DAY_OPEN, US_DAY_CLOSE = time(4, 0), time(20, 0)
 # passes I3 only when the snapshot residual equals the residual of the ust21132 deposit by U.S. trading day.
 LEDGER_OPERATION = "account_deposit_by_date_read"
 OUTFLOW_MATCH_USD = Decimal("0.05")
+# recon-krw (user card 2026-10-29): a KRW deposit rise up to this many won (interest, rounding) is not a rise;
+# a larger one still holds as a possible FX inflow.
+KRW_RISE_TOLERANCE = Decimal("1000")
 OUTFLOW_UNAVAILABLE = "UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE"
 OUTFLOW_SPAN_MISMATCH = "UNVERIFIED_OUTFLOW_SPAN_MISMATCH"
 RESULT_SCHEMA_VERSION = "auto-core-reconcile-1.0"
@@ -805,7 +808,8 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
     - the same fill settlement cash (fees included) - the same classified flows must be below -1.00 and within
     0.05 of R; the outflow (-R) may not exceed the baseline order-available cash plus the net cash that came in
     over the same span (max(0, fill settlement cash + classified flows): a net outflow of fills neither lowers nor
-    raises it); and the KRW deposit may not have risen (an FX inflow). Both reads are the same balance through two inquiries: this allows the record,
+    raises it); and the KRW deposit may not have risen (an FX inflow) by more than KRW_RISE_TOLERANCE won (a rise
+    of 1000 won or less, measured base_before to base_after, is allowed: recon-krw). Both reads are the same balance through two inquiries: this allows the record,
     it does not prove a withdrawal. The cash-flow declaration is untouched, so the HWM is not adjusted.
     recon-fallback (user card 2026-10-28): ledger may also carry "fallback", the session just before base_after,
     with its read in results. Its row takes the place of base_after's only when all hold: the base_after read
@@ -841,7 +845,7 @@ def unverified_outflow(*, residual: Decimal, baseline_cash: Decimal, trades: Dec
     available = baseline_cash + max(Decimal("0"), trades + flows)
     if amount > available:
         return None, [f"UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:{_money(amount)}:{_money(available)}"]
-    if balances[after]["won_entr"] > balances[before]["won_entr"]:
+    if balances[after]["won_entr"] - balances[before]["won_entr"] > KRW_RISE_TOLERANCE:
         return None, [f"UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:{balances[before]['won_entr']}:{balances[after]['won_entr']}"]
     return {"unverified_outflow_usd": _money(amount), "unverified_outflow_basis": {
         "base_before": before.isoformat(), "base_after": after.isoformat(),

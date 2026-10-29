@@ -589,5 +589,65 @@ class FallbackRunTests(base.Workspace):
         self.assertEqual(broker.ledger_requests(), [request("20261009"), request("20261013")])
 
 
+class KrwRiseToleranceTests(unittest.TestCase):
+    """recon-krw (user card 2026-10-29): a KRW deposit rise of KRW_RISE_TOLERANCE (1000) won or less from
+    base_before to base_after is not a rise; a larger one holds as before. The other conditions are unchanged."""
+
+    DAYS = (date(2026, 10, 20), date(2026, 10, 26))
+
+    def judge(self, *, won_before="0", won_after="9", residual="-173.64", baseline="82.93", after="59.30",
+              sessions=("2026-10-21",)):
+        # 2026-10-29: record cash 82.93, the 10/21 session settles +150.03, withdrawals 82.93 and 90.72;
+        # ust21132 USD 82.94 -> 59.30 (L = -173.67) and KRW 0 -> 9.
+        return core.unverified_outflow(
+            residual=Decimal(residual), baseline_cash=Decimal(baseline), trades=Decimal("150.03"),
+            flows=Decimal("0"), window=[{"session_date": session} for session in sessions],
+            ledger={"days": self.DAYS, "results": [ledger_read("20261020", [ledger_row("82.94", won_before)]),
+                                                   ledger_read("20261026", [ledger_row(after, won_after)])]})
+
+    def test_tolerance_value(self):
+        self.assertEqual(core.KRW_RISE_TOLERANCE, Decimal("1000"))
+
+    def test_oct29_nine_won_rise_passes(self):
+        outflow, reasons = self.judge()
+        self.assertEqual(reasons, [])
+        self.assertEqual(outflow["unverified_outflow_usd"], "173.64")
+        self.assertEqual(outflow["unverified_outflow_basis"], {
+            "base_before": "2026-10-20", "base_after": "2026-10-26", "fx_entr_before_usd": "82.94",
+            "fx_entr_after_usd": "59.30", "won_entr_before": "0", "won_entr_after": "9",
+            "sessions": ["2026-10-21"], "fill_cash_usd": "150.03", "flow_cash_usd": "0.00",
+            "ledger_residual_usd": "-173.67", "snapshot_residual_usd": "-173.64"})
+
+    def test_rise_of_exactly_1000_passes(self):
+        self.assertEqual(self.judge(won_after="1000")[0]["unverified_outflow_usd"], "173.64")
+        self.assertEqual(self.judge(won_before="500", won_after="1500")[0]["unverified_outflow_usd"], "173.64")
+
+    def test_rise_of_1001_holds(self):
+        self.assertEqual(self.judge(won_after="1001"), (None, ["UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:0:1001"]))
+        # The rise is measured base_before to base_after, so small steps adding up past 1000 hold too.
+        self.assertEqual(self.judge(won_before="500", won_after="1501"),
+                         (None, ["UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:500:1501"]))
+
+    def test_large_rise_holds(self):
+        self.assertEqual(self.judge(won_after="1000000"), (None, ["UNVERIFIED_OUTFLOW_KRW_DEPOSIT_ROSE:0:1000000"]))
+
+    def test_fall_or_no_change_passes(self):
+        for won_before, won_after in (("5000", "0"), ("0", "0"), ("120000", "120000")):
+            with self.subTest(won_before=won_before, won_after=won_after):
+                outflow, reasons = self.judge(won_before=won_before, won_after=won_after)
+                self.assertEqual(reasons, [])
+                self.assertEqual(outflow["unverified_outflow_basis"]["won_entr_after"], won_after)
+
+    def test_small_rise_does_not_loosen_the_other_conditions(self):
+        # 0.05 match: L = 59.24 - 82.94 - 150.03 = -173.73, 0.09 from R.
+        self.assertEqual(self.judge(after="59.24"), (None, ["UNVERIFIED_OUTFLOW_NOT_MATCHED:-173.64:-173.73"]))
+        # Limit: 10.00 + 150.03 = 160.03.
+        self.assertEqual(self.judge(baseline="10.00"),
+                         (None, ["UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:173.64:160.03"]))
+        # Window: a fill session outside (base_before, base_after].
+        self.assertEqual(self.judge(sessions=("2026-10-21", "2026-10-27")),
+                         (None, ["UNVERIFIED_OUTFLOW_SPAN_MISMATCH:2026-10-27"]))
+
+
 if __name__ == "__main__":
     unittest.main()

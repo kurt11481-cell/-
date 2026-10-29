@@ -303,7 +303,9 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
   outflow (-R) is at most the baseline order-available cash plus max(0, the
   same fill settlement cash + the same classified flows) (the cash that could
   have been in the account over the span; a net buy span neither lowers nor
-  raises it), and `won_entr` did not rise; otherwise it holds with
+  raises it), and `won_entr` did not rise by more than 1,000 won from base_before
+  to base_after (a rise of 1,000 won or less, e.g. interest or rounding, is
+  allowed; recon-krw 2026-10-29); otherwise it holds with
   `UNVERIFIED_OUTFLOW_LEDGER_UNAVAILABLE`, `UNVERIFIED_OUTFLOW_SPAN_MISMATCH`,
   `UNVERIFIED_OUTFLOW_NOT_MATCHED:<R>:<L>`,
   `UNVERIFIED_OUTFLOW_ABOVE_AVAILABLE_CASH:<outflow>:<limit>` or
