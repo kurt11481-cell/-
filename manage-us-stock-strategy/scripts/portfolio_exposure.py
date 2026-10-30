@@ -593,6 +593,50 @@ def journal_view(journal: dict[str, Any]) -> dict[str, Any]:
 # R4 review lines and R6 holds
 # ---------------------------------------------------------------------------------------------
 
+def _sold_symbol_gap(snapshots: list[dict[str, Any]], snapshot: dict[str, Any], session: str,
+                     evaluation_session: str, missing: list[str]) -> bool:
+    """True when a session's missing closes are only of symbols the next confirmed reconciliation no longer holds.
+
+    s7-hold-gap: the reconciliation record may jump past sessions (a reconciliation on hold for days), so the
+    session is priced with the older holdings A while the next record B shows them sold, and closes are
+    collected for held symbols only. Every check must hold, otherwise the gap stops the walk (D5): A is the
+    session's snapshot_for and no record dated on or before the session is dated after A (no as_of reversal);
+    B is the earliest record dated after the session and on or before the evaluation session; every record
+    dated after the session comes after A in list order with a higher state revision; A and B are confirmed
+    by a ledger entry; their held symbols differ; every missing item is a symbol A holds and B does not
+    (a missing cash or split reconciliation never qualifies). A close is never filled in.
+    """
+    def revision(item: dict[str, Any]) -> int | None:
+        value = item.get("state_revision")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+    if not missing:
+        return False
+    dated = [(index, item) for index, item in enumerate(snapshots)
+             if isinstance(item.get("as_of"), str) and _date(item["as_of"])]
+    earlier = [(index, item) for index, item in dated if item["as_of"] <= session]
+    later = [(index, item) for index, item in dated if session < item["as_of"] <= evaluation_session]
+    if not earlier or not later:
+        return False
+    a_index, before = earlier[-1]
+    if before is not snapshot or any(item["as_of"] > before["as_of"] for _, item in earlier):
+        return False
+    a_revision = revision(before)
+    if a_revision is None or before.get("from_ledger_entry") is not True:
+        return False
+    for index, item in later:
+        item_revision = revision(item)
+        if index <= a_index or item_revision is None or item_revision <= a_revision:
+            return False
+    _, after = min(later, key=lambda pair: (pair[1]["as_of"], pair[0]))
+    if after.get("from_ledger_entry") is not True:
+        return False
+    old, new = held(before), held(after)
+    if set(old) == set(new):
+        return False
+    return all(item in old and item not in new for item in missing)
+
+
 def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] | None,
                           line_reviews: list[dict[str, Any]], sessions: list[str], evaluation_session: str,
                           snapshots: list[dict[str, Any]], closes: dict[str, dict[str, str]],
@@ -603,6 +647,8 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
     """Recompute HWM, line breaches and pauses from the activation record forward (decision P1).
 
     skipped_sessions lists every session inside a cash-flow or sale hold window (its meaning is unchanged).
+    s7-hold-gap: it also lists a session that could not be evaluated because its only missing closes are of
+    symbols sold by the next confirmed reconciliation (_sold_symbol_gap); its equity, HWM and lines are not judged.
     hwm-fix rule 1: a session before the evaluation session whose covering windows have all ended is revalued
     (revalue_held_session) and listed in revalued_sessions; a session that cannot be revalued stops the walk
     UNVERIFIED (HELD_SESSION_NOT_REVALUABLE), and a window that has not ended is still skipped (HELD).
@@ -706,6 +752,9 @@ def evaluate_review_lines(*, config: dict[str, Any], activation: dict[str, Any] 
                 result["reasons"].append(f"NO_CONFIRMED_SNAPSHOT:{session}")
                 break
             equity, _, missing = closing_equity(snapshot, closes, session, split_actions)
+            if equity is None and _sold_symbol_gap(snapshots, snapshot, session, evaluation_session, missing):
+                result["skipped_sessions"].append(session)
+                continue
             if equity is None:
                 # D5: a missing close is never skipped; skipping would understate the HWM.
                 status = "UNVERIFIED"
@@ -955,9 +1004,17 @@ def evaluate_peak_reviews(*, config: dict[str, Any], activation: dict[str, Any] 
                      "close": _plain(_dec(closes[symbol][evaluation_session])), "threshold": _plain(peak * factor),
                      "events": rendered, "open_events": open_events,
                      "pause_add_recommendations": bool(open_events)})
+    # s7-hold-gap: a completed review of a closed position (held in a reconciliation on or before the
+    # evaluation session, not held now) can never be matched again and is not counted as unmatched.
+    ever_held = {symbol for snapshot in snapshots if isinstance(snapshot.get("as_of"), str)
+                 and snapshot["as_of"] <= evaluation_session for symbol in held(snapshot)}
     for entry in peak_reviews:
         if id(entry) not in matched_ids:
             payload = entry.get("payload") or {}
+            symbol = payload.get("symbol")
+            if (current is not None and payload.get("review_status") == "completed" and isinstance(symbol, str)
+                    and symbol not in symbols and symbol in ever_held):
+                continue
             unmatched.append({"entry_id": entry.get("entry_id"), "symbol": payload.get("symbol"),
                               "breach_date": payload.get("breach_date")})
     return {"items": items, "unmatched_journal_reviews": unmatched}
