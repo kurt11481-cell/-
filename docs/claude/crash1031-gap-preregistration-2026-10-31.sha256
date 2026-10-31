@@ -1,0 +1,4 @@
+raw_sha256 a474eff79725403b7bc25cf6d538f7b97539db77f7f9039580b738cff5e53e6e  docs/claude/crash1031-gap-preregistration-2026-10-31.md
+lf_sha256 a474eff79725403b7bc25cf6d538f7b97539db77f7f9039580b738cff5e53e6e
+runner_sha256 76589c2759d8002c7b7890ab319694d3e7576030645d14053875277565529ae0  docs/claude/crash1031_gap_replay.py
+fixed_at 2026-10-31T19:36:15+09:00 (crash-1031 ②, 2026-10-31 18:23 KST 사장 결정 카드; 계산 전 고정, 고정 전 독립 검토 1회 + 수정 확인 재검토 반영)
