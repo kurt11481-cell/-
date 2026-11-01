@@ -39,4 +39,9 @@
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-11-01T06:52:24Z
+- 병합 커밋: `5e7f332582fa1c7c0184ed818e933271281e4b77` · 방식: rebase
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/obs-links2/ 의 원본 기록입니다.)
