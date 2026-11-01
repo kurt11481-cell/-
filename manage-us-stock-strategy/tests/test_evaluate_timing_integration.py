@@ -38,6 +38,7 @@ def locate_strategy_system_root() -> Path:
 
 SYSTEM_ROOT = locate_strategy_system_root()
 SCRIPTS = SKILL_ROOT / "scripts"
+TIMING_STATE_FIXTURE = SKILL_ROOT / "tests" / "fixtures" / "portfolio_state.timing.test-only.json"
 sys.path.insert(0, str(SCRIPTS))
 
 
@@ -99,7 +100,7 @@ def with_timing_positions(policy: dict, *symbols: str) -> dict:
 class EvaluateTimingIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.policy = json.loads((SYSTEM_ROOT / "alert_policy.json").read_text(encoding="utf-8"))
-        self.state = json.loads((SYSTEM_ROOT / "portfolio_state.json").read_text(encoding="utf-8"))
+        self.state = json.loads(TIMING_STATE_FIXTURE.read_text(encoding="utf-8"))
         # The generic technical fixture trades near USD 102. Normalize the NBIS
         # test-only cost so unrelated integration cases do not accidentally
         # trigger the live 10% NBIS hard-risk boundary.
@@ -322,7 +323,7 @@ class EvaluateTimingIntegrationTests(unittest.TestCase):
         )
 
     def test_i0b_t3_real_policy_and_state_pass_integrity_without_state_write(self) -> None:
-        state_path = SYSTEM_ROOT / "portfolio_state.json"
+        state_path = TIMING_STATE_FIXTURE
         before = state_path.read_bytes()
         state = json.loads(before.decode("utf-8"))
         policy = json.loads((SYSTEM_ROOT / "alert_policy.json").read_text(encoding="utf-8"))
