@@ -1,0 +1,4 @@
+raw_sha256 a113a8a86845e94590d7219b9c1d38a40dbffb4ff3684c17e4ec65a7fb3456d3  docs/claude/strategy1101-root-preregistration-2026-11-01.md
+lf_sha256 a113a8a86845e94590d7219b9c1d38a40dbffb4ff3684c17e4ec65a7fb3456d3
+runner_sha256 2b5b6d984f5388231009d0e82dc7003490cc227822a8949f359a4e5d21f61f16  docs/claude/strategy1101_root_replay.py
+fixed_at 2026-11-01T23:24:26+09:00 (strategy-1101 ④ 방어 뿌리 시험, 2026-11-01 21:34 KST 사장 결정 카드; 계산 전·시장 자료 받기 전 고정, 고정 전 독립 검토 1회 + 바뀐 곳 재검토 1회 반영)
