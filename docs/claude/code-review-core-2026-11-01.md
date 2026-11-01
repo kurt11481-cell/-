@@ -1,0 +1,50 @@
+# 코드 리뷰 ① 코어 판정 (2026-11-01)
+
+status: 읽기 전용 리뷰 결과 — 코드·정책·예약 변경 없음. 수정은 개발 큐 후보로만 둔다(K3 해당 여부는 각 항목에 표시).
+작성: 사장실 회사PC 스레드 "전체 코드 리뷰 진행" (계획 승인: 사장 버튼 2026-11-01 13:03 KST)
+기준: 브랜치 codex/master-recovery-expansion HEAD d2c9d9e
+
+## 읽은 범위 (전부 다 읽은 것은 아님)
+| 파일 | 줄 | 읽은 정도 |
+|---|---|---|
+| auto_core.py | 426 | 전체 |
+| auto_core_decide.py | 1285 | 전체 |
+| auto_core_tickets.py | 1304 | plan·매도·매수 회로·보유 범위(721~1190행) |
+| auto_core_rules.py | 993 | rrec1·ev3_dates(733~905행), 예외 처리 grep |
+| auto_core_inputs.py / bars / compare / replay | 1328 | 예외 처리 grep만 (**미검토**) |
+
+참고: ev3 날짜를 확인하려고 회사PC VM에서 auto_core_rules 모듈을 1회 import했다. 순수 함수만 썼고 파일 쓰기는 없었다. 이후에는 읽기 명령만 썼다.
+
+## 발견
+
+### C-1 (중) 회복 관문 문서가 없거나 서식이 바뀌면 사용자 지정 충격 이벤트가 조용히 사라짐 — fail-open
+- auto_core_decide.py 644~645행: `recovery-gate-R-REC1-2026-10-09.md`가 없으면 빈 글로 처리한다.
+- auto_core_rules.py 69행 `EV3_LINE`은 "- 이벤트 YYYY-MM-DD(EV" 서식에 정확히 맞는 줄만 읽는다. 지금 읽히는 날짜는 2026-10-08 1건이다.
+- rules.py 891~893행: 이벤트가 하나도 없으면 `status ok, open False`가 되어 R-REC1이 매수를 막지 않는다.
+- 문서가 없을 때 inputs에는 sha256 None으로 기록되지만, 어떤 관문도 이것을 막지 않는다.
+- 영향: 문서 이름 변경·서식 수정·삭제 한 번으로 EV3a 이벤트가 빠진다. 다른 EV1·EV2 이벤트가 같은 창에 있으면 영향이 줄어든다(확인 필요).
+- 수정 후보: 문서가 없거나 EV3 줄이 0건이면 G1 사유(예: `G1_RECOVERY_DOC_UNREADABLE`)로 매수만 막는다. 코어 판정 입력이므로 **K3**.
+
+### C-2 (중, 확인 필요) 보유 종목의 S7 비중이 비어 있으면 현재 비중을 0으로 계산
+- auto_core_decide.py 1077행은 weight가 None인 종목을 빼고, auto_core_tickets.py 1133행은 `weights.get(symbol, 0)`을 쓴다.
+- 보유 종목인데 S7 review의 weight가 None이면 current = 0이 되고, 목표까지 전량 매수하는 delta가 나온다.
+- S7 fail_closed·G1_S7 관문(decide 1013~1017행)이 같은 상황을 먼저 막는지는 **확인 필요**.
+- 수정 후보: 보유 종목은 weight가 없으면 `G1_WEIGHT_MISSING`으로 막는다(fail closed). **K3**.
+
+### C-3 (하) 종가 기록이 없는 종목의 거래소를 NASDAQ로 가정
+- auto_core_decide.py 598~601행: `exchange or "NASDAQ"`. T1(auto_core.py 127~140행)은 같은 경우 추측하지 않고 FAIL로 처리한다. 두 쪽 규칙이 다르다.
+- T1은 보유 종목·관심 명단·symbols_extra만 모은다. 그래서 RG2 기준 지수(rg2_benchmark)처럼 T1이 모으지 않는 종목에서 이 경로가 실제로 쓰이는지 **확인 필요**.
+- load_symbol이 exchange를 어디에 쓰는지에 따라 영향이 달라진다(확인 필요).
+
+### C-4 (하) 일지 기록 뒤 실패하면 같은 평가 세션이 반복해서 FAIL할 수 있음
+- decide 724~727행 주석이 이 경로를 인정하고 있다. 기록이 끝난 뒤 실패하면 다음 날 append가 CORE_DECISION_ALREADY_RECORDED로 거부되어 FAIL이 된다.
+- fail closed라 안전 쪽이지만, 풀려면 사람이 개입해야 한다. 절차 문서가 있는지 **확인 필요**.
+
+### 문제 없음으로 본 것
+- 매수 회로는 관문 사유가 하나라도 있으면 막는다: G0·G1·연구 기록·요건 1~5·정책 상품·S7 목표(tickets 1112~1190행). 현금이나 equity를 모르면 막는다.
+- 보유 범위 계산 오류는 HOLD_RANGE_UNVERIFIED로 매수를 막는다(tickets 829·910·950행).
+- 중지 스위치, apply 가드, 일지 쓰기 직전 재확인(decide 738~749행)이 있다.
+- 실패 기록은 주문표를 0으로 만든다(_settle 1248~1269행).
+
+## 결론을 바꿀 조건
+C-1·C-2가 다른 관문에 이미 막혀 있다는 근거(테스트나 코드)가 나오면 하로 낮춘다.
