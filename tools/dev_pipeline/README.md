@@ -73,7 +73,10 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 | JUDGE_ERROR / TIMEOUT | Judge 출력을 못 읽음 / 시간 초과 | 재시도 없음. 새 id로 |
 | STOP_PROTECTED / STOP_SCOPE / STOP_SECRET | 보호·허용 경로 밖·비밀 파일 이름 | 재시도 없음 |
 | STOP_MAIN_TOUCHED / STOP_RUN_RECORD_CHANGED | 실행 중 메인 체크아웃(정책·상태·추적 파일)이 바뀜 / run 기록(run.json·기준선·표지 파일)이 바뀜 | 재시도 없음. 원인 확인 뒤 새 id |
+| STOP_BASELINE_REGRESSED | 기준선 실패가 직전 기준선보다 10건 이상 늘어남(이름 목록 = 실행 폴더 `baseline-regressed.txt`) | 원인을 고치거나, 사장이 직접 `_baseline/accept-<기준 sha8>.txt`를 만든 뒤 새 id |
 | STOP_PREFLIGHT 등 STOP_* | 시작 조건 실패(reason 참고) | 원인 해결 뒤 새 id |
+
+기준선 정보 reason(판정을 바꾸지 않음, `사유`와 `DEV-RUN … baseline=`에 표시): `BASELINE_FAILURES_ROSE:<직전 sha8>:+N`(1~9건 증가) · `BASELINE_FAILURES_ROSE_ACCEPTED:<기준 sha8>:+N`(accept 파일로 낮춘 멈춤) · `BASELINE_PREV_NONE`(직전 기준선 없음).
 
 ## 고정 상수 (지시문·머리말로 못 바꿈)
 
@@ -82,7 +85,7 @@ Builder가 이것을 만들거나 고치면 테스트·Judge·재시도 없이 `
 - dev-queue 상한: commit-docs 15분 + dev-run 340분 + 여유 5분 = 작업 한도 360분.
 - Judge: `--model opus --effort xhigh --tools "Read,Grep,Glob"`, 같은 MCP·설정 제한, 80턴, 45분.
 - 테스트: `PYTHONUTF8=1 PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1`, 실행마다 새 `PYTHONPYCACHEPREFIX`. 새 실패 = 실패 id − 기준선. Ran 감소·skipped 증가·`expected failures` 증가·`def test_` 감소·테스트 파일 삭제·스키마 감사 FAIL = 실패(재시도 대상). Ran 줄이 없으면 `STOP_TESTS_DID_NOT_RUN`.
-- 기준선: 임시 worktree `.claude/worktrees/_base-<sha8>`을 브랜치 `devpipe-base-<sha8>` 위에 만든다(Builder worktree와 같은 브랜치 조건). 캐시 키 `<base>-py<버전>-b2.json`(detached 시절 캐시는 쓰지 않음). Builder와 동시에 돌고(로그 `BASELINE start/end`), 상한은 그대로(전체 60분 + 스키마 10분, 바깥 75분). 어느 종료 경로든 잠금 해제 전에 그 worktree와 **이 실행이 만든** `devpipe-base-` 브랜치(base를 가리킬 때만)를 지운다. check는 base·python·방식이 같은 `baseline.json`만 쓴다(없으면 `STOP_BASELINE_MISSING`).
+- 기준선: 임시 worktree `.claude/worktrees/_base-<sha8>`을 브랜치 `devpipe-base-<sha8>` 위에 만든다(Builder worktree와 같은 브랜치 조건). 캐시 키 `<base>-py<버전>-b2.json`(detached 시절 캐시는 쓰지 않음). Builder와 동시에 돌고(로그 `BASELINE start/end`), 상한은 그대로(전체 60분 + 스키마 10분, 바깥 75분). 어느 종료 경로든 잠금 해제 전에 그 worktree와 **이 실행이 만든** `devpipe-base-` 브랜치(base를 가리킬 때만)를 지운다. check는 base·python·방식이 같은 `baseline.json`만 쓴다(없으면 `STOP_BASELINE_MISSING`). 직전 기준선 = 캐시 중 python·방식이 같고 지금 base의 진짜 조상인 다른 base의 `computed_utc` 최신 1개. 비교 키(`prev_base`·`added_failures`·`removed_failures`)는 새로 잴 때 캐시에 쓰고, 키 없는 옛 캐시는 읽을 때 계산한다(파일은 그대로). 문턱값 `BASELINE_ROSE_STOP` = 10.
 - 기록·메인 보호(O3): run.json·baseline.json·기준선 캐시·표지 파일의 sha256을 dev-run 프로세스가 단계마다 기억하고 다음 단계 전에 대조(`STOP_RUN_RECORD_CHANGED`). Builder 1회차 직전에 메인의 추적 파일 상태 줄(docs/claude/ 밖)과 `workspace/policies/`·`stock-strategy-system/` 전 파일 sha256을 찍고 check 직전마다 비교(`STOP_MAIN_TOUCHED`). 실행이 06:10~06:40 KST에 걸치면 `stock-strategy-system/` 비교만 건너뛴다(`SKIPPED_AUTO_CORE_WINDOW`, fail-closed가 아닌 예외).
 - 재시도: 전체 1회(테스트 실패·Judge FAIL만), 같은 worktree에서, ①부터 전부 다시.
 

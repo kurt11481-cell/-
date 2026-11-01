@@ -88,6 +88,10 @@ BASE_BRANCH_PREFIX = "devpipe-base-"
 BASELINE_METHOD = "b2"
 BASELINE_WORKTREE_JSON = "baseline-worktree.json"
 BASELINE_CLEANUP_JSON = "baseline-cleanup.json"
+BASELINE_ROSE_STOP = 10  # failures added since the previous baseline: 1-9 warn, this many or more stop
+BASELINE_REGRESSED_TXT = "baseline-regressed.txt"
+# Information only: these never fail a check or a merge retest (run_test_checks keeps them out of "reasons").
+BASELINE_NOTICE_PREFIXES = ("BASELINE_FAILURES_ROSE", "BASELINE_PREV_NONE")
 SHA_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 # O3: run records whose sha256 dev-run keeps in memory between steps, and what a Builder's code could
 # change in the main checkout (tracked status lines outside docs/claude/, every file under the watch dirs).
@@ -620,6 +624,23 @@ def run_schema_audit(workdir, out_base):
     return {"result": "PASS" if code == 0 and status == "PASS" else "FAIL", "exit_code": code}
 
 
+def baseline_rose_verdict(baseline):
+    """(stop or None, notices) from the comparison keys of the baseline dict. A baseline without them gives neither."""
+    if "prev_base" not in baseline:
+        return None, []
+    prev = baseline["prev_base"]
+    if prev is None:
+        return None, ["BASELINE_PREV_NONE"]
+    added = len(baseline.get("added_failures") or [])
+    if added == 0:
+        return None, []
+    if added < BASELINE_ROSE_STOP:
+        return None, ["BASELINE_FAILURES_ROSE:%s:+%d" % (prev[:8], added)]
+    if baseline.get("baseline_accepted") is True:
+        return None, ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+%d" % (baseline["base"][:8], added)]
+    return ("STOP_BASELINE_REGRESSED", "%s:+%d" % (prev[:8], added)), []
+
+
 def evaluate_tests(baseline, targets, full, schema, def_changes):
     """Deterministic comparison against the baseline. Returns (stop or None, reasons, new_failures)."""
     base_failures = set(baseline["failures"])
@@ -656,8 +677,10 @@ def evaluate_tests(baseline, targets, full, schema, def_changes):
     if baseline.get("schema") == "PASS" and (schema or {}).get("result") != "PASS":
         reasons.append("SCHEMA_FAIL")
     reasons.extend(def_changes)
+    rose_stop, notices = baseline_rose_verdict(baseline)
+    reasons.extend(notices)
     reasons = ["NEW_FAILURE:%s" % item for item in sorted(new_failures)] + reasons
-    return None, reasons, sorted(new_failures)
+    return rose_stop, reasons, sorted(new_failures)
 
 
 def is_test_file(path):
@@ -947,13 +970,18 @@ def run_test_checks(run, baseline, out_dir, changes):
     schema = run_schema_audit(wt, Path(out_dir) / "schema")
     defs = test_def_changes(wt, run["base"], changes)
     stop, reasons, new_failures = evaluate_tests(baseline, targets, full, schema, defs)
+    notices = [item for item in reasons if item.startswith(BASELINE_NOTICE_PREFIXES)]
+    if stop and stop[0] == "STOP_BASELINE_REGRESSED":
+        # out_dir is attempt-N or merge-tests, both directly under the run folder.
+        write_text_crlf(Path(out_dir).parent / BASELINE_REGRESSED_TXT, "\n".join(baseline["added_failures"]) + "\n")
     summary = {
         "targets": [{k: t.get(k) for k in ("pattern", "ran", "status", "skipped", "failures", "timed_out")}
                     for t in targets],
         "full": {k: full.get(k) for k in ("ran", "status", "skipped", "counts", "failures", "timed_out")},
         "schema": schema.get("result"),
         "new_failures": new_failures,
-        "reasons": reasons,
+        "reasons": [item for item in reasons if item not in notices],
+        "notices": notices,
     }
     return stop, summary
 
@@ -966,6 +994,38 @@ def baseline_cache_name(base, python):
 
 def baseline_cache_path(repo, base):
     return runs_root(repo) / "_baseline" / baseline_cache_name(base, python_version())
+
+
+def baseline_accept_path(repo, base):
+    """The user's own marker for this base. The pipeline only looks at it, never writes it."""
+    return runs_root(repo) / "_baseline" / ("accept-%s.txt" % str(base)[:8])
+
+
+def previous_baseline(repo, base, python):
+    """The newest cached baseline of a real ancestor of base with the same python and method, or None."""
+    candidates = []
+    for path in (runs_root(repo) / "_baseline").glob("*.json"):
+        try:
+            data = read_json(path)
+        except (ValueError, OSError):
+            continue
+        if (isinstance(data, dict) and data.get("python") == python and data.get("method") == BASELINE_METHOD
+                and isinstance(data.get("base"), str) and SHA_RE.match(data["base"]) and data["base"] != base
+                and isinstance(data.get("failures"), list) and isinstance(data.get("computed_utc"), str)):
+            candidates.append(data)
+    for data in sorted(candidates, key=lambda item: (item["computed_utc"], item["base"]), reverse=True):
+        if git(repo, "merge-base", "--is-ancestor", data["base"], base, check=False)[0] == 0:
+            return data
+    return None
+
+
+def compare_baseline(repo, data):
+    """prev_base, added_failures and removed_failures of a baseline against its previous baseline."""
+    prev = previous_baseline(repo, data["base"], data["python"])
+    if prev is None:
+        return {"prev_base": None, "added_failures": [], "removed_failures": []}
+    now, before = set(data["failures"]), set(prev["failures"])
+    return {"prev_base": prev["base"], "added_failures": sorted(now - before), "removed_failures": sorted(before - now)}
 
 
 def remove_temp_worktree(repo, path):
@@ -999,6 +1059,9 @@ def cached_baseline(repo, base):
     if (isinstance(data, dict) and data.get("base") == base and data.get("python") == python_version()
             and data.get("method") == BASELINE_METHOD and isinstance(data.get("ran"), int)):
         data["source"] = "cache"
+        if "prev_base" not in data:  # a cache written before this comparison existed; the file itself stays as it is
+            data.update(compare_baseline(repo, data))
+        data["baseline_accepted"] = baseline_accept_path(repo, base).is_file()
         return data
     return None
 
@@ -1074,7 +1137,9 @@ def run_baseline_in(info):
     data = {"base": base, "python": python_version(), "method": BASELINE_METHOD, "branch": info["branch"],
             "ran": full["ran"], "skipped": full["skipped"], "counts": full["counts"], "failures": full["failures"],
             "status": full["status"], "schema": schema.get("result"), "computed_utc": utc_now()}
+    data.update(compare_baseline(info["repo"], data))
     write_json(cache, data)
+    data["baseline_accepted"] = baseline_accept_path(info["repo"], base).is_file()
     data["source"] = "computed"
     return data
 
@@ -1883,7 +1948,8 @@ def cmd_write_result(args):
         "skipped": "%s->%s" % (baseline.get("skipped"), full.get("skipped")),
         "schema": "%s->%s" % (baseline.get("schema"), tests_raw.get("schema")),
     }
-    reasons = [r for r in (args.reason or []) if r] + [r for r in checks.get("reasons", []) if r]
+    notices = tests_raw.get("notices") or []
+    reasons = [r for r in (args.reason or []) if r] + [r for r in checks.get("reasons", []) if r] + notices
     result = {
         "id": run["id"], "status": status, "class": cls, "class_reasons": sorted(set(class_reasons)),
         "base": run["base"], "main_branch": run["main_branch"], "worktree": run["worktree"], "branch": run["branch"],
@@ -1900,6 +1966,8 @@ def cmd_write_result(args):
         result["baseline_cleanup"] = read_json(run_dir / BASELINE_CLEANUP_JSON)
     line = "DEV-RUN %s %s judge=%s new_failures=%d ran=%s retries=%d next=%s" % (
         run["id"], status, judge_verdict, len(tests["new_failures"]), tests["ran"], args.retries, result["next"])
+    if notices:
+        line += " baseline=%s" % ",".join(notices)
     result["line"] = ascii_safe(line, 2000)
     write_json(run_dir / "result.json", result)
     write_latest(run["repo"], {k: result[k] for k in ("id", "status", "class", "base", "line", "next", "finished_utc")})
