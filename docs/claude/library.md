@@ -2,7 +2,7 @@
 id: library
 type: index
 status: current
-as_of: 2026-10-22
+as_of: 2026-11-01
 summary: "투자_V2 문서·자료 찾기 입구 — 어떤 기록이 어디 있는지. 목록 자체는 자동 목록·각 원장이 원본."
 consumers: "사장(Obsidian) · Cowork 세션(찾기 입구)"
 source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식 문서 사본 제외 — R2)"
@@ -18,7 +18,7 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식
 | 카드 원장 · 관심 명단 | card-evidence-registry.json · watchlist-registry.json | 자동 코어가 읽음 |
 | 외부자료 주장 원장 | [external-claims-ledger.md](external-claims-ledger.md) | 주간 보고가 읽음 |
 | 종목·옵션·기술 분석, 외부 PDF, SAVE 리포트 | E:\사업\##금동한\chatgpt_종목분석결과 (저장소 밖) | 자동 목록 INDEX-research-auto.md는 관제판 duet-idx에서 만듦 |
-| 지식 문서 3개(헌법·종목 프로토콜·옵션 프로토콜) | 원본 = 옛 프로젝트 백업 E:\사업\##금동한\투자_V2_옛프로젝트_백업_2026-10-25\knowledge\ (옛 claude.ai 프로젝트는 2026-10-25 보관) | 헌법만 읽기용 사본 [constitution-v1.3.0-readonly-copy.md](constitution-v1.3.0-readonly-copy.md) (Revision 1.3.0, sha256 f1859d93…059a87 = 백업과 바이트 동일, 2026-10-25 사장 D7 a). 고치지 않음. 원본이 바뀌면 사본을 새로 뜬다 |
+| 지식 문서 3개(헌법·종목 프로토콜·옵션 프로토콜) | 헌법 원본 = [constitution-v1.4.0.md](constitution-v1.4.0.md) (Revision 1.4.0, 2026-11-01 11:04 KST 사장 직접 입력 확정, sha256 d676fda5…aa921e). 종목·옵션 프로토콜 원본 = 옛 프로젝트 백업 E:\사업\##금동한\투자_V2_옛프로젝트_백업_2026-10-25\knowledge\ (옛 claude.ai 프로젝트는 2026-10-25 보관) | 헌법 1.3.0은 역사본 [constitution-v1.3.0-readonly-copy.md](constitution-v1.3.0-readonly-copy.md) (sha256 f1859d93…059a87 = 백업의 헌법 파일과 바이트 동일, 2026-10-25 사장 D7 a) — 고치지 않음. 백업의 헌법 파일(이름 v1_2_1, 내용 1.3.0)은 옛 판 보관. 헌법을 바꿀 때는 사장 직접 입력 + 새 판 파일(덮어쓰지 않음). constitution-v*.md는 개발 큐 권한 경로(tools/dev_pipeline/authority-paths.txt, 병합 d2c9d9e). 기록: [top-guideline-review-2026-11-01.md](top-guideline-review-2026-11-01.md) 10·11절 |
 | 결정 기록 | 각 결정 문서(*-YYYY-MM-DD.md) + 관제판 log | 결정 원장 K-1이 생기면 그쪽(관제판 duet-k1) |
 | 막혔다 푼 방법 | [ops-fixes.md](ops-fixes.md) | 프로젝트 문서 claude/ops-fixes.md는 사본 |
 | 일 매뉴얼(플레이북) | [playbooks/README.md](playbooks/README.md) | 새 예약 작업부터 |
