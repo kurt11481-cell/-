@@ -43,3 +43,11 @@ status: 읽기 전용 리뷰 결과 — 코드·설정·예약 변경 없음. �
 
 ## 결론을 바꿀 조건
 P-1 원인이 "2026-10-30이 지나면서 기한이 끝난 고정 시험 데이터"로 확인되고 코드 회귀가 0건이면, P-1은 (중)으로 낮춘다. 그래도 기준선 감시 규칙은 필요하다.
+
+## 추가: P-1 원인 진단 결과 (2026-11-01 15:43 KST, 개발 큐 p1-baseline-diag2)
+- 출처: .claude/worktrees/p1-baseline-diag2/docs/claude/p1-baseline-diag2-report.md. Judge 판정은 FAIL이고, 그래서 병합하지 않았다. Judge 2차(workspace/outputs/dev-runs/p1-baseline-diag2/judge-2.json)는 **주 결론과 243건의 추적이 원문과 맞다**고 확인했다. FAIL 사유는 그 밖 5~6건의 세부 원인 설명이 틀렸다는 것이다. 보고서에는 보유 수량이 들어 있어서 docs/claude로 옮기지 않는다.
+- 결론: 원인은 **EXTERNAL_FILE**이다. 시험이 git 밖의 **실제 상태 파일** `stock-strategy-system/portfolio_state.json`을 읽는다(tests/test_evaluate_timing_integration.py:101-102, test_portfolio_decision_dashboard.py:2336-2337). 파이프라인은 기준선과 Builder worktree를 만들 때마다 메인의 실제 상태 파일을 복사한다(.worktreeinclude:1-2, devpipe.py:1049-1055).
+- 계기: 10/30 07:45 KST 판정 때 상태 파일이 rev31로 갱신되면서 보유 종목에 신원 등록부 범위 밖의 종목이 들어왔다(s7-hold-gap-2026-10-30.md:15-17, materialize_instrument_identity_artifact.py:36-39). 그 뒤 신원 NOT_VERIFIED → validate_manual_direction_evidence False로 이어져 243건이 실패한다.
+- TIME(날짜 경과)과 CODE(코드 회귀)는 근거가 없다.
+- 뜻: **테스트 결과가 계좌 보유에 따라 달라진다.** 보유가 바뀔 때마다 기준선이 조용히 바뀌고, 그 시험들이 회귀를 못 잡는다.
+- 수정 후보: ① 두 시험 파일이 저장소 안 고정 fixture 상태를 읽게 바꾼다(테스트만 변경). ② P-1의 기준선 실패 수 감시 규칙(K3).
