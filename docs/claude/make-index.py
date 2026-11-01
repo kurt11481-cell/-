@@ -60,6 +60,12 @@ def mday(path):
         return '?'
 
 
+def md_link(label, target):
+    if re.search(r'[ ()]', target):
+        target = f'<{target}>'
+    return f'[{label}]({target})'
+
+
 def docs_index():
     rows, others, subdirs = [], [], []
     for name in sorted(os.listdir(DOCS)):
@@ -67,7 +73,12 @@ def docs_index():
         if os.path.isdir(p):
             if not name.startswith('.'):
                 cnt = sum(len(fs) for _, _, fs in os.walk(p))
-                subdirs.append((name, cnt))
+                label = f'{name}/'
+                for entry in ('README.md', 'INDEX.md'):
+                    if os.path.isfile(os.path.join(p, entry)):
+                        label = md_link(label, f'{name}/{entry}')
+                        break
+                subdirs.append((label, cnt))
             continue
         if name in SKIP:
             continue
@@ -85,11 +96,12 @@ def docs_index():
          'summary: docs/claude 자동 목록(make-index.py가 만듦 — 손으로 고치지 않음)', '---', '',
          '# docs/claude 자동 목록', '',
          f'- 문서(md) {len(rows)}개 · 머리말 없음 {sum(1 for r in rows if r[5])}개 · 기타 파일 {len(others)}개 · 하위 폴더 {len(subdirs)}개',
-         '- 찾는 법: 이 파일에서 키워드 검색 → 파일 열기. 상태(status)가 비어 있으면 머리말에 없다는 뜻(현행 여부 확인 필요).', '',
+         '- 찾는 법: 이 파일에서 키워드 검색 → 파일 열기. 상태(status)가 비어 있으면 머리말에 없다는 뜻(현행 여부 확인 필요).',
+         '- Obsidian 그래프: 이 목록의 링크로 모든 문서가 이어진다(문서끼리 직접 잇는 선은 아님).', '',
          '## 문서', '', '| 파일 | 날짜 | id | 상태 | 요약·제목 | 비고 |', '|---|---|---|---|---|---|']
-    L += [f'| {a} | {b} | {c} | {d} | {e} | {f} |' for a, b, c, d, e, f in rows]
+    L += [f'| {md_link(a, a)} | {b} | {c} | {d} | {e} | {f} |' for a, b, c, d, e, f in rows]
     L += ['', '## 하위 폴더', '', '| 폴더 | 파일 수 |', '|---|---|']
-    L += [f'| {a}/ | {b} |' for a, b in subdirs]
+    L += [f'| {a} | {b} |' for a, b in subdirs]
     L += ['', '## 기타 파일', '', '| 파일 | 수정일 |', '|---|---|']
     L += [f'| {a} | {b} |' for a, b in others]
     return '\n'.join(L) + '\n'
