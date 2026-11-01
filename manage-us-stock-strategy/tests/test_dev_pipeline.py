@@ -1048,6 +1048,210 @@ class BaselineStepTests(unittest.TestCase):
         self.assertEqual(devpipe.load_baseline_for_check(self.fx.run, self.run_dir)["ran"], 2)
 
 
+# ---------------------------------------------------------------- baseline-watch: previous baseline check
+
+def failure_names(count, prefix="f"):
+    return ["%s%02d (m.C.t)" % (prefix, n) for n in range(count)]
+
+
+class BaselineWatchTests(unittest.TestCase):
+    def setUp(self):
+        self.repo, self.first = plain_repo(self, {"a.txt": b"1\n"})
+        self.base = self.commit("second")
+        self.python = devpipe.python_version()
+
+    def commit(self, message):
+        run_git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
+        return run_git(self.repo, "rev-parse", "HEAD")
+
+    def cache(self, base, failures, utc="2026-11-01T00:00:00Z", **extra):
+        data = dict({"base": base, "python": self.python, "method": devpipe.BASELINE_METHOD, "ran": 100, "skipped": 0,
+                     "counts": {}, "failures": list(failures), "status": "FAILED", "schema": "PASS",
+                     "computed_utc": utc}, **extra)
+        devpipe.write_json(devpipe.baseline_cache_path(self.repo, base), data)
+        return data
+
+    def accept(self, base):
+        path = devpipe.baseline_accept_path(self.repo, base)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"ok\n")
+        return path
+
+    def verdict(self, before, now):
+        """Previous baseline on the first commit, keyless cache on base, read and judged the normal way."""
+        self.cache(self.first, before, "2026-11-01T00:00:00Z")
+        self.cache(self.base, now, "2026-11-02T00:00:00Z")
+        baseline = devpipe.cached_baseline(self.repo, self.base)
+        full = {"ran": 100, "skipped": 0, "failures": list(now), "status": "FAILED", "counts": {}, "timed_out": False,
+                "pattern": "test_*.py"}
+        stop, reasons, new = devpipe.evaluate_tests(baseline, [], full, {"result": "PASS"}, [])
+        self.assertEqual(new, [])
+        return stop, reasons, baseline
+
+    def test_same_failures_add_no_reason(self):
+        stop, reasons, baseline = self.verdict(failure_names(3), failure_names(3))
+        self.assertEqual((stop, reasons), (None, []))
+        self.assertEqual((baseline["prev_base"], baseline["added_failures"]), (self.first, []))
+
+    def test_one_more_failure_warns_without_stop(self):
+        stop, reasons, _ = self.verdict(failure_names(3), failure_names(4))
+        self.assertIsNone(stop)
+        self.assertEqual(reasons, ["BASELINE_FAILURES_ROSE:%s:+1" % self.first[:8]])
+
+    def test_nine_more_failures_still_only_warn(self):
+        stop, reasons, _ = self.verdict([], failure_names(9))
+        self.assertIsNone(stop)
+        self.assertEqual(reasons, ["BASELINE_FAILURES_ROSE:%s:+9" % self.first[:8]])
+
+    def test_ten_more_failures_stop(self):
+        self.assertEqual(devpipe.BASELINE_ROSE_STOP, 10)
+        stop, reasons, _ = self.verdict(failure_names(3), failure_names(13))
+        self.assertEqual(stop, ("STOP_BASELINE_REGRESSED", "%s:+10" % self.first[:8]))
+        self.assertEqual(reasons, [])
+
+    def test_accept_file_of_this_base_lowers_the_stop(self):
+        path = self.accept(self.base)
+        stop, reasons, baseline = self.verdict([], failure_names(10))
+        self.assertIsNone(stop)
+        self.assertIs(baseline["baseline_accepted"], True)
+        self.assertEqual(reasons, ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+10" % self.base[:8]])
+        self.assertEqual(path.read_bytes(), b"ok\n")
+
+    def test_accept_file_of_another_base_does_not_apply(self):
+        self.accept(self.first)
+        stop, _, baseline = self.verdict([], failure_names(10))
+        self.assertEqual(stop[0], "STOP_BASELINE_REGRESSED")
+        self.assertIs(baseline["baseline_accepted"], False)
+
+    def test_non_ancestor_cache_is_left_out_even_when_newer(self):
+        self.cache(self.first, failure_names(1), "2026-11-01T00:00:00Z")
+        run_git(self.repo, "checkout", "-q", "-b", "side", self.first)
+        side = self.commit("side")
+        run_git(self.repo, "checkout", "-q", "main")
+        self.cache(side, failure_names(50), "2026-11-03T00:00:00Z")
+        data = self.cache(self.base, failure_names(1), "2026-11-02T00:00:00Z")
+        self.assertEqual(devpipe.previous_baseline(self.repo, self.base, self.python)["base"], self.first)
+        self.assertEqual(devpipe.compare_baseline(self.repo, data)["removed_failures"], [])
+
+    def test_latest_ancestor_same_python_and_method_only(self):
+        third = self.commit("third")
+        self.cache(self.first, [], "2026-11-01T00:00:00Z")
+        self.cache(self.base, [], "2026-11-02T00:00:00Z")
+        self.assertEqual(devpipe.previous_baseline(self.repo, third, self.python)["base"], self.base)
+        self.assertIsNone(devpipe.previous_baseline(self.repo, third, "0.0.0"))
+        self.cache(self.base, [], "2026-11-02T00:00:00Z", method="b1")
+        self.assertEqual(devpipe.previous_baseline(self.repo, third, self.python)["base"], self.first)
+        self.assertIsNone(devpipe.previous_baseline(self.repo, self.first, self.python))  # never itself
+
+    def test_no_previous_baseline_is_information_only(self):
+        self.cache(self.base, failure_names(30))
+        baseline = devpipe.cached_baseline(self.repo, self.base)
+        self.assertIsNone(baseline["prev_base"])
+        stop, reasons, _ = devpipe.evaluate_tests(baseline, [], None, {"result": "PASS"}, [])
+        self.assertEqual((stop, reasons), (None, ["BASELINE_PREV_NONE"]))
+
+    def test_fewer_failures_record_removed_only(self):
+        stop, reasons, baseline = self.verdict(failure_names(20), failure_names(5))
+        self.assertEqual((stop, reasons), (None, []))
+        self.assertEqual(baseline["added_failures"], [])
+        self.assertEqual(baseline["removed_failures"], failure_names(20)[5:])
+
+    def test_old_cache_is_compared_on_read_and_stays_unchanged(self):
+        self.cache(self.first, [], "2026-11-01T00:00:00Z")
+        self.cache(self.base, failure_names(12), "2026-11-02T00:00:00Z")
+        path = devpipe.baseline_cache_path(self.repo, self.base)
+        before = path.read_bytes()
+        baseline = devpipe.ensure_baseline(self.repo, self.base, {})
+        self.assertEqual((baseline["source"], len(baseline["added_failures"])), ("cache", 12))
+        self.assertEqual(devpipe.baseline_rose_verdict(baseline)[0][0], "STOP_BASELINE_REGRESSED")
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_new_cache_keeps_keys_and_accept_is_read_every_time(self):
+        self.cache(self.first, [], "2026-11-01T00:00:00Z")
+        full = {"ran": 100, "skipped": 0, "counts": {}, "failures": failure_names(11), "status": "FAILED"}
+        info = devpipe.baseline_worktree_info(self.repo, self.base)
+        with mock.patch.object(devpipe, "check_baseline_branch"), mock.patch.object(devpipe, "run_unittest", return_value=full), \
+                mock.patch.object(devpipe, "run_schema_audit", return_value={"result": "PASS"}):
+            computed = devpipe.run_baseline_in(info)
+        self.assertEqual((computed["prev_base"], len(computed["added_failures"])), (self.first, 11))
+        stored = devpipe.read_json(devpipe.baseline_cache_path(self.repo, self.base))
+        self.assertEqual(stored["added_failures"], computed["added_failures"])
+        self.assertNotIn("baseline_accepted", stored)
+        with mock.patch.object(devpipe, "compare_baseline", side_effect=AssertionError("cached keys are reused")):
+            self.assertEqual(devpipe.baseline_rose_verdict(devpipe.cached_baseline(self.repo, self.base))[0],
+                             ("STOP_BASELINE_REGRESSED", "%s:+11" % self.first[:8]))
+            self.accept(self.base)
+            self.assertIsNone(devpipe.baseline_rose_verdict(devpipe.cached_baseline(self.repo, self.base))[0])
+
+    def test_keyless_baseline_dict_adds_nothing(self):
+        self.assertEqual(devpipe.baseline_rose_verdict({"failures": [], "ran": 1}), (None, []))
+
+
+class BaselineWatchCheckTests(unittest.TestCase):
+    """The notice leaves the verdict alone and shows in the result; the stop leaves the list in the run folder."""
+
+    def setUp(self):
+        self.fx = RepoFixture(self)
+        self.fx.good_change()
+        self.run_dir = self.fx.repo / devpipe.RUNS_REL / TASK
+        devpipe.write_json(self.run_dir / "run.json", self.fx.run)
+
+    def baseline(self, added):
+        return {"base": self.fx.base, "ran": 2, "skipped": 0, "counts": {}, "failures": [], "schema": "MISSING",
+                "prev_base": "b" * 40, "added_failures": failure_names(added), "removed_failures": [],
+                "baseline_accepted": False}
+
+    def checks(self, baseline):
+        full = {"ran": 2, "skipped": 0, "counts": {}, "failures": [], "status": "OK", "timed_out": False,
+                "pattern": "test_*.py"}
+        target = dict(full, pattern="test_app*.py")
+        with mock.patch.object(devpipe, "run_unittest", side_effect=[target, full]), \
+                mock.patch.object(devpipe, "run_schema_audit", return_value={"result": "MISSING"}):
+            return devpipe.run_checks(self.fx.run, self.run_dir, 1, baseline)
+
+    def test_warning_keeps_status_and_shows_in_line_and_summary(self):
+        devpipe.write_json(self.run_dir / "baseline.json", self.baseline(1))
+        checks = self.checks(self.baseline(1))
+        self.assertEqual((checks["status"], checks["reasons"]), ("OK", []))
+        (self.run_dir / "judge-1.json").write_bytes(judge_envelope("PASS"))
+        self.assertEqual(call(devpipe.cmd_parse_judge, run_dir=str(self.run_dir), attempt=1)[0], 0)
+        code, line = call(devpipe.cmd_write_result, run_dir=str(self.run_dir), status="PASS", retries=0, reason=None)
+        self.assertEqual(code, 0)
+        self.assertTrue(line.startswith("DEV-RUN t-demo READY_TO_MERGE "), line)
+        self.assertTrue(line.endswith(" baseline=BASELINE_FAILURES_ROSE:bbbbbbbb:+1"), line)
+        summary = (self.fx.repo / "docs/claude/dev-runs/t-demo.md").read_text(encoding="utf-8")
+        self.assertIn("사유: BASELINE_FAILURES_ROSE:bbbbbbbb:+1", summary)
+        self.assertFalse((self.run_dir / devpipe.BASELINE_REGRESSED_TXT).exists())
+
+    def test_notice_is_not_a_merge_retest_reason(self):
+        with mock.patch.object(devpipe, "run_unittest", return_value={
+                "ran": 2, "skipped": 0, "counts": {}, "failures": [], "status": "OK", "timed_out": False,
+                "pattern": "test_*.py"}), mock.patch.object(devpipe, "run_schema_audit", return_value={"result": "MISSING"}):
+            stop, tests = devpipe.run_test_checks(self.fx.run, self.baseline(9), self.run_dir / "merge-tests",
+                                                  devpipe.collect_changes(self.fx.wt, self.fx.base))
+        self.assertIsNone(stop)
+        self.assertEqual((tests["reasons"], tests["notices"]), ([], ["BASELINE_FAILURES_ROSE:bbbbbbbb:+9"]))
+
+    def test_stop_writes_the_list_and_reaches_the_summary(self):
+        devpipe.write_json(self.run_dir / "baseline.json", self.baseline(10))
+        checks = self.checks(self.baseline(10))
+        self.assertEqual((checks["status"], checks["reasons"]), ("STOP_BASELINE_REGRESSED", ["bbbbbbbb:+10"]))
+        listed = (self.run_dir / devpipe.BASELINE_REGRESSED_TXT).read_bytes().decode("utf-8")
+        self.assertEqual(listed.split("\r\n"), failure_names(10) + [""])
+        code, line = call(devpipe.cmd_write_result, run_dir=str(self.run_dir), status=checks["status"], retries=0, reason=None)
+        self.assertEqual(code, 1)
+        self.assertTrue(line.startswith("DEV-RUN t-demo STOP_BASELINE_REGRESSED "), line)
+        summary = (self.fx.repo / "docs/claude/dev-runs/t-demo.md").read_text(encoding="utf-8")
+        self.assertIn("STOP_BASELINE_REGRESSED", summary)
+        self.assertIn("사유: bbbbbbbb:+10", summary)
+
+    def test_accepted_stop_keeps_status_ok(self):
+        checks = self.checks(dict(self.baseline(10), baseline_accepted=True))
+        self.assertEqual((checks["status"], checks["reasons"]), ("OK", []))
+        self.assertEqual(checks["tests"]["notices"], ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+10" % self.fx.base[:8]])
+        self.assertFalse((self.run_dir / devpipe.BASELINE_REGRESSED_TXT).exists())
+
+
 # ------------------------------------------------------------------------------ N1 added-line markers
 
 class AddedLineMarkerTests(unittest.TestCase):
