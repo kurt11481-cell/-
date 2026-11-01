@@ -20,14 +20,16 @@ weekly_user_touch: "0"
    - EXTERNAL_FILE: git이 추적하지 않는 파일(workspace/outputs/…, 설치 사본, 홈 폴더)을 읽음. 그 경로를 적는다.
    - CODE: 저장소 코드의 실제 회귀. 원인 커밋을 `git log`로 찾는다.
    - UNKNOWN: 읽기와 대상 테스트만으로는 판단이 안 됨. 왜 안 되는지 적는다.
-4. 10/29 이전부터 있던 실패 22·오류 9도 같은 넷으로 짧게 분류한다. 이름은 기준선 기록에서 가져온다: `workspace/outputs/dev-runs/_baseline/1e43b430765411208baeb9724905cb32b6356d16-py3.13.15-b2.full.err`. 읽을 수 없으면 "읽기 불가"라고 적는다.
+4. (10/29 이전 실패 22·오류 9의 분류는 이 작업에서 하지 않는다. 기준선 기록이 worktree 밖에 있어서다. 사장실 스레드가 따로 맡는다.)
 5. 고치는 방법을 **제안만** 한다. 예: 테스트에 고정 시각 주입, fixture 파일을 저장소 안으로 옮기기. 예상 변경 파일도 함께 적는다. 이 작업에서는 고치지 않는다.
 
 ## 테스트
-- 환경 변수 `PYTHONDONTWRITEBYTECODE=1`을 켜고, 아래 두 명령**만** 실행한다. 전체 스위트와 기준선 비교는 파이프라인이 한다.
-  - `python -B -m unittest discover -s manage-us-stock-strategy/tests -p "test_evaluate_timing_integration.py"`
-  - `python -B -m unittest discover -s manage-us-stock-strategy/tests -p "test_portfolio_decision_dashboard.py"`
-- `.claude/` 아래 파일을 불러오는 테스트나 명령은 실행하지 않는다. 허용 목록 밖의 셸 작업(`python -c`, 스크립트 직접 실행, 파이프, PowerShell)은 하지 않는다.
+- 아래 두 명령을 **글자 그대로** 실행한다. 앞에 환경 변수를 붙이거나 `-B` 같은 옵션을 더하지 않는다. 1차 실행(2026-11-01 14:35 KST)은 `PYTHONDONTWRITEBYTECODE=1 python -B ...` 꼴이라 허용 목록에 걸려 거부됐다. 전체 스위트와 기준선 비교는 파이프라인이 한다.
+  - `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_evaluate_timing_integration.py"`
+  - `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_portfolio_decision_dashboard.py"`
+- 실패가 많아 출력이 길면, 실패 이름과 단언 첫 줄을 클래스별로 세어 보고서에 적는다. 대표 실패 몇 건은 traceback에서 False가 난 검증 함수 줄(파일:행)까지 따라간다.
+- `.claude/` 아래 파일을 불러오는 테스트나 명령은 실행하지 않는다. 그 밖의 셸 작업(`python -c`, 스크립트 직접 실행, 파이프, PowerShell, `head`)은 하지 않는다. git은 `git status`·`git diff`·`git log`만 쓴다.
+- 1차 실행이 읽기로 이미 배제한 가설(달력 coverage_end 2026-12-31, artifact 줄바꿈·부재, 검증 경로가 observed_at을 받을 때의 현재 시각 직접 의존)은 다시 보지 않아도 된다. 이번에는 실행 결과로 확정하는 데 집중한다.
 
 ## 지켜야 할 것 (어기면 Judge FAIL)
 1. 새 파일 `docs/claude/p1-baseline-diag-report.md` 하나만 만든다. 코드·테스트·다른 문서·기준선 기록은 손대지 않는다. 단언을 약화하거나 skip을 더하는 일은 금지다(builder-rules).
@@ -39,7 +41,7 @@ weekly_user_touch: "0"
 반드시 포함:
 (a) 지금 대상 테스트 2개의 결과 마지막 3줄(실행·실패·오류 수)
 (b) 실패 클래스별 표: 클래스, 실패 수, 분류(TIME/EXTERNAL_FILE/CODE/UNKNOWN), 근거 파일:행, 깨지기 시작한 날짜(TIME이면)
-(c) 10/29 이전 실패 22·오류 9의 분류 요약
+(c) 생략(사장실 스레드가 따로 맡음)이라고 한 줄
 (d) 고치는 방법 제안과 예상 변경 파일. 고치면 기준선 실패가 몇 건으로 줄어들지 추정하고, 모르면 "확인 필요"
 (e) CODE로 분류한 것이 있으면 맨 위에 따로 적는다
 이 보고서 문장에는 주문·권한 표지 문자열을 적지 말고 "표지 없음"이라고만 쓴다.
@@ -52,5 +54,5 @@ weekly_user_touch: "0"
 5. 보고서에 (a)~(e)가 모두 있고, 표지가 없다.
 
 ```dev-run
-{"task_id": "p1-baseline-diag", "class": "general", "builder_model": "sonnet", "builder_effort": "high", "max_turns": 80, "builder_timeout_min": 50, "allowed_paths": ["docs/claude/p1-baseline-diag-report.md"], "target_tests": ["test_evaluate_timing_integration.py", "test_portfolio_decision_dashboard.py"], "commit_message": "docs(claude): p1-baseline-diag report - why the dev-queue baseline failures rose from 22+9 to 276+10 (diagnosis only, no code change)"}
+{"task_id": "p1-baseline-diag", "class": "general", "builder_model": "sonnet", "builder_effort": "high", "max_turns": 90, "builder_timeout_min": 50, "allowed_paths": ["docs/claude/p1-baseline-diag-report.md"], "target_tests": ["test_evaluate_timing_integration.py", "test_portfolio_decision_dashboard.py"], "commit_message": "docs(claude): p1-baseline-diag report - why the dev-queue baseline failures rose from 22+9 to 276+10 (diagnosis only, no code change)"}
 ```
