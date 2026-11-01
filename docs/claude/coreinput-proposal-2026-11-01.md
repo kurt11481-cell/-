@@ -117,5 +117,7 @@ B의 비용 — 미커밋 날은 매수 주문표가 없다. 실제로 생길 �
 - 무응답 = c(NO_CHANGE, 대기 유지). 착수해도 병합은 사장 결정 1번 + PowerShell 한 줄이 따로 필요.
 - **결정 기록: a) 착수 — B 방식** · 2026-11-01 17:53 KST · 사장 결정 카드(이 스레드, cmsg_0137MRzn9nuDvvQmVxm6WeX9FN5zdRrmv1MZgP5gkYnJhR) · 계정=사장. 같은 날 지시문 source 줄을 이 기록으로 바꾸고 개발 큐 authority(id coreinput)에 올림. 병합은 아직 승인 아님.
 - **병합 결정 기록: 문구 고친 뒤 병합** · 2026-11-01 19:23 KST · 사장 결정 카드(이 스레드, cmsg_0137MRzn9nuDvvQmVxm6WeX9Xd2TCniqTrddfHGWP2Jjq6) · 계정=사장. coreinput(18:55 KST NEEDS_APPROVAL, Judge 2회차 PASS)은 병합하지 않고, 알림의 '매도 그대로' 문구를 '매수 주문표 막힘·재배치 후보 빠짐(매도는 후보 없는 날처럼 계산)'으로 고친 새 실행 coreinput2(지시문 coreinput2-builder-prompt.md, 참고 diff coreinput2-reference.diff.md)를 같은 날 올림. coreinput2 결과 뒤 다시 병합 결정.
+- **병합 결정 기록: coreinput2 병합 승인** · 2026-11-01 20:59 KST · 사장 결정 카드(이 스레드, cmsg_0137MRzn9nuDvvQmVxm6WeX93UTYv13Z1DBTxJ98RRuZY3) · 계정=사장. coreinput2 = 19:56 KST NEEDS_APPROVAL(Judge 1회차 PASS, 새 실패 0, 1차와 차이는 알림 문구·주석·테스트 l뿐 — 스레드 대조). 병합 실행은 사장이 직접 연 PowerShell에서 `.\tools\dev-merge.ps1 coreinput2 -ApproveAuthority` + Enter(스레드·Cowork는 -ApproveAuthority를 붙이지 않음).
+- **병합 완료:** 2026-11-01 21:34 KST, 커밋 db56303(mode ff, 사장 PowerShell). 1차 coreinput 브랜치는 병합하지 않음. 남은 확인 = 첫 새 세션 판정(11/03 07:45 KST)의 inputs.core_input_guard.status OK.
 
 검토 완결: 원문 확인 1·3·4·7절 근거 행 전부 본 세션 확인(AMD 예시 1건만 재검토 보고 기반) · 내장 재검토 1회(반영 16건) · 미해결 0 · 자료 시점 2026-11-01 17시대 KST(저장소 c53940a, 관제판 tasks 조회) · 바뀔 조건 8절
