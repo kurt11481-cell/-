@@ -197,6 +197,60 @@ def m6_documents(docs_dir: Path) -> list[tuple[str, str]]:
             for path in sorted(Path(docs_dir).glob(M6_PREFIX + "*.md"))]
 
 
+def _guard_label(path: Path, repo: Path) -> str:
+    """Repository-relative posix path (the last part is not followed: a link keeps its own name), else the file name."""
+    try:
+        return (path.parent.resolve() / path.name).relative_to(Path(repo).resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def core_input_guard(*, recovery_gate_path: Path, watchlist_path: Path, docs_dir: Path, repo: Path,
+                     committed_check: Callable[[Path, Path], tuple[bool, str | None]]) -> dict[str, Any]:
+    """coreinput: decide's docs/claude judgment inputs must be the committed ones. Checked: the R-REC1 document, the
+    watchlist and every M6 document (the glob of m6_documents). {status OK|BLOCKED, reasons (sorted), checked, details
+    {path: why}, sha256 {path: hex}}. Reasons: CORE_INPUT_MISSING:<path> (R-REC1 only: a missing watchlist is already
+    load_watchlist's UNREADABLE), CORE_INPUT_UNCOMMITTED:<path> (a symbolic link, a failed committed_check or one that
+    raises), CORE_INPUT_GUARD_ERROR:<exception>. It never raises: a decide failure would take the sell tickets too. The
+    reasons block every buy and drop the redeployment candidate (plan()): they never enter a sell gate, card_check or
+    _plan_sell, but without the candidate a sell's regret columns, step, quantity and swap_pair can differ or that day
+    can have no sell ticket (the same calculation as a day without a candidate).
+    The card registry has its own check; card documents are pinned by its section
+    hashes."""
+    reasons: set[str] = set()
+    checked: list[str] = []
+    details: dict[str, str] = {}
+    digests: dict[str, str] = {}
+    try:
+        recovery = Path(recovery_gate_path)
+        for path in [recovery, Path(watchlist_path), *sorted(Path(docs_dir).glob(M6_PREFIX + "*.md"))]:
+            label = _guard_label(path, repo)
+            checked.append(label)
+            linked = path.is_symlink()  # registry_committed resolves a link, so it sees only the link's target
+            if not linked and not path.is_file():
+                if path == recovery:
+                    reasons.add(f"CORE_INPUT_MISSING:{label}")
+                continue
+            if linked:
+                why = "SYMLINK"
+            else:
+                try:
+                    committed, reason = committed_check(path, repo)
+                    why = None if committed else reason or "UNCOMMITTED"
+                except Exception as exc:  # noqa: BLE001 - an unknown commit state is not a committed file
+                    why = type(exc).__name__
+            if why is not None:
+                reasons.add(f"CORE_INPUT_UNCOMMITTED:{label}")
+                details[label] = why
+            if path.is_file():
+                digests[label] = hashlib.sha256(path.read_bytes()).hexdigest()
+    except Exception as exc:  # noqa: BLE001 - see the docstring: buys are blocked, decide goes on
+        return {"status": "BLOCKED", "reasons": [f"CORE_INPUT_GUARD_ERROR:{type(exc).__name__}"],
+                "checked": sorted(checked), "details": details, "sha256": digests}
+    return {"status": "BLOCKED" if reasons else "OK", "reasons": sorted(reasons), "checked": sorted(checked),
+            "details": details, "sha256": digests}
+
+
 # ---------------------------------------------------------------------------------------------
 # F3 research records
 # ---------------------------------------------------------------------------------------------

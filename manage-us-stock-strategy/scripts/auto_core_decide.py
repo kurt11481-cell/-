@@ -7,7 +7,9 @@
  3 inputs: 30-minute pages, close histories, corporate actions, calendar, card registry (F2), research record
    (F3; when today's is missing it is looked for every 5 minutes until 08:30 KST, then the run goes on without
    it: buys blocked), watchlist, alert policy, previous decision.json. The S7 review is run again with the
-   research record's earnings and the buy-target proposals (read-only output under <day>/s7/).
+   research record's earnings and the buy-target proposals (read-only output under <day>/s7/). An uncommitted or
+   missing docs/claude judgment input (coreinput, inputs.core_input_guard) blocks every buy and drops the redeployment
+   candidate: its reasons never enter a sell gate, but a sell can change (or lose its ticket) without the candidate.
  4 F6 outcome classification (read-only ust21150 order fills and ust21050 open orders only) of the tickets left
    unclassified by the latest record whose F6 ran (f6_ran); a record that ends before F6 or fails carries that
    record's ledger and tickets (carried_from) and commits nothing. A ticket is classified only after its
@@ -393,6 +395,7 @@ def decide(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CON
            watchlist_path: Path = inputs.WATCHLIST_PATH, docs_dir: Path = DOCS_DIR,
            explained_path: Path = compare_module.EXPLAINED_PATH, repo: Path = REPO_ROOT,
            registry_committed_check: Callable[[Path, Path], tuple[bool, str | None]] = inputs.registry_committed,
+           input_committed_check: Callable[[Path, Path], tuple[bool, str | None]] | None = None,
            calendar_loader: Callable[[datetime], dict[str, Any]] | None = None,
            score_runner: Callable[[Path], Any] | None = None,
            bars_loader: Callable[..., dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -440,6 +443,7 @@ def decide(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CON
                     provenance_source=provenance_source, closes_root=closes_root, research_root=research_root,
                     registry_path=registry_path, watchlist_path=watchlist_path, docs_dir=docs_dir,
                     explained_path=explained_path, repo=repo, registry_committed_check=registry_committed_check,
+                    input_committed_check=registry_committed_check if input_committed_check is None else input_committed_check,
                     calendar_loader=calendar_loader, score_runner=score_runner, bars_loader=bars_loader,
                     previous=previous, carry=carry,
                     previous_all=previous_all, config_path=config_path, exceptions=exceptions)
@@ -506,8 +510,8 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
          paths: dict[str, Path], output_root: Path, output_directory: Path, day: str, now: datetime,
          clock: Callable[[], datetime], sleeper: Callable[[float], None], reader: Any, exposure_runner: Any,
          provenance_source: Any, closes_root: Path, research_root: Path, registry_path: Path, watchlist_path: Path,
-         docs_dir: Path, explained_path: Path, repo: Path, registry_committed_check: Any, calendar_loader: Any,
-         score_runner: Any, bars_loader: Any, previous: dict[str, Any] | None, carry: dict[str, Any],
+         docs_dir: Path, explained_path: Path, repo: Path, registry_committed_check: Any, input_committed_check: Any,
+         calendar_loader: Any, score_runner: Any, bars_loader: Any, previous: dict[str, Any] | None, carry: dict[str, Any],
          previous_all: list[tuple[str, Any]], config_path: Path,
          exceptions: list[tuple[str, str]]) -> dict[str, Any]:
     from run_portfolio_exposure_review import expected_completed_session, load_corporate_actions
@@ -528,6 +532,7 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
             and carry["evaluation_session"] == evaluation_session:
         return _no_new_session(decision=decision, carry=carry, previous=previous, previous_all=previous_all,
                                config=config, mode=mode, calendar=calendar, explained_path=explained_path,
+                               committed_check=input_committed_check, repo=repo,
                                output_root=output_root, output_directory=output_directory, day=day)
     journal_path = paths["journal"]
     from portfolio_review_journal import load_journal
@@ -561,6 +566,20 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
     registry = inputs.load_registry(registry_path, repo=repo, committed_check=registry_committed_check)
     watchlist = inputs.load_watchlist(watchlist_path)
     m6_docs = inputs.m6_documents(docs_dir)
+    recovery_text = (docs_dir / RECOVERY_GATE_DOC.name).read_text(encoding="utf-8") \
+        if (docs_dir / RECOVERY_GATE_DOC.name).is_file() else ""
+    # coreinput: checked right after the three documents are read, not after the research wait (up to 08:30), so an
+    # edit before the check is not missed by reading it later. A reason blocks every buy and drops the redeployment
+    # candidate; it never enters a gate or card_check.
+    guard = inputs.core_input_guard(recovery_gate_path=docs_dir / RECOVERY_GATE_DOC.name, watchlist_path=watchlist_path,
+                                    docs_dir=docs_dir, repo=repo, committed_check=input_committed_check)
+    decision["inputs"]["core_input_guard"] = guard
+    previous_guard = ((previous or {}).get("inputs") or {}).get("core_input_guard") or {}
+    if guard["reasons"] and guard["reasons"] != previous_guard.get("reasons"):
+        exceptions.append(("CORE_INPUT_UNCOMMITTED",
+                           "\uc790\ub3d9 \ucf54\uc5b4 \uc785\ub825 \ubb38\uc11c \ubbf8\ucee4\ubc0b \u2014 \ub9e4\uc218 \uc8fc\ubb38\ud45c \ub9c9\ud798\u00b7\uc7ac\ubc30\uce58 \ud6c4\ubcf4 \ube60\uc9d0(\ub9e4\ub3c4\ub294 \ud6c4\ubcf4 \uc5c6\ub294 \ub0a0\ucc98\ub7fc \uacc4\uc0b0): "
+                           + ", ".join(reason.split(":", 1)[-1] for reason in guard["reasons"])
+                           + " \u2014 Cowork \ucee4\ubc0b \ud655\uc778"))
     wait = _wait_for_research(research_root, day, clock, sleeper)
     # The R-REC1 window (60 sessions to the evaluation session): damage facts and recorded sessions (r2 R2-4).
     window = [session for session in sessions if session <= evaluation_session][-rules.C["RREC_WINDOW_SESSIONS"]:]
@@ -641,8 +660,6 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         attributed = tickets_module.attribute_orders(attributed, outcome_block["attributed"], day)
     decision.update(keys=keys, attributed_orders=attributed, f6_ran=True)
     # F1-F5 for the evaluation session (auto_core_replay runs the same function).
-    recovery_text = (docs_dir / RECOVERY_GATE_DOC.name).read_text(encoding="utf-8") \
-        if (docs_dir / RECOVERY_GATE_DOC.name).is_file() else ""
     seen: set[str] = set()
     for _day, item in previous_all:
         seen.update((item or {}).get("facts_seen") or [])
@@ -673,7 +690,8 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         input_hashes={"registry": registry.get("sha256"),
                       "research_record": decision["inputs"]["research_record"]["sha256"],
                       "t1_result": decision["inputs"]["t1_result"]["sha256"]},
-        hold_range=True)  # close-confirm e: every ticket carries its hold range (priceCalc band, hold)
+        hold_range=True,  # close-confirm e: every ticket carries its hold range (priceCalc band, hold)
+        input_block=guard["reasons"])
     gate1 = session["gate1"]
     decision.update(symbols={symbol: _symbol_view(result) for symbol, result in session["symbols"].items()},
                     evidence=session["evidence"], buy_requirements=session["rows"], tickets=session["planned"]["tickets"],
@@ -687,7 +705,7 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
         decision["status"] = "HOLD"
     # F9 compare and the streak.
     block = compare_module.compare(decision, today_record.get("integrated_check_run"), registry["entries"], research_ok)
-    explained, explained_errors = compare_module.load_explained(explained_path)
+    explained, explained_errors = _committed_explained(explained_path, input_committed_check, repo)
     history = [(run_day, compare_module.streak_block(item)) for run_day, item in previous_all] + [(day, block)]
     block.update(streak=compare_module.streak(history, explained), required=int(config.get("decision_compare_days_required") or 5),
                  explained_errors=explained_errors)
@@ -804,9 +822,25 @@ def _rerun(decision: dict[str, Any], output_directory: Path, now: datetime) -> d
     return decision
 
 
+def _committed_explained(path: Path, committed_check: Callable[[Path, Path], tuple[bool, str | None]],
+                         repo: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    """coreinput: load_explained, but an explanation file that is a symbolic link or not committed explains nothing
+    (EXPLAINED_FILE_UNCOMMITTED first in the errors). It only feeds the compare streak; no file stays as before."""
+    explained, errors = compare_module.load_explained(path)
+    target = Path(path)
+    if not target.is_file():
+        return explained, errors
+    try:
+        committed = not target.is_symlink() and committed_check(target, repo)[0]
+    except Exception:  # noqa: BLE001 - an unknown commit state is not a committed file
+        committed = False
+    return (explained, errors) if committed else ([], ["EXPLAINED_FILE_UNCOMMITTED"] + errors)
+
+
 def _no_new_session(*, decision: dict[str, Any], carry: dict[str, Any], previous: dict[str, Any] | None,
                     previous_all: list[tuple[str, Any]], config: dict[str, Any], mode: str, calendar: dict[str, Any],
-                    explained_path: Path, output_root: Path, output_directory: Path, day: str) -> dict[str, Any]:
+                    explained_path: Path, committed_check: Callable[[Path, Path], tuple[bool, str | None]], repo: Path,
+                    output_root: Path, output_directory: Path, day: str) -> dict[str, Any]:
     """r3 R3-3: the evaluation session is the ledger source's (the latest record with f6_ran true): no U.S.
     session has closed since (a holiday before this run). Nothing new is judged: status OK, no ticket, no journal
     entry, no push, no broker read. The source's keys, attributed orders (r4 R4-1) and unclassified tickets are
@@ -828,7 +862,7 @@ def _no_new_session(*, decision: dict[str, Any], carry: dict[str, Any], previous
         run_core["tickets"] = [item for item in run_core["tickets"] if item.get("id") in not_yet]
     orders = [copy.deepcopy(order) for order in dashboard.get("orders") or [] if order.get("id") in not_yet]
     block: dict[str, Any] = {"status": compare_module.NO_NEW_SESSION, "same_session_as": carry["carried_from"]}
-    explained, explained_errors = compare_module.load_explained(explained_path)
+    explained, explained_errors = _committed_explained(explained_path, committed_check, repo)
     history = [(run_day, compare_module.streak_block(item)) for run_day, item in previous_all] + [(day, block)]
     block.update(streak=compare_module.streak(history, explained),
                  required=int(config.get("decision_compare_days_required") or 5), explained_errors=explained_errors)
@@ -936,7 +970,7 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
                      keys: dict[str, Any], gate0: list[str], gate1: list[str],
                      s7_runner: Callable[[list[dict[str, Any]]], dict[str, Any]],
                      research: dict[str, Any], input_hashes: dict[str, Any],
-                     hold_range: bool = False) -> dict[str, Any]:
+                     hold_range: bool = False, input_block: list[str] | None = None) -> dict[str, Any]:
     """F1 judgments, F4 requirements and gates, F5 tickets for one evaluation session.
 
     decide and auto_core_replay both call this (one implementation). bars are load_symbol outputs for every
@@ -950,6 +984,11 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     hold_range (close-confirm e, user decision 2026-10-20): decide passes True, so plan() gets ctx["hold_eval"]
     and every ticket its hold range (tickets_module.hold_range); False (the replay, the default) keeps the tickets
     as before.
+    input_block (coreinput): decide's core_input_guard reasons; any reason blocks every buy and drops the redeployment
+    candidate. The reasons never enter a sell gate, card_check or _plan_sell, but without the candidate's columns a
+    sell's regret columns, step, quantity and swap_pair can differ, or the table can end in REGRET_ZERO, LOT_ZERO or
+    DEADBAND (no sell ticket that day), as on a day without a candidate.
+    None (the replay, the default) keeps the tickets as before.
     """
     sessions = sorted(calendar["sessions"])
     later = [item for item in sessions if item > evaluation_session]
@@ -1104,7 +1143,7 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
         "policy_instruments": policy_instruments,
         "scenarios": scenario, "keys": keys, "model_for": model_for, "redeploy_ranked": redeploy_ranked,
         "input_hashes": {**input_hashes, "s7_review_id": review.get("review_id")},
-        "research_block": research["block"],
+        "research_block": research["block"], "input_block": list(input_block or []),
         # risk1r: evaluation-session EMA20 and ATR14 for the display-only 1R of a buy ticket.
         "indicators": {symbol: marks_of(item) for symbol, item in symbols_out.items()},
     }

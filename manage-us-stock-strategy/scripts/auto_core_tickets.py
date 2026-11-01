@@ -737,6 +737,9 @@ def plan(ctx: dict[str, Any]) -> dict[str, Any]:
                    and ctx["evidence"][symbol]["sell"]["basis_met"]}
         ctx["redeploy_candidate"] = next((dict(item) for item in ctx["redeploy_ranked"]
                                           if item["symbol"] not in selling), None)
+    # coreinput: a candidate picked from unverified inputs does not reach the sell regret table (as if none passed).
+    if ctx.get("input_block"):
+        ctx["redeploy_candidate"] = None
 
     # Sells (circuit D5): a held symbol with an S7 reduce item or a card EXIT/TRIM target and sell evidence.
     for symbol in sorted(holdings):
@@ -816,8 +819,9 @@ def _plan_buy(ctx: dict[str, Any], row: dict[str, Any], add_symbols: set[str], g
                        else "S7_ADD_RECOMMENDATION"})
     # r2 R2-1: without an OK research record of the day every buy (index ETFs included) is blocked.
     research = [f"RESEARCH_RECORD_NOT_OK:{ctx['research_block']}"] if ctx["research_block"] is not None else []
-    reasons = list(global_reasons) + research + list((ctx["checks"].get(symbol) or {}).get("reasons") or []) + \
-        ctx["data_reasons"].get(symbol, [])
+    # coreinput: an uncommitted or missing docs/claude judgment input blocks every buy too.
+    reasons = list(global_reasons) + research + list(ctx.get("input_block") or []) + \
+        list((ctx["checks"].get(symbol) or {}).get("reasons") or []) + ctx["data_reasons"].get(symbol, [])
     return _buy_ticket(ctx, symbol, row, evidence, reasons, blocked)
 
 
