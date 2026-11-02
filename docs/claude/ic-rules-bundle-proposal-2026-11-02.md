@@ -1,7 +1,7 @@
 ---
 id: ic-rules-bundle-proposal-2026-11-02
 type: proposal
-status: 승인 대기 (사장 직접 입력)
+status: 적용 (2026-11-02 20:17 KST 예약 교체, 바이트 대조 74b1a367… 일치) — 첫 실행 11/03 06:40 확인 대기
 as_of: 2026-11-02 KST
 summary: "통합 점검 규칙 파일 v3.12.10 → v3.12.11, 지시문 v3.12.10-L+R2 → v3.12.11-L+R2. 기다리던 4건(close-confirm a · ic-rerun-core a · 원장 트리거 2개 · fact_id 판 바꿈)을 한 판으로. 제약 완화(코어 + 강 근거 경로 확대) 포함."
 consumers: "예약 작업 '보유·관심 종목 통합 점검 (장마감 후)' trig_01YWzNq847nJfNgDUnnukBqP · 07:45 자동 운영 코어(연구 기록) · 08:40 독립 대조 · 관제판 ic-rules-bundle·close-confirm·ic-rerun-core·rule-factid-version·rule-rev-ledger-trig"
