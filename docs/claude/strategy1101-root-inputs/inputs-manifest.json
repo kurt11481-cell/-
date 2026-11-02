@@ -1,0 +1,81 @@
+{
+  "collected_at_kst": "2026-11-01",
+  "collector": "사장실 회사PC 스레드(회사 전략 수정 strategy-1101 ④ 방어 뿌리 시험), read-only kiwoom_query via 키움증권 OpenAPI Exec MCP — 사장 직접 요청(2026-11-01 22:27 KST '키움 XLE·XLV·SPY·SOXX·SOXL 일봉 이력 조회해')",
+  "contract_fixed_at": "2026-11-01T23:24:26+09:00",
+  "command_path": "overseas candles stock-daily",
+  "api_id": "usa06012",
+  "common_options": {
+    "adjusted": "1",
+    "pages": 0,
+    "format": "json",
+    "profile": "실전계좌",
+    "mode": "real"
+  },
+  "save_method": "Each response exceeded the tool output limit and was saved verbatim by the tool harness to a file (container tool-results/...kiwoom_query-<id>.txt holding the raw response JSON); that file was copied byte-for-byte (cp -p, cmp identical) to these paths. No value was retyped. called_kst = the harness save time of each response file (container clock, KST), i.e. just after the call returned. The response does not echo the ticker: labels come from the call order (SOXX, SOXL, XLE, XLV, SPY), checked at run time by the runner's identity check against the pinned Nasdaq copies.",
+  "identity": "not recorded here: the runner computes it at run time from the pinned Nasdaq copies (docs/claude/strategy1101-root-inputs/nasdaq-identity/, contract 2-1)",
+  "files": {
+    "SOXX": {
+      "path": "docs/claude/strategy1101-root-inputs/SOXX_kiwoom_usa06012_daily_adj1_20261101.json",
+      "exchange": "NASDAQ",
+      "called_kst": "2026-11-01T23:26:43+09:00",
+      "sha256": "ba8ba63786df68bfd028d529ced942b440b5a3f93dd2a76a60aa6d9732b55efa",
+      "bytes": 911485,
+      "rows": 4034,
+      "first": "2010-10-18",
+      "last": "2026-10-30"
+    },
+    "SOXL": {
+      "path": "docs/claude/strategy1101-root-inputs/SOXL_kiwoom_usa06012_daily_adj1_20261101.json",
+      "exchange": "NYSE",
+      "called_kst": "2026-11-01T23:27:14+09:00",
+      "sha256": "20bb7ba597adff1cb08f6b7973821a92f08098b094cb21bb7af33bf8d86084e6",
+      "bytes": 935172,
+      "rows": 4168,
+      "first": "2010-04-05",
+      "last": "2026-10-30"
+    },
+    "XLE": {
+      "path": "docs/claude/strategy1101-root-inputs/XLE_kiwoom_usa06012_daily_adj1_20261101.json",
+      "exchange": "NYSE",
+      "called_kst": "2026-11-01T23:27:42+09:00",
+      "sha256": "c5dc009c8d3e359a8727b4d863aa786a2fbfe44d899554693cbc005289e9f167",
+      "bytes": 1248035,
+      "rows": 5500,
+      "first": "2004-12-21",
+      "last": "2026-10-30"
+    },
+    "XLV": {
+      "path": "docs/claude/strategy1101-root-inputs/XLV_kiwoom_usa06012_daily_adj1_20261101.json",
+      "exchange": "NYSE",
+      "called_kst": "2026-11-01T23:28:07+09:00",
+      "sha256": "4b188c435898981ee511efebd246246dc8224886811ed84779f011674bc125c9",
+      "bytes": 1247110,
+      "rows": 5500,
+      "first": "2004-12-21",
+      "last": "2026-10-30"
+    },
+    "SPY": {
+      "path": "docs/claude/strategy1101-root-inputs/SPY_kiwoom_usa06012_daily_adj1_20261101.json",
+      "exchange": "NYSE",
+      "called_kst": "2026-11-01T23:28:31+09:00",
+      "sha256": "32f961294009af65b7ea9de87e806278410ada76f69cda026f4965c2895d993d",
+      "bytes": 1278444,
+      "rows": 5500,
+      "first": "2004-12-21",
+      "last": "2026-10-30"
+    }
+  },
+  "retries": [],
+  "notes": [
+    "One call per ticker in the order SOXX, SOXL, XLE, XLV, SPY; every call returned return_code 0 on the first try: no retry and no confirming fetch (no first date after 2011-02-05).",
+    "XLE, XLV and SPY each returned 5,500 rows starting 2004-12-21; whether that is Kiwoom's stored history start or a row cap is 확인 필요. It lies before the common range (from 2010-10-18) and does not change it.",
+    "After the lock (2026-11-01 23:24:26 KST), while checking the save format, the author saw the first bytes of the new SOXX file (its provisional last row, 2026-10-30) and the newest and oldest rows of the old 2026-10-28 SOXX file (2026-10-27, 2010-10-18) - after fixation and outside the verdict window."
+  ],
+  "account_like_keys_found": {
+    "SOXX": [],
+    "SOXL": [],
+    "XLE": [],
+    "XLV": [],
+    "SPY": []
+  }
+}
