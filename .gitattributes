@@ -2,3 +2,15 @@
 # Keep them byte-identical to the stored blobs on every checkout (no CRLF conversion).
 workspace/calendar-authority/artifacts/** -text
 workspace/instrument-identity-authority/artifacts/** -text
+workspace/research/provider-evidence/** -text
+workspace/instrument-identity-authority/** -text
+workspace/policies/instrument_identity_activation.json -text
+workspace/policies/session_calendar_activation.json -text
+# Past 2026-08 evidence already checked out with CRLF in the main repo; keep receiving it as before.
+workspace/instrument-identity-authority/rejudge-runs/2026-08-28/k3-identity-binding-repair/run_manifest.json text
+workspace/research/provider-evidence/kiwoom/2026-08-13/acceptance-manifest.json text
+workspace/research/provider-evidence/kiwoom/2026-08-14/mvll-canonical-volume-lineage.json text
+workspace/research/provider-evidence/kiwoom/2026-08-14/mvll-volume-authority-acceptance.json text
+workspace/research/provider-evidence/kiwoom/2026-08-14/session-aware-priority-acceptance.json text
+workspace/research/provider-evidence/kiwoom/2026-08-28/k3-authority-candidate-builder-run-manifest.json text
+workspace/research/provider-evidence/kiwoom/2026-08-29/k3-normalized-candidate-repair/run_manifest.json text
