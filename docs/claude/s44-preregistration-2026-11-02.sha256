@@ -1,0 +1,4 @@
+raw_sha256 1294d29b7c8fea7eccb6fb22438b9d7bf42f6b71cb650f8b536343a42c4c60a5  docs/claude/s44-preregistration-2026-11-02.md (고정 때 파일 전체, 계약 — 고치면 계산 파일이 실행을 거부)
+lf_sha256 1294d29b7c8fea7eccb6fb22438b9d7bf42f6b71cb650f8b536343a42c4c60a5
+runner_sha256 582740ba32d2add7812daa2ec378824b54d3d9f6d7946f69307e7a68b67e7450  docs/claude/s44_rebalance_replay.py (계약)
+fixed_at 2026-11-02T20:35:43+09:00 (S4-4 종목 코어 되돌리기 사전 등록, 2026-11-02 19:44 KST 사장 직접 입력 + 19:53 KST 기간 결정 카드 '키움 2005~ + 그림자 기록'; 시장 자료 받기 전 고정 — 고정 전 독립 검토 1회 + 바뀐 곳 재검토 1회 반영)
