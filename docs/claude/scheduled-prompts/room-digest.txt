@@ -2,7 +2,7 @@
 목적: 지난 24시간(어제 10:43 ~ 지금) 예약 작업이 ① 돌았는지 ② 무엇을 남겼는지를 사장실에서 한 번에 보게 한다. 08:50 코어 알림·개장 전 점검의 이상 줄은 아침·개장 전 알림이 이미 올리므로 여기서는 "돌았는지"만 본다. 판단·매매 의견·수량·가격을 더하지 않는다.
 저장소 R = E:\사업\##금동한\코덱스저장소 (기기 폴더 도구: 목록·받기·셸 읽기 명령만). TODAY = TZ=Asia/Seoul date +%F, 요일도 같은 방법.
 
-1) 시작 기록(읽기만): list_triggers(enabled 생략, include_completed true, 끝 페이지까지)에서 last_run.fired_at이 지난 24시간 안인 작업의 이름·상태. 상태가 SUCCEEDED가 아니면 "실패" 후보. SUCCEEDED는 시작만 뜻하므로 2)의 파일로 끝까지 확인한다.
+1) 시작 기록(읽기만): list_triggers(recurring true, enabled true, limit 100, next_cursor가 없을 때까지 모든 페이지 — 한 페이지가 크기로 잘려도 next_cursor로 이어 읽는다. 일회성은 include_completed true, recurring false로 한 번 더)에서 last_run.fired_at이 지난 24시간 안인 작업의 이름·상태. 상태가 SUCCEEDED가 아니면 "실패" 후보. SUCCEEDED는 시작만 뜻하므로 2)의 파일로 끝까지 확인한다.
 2) 결과 파일 확인(수정 시각 KST, 그 요일에 돌아야 하는 것만):
  | 작업 | 도는 날·시각 | 확인 파일 |
  | SAVE 메모 | 매일 06:15 | workspace/outputs/save-daily-offline-replay/LATEST_TICKER_LEADS.json 오늘 |
