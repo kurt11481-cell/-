@@ -45,3 +45,28 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 - 같은 날 두 작업이 서로 다른 조상 기준선을 쓰면 비교 대상이 다를 수 있다. 조상 조건으로 줄이지만 완전히 없애지는 못한다.
 - 늘어난 실패를 기준선에 "받아들이는" 절차는 없다. B안에서 10건 이상 멈췄을 때는 원인을 고치거나, 사장 결정으로 그 기준선을 승인하는 작은 표식 파일(`_baseline/accept-<sha8>.txt`)을 두는 방법을 이번 변경에 같이 넣는다(안). 표식 파일은 사장실 스레드가 아니라 사장이 직접 만든다.
 - P-2(작업 브랜치에서 safety-ci 미실행)는 이번 범위가 아니다.
+
+## 사장 결정 기록 (2026-11-01)
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX96N42R8EVfpkqMD55ex6miT (이 스레드가 이 수정안 baseline-watch-proposal-2026-11-01에 대해 올린 카드, 질문 "기준선 실패가 늘면 개발 큐를 어떻게 할까요?")
+- 고른 항목: "B안: 경고, 10건 이상 멈춤" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-01 23:30:29 KST (harness wake 원문 기준)
+- 범위: 이 수정안 1건, 같은 날, 1회(CLAUDE.md "Authority/limit change"). 2026-11-01 안에 Builder를 시작하지 못하면, 시작 직전에 같은 수정안으로 승인 카드를 다시 받는다.
+- 지시문: docs/claude/baseline-watch-builder-prompt.md, docs/claude/baseline-watch-judge-prompt.md
+
+## 사장 재승인 기록 (2026-11-02)
+- 사유: 11/01 승인 뒤 00:00 KST 전에 Builder가 시작되지 않음(11/02 07:31 KST 확인: worktree·실행 기록·실행 스레드 없음). 11/01 승인은 소멸.
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9B2pyomEHZWjL2nS3Nw41sJ (이 스레드가 이 수정안 baseline-watch-proposal-2026-11-01 B안에 대해 올린 카드, 질문 "기준선 감시 규칙(B안) Builder를 오늘 시작할까요?")
+- 고른 항목: "승인, 오늘 시작" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-02 07:31:57 KST (harness wake 원문 기준)
+- 범위: 이 수정안 1건, 2026-11-02 하루, 1회. 지시문은 11/01과 같음(baseline-watch-builder-prompt.md, baseline-watch-judge-prompt.md).
+- 실행 지시(사장 직접 입력): 사장실 회사PC 실행 스레드 '기준선 감시 규칙 만들기' 시작 메시지 cmsg_0137MRzn9nuDvvQmVxm6WeX9GuqwsXBfZbMZ5JscomuVZf, 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-02 07:34:10 KST, 원문 "기준선 감시 실행해"(harness from=human trust=principal). 위 카드는 다른 스레드에서 올라온 것이라, 이 실행 스레드에서는 이 직접 입력을 CLAUDE.md "Authority/limit change"의 현재 대화 승인으로 삼는다. 이 스레드가 Builder worktree(.claude/worktrees/baseline-watch)와 별도 읽기 전용 Judge를 띄운다. 커밋·병합 없음, 병합은 사장 PowerShell 결정 뒤.
+
+## 병합 준비 결정 기록 (2026-11-02)
+- 결과: Builder 완료(worktree .claude/worktrees/baseline-watch, 기준 d7b8b99, 시험 143건 OK), 독립 Judge VERDICT: PASS(docs/claude/baseline-watch-judge-report.md). Judge 주의 (B) 멈춤이 다음 기준선에서 저절로 풀림, (C) dev-merge rebase에도 새 멈춤.
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9XrNrfwzV6k7Vox7VieHDe2 (실행 스레드 '기준선 감시 규칙 만들기'가 이 수정안에 대해 올린 카드, 질문 "기준선 감시(Judge PASS)를 지금 모습대로 병합할까요?")
+- 고른 항목: "지금대로 병합 준비" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-02 08:37:22 KST (harness wake 원문 기준)
+- 뜻: 병합 스크립트 준비까지. 병합 자체는 사장이 자기 PowerShell에서 docs/claude/baseline-watch-merge-2026-11-02.ps1 한 줄을 실행할 때다. (B)는 후속 수정안으로 따로 올린다.
