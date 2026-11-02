@@ -1186,6 +1186,74 @@ class BaselineWatchTests(unittest.TestCase):
     def test_keyless_baseline_dict_adds_nothing(self):
         self.assertEqual(devpipe.baseline_rose_verdict({"failures": [], "ran": 1}), (None, []))
 
+    def after_rise(self, added=10):
+        """W = first (3 failures), X = base with `added` more in its stored keys, Y = a new commit after X."""
+        self.cache(self.first, failure_names(3), "2026-11-01T00:00:00Z",
+                   prev_base=None, added_failures=[], removed_failures=[])
+        now = failure_names(3 + added)
+        self.cache(self.base, now, "2026-11-02T00:00:00Z",
+                   prev_base=self.first, added_failures=now[3:], removed_failures=[])
+        return now, self.commit("third")
+
+    def judged(self, base, failures, utc="2026-11-03T00:00:00Z"):
+        """Keyless cache on base, read and judged the normal way."""
+        self.cache(base, failures, utc)
+        baseline = devpipe.cached_baseline(self.repo, base)
+        return baseline, devpipe.baseline_rose_verdict(baseline)
+
+    def test_stop_stays_on_the_next_baseline(self):
+        now, y = self.after_rise()
+        baseline, (stop, notices) = self.judged(y, now)
+        self.assertEqual(baseline["prev_base"], self.first)
+        self.assertEqual(stop, ("STOP_BASELINE_REGRESSED", "%s:+10" % self.first[:8]))
+        self.assertEqual(notices, [])
+
+    def test_stop_stays_along_a_chain_of_baselines(self):
+        now, y = self.after_rise()
+        self.cache(y, now, "2026-11-03T00:00:00Z", prev_base=self.first, added_failures=now[3:], removed_failures=[])
+        z = self.commit("fourth")
+        baseline, (stop, _) = self.judged(z, now, "2026-11-04T00:00:00Z")
+        self.assertEqual(baseline["prev_base"], self.first)
+        self.assertEqual(stop, ("STOP_BASELINE_REGRESSED", "%s:+10" % self.first[:8]))
+
+    def test_accepted_stop_is_the_next_comparison_point(self):
+        now, y = self.after_rise()
+        marker = self.accept(self.base)
+        baseline, verdict = self.judged(y, now)
+        self.assertEqual(baseline["prev_base"], self.base)
+        self.assertEqual(verdict, (None, []))
+        self.assertEqual(marker.read_bytes(), b"ok\n")
+
+    def test_accept_of_the_next_baseline_alone_does_not_clear_the_skipped_one(self):
+        now, y = self.after_rise()
+        self.accept(y)
+        baseline, (stop, notices) = self.judged(y, now)
+        self.assertEqual(baseline["prev_base"], self.first)
+        self.assertIsNone(stop)
+        self.assertEqual(notices, ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+10" % y[:8]])
+
+    def test_fixing_the_failures_clears_the_stop(self):
+        _, y = self.after_rise()
+        baseline, verdict = self.judged(y, failure_names(3))
+        self.assertEqual(baseline["prev_base"], self.first)
+        self.assertEqual(verdict, (None, []))
+
+    def test_keyless_old_cache_stays_a_candidate(self):
+        third = self.commit("third")
+        self.cache(self.first, [], "2026-11-01T00:00:00Z")
+        path = devpipe.baseline_cache_path(self.repo, self.base)
+        self.cache(self.base, failure_names(50), "2026-11-02T00:00:00Z")
+        before = path.read_bytes()
+        with mock.patch.object(devpipe, "compare_baseline", side_effect=AssertionError("no recursive compare")):
+            self.assertEqual(devpipe.previous_baseline(self.repo, third, self.python)["base"], self.base)
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_warning_baseline_stays_a_candidate(self):
+        now, y = self.after_rise(9)
+        baseline, verdict = self.judged(y, now)
+        self.assertEqual(baseline["prev_base"], self.base)
+        self.assertEqual(verdict, (None, []))
+
 
 class BaselineWatchCheckTests(unittest.TestCase):
     """The notice leaves the verdict alone and shows in the result; the stop leaves the list in the run folder."""

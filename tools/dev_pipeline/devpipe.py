@@ -1001,8 +1001,16 @@ def baseline_accept_path(repo, base):
     return runs_root(repo) / "_baseline" / ("accept-%s.txt" % str(base)[:8])
 
 
+def baseline_stopped(repo, data):
+    """Stored keys of this cache reached the stop and its base has no accept marker. A cache without the keys is not."""
+    added = data.get("added_failures")
+    return (isinstance(added, list) and len(added) >= BASELINE_ROSE_STOP
+            and not baseline_accept_path(repo, data["base"]).is_file())
+
+
 def previous_baseline(repo, base, python):
-    """The newest cached baseline of a real ancestor of base with the same python and method, or None."""
+    """The newest cached baseline of a real ancestor of base with the same python and method that did not stop
+    unaccepted, or None. Skipping a stopped one keeps the stop until the failures are fixed or the user accepts."""
     candidates = []
     for path in (runs_root(repo) / "_baseline").glob("*.json"):
         try:
@@ -1011,7 +1019,8 @@ def previous_baseline(repo, base, python):
             continue
         if (isinstance(data, dict) and data.get("python") == python and data.get("method") == BASELINE_METHOD
                 and isinstance(data.get("base"), str) and SHA_RE.match(data["base"]) and data["base"] != base
-                and isinstance(data.get("failures"), list) and isinstance(data.get("computed_utc"), str)):
+                and isinstance(data.get("failures"), list) and isinstance(data.get("computed_utc"), str)
+                and not baseline_stopped(repo, data)):
             candidates.append(data)
     for data in sorted(candidates, key=lambda item: (item["computed_utc"], item["base"]), reverse=True):
         if git(repo, "merge-base", "--is-ancestor", data["base"], base, check=False)[0] == 0:
