@@ -1,0 +1,5 @@
+body_sha256 4aa91c0935fa3e90ceceef2c42f07d6731c34bff5aead6ad51aef49c64f8ddfe  docs/claude/strategy1101-score-preregistration-2026-11-02.md (표시 줄 앞까지 본문 — UTF-8·LF로 맞춰 잼, 계약)
+raw_sha256 bf6490fdb0f01975d4c0ff22d940f6811e3968472467d2ab759b412974f91545  docs/claude/strategy1101-score-preregistration-2026-11-02.md (고정 때 파일 전체 — 참고, 11절에 결과를 적으면 바뀜)
+lf_sha256 bf6490fdb0f01975d4c0ff22d940f6811e3968472467d2ab759b412974f91545
+runner_sha256 2081c8b43b150e44a4239cb791422f15c7055c7a88cc50b5b16bf954ddfc6bb8  docs/claude/strategy1101_score.py (UTF-8·LF로 맞춰 잼, 계약)
+fixed_at 2026-11-02T10:07:19+09:00 (strategy-1101 채점 사전 등록, 2026-11-02 07:30:13 KST 사장 결정 카드 '관제판 7건 + 채점 사전 등록'; 첫 줄이기 체결 전 고정 — 마지막 코어 세션 2026-10-30, 고정 전 독립 검토 1회 + 바뀐 곳 재검토 1회 반영)
