@@ -68,3 +68,15 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 - ④ 고치는 법 1번("임시 사본에 구현 해시를 다시 채워 검증")은 그대로는 안 된다. 검증기가 manifest 파일의 정규화 해시를 정책의 Acceptance 묶음과 대조하기 때문이다(validate_kiwoom_session_aware_acceptance.py 25행). 사본을 고치면 묶음이 깨진다.
 - 그래서 두 시험은 실제 manifest를 그대로 검증한다. 그 결과에서 `implementation hash mismatch: <경로>` 오류만 따로 뗀다. 남은 오류가 0인지, 뗀 오류의 경로가 모두 manifest의 `implementation_hashes` 키 안에 있는지 확인한다.
 - 위 2번(어긋남은 구현 해시뿐) 단언과 뜻이 같다. 검증기·다른 시험은 그대로다. 승인 범위(시험 2개만, 검증기 불변) 안이다.
+
+## ④ 실행·병합 결정 기록 (2026-11-02)
+- 1차 acc-implhash: BLOCKED(2026-11-02 20:11 KST). 시험 파일이 git에 CRLF·LF 혼합(i/mixed)으로 있어 편집 도구가 전체를 LF로 바꿨고, "줄바꿈 지키기" 규칙에 걸렸다. 내용 수정과 대상 42건 통과는 됐다.
+- 2차 acc-implhash2(지시문 docs/claude/acc-implhash2-builder-prompt.md, 이 파일만 LF 허용): NEEDS_APPROVAL, Judge 2회차 PASS(1회차 FAIL은 보고서 (b) 경로 목록 누락), 새 실패 0, 기준선 실패 15→13, ran 3513→3513 (2026-11-02 20:57 KST, docs/claude/dev-runs/acc-implhash2.md).
+- 등급 authority 사유: REMOVED_LINE:order_authority. 줄바꿈 전체 변경 때문에 생긴 오탐이다. Judge가 지운 8줄과 더한 8줄의 글자가 같음을 확인했다.
+- 공개: Builder가 임시 스크립트 실행과 파이프 1회를 시도했다가 거부됐다. diff에는 흔적이 없다(Judge G2).
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9N7KFJusrmeTe1aV6hYiXGs (질문 "시험 2개 수정(acc-implhash2)을 병합할까요?", 위 두 공개 사항을 알린 뒤)
+- 고른 항목: "병합 승인" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-02 21:08:47 KST (harness wake 원문 기준)
+- 실행: 사장이 직접 연 대화형 PowerShell에서 `.\tools\dev-merge.ps1 acc-implhash2 -ApproveAuthority` 실행 후 Enter 한 번. 이 스레드는 실행하지 않는다.
+- 병합 결과: `DEV-MERGE acc-implhash2 MERGED sha=c81ac2e6 mode=ff`(사장 붙여 넣기, 2026-11-02 21:43:54 KST). 커밋 c81ac2e 21:41:45 KST, 파일 2개.
