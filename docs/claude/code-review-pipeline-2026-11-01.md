@@ -51,3 +51,17 @@ P-1 원인이 "2026-10-30이 지나면서 기한이 끝난 고정 시험 데이�
 - TIME(날짜 경과)과 CODE(코드 회귀)는 근거가 없다.
 - 뜻: **테스트 결과가 계좌 보유에 따라 달라진다.** 보유가 바뀔 때마다 기준선이 조용히 바뀌고, 그 시험들이 회귀를 못 잡는다.
 - 수정 후보: ① 두 시험 파일이 저장소 안 고정 fixture 상태를 읽게 바꾼다(테스트만 변경). ② P-1의 기준선 실패 수 감시 규칙(K3).
+
+## 추가: dev-run·dev-merge 스크립트 리뷰 (2026-11-02 15:4x KST, 읽기 전용)
+읽은 범위: tools/dev-merge.ps1 전체(136줄), tools/dev-run.ps1 36~70행·325~360행(Builder·Judge 실행 플래그), tools/dev_pipeline/devpipe.py 1274~1300행(`main_snapshot`·`compare_main`). dev-queue.ps1·commit-docs.ps1과 dev-run.ps1의 나머지 줄은 **미검토**.
+
+### P-4 (중, P-3과 같은 종류) Builder는 시험 파일을 통해 아무 Python이나 실행할 수 있다
+- dev-run.ps1 38~45행: Builder 허용 명령은 `python -m unittest *`다. Builder는 worktree 안에서 시험 파일을 쓸 수 있다(acceptEdits). 그래서 시험 파일에 넣은 코드는 `python -m unittest discover ...`로 그대로 실행된다. 명령 문자열 허용 목록은 실행되는 코드 내용을 제한하지 못한다.
+- 지금 막는 선: ① 실행 뒤 메인 checkout의 workspace/policies/·stock-strategy-system/ 모든 파일 해시와 추적 파일 상태를 실행 전과 비교한다(devpipe.py 1274~1300행, main-before.json·main-check-N.json). 바뀌면 잡힌다. 다만 막지는 못하고 **뒤에 알아챈다**. ② MCP 전부 차단(`--strict-mcp-config`, `mcp__*` deny). ③ 키움 브리지가 주문 엔드포인트를 막는다(authority-paths.txt 주석). ④ Judge가 diff를 읽는다.
+- 남는 빈틈: 감시 폴더 밖의 부작용은 비교에 잡히지 않는다. 예를 들면 홈 폴더 쓰기, 예약 작업 등록, 네트워크 호출, 비밀 파일 읽기다. Builder 모델이 지시문을 따른다는 전제에 기대고 있다.
+- 제안: 당장 고칠 일은 아니다. P-3과 묶어 "실행 전 내용 검사 또는 격리 실행" K3 검토 안건으로 둔다. 짧게 할 수 있는 일은 Judge 확인 항목에 "새 시험 파일이 subprocess·socket·os.system·파일 시스템 절대 경로를 쓰는지"를 더하는 것이다. judge-prompt.md도 tools/ 아래라 K3다.
+
+### 문제 없음으로 본 것
+- dev-merge.ps1: main checkout의 result.json만 믿는다. 조건은 devpipe가 모두 다시 계산한다. -ApproveAuthority는 대화형 콘솔·두 표준 핸들·Enter 한 번을 요구하고, 판단이 안 되면 멈춘다(39~85행). 스크립트 주석 스스로 "사람임을 증명하지는 못한다"고 밝힌다(41~43행). 원격 push·강제·브랜치 삭제는 없다(15행).
+- Judge는 Read·Grep·Glob만 쓰고 MCP는 차단된다(dev-run.ps1 356~358행).
+- auto-core decision_mode: 설정이 없으면 기본은 compare다(auto_core_decide.py 418행). 일지에 쓰기 직전에 apply·kill_switch·provenance를 다시 확인한다(770~779행).
