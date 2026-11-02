@@ -67,6 +67,9 @@ CONSTANTS: dict[str, tuple[Any, str]] = {
 C = {name: value for name, (value, _source) in CONSTANTS.items()}
 POWER_SECTOR_PREFIX = "A1 \uc804\ub825"  # "A1 \uc804\ub825"
 EV3_LINE = re.compile(r"^- \uc774\ubca4\ud2b8 (\d{4}-\d{2}-\d{2})\(EV")  # "^- \uc774\ubca4\ud2b8 (date)(EV"
+# core-failclose: a list line with "\uc774\ubca4\ud2b8", a date and EV3 in any layout; compared with ev3_dates only.
+EV3_LOOSE_LINE = re.compile(r"^\s*-(?=.*\uc774\ubca4\ud2b8)(?=.*\d{4}-\d{2}-\d{2})(?=.*EV3)")
+EV3_PARSE_REASON = "CORE_INPUT_PARSE:EV3"
 
 # Merge groups ("\uac19\uc740 \uc885\ub958", rule file 3)): direction "-" is sell evidence for a held symbol (weakening for a watch
 # symbol), "+" buy evidence; "alert" is a review (never evidence).
@@ -732,6 +735,13 @@ def r5_state(peak_item: dict[str, Any]) -> str:
 
 def ev3_dates(text: str) -> list[str]:
     return sorted({match.group(1) for line in text.splitlines() if (match := EV3_LINE.match(line))})
+
+
+def ev3_parse_reasons(text: str) -> list[str]:
+    """core-failclose: [EV3_PARSE_REASON] when more lines look like an EV3 event than ev3_dates reads (a changed
+    layout would otherwise close the event silently), else []. Goes to core_input_guard as a blocking reason."""
+    loose = sum(1 for line in text.splitlines() if EV3_LOOSE_LINE.match(line))
+    return [EV3_PARSE_REASON] if loose > len(ev3_dates(text)) else []
 
 
 SAME_AS_BENCHMARK = object()  # rrec1 rg2_series default: the RG2 benchmark leg is the benchmark itself

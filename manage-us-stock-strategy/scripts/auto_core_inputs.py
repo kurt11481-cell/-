@@ -206,18 +206,20 @@ def _guard_label(path: Path, repo: Path) -> str:
 
 
 def core_input_guard(*, recovery_gate_path: Path, watchlist_path: Path, docs_dir: Path, repo: Path,
-                     committed_check: Callable[[Path, Path], tuple[bool, str | None]]) -> dict[str, Any]:
+                     committed_check: Callable[[Path, Path], tuple[bool, str | None]],
+                     parse_reasons: tuple[str, ...] | list[str] = ()) -> dict[str, Any]:
     """coreinput: decide's docs/claude judgment inputs must be the committed ones. Checked: the R-REC1 document, the
     watchlist and every M6 document (the glob of m6_documents). {status OK|BLOCKED, reasons (sorted), checked, details
     {path: why}, sha256 {path: hex}}. Reasons: CORE_INPUT_MISSING:<path> (R-REC1 only: a missing watchlist is already
     load_watchlist's UNREADABLE), CORE_INPUT_UNCOMMITTED:<path> (a symbolic link, a failed committed_check or one that
-    raises), CORE_INPUT_GUARD_ERROR:<exception>. It never raises: a decide failure would take the sell tickets too. The
+    raises), CORE_INPUT_GUARD_ERROR:<exception>, and parse_reasons as given (core-failclose: decide's
+    CORE_INPUT_PARSE:EV3, judged on the very text it read). It never raises: a decide failure would take the sell tickets too. The
     reasons block every buy and drop the redeployment candidate (plan()): they never enter a sell gate, card_check or
     _plan_sell, but without the candidate a sell's regret columns, step, quantity and swap_pair can differ or that day
     can have no sell ticket (the same calculation as a day without a candidate).
     The card registry has its own check; card documents are pinned by its section
     hashes."""
-    reasons: set[str] = set()
+    reasons: set[str] = set(parse_reasons)
     checked: list[str] = []
     details: dict[str, str] = {}
     digests: dict[str, str] = {}
@@ -245,7 +247,7 @@ def core_input_guard(*, recovery_gate_path: Path, watchlist_path: Path, docs_dir
             if path.is_file():
                 digests[label] = hashlib.sha256(path.read_bytes()).hexdigest()
     except Exception as exc:  # noqa: BLE001 - see the docstring: buys are blocked, decide goes on
-        return {"status": "BLOCKED", "reasons": [f"CORE_INPUT_GUARD_ERROR:{type(exc).__name__}"],
+        return {"status": "BLOCKED", "reasons": sorted({f"CORE_INPUT_GUARD_ERROR:{type(exc).__name__}", *parse_reasons}),
                 "checked": sorted(checked), "details": details, "sha256": digests}
     return {"status": "BLOCKED" if reasons else "OK", "reasons": sorted(reasons), "checked": sorted(checked),
             "details": details, "sha256": digests}

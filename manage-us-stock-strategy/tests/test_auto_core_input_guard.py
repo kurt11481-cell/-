@@ -1,6 +1,7 @@
 """coreinput: decide's docs/claude judgment inputs (R-REC1 document, M6 documents, watchlist, compare explanations).
 
-An uncommitted, missing or linked input blocks every buy ticket and drops the redeployment candidate. Its reasons never
+An uncommitted, missing, linked or unparsable (EV3 line, core-failclose) input blocks every buy ticket and drops the
+redeployment candidate. Its reasons never
 enter a sell gate, card_check or _plan_sell, but without the candidate a sell's regret columns, step, quantity and
 swap_pair can differ or that day can have no sell ticket (CandidateCarriesTheSellTests). decide never fails because of
 it and the push comes once per change. All inputs are synthetic (TEST_ONLY); no network, no Kiwoom.
@@ -196,6 +197,95 @@ class BlockedInputTests(BuyCase):
         self.assertEqual(order[3], "wait")
 
 
+class Ev3ParseTests(BuyCase):
+    """core-failclose C-1: an EV3 line the strict pattern cannot read blocks buys through the guard's reasons."""
+
+    REASON = decide_module.rules.EV3_PARSE_REASON
+    REAL_TEXT = (decide_fixture.ROOT / "docs/claude" / RECOVERY).read_text(encoding="utf-8")
+    STRICT_START = "- 이벤트 2026-10-08(EV3"
+    SPACED_START = "- 이벤트 2026-10-08 (EV3"
+
+    def run_with(self, text):
+        (self.env.docs / RECOVERY).write_text(text, encoding="utf-8")
+        return self.env.run(input_committed_check=committed)
+
+    def test_the_current_document_gives_no_new_reason(self):
+        rules = decide_module.rules
+        loose = [line for line in self.REAL_TEXT.splitlines() if rules.EV3_LOOSE_LINE.match(line)]
+        self.assertEqual((len(loose), rules.ev3_dates(self.REAL_TEXT)), (1, ["2026-10-08"]))
+        self.assertEqual(rules.ev3_parse_reasons(self.REAL_TEXT), [])
+        decision = self.run_with(self.REAL_TEXT)
+        self.assertEqual((guard_of(decision)["status"], guard_of(decision)["reasons"]), ("OK", []))
+        self.assertNotIn(self.REASON, blocked_buy_reasons(decision))
+
+    def test_a_spacing_variant_of_the_line_blocks_the_buy(self):
+        self.assertEqual(len(buys(self.env.run(input_committed_check=committed))), 1)
+        text = self.REAL_TEXT.replace(self.STRICT_START, self.SPACED_START)
+        self.assertNotEqual(text, self.REAL_TEXT)
+        self.assertEqual(decide_module.rules.ev3_dates(text), [])  # the strict reading is unchanged: no date
+        self.assert_buy_blocked(self.run_with(text), self.REASON)
+
+    def test_a_document_without_an_ev3_line_gives_no_new_reason(self):
+        text = "\n".join(line for line in self.REAL_TEXT.splitlines() if not line.startswith(self.STRICT_START))
+        self.assertEqual(decide_module.rules.ev3_parse_reasons(text), [])
+        decision = self.run_with(text)
+        self.assertEqual((guard_of(decision)["reasons"], len(buys(decision))), ([], 1))
+
+    def test_a_broken_line_next_to_a_readable_one_is_counted(self):
+        text = f"{self.STRICT_START}, 사용자 지정)\n- 이벤트: 2026-10-20 — EV3\n"
+        self.assertEqual(decide_module.rules.ev3_dates(text), ["2026-10-08"])
+        self.assertEqual(decide_module.rules.ev3_parse_reasons(text), [self.REASON])
+
+    def test_lines_that_are_not_event_list_lines_do_not_count(self):
+        text = ("x - 이벤트 2026-10-09(EV3\n- 적용 메모(2026-10-19): 남는 사건은 EV3\n- 이벤트 2026-10-08(EV1\n"
+                "- 이벤트 중 새 이벤트가 오면 EV3도 기준점을 새로 잡는다\n")
+        self.assertEqual(decide_module.rules.ev3_parse_reasons(text), [])
+
+    def test_the_check_runs_before_the_research_wait(self):
+        order = []
+        original_wait, rules = decide_module._wait_for_research, decide_module.rules
+        original_parse = rules.ev3_parse_reasons
+
+        def wait(*args):
+            order.append("wait")
+            return original_wait(*args)
+
+        def parse(text):
+            order.append("parse")
+            return original_parse(text)
+
+        with mock.patch.object(decide_module, "_wait_for_research", wait), \
+                mock.patch.object(rules, "ev3_parse_reasons", parse):
+            self.env.run(input_committed_check=committed)
+        self.assertEqual(order, ["parse", "wait"])
+
+    def test_the_reason_survives_a_guard_error_and_stays_out_of_the_decision_reasons(self):
+        decision = self.run_with(self.SPACED_START)
+        self.assertEqual([reason for reason in decision["reasons"] if reason.startswith("CORE_INPUT")], [])
+        with mock.patch.object(Path, "is_file", side_effect=OSError("TEST_ONLY")):
+            guard = inputs.core_input_guard(recovery_gate_path=self.env.docs / RECOVERY,
+                                            watchlist_path=self.env.watchlist, docs_dir=self.env.docs,
+                                            repo=self.env.root, committed_check=committed,
+                                            parse_reasons=[self.REASON])
+        self.assertEqual((guard["status"], guard["reasons"]),
+                         ("BLOCKED", ["CORE_INPUT_GUARD_ERROR:OSError", self.REASON]))
+
+    def test_the_alert_says_the_format_broke_and_not_uncommitted(self):
+        decision = self.run_with(self.SPACED_START)
+        self.assertEqual([alert for alert in decision["alerts"] if alert["code"].startswith("CORE_INPUT")], [{
+            "code": "CORE_INPUT_PARSE", "push": True,
+            "line": "자동 코어 입력 문서 형식 깨짐 — 매수 주문표 막힘·재배치 후보 빠짐(매도는 후보 없는 날처럼 계산): "
+                    "EV3 — Cowork 문서 확인"}])
+
+    def test_both_kinds_of_reason_get_their_own_alert_line(self):
+        (self.env.docs / RECOVERY).write_text(self.SPACED_START, encoding="utf-8")
+        decision = self.env.run(input_committed_check=uncommitted(WATCHLIST))
+        alerts = {alert["code"]: alert["line"] for alert in decision["alerts"] if alert["code"].startswith("CORE_INPUT")}
+        self.assertEqual(sorted(alerts), ["CORE_INPUT_PARSE", "CORE_INPUT_UNCOMMITTED"])
+        self.assertNotIn("EV3", alerts["CORE_INPUT_UNCOMMITTED"])
+        self.assertNotIn(WATCHLIST, alerts["CORE_INPUT_PARSE"])
+
+
 class ExplainedFileTests(BuyCase):
     def explained_path(self):
         path = self.env.root / EXPLAINED
@@ -384,6 +474,15 @@ class SellThroughDecideTests(unittest.TestCase):
         plain = self.env().run()
         self.assertEqual([(ticket["ticker"], ticket["side"]) for ticket in plain["tickets"] if ticket["side"] == "sell"],
                          [(sells[0]["ticker"], "sell")])
+
+    def test_a_broken_ev3_line_leaves_a_sell_that_needs_no_candidate(self):
+        env = self.env()
+        (env.docs / RECOVERY).write_text(Ev3ParseTests.SPACED_START, encoding="utf-8")
+        decision = env.run(input_committed_check=committed)
+        self.assertEqual(guard_of(decision)["reasons"], [Ev3ParseTests.REASON])
+        sells = [ticket for ticket in decision["tickets"] if ticket["side"] == "sell"]
+        self.assertEqual(len(sells), 1, decision["blocked"])
+        self.assertEqual(sells[0]["regret"]["columns"], ["up:cash", "down:cash"])
 
 
 if __name__ == "__main__":

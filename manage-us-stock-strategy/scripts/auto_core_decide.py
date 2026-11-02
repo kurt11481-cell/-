@@ -7,8 +7,9 @@
  3 inputs: 30-minute pages, close histories, corporate actions, calendar, card registry (F2), research record
    (F3; when today's is missing it is looked for every 5 minutes until 08:30 KST, then the run goes on without
    it: buys blocked), watchlist, alert policy, previous decision.json. The S7 review is run again with the
-   research record's earnings and the buy-target proposals (read-only output under <day>/s7/). An uncommitted or
-   missing docs/claude judgment input (coreinput, inputs.core_input_guard) blocks every buy and drops the redeployment
+   research record's earnings and the buy-target proposals (read-only output under <day>/s7/). An uncommitted,
+   missing or unparsable (EV3 line, core-failclose) docs/claude judgment input (coreinput, inputs.core_input_guard)
+   blocks every buy and drops the redeployment
    candidate: its reasons never enter a sell gate, but a sell can change (or lose its ticket) without the candidate.
  4 F6 outcome classification (read-only ust21150 order fills and ust21050 open orders only) of the tickets left
    unclassified by the latest record whose F6 ran (f6_ran); a record that ends before F6 or fails carries that
@@ -572,14 +573,24 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
     # edit before the check is not missed by reading it later. A reason blocks every buy and drops the redeployment
     # candidate; it never enters a gate or card_check.
     guard = inputs.core_input_guard(recovery_gate_path=docs_dir / RECOVERY_GATE_DOC.name, watchlist_path=watchlist_path,
-                                    docs_dir=docs_dir, repo=repo, committed_check=input_committed_check)
+                                    docs_dir=docs_dir, repo=repo, committed_check=input_committed_check,
+                                    parse_reasons=rules.ev3_parse_reasons(recovery_text))
     decision["inputs"]["core_input_guard"] = guard
     previous_guard = ((previous or {}).get("inputs") or {}).get("core_input_guard") or {}
     if guard["reasons"] and guard["reasons"] != previous_guard.get("reasons"):
-        exceptions.append(("CORE_INPUT_UNCOMMITTED",
-                           "\uc790\ub3d9 \ucf54\uc5b4 \uc785\ub825 \ubb38\uc11c \ubbf8\ucee4\ubc0b \u2014 \ub9e4\uc218 \uc8fc\ubb38\ud45c \ub9c9\ud798\u00b7\uc7ac\ubc30\uce58 \ud6c4\ubcf4 \ube60\uc9d0(\ub9e4\ub3c4\ub294 \ud6c4\ubcf4 \uc5c6\ub294 \ub0a0\ucc98\ub7fc \uacc4\uc0b0): "
-                           + ", ".join(reason.split(":", 1)[-1] for reason in guard["reasons"])
-                           + " \u2014 Cowork \ucee4\ubc0b \ud655\uc778"))
+        unparsed = [reason for reason in guard["reasons"] if reason.startswith("CORE_INPUT_PARSE:")]
+        others = [reason for reason in guard["reasons"] if reason not in unparsed]
+        effect = " \u2014 \ub9e4\uc218 \uc8fc\ubb38\ud45c \ub9c9\ud798\u00b7\uc7ac\ubc30\uce58 \ud6c4\ubcf4 \ube60\uc9d0(\ub9e4\ub3c4\ub294 \ud6c4\ubcf4 \uc5c6\ub294 \ub0a0\ucc98\ub7fc \uacc4\uc0b0): "
+        if others:
+            exceptions.append(("CORE_INPUT_UNCOMMITTED",
+                               "\uc790\ub3d9 \ucf54\uc5b4 \uc785\ub825 \ubb38\uc11c \ubbf8\ucee4\ubc0b" + effect
+                               + ", ".join(reason.split(":", 1)[-1] for reason in others)
+                               + " \u2014 Cowork \ucee4\ubc0b \ud655\uc778"))
+        if unparsed:  # core-failclose: the document is committed but a line of it cannot be read
+            exceptions.append(("CORE_INPUT_PARSE",
+                               "\uc790\ub3d9 \ucf54\uc5b4 \uc785\ub825 \ubb38\uc11c \ud615\uc2dd \uae68\uc9d0" + effect
+                               + ", ".join(reason.split(":", 1)[-1] for reason in unparsed)
+                               + " \u2014 Cowork \ubb38\uc11c \ud655\uc778"))
     wait = _wait_for_research(research_root, day, clock, sleeper)
     # The R-REC1 window (60 sessions to the evaluation session): damage facts and recorded sessions (r2 R2-4).
     window = [session for session in sessions if session <= evaluation_session][-rules.C["RREC_WINDOW_SESSIONS"]:]

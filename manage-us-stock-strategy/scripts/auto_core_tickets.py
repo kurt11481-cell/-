@@ -1134,6 +1134,9 @@ def _buy_ticket(ctx: dict[str, Any], symbol: str, row: dict[str, Any], evidence:
         blocked.append({"symbol": symbol, "side": "buy", "reasons": ["G1_PRICE_OR_SIGMA_MISSING"]})
         return None
     held = symbol in ctx["holdings"]
+    if held and symbol not in ctx["weights"]:  # core-failclose: an unknown current weight is not 0
+        blocked.append({"symbol": symbol, "side": "buy", "reasons": ["CURRENT_WEIGHT_MISSING"]})
+        return None
     current = Decimal(str(ctx["weights"].get(symbol, 0)))
     goal = target if held else floor_to_step(target * S["FIRST_ENTRY"])
     delta = int(math.floor((goal - current) * ctx["equity"] / reference))

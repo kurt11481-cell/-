@@ -16,6 +16,7 @@ from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "manage-us-stock-strategy/scripts"
@@ -728,6 +729,71 @@ class LotZeroAfterStepTests(unittest.TestCase):
         blocked = []
         self.assertIsNone(tk._buy_ticket(ctx, "MU", row, {"r_max": "1/3", "ids": ["MU:x"]}, [], blocked))
         self.assertEqual(blocked, [{"symbol": "MU", "side": "buy", "reasons": ["LOT_ZERO"]}])
+
+
+class CurrentWeightTests(unittest.TestCase):
+    """core-failclose C-2: a held symbol without an S7 weight has no buy ticket; every other buy is computed as before."""
+
+    def run_held(self, *, drop_weight):
+        scenario = Scenario(holdings={"SOXL": 10, "MU": 20})
+        original = tk.plan
+        seen = {}
+
+        def shaped(ctx):
+            seen["weight"] = ctx["weights"]["MU"]
+            seen["equity"] = ctx["equity"]
+            seen["reference"] = tk._sigma_and_ref(ctx, "MU")[0]
+            if drop_weight:
+                del ctx["weights"]["MU"]
+            return original(ctx)
+
+        with mock.patch.object(tk, "plan", shaped):
+            return scenario.run(), seen
+
+    def test_held_without_a_weight_is_blocked(self):
+        result, _seen = self.run_held(drop_weight=True)
+        self.assertEqual(tickets_of(result, "MU", "buy"), [])
+        self.assertEqual(blocked_reasons(result, "MU", "buy"), ["CURRENT_WEIGHT_MISSING"])
+
+    def test_held_with_a_weight_keeps_its_quantity(self):
+        result, seen = self.run_held(drop_weight=False)
+        tickets = tickets_of(result, "MU", "buy")
+        self.assertEqual(len(tickets), 1, result["planned"]["blocked"])
+        gap = tickets[0]["gap"]
+        self.assertFalse(gap["first_entry"])
+        self.assertEqual(gap["current_weight"], seen["weight"])
+        self.assertEqual(gap["delta"], math.floor((Decimal(str(gap["target_weight"])) - Decimal(str(seen["weight"])))
+                                                  * seen["equity"] / seen["reference"]))
+        self.assertNotIn("CURRENT_WEIGHT_MISSING", blocked_reasons(result, "MU", "buy"))
+
+    def test_first_buy_without_a_weight_starts_from_zero(self):
+        original = tk.plan
+        seen = {}
+
+        def shaped(ctx):
+            seen["weights"] = dict(ctx["weights"])
+            return original(ctx)
+
+        with mock.patch.object(tk, "plan", shaped):
+            result = Scenario().run()
+        self.assertNotIn("MU", seen["weights"])
+        tickets = tickets_of(result, "MU", "buy")
+        self.assertEqual(len(tickets), 1, result["planned"]["blocked"])
+        self.assertEqual((tickets[0]["gap"]["first_entry"], tickets[0]["gap"]["current_weight"]), (True, 0.0))
+
+    def test_the_block_comes_only_after_the_other_buy_reasons(self):
+        ctx = {"policy_instruments": {"MU"}, "equity": Decimal("10000"), "holdings": {"MU": 5}, "weights": {},
+               "proposal_results": [{"symbol": "MU", "target_weight": 0.04, "status": "DISPLAY", "reasons": []}],
+               "closes": {"MU": Decimal("100")}, "sigmas": {"MU": 0.02}, "cash": Decimal("100000"),
+               "scenarios": {"MU": {"status": "ok", "up": 0.02, "down": -0.02, "worst_day": -0.03}},
+               "checks": {"MU": {"entry": {}}}, "keys": {}, "config": {}}
+        row = {"code": "MU", "add": False, "c": [{"s": "ok", "t": ""}] * 5 + [{"s": "wait", "t": ""}]}
+        blocked = []
+        self.assertIsNone(tk._buy_ticket(ctx, "MU", row, {"r_max": "1/3", "ids": ["MU:x"]}, ["G0_TEST"], blocked))
+        self.assertEqual(blocked, [{"symbol": "MU", "side": "buy", "reasons": ["G0_TEST"]}])
+        blocked = []
+        self.assertIsNone(tk._buy_ticket(ctx, "MU", row, {"r_max": "1/3", "ids": ["MU:x"]}, [], blocked))
+        self.assertEqual(blocked, [{"symbol": "MU", "side": "buy", "reasons": ["CURRENT_WEIGHT_MISSING"]}])
 
 
 class RequirementRowTests(unittest.TestCase):
