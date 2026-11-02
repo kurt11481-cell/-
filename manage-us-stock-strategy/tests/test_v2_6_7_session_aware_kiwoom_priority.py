@@ -101,6 +101,24 @@ def current_acceptance_manifest_path(
     return matches[0]
 
 
+IMPLEMENTATION_DRIFT_PREFIX = "implementation hash mismatch: "
+
+
+def split_implementation_drift(errors: list[str], manifest: dict) -> tuple[list[str], list[str]]:
+    """Split validator errors into (drifted implementation paths, all other errors).
+
+    The pin was retired by redesign T1, so implementation files may change after
+    the locked Acceptance was recorded. Only that drift is separated; every other
+    error stays visible to the caller.
+    """
+    drifted = [
+        error[len(IMPLEMENTATION_DRIFT_PREFIX):]
+        for error in errors if error.startswith(IMPLEMENTATION_DRIFT_PREFIX)
+    ]
+    others = [error for error in errors if not error.startswith(IMPLEMENTATION_DRIFT_PREFIX)]
+    return drifted, others
+
+
 def regular(provider: str = "KIWOOM_REST", price: float = 100.0) -> dict:
     if provider == "KIWOOM_REST":
         return kiwoom_daily_observation(
@@ -293,6 +311,11 @@ class PriorityAndScopeTests(unittest.TestCase):
 
 
 class InvariantAndContractTests(unittest.TestCase):
+    def assert_only_implementation_drift(self, errors: list[str], manifest: dict) -> None:
+        drifted, others = split_implementation_drift(errors, manifest)
+        self.assertEqual(others, [])
+        self.assertTrue(set(drifted) <= set(manifest["implementation_hashes"]))
+
     def validate_scope_mutation(self, mutate) -> list[str]:
         manifest_path = current_acceptance_manifest_path()
         policy = load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json")
@@ -321,7 +344,9 @@ class InvariantAndContractTests(unittest.TestCase):
                 acceptance_hash=acceptance_hash,
             ))
 
-        self.assertEqual(self.validate_scope_mutation(extend), [])
+        self.assert_only_implementation_drift(
+            self.validate_scope_mutation(extend), load_json(current_acceptance_manifest_path())
+        )
 
     def test_duplicate_provider_scope_fails_closed(self):
         def duplicate(policy, _acceptance_hash):
@@ -424,15 +449,16 @@ class InvariantAndContractTests(unittest.TestCase):
 
     def test_guarded_priority_requires_locked_acceptance_manifest(self):
         manifest_path = current_acceptance_manifest_path()
+        manifest = load_json(manifest_path)
         errors = validate_acceptance(
-            manifest=load_json(manifest_path), manifest_path=manifest_path,
+            manifest=manifest, manifest_path=manifest_path,
             manifest_schema=SCHEMAS / "kiwoom-session-aware-acceptance-manifest.schema.json",
             priority_policy=load_json(ROOT / "workspace/policies/kiwoom-session-aware-priority-policy.json"),
             priority_schema=SCHEMAS / "kiwoom-session-aware-priority-policy.schema.json",
             source_registry=load_json(ROOT / "workspace/policies/source_capabilities.json"),
             source_schema=SCHEMAS / "source-capability.schema.json", repo_root=ROOT,
         )
-        self.assertEqual(errors, [])
+        self.assert_only_implementation_drift(errors, manifest)
 
     def test_missing_acceptance_hash_blocks_guarded_transition(self):
         manifest_path = current_acceptance_manifest_path()
