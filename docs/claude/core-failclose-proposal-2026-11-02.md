@@ -45,3 +45,11 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 - 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
 - 시각: 2026-11-02 13:16:01 KST (harness wake 원문 기준)
 - 범위: 이 수정안 1건, 2026-11-02 하루, 1회. 개발 큐 authority 작업 core-failclose. 병합은 별도 사장 결정 + 사장 PowerShell -ApproveAuthority. 위 정정은 병합 결정 전에 사장에게 알린다.
+
+## 사장 병합 결정 기록 (2026-11-02)
+- 결과: 개발 큐 core-failclose NEEDS_APPROVAL, Judge PASS(14/14), 새 실패 0, ran 3497→3511 (2026-11-02 13:51 KST, workspace/outputs/dev-runs/_queue/2026-11-02.log). 보고서 (c): C-2는 재배치 후보·매도표 영향 없음. (e): C-1은 사유가 난 날 재배치 후보가 빠짐(위 정정과 같음).
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9EwNXJt6JKby2DvG8SXL8JT (질문 "core-failclose를 병합할까요?", 위 정정과 결과를 함께 알린 뒤)
+- 고른 항목: "병합 승인" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-02 14:45:18 KST (harness wake 원문 기준)
+- 실행: 사장이 직접 연 대화형 PowerShell에서 `.\tools\dev-merge.ps1 core-failclose -ApproveAuthority` + Enter 한 번. 이 스레드는 실행하지 않는다.
