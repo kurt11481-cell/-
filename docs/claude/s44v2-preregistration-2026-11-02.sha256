@@ -1,0 +1,4 @@
+raw_sha256 b5999340eefb2c2846cc71df01aab7f2cc34ad8f6b50c45f24f1317cb762c5db  docs/claude/s44v2-preregistration-2026-11-02.md (고정 때 파일 전체, 계약 — 고치면 계산 파일이 실행을 거부)
+lf_sha256 b5999340eefb2c2846cc71df01aab7f2cc34ad8f6b50c45f24f1317cb762c5db
+runner_sha256 b966186210d6ea7cec78268e8bc0edb7a930def5c4f067c933fc7dfd2d50db23  docs/claude/s44v2_rebalance_replay.py (계약)
+fixed_at 2026-11-02T21:43:33+09:00 (S4-4 v2 사전 등록, v1 멈춤 뒤 2026-11-02 21:30 KST 사장 결정 카드 '새 사전 등록으로 다시 재기'; v2 시장 자료 받기 전 고정 — 고정 전 독립 검토 1회 + 바뀐 곳 재검토 1회 반영)
