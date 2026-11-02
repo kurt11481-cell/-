@@ -48,3 +48,10 @@ status: 읽기 전용 리뷰 결과 — 코드·정책·예약 변경 없음. �
 
 ## 결론을 바꿀 조건
 C-1·C-2가 다른 관문에 이미 막혀 있다는 근거(테스트나 코드)가 나오면 하로 낮춘다.
+
+## 추가: 2차 리뷰 — 판정 비교·봉·모드 (2026-11-02 15:5x KST, 읽기 전용)
+- 반영된 수정: C-1 잔여·C-2는 core-failclose로 병합됐다(6aea772, 2026-11-02 15:06 KST). C-1의 "문서 없음·미커밋"은 coreinput2(db56303)가 이미 막았다.
+- auto_core_compare.py(판정 대조·연속 일수): 설명 파일(redesign-t2-compare-explained.json)은 coreinput2 뒤로 커밋 검사를 받는다. 커밋 안 됐거나 링크면 아무것도 설명하지 않는다(auto_core_decide.py 836~849행). 연속 일수는 Cowork 안내(next_action_for_cowork)에만 쓰인다. decision_mode를 바꾸는 일은 사람이 한다(auto-core-config.schema.json 5행). 결함 없음.
+- decision_mode: 설정에 키가 없으면 compare다(decide 418행). apply면 일지에 쓰기 직전에 모드·kill_switch·provenance를 다시 확인한다(770~779행). 결함 없음.
+- auto_core_bars.py: 봉 하나만 빠져도 그 세션의 고가·저가·거래량은 INCOMPLETE가 된다. 기록에 없는 큰 가격 점프는 SPLIT_SUSPECTED로 그 종목 지표를 모두 unknown으로 만든다. 기업 행사 기록이 INVALID면 그 종목을 쓰지 않는다(171~196행). fail-closed다. 거래소 기본값이 NASDAQ인 점은 C-3과 같은 뿌리다(bars 91·172행, decide 631행).
+- **미검토**: auto_core_replay.py(과거 재현, 운영 판정 경로 밖), auto_core_inputs.load_research의 세부, 봉의 "마지막 세션 = 평가 세션" 신선도 확인 위치.
