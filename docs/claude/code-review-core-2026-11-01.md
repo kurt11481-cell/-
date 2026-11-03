@@ -55,3 +55,17 @@ C-1·C-2가 다른 관문에 이미 막혀 있다는 근거(테스트나 코드)
 - decision_mode: 설정에 키가 없으면 compare다(decide 418행). apply면 일지에 쓰기 직전에 모드·kill_switch·provenance를 다시 확인한다(770~779행). 결함 없음.
 - auto_core_bars.py: 봉 하나만 빠져도 그 세션의 고가·저가·거래량은 INCOMPLETE가 된다. 기록에 없는 큰 가격 점프는 SPLIT_SUSPECTED로 그 종목 지표를 모두 unknown으로 만든다. 기업 행사 기록이 INVALID면 그 종목을 쓰지 않는다(171~196행). fail-closed다. 거래소 기본값이 NASDAQ인 점은 C-3과 같은 뿌리다(bars 91·172행, decide 631행).
 - **미검토**: auto_core_replay.py(과거 재현, 운영 판정 경로 밖), auto_core_inputs.load_research의 세부, 봉의 "마지막 세션 = 평가 세션" 신선도 확인 위치.
+
+## 추가: 3차 리뷰 — 리서치 기록·리플레이 (2026-11-03 21:5x KST, 읽기 전용)
+읽은 범위: auto_core_inputs.py 250~385행(check_record·load_research), auto_core_decide.py 594~625행, auto_core_rules.py 215~232·540~552행, auto_core_replay.py 397~436행. 기준 커밋 8f2fdd5.
+
+### RI-1 (하) 오늘 리서치 기록의 평가 세션이 코어의 평가 세션과 같은지 확인하지 않는다
+- check_record는 기록 날짜, 달력 안 세션인지, 작성 시각(그 세션 16:00 ET 이후, 판정 시각 이전)을 본다(auto_core_inputs.py 296~306행). 그러나 기록의 evaluation_session이 decide가 계산한 평가 세션(auto_core_decide.py 522행)과 같은지는 어디에서도 비교하지 않는다(grep).
+- 그래서 작성 도구가 실수로 지난 세션을 적으면, 지난 세션의 실적 일정·공식 사실이 오늘 것으로 쓰인다(fail-open).
+- 실제 기록: 최근 12개(10/17~11/03 KST) 모두 기록 날짜 바로 전 미국 세션을 적었다. 어긋난 적은 없다.
+- 고치는 법(안): load_research 결과 today의 evaluation_session ≠ 평가 세션이면 status를 INVALID(RESEARCH_RECORD_SESSION_MISMATCH)로 둔다. auto_core_* 파일이라 권한 작업 개발 큐 후보다. 급하지 않다.
+
+### 문제 없음으로 본 것
+- 봉 신선도: 평가 세션 종가가 없으면 build_series가 None을 돌려주고, 그 종목은 CLOSE_MISSING으로 UNK가 된다(rules 223·544~547행). fail-closed다. 위 2차의 "신선도 확인 위치" 미검토 항목은 이것으로 닫는다.
+- 리서치 사실: 공식 도메인이 아니면 버린다. 피해 도메인 사실은 RG1에만 쓰인다. 발표 시각이 판정 시각보다 뒤이거나 요약이 200자를 넘어도 버린다(310~331행).
+- auto_core_replay.py: 일지는 합성 값이다. 쓰는 곳은 workspace/outputs/auto-core/replay/<run-id>/ 두 파일뿐이다(427~428행). 운영 상태를 바꾸지 않는다. 거래소를 모르면 NASDAQ으로 두는 것(424행)은 C-3과 같은 뿌리다.

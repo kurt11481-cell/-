@@ -65,3 +65,17 @@ P-1 원인이 "2026-10-30이 지나면서 기한이 끝난 고정 시험 데이�
 - dev-merge.ps1: main checkout의 result.json만 믿는다. 조건은 devpipe가 모두 다시 계산한다. -ApproveAuthority는 대화형 콘솔·두 표준 핸들·Enter 한 번을 요구하고, 판단이 안 되면 멈춘다(39~85행). 스크립트 주석 스스로 "사람임을 증명하지는 못한다"고 밝힌다(41~43행). 원격 push·강제·브랜치 삭제는 없다(15행).
 - Judge는 Read·Grep·Glob만 쓰고 MCP는 차단된다(dev-run.ps1 356~358행).
 - auto-core decision_mode: 설정이 없으면 기본은 compare다(auto_core_decide.py 418행). 일지에 쓰기 직전에 apply·kill_switch·provenance를 다시 확인한다(770~779행).
+
+## 추가: 3차 리뷰 — dev-queue·commit-docs (2026-11-03 21:5x KST, 읽기 전용)
+읽은 범위: tools/dev-queue.ps1 전체(150줄), tools/commit-docs.ps1 전체(85줄). 기준 커밋 8f2fdd5.
+
+### CD-1 (중) commit-docs는 docs/claude 아래면 권한 문서도 그대로 커밋한다
+- commit-docs.ps1 44행의 경로 검사는 세 가지만 본다. `docs/claude/` 아래인지, `..`이 없는지, `_pending/`이 아닌지다. authority-paths 같은 별도 관문은 없다.
+- 그래서 헌법(constitution-v*.md), automation-redesign-2026-10-10.md 같은 권한 문서와 파이프라인이 쓰는 docs/claude/dev-runs/·_dev-queue/ 파일도 _pending 한 줄이나 23:30 자동 커밋으로 들어갈 수 있다. 사람 검토는 없다.
+- 이미 아는 사실과 맞다. constitution-location 기억에 "스레드 문서 쓰기·23:30 자동 커밋은 막지 않는다"고 적혀 있다. card-evidence-registry.json은 CLAUDE.md 51행에 따라 대화형 세션이 일부러 커밋하는 파일이라 예외가 정상이다.
+- 지금 막는 선: 자동 코어가 읽는 docs/claude 입력 4곳은 커밋 검사(coreinput2)를 받는다. 다만 이 검사는 "커밋됐는가"만 보고, "누가 바꿨는가"는 보지 않는다.
+- 고치는 법(안): commit-docs에 보호 목록(헌법·결정 색인 머리·dev-runs·_dev-queue)을 두고, 그 경로는 거부하거나 별도 표시를 요구한다. tools/ 변경이라 **K3**다. 급하지 않다. 23:30 커밋 기록이 git에 남아 뒤에 추적할 수 있기 때문이다.
+
+### 문제 없음으로 본 것
+- dev-queue.ps1: 잠금 파일은 pid와 시작 시각을 함께 본다(Test-LockAlive). 예약 작업은 MultipleInstances IgnoreNew다. 그래서 두 번 겹쳐 돌지 않는다. task id는 정규식 `^[a-z0-9][a-z0-9-]{1,47}$`으로 거른다. dev-run은 340분으로 제한된다.
+- 알아 둘 점: 지시문이 아직 커밋되지 않았으면 dev-queue가 commit-docs를 한 번 돌린다. 이때 그 지시문만이 아니라 대기 중인 _pending 전부가 커밋된다. 결함은 아니다. 다만 대기 줄에 다른 문서가 있으면 함께 들어간다.
