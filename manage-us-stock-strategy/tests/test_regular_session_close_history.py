@@ -136,14 +136,15 @@ class CloseHistoryTests(unittest.TestCase):
         early = history["sessions"][-1]
         self.assertEqual((early["session_date"], early["close"], early["bar_cntr_tm"], early["close_type"]),
                          ("2026-11-27", "9.80", "20261127123000", "EARLY"))
-        # Bar labels were measured only under UTC-04:00; standard-time sessions stay unverified.
-        self.assertIn("BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET", early["unverified_reasons"])
+        # Bar labels are measured under UTC-05:00 too (2026-11-02); only the non-ACTIVE calendar is left.
+        self.assertNotIn("BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET", early["unverified_reasons"])
+        self.assertEqual(early["unverified_reasons"], ["SESSION_CALENDAR_NOT_ACTIVE"])
         self.assertFalse(early["verified"])
 
-    def test_early_close_is_verified_when_the_winter_offset_is_added_to_the_verified_set(self) -> None:
-        # Prepared path for the measurement planned after the 2026-11-02 session: once "-05:00" is
-        # measured, adding it to LABEL_VERIFIED_UTC_OFFSETS is the only change a winter session needs.
-        # The constant itself stays ("-04:00",) until then; this only patches it inside the test.
+    def test_early_close_is_verified_under_the_measured_winter_offset(self) -> None:
+        # "-05:00" was measured on the 2026-11-02 session and is in LABEL_VERIFIED_UTC_OFFSETS, so a
+        # winter session on the ACTIVE calendar is verified without any patch.
+        self.assertIn("-05:00", rsch.LABEL_VERIFIED_UTC_OFFSETS)
         trusted = self.tmp / "trusted"
         calendar_copy = build_authority_root(trusted, extra_calendars=(SESSION_0829,))
         with mock.patch.object(rsch, "TRUSTED_ROOT", trusted):
@@ -154,10 +155,7 @@ class CloseHistoryTests(unittest.TestCase):
         folder = self.pages_dir("TEST", {"p1.json": page([
             ("20261127133000", "9.99"), ("20261127130000", "9.90"), ("20261127123000", "9.80"),
             ("20261127120000", "9.70"), ("20261125153000", "9.50"), ("20261125150000", "9.40")])})
-        unmeasured = self.build(folder, "TEST", calendar=active)["sessions"][-1]
-        self.assertEqual(unmeasured["unverified_reasons"], ["BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET"])
-        with mock.patch.object(rsch, "LABEL_VERIFIED_UTC_OFFSETS", ("-04:00", "-05:00")):
-            early = self.build(folder, "TEST", calendar=active)["sessions"][-1]
+        early = self.build(folder, "TEST", calendar=active)["sessions"][-1]
         self.assertEqual((early["session_date"], early["close"], early["bar_cntr_tm"], early["close_type"]),
                          ("2026-11-27", "9.80", "20261127123000", "EARLY"))
         self.assertTrue(early["verified"])
@@ -338,6 +336,27 @@ class CloseHistoryTests(unittest.TestCase):
             json.dumps(page(changed)["result"], separators=(",", ":")).encode("utf-8") + b"\r\n")
         with self.assertRaisesRegex(rsch.CloseHistoryError, "PAGE_ROWS_CONFLICT:20260930153000"):
             self.build(folder, "MIX")
+
+    def test_unmeasured_offset_still_leaves_the_winter_close_unverified(self) -> None:
+        # Fail-closed path: an offset outside LABEL_VERIFIED_UTC_OFFSETS keeps the session unverified.
+        trusted = self.tmp / "trusted"
+        calendar_copy = build_authority_root(trusted, extra_calendars=(SESSION_0829,))
+        with mock.patch.object(rsch, "TRUSTED_ROOT", trusted):
+            snapshot, failure = rsch.load_production_snapshot(datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertIsNone(failure)
+        active = rsch.load_calendar(calendar_copy, snapshot)
+        self.assertEqual(active["identity"]["authority_status"], "ACTIVE")
+        folder = self.pages_dir("TEST", {"p1.json": page([
+            ("20261127133000", "9.99"), ("20261127130000", "9.90"), ("20261127123000", "9.80"),
+            ("20261127120000", "9.70"), ("20261125153000", "9.50"), ("20261125150000", "9.40")])})
+        with mock.patch.object(rsch, "LABEL_VERIFIED_UTC_OFFSETS", ("-04:00",)):
+            history = self.build(folder, "TEST", calendar=active)
+        early = history["sessions"][-1]
+        self.assertEqual((early["session_date"], early["close"]), ("2026-11-27", "9.80"))
+        self.assertFalse(early["verified"])
+        self.assertEqual(early["unverified_reasons"], ["BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET"])
+        self.assertEqual(rsch.unverified_reasons(history, ["2026-11-27"]),
+                         ["BAR_LABEL_TIMEZONE_UNVERIFIED_FOR_UTC_OFFSET"])
 
 
 if __name__ == "__main__":

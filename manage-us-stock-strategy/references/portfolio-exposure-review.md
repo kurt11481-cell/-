@@ -69,7 +69,7 @@ A close is unverified (values stay visible, R0 applies) when:
 
 - the session calendar used is not the ACTIVE production calendar,
 - the session's UTC offset is not one under which bar labels were measured
-  (only `-04:00` so far; remeasure after 2026-11-02),
+  (`-04:00` and `-05:00`, measured 2026-11-02),
 - the saved pages are missing (a history without its pages is never verified).
 
 The runner decides this itself. It rebuilds every history from the saved pages

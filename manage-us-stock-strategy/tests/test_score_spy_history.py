@@ -24,7 +24,7 @@ from test_s7_calendar_binding import SESSION_0829, build_authority_root  # noqa:
 
 NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
 VERIFIED_SESSIONS = ("2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30")
-WINTER_SESSION = "2026-01-05"  # core close at -05:00: the label time zone is not verified for that offset
+WINTER_SESSION = "2026-01-05"  # -05:00 close; e3/e4 patch back to the summer-only set so it stays unverified
 CLOSES = {"2026-09-24": "500.10", "2026-09-25": "501.20", "2026-09-28": "502.30", "2026-09-29": "503.40",
           "2026-09-30": "504.50"}
 REFERENCE_NOTE = "synthetic reference closes for tests"
@@ -140,21 +140,23 @@ class SpyHistoryCase(unittest.TestCase):
         self.assertEqual(["CLOSE_HISTORY_NOT_JSON"], benchmark["errors"])
 
     def test_e3_unverified_session_is_left_out(self) -> None:
-        self.write_history({**CLOSES, WINTER_SESSION: "480.00"})
-        history = json.loads((self.closes_root / "history/SPY.close-history.json").read_text(encoding="utf-8"))
-        winter = next(item for item in history["sessions"] if item["session_date"] == WINTER_SESSION)
-        self.assertTrue(winter["unverified_reasons"], "fixture must hold an unverified session")
-        benchmark = self.inputs()["benchmark"]
-        self.assertEqual("OK", benchmark["status"])
-        self.assertNotIn(WINTER_SESSION, benchmark["closes"])
-        self.assertEqual(CLOSES, benchmark["closes"])
+        with mock.patch.object(rsch, "LABEL_VERIFIED_UTC_OFFSETS", ("-04:00",)):
+            self.write_history({**CLOSES, WINTER_SESSION: "480.00"})
+            history = json.loads((self.closes_root / "history/SPY.close-history.json").read_text(encoding="utf-8"))
+            winter = next(item for item in history["sessions"] if item["session_date"] == WINTER_SESSION)
+            self.assertTrue(winter["unverified_reasons"], "fixture must hold an unverified session")
+            benchmark = self.inputs()["benchmark"]
+            self.assertEqual("OK", benchmark["status"])
+            self.assertNotIn(WINTER_SESSION, benchmark["closes"])
+            self.assertEqual(CLOSES, benchmark["closes"])
 
     def test_e4_only_unverified_sessions_is_invalid(self) -> None:
-        self.write_history({WINTER_SESSION: "480.00", "2026-01-06": "481.00"})
-        benchmark = self.inputs()["benchmark"]
-        self.assertEqual("INVALID", benchmark["status"])
-        self.assertEqual({}, benchmark["closes"])
-        self.assertEqual(["CLOSE_HISTORY_NO_VERIFIED_SESSIONS"], benchmark["errors"])
+        with mock.patch.object(rsch, "LABEL_VERIFIED_UTC_OFFSETS", ("-04:00",)):
+            self.write_history({WINTER_SESSION: "480.00", "2026-01-06": "481.00"})
+            benchmark = self.inputs()["benchmark"]
+            self.assertEqual("INVALID", benchmark["status"])
+            self.assertEqual({}, benchmark["closes"])
+            self.assertEqual(["CLOSE_HISTORY_NO_VERIFIED_SESSIONS"], benchmark["errors"])
 
     def test_f_no_calendar_keeps_missing(self) -> None:
         self.write_history(CLOSES)

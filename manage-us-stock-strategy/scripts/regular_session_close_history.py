@@ -58,10 +58,10 @@ PAGE_END_MARKER = "1f"
 TIME_LABEL = re.compile(r"(?:[01]\d|2[0-7])(?:00|30)00")
 STAMP = re.compile(r"\d{14}")
 SYMBOL = re.compile(r"[A-Z][A-Z0-9.]{0,11}")
-# Bar labels were observed in U.S. Eastern wall-clock time only while this UTC offset was in force
-# (Cowork measurements K3/C13, 2026-04-01..2026-09-30). A session under another offset stays
-# unverified until the label basis is measured again (planned after 2026-11-02).
-LABEL_VERIFIED_UTC_OFFSETS = ("-04:00",)
+# Bar labels were observed in U.S. Eastern wall-clock time under these UTC offsets only: -04:00
+# (Cowork measurements K3/C13, 2026-04-01..2026-09-30) and -05:00 (2026-11-02 session,
+# docs/claude/dst-label-measure-2026-11-03.md). Any other offset stays unverified until measured.
+LABEL_VERIFIED_UTC_OFFSETS = ("-04:00", "-05:00")
 
 
 class CloseHistoryError(ValueError):
