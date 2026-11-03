@@ -597,6 +597,11 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
     research = inputs.load_research(root=research_root, run_day=day, calendar_sessions=sessions,
                                     decide_time=clock(), registry=registry, window_start=window[0])
     today_record = research["today"]
+    # ri1-session2 (RI-1): an OK record that names another evaluation session than decide's is INVALID for today
+    # (buys blocked through RESEARCH_RECORD_NOT_OK, sells as usual). A new dict: the loaded one is not changed.
+    if today_record["status"] == "OK" and today_record["evaluation_session"] != evaluation_session:
+        today_record = {**today_record, "status": "INVALID", "reasons": ["RESEARCH_RECORD_SESSION_MISMATCH"],
+                        "facts": [], "earnings": None, "integrated_check_run": None}
     research_ok = today_record["status"] == "OK"
     facts = research["facts"] if research_ok else None
     research_block = None if research_ok else (today_record["reasons"] or [today_record["status"]])[0]

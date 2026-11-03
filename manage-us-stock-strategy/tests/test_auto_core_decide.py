@@ -126,11 +126,12 @@ class Env:
         }
         self.policy = helpers.policy()
 
-    def write_research(self, *, facts=None, run=None, written=None, earnings=None):
+    def write_research(self, *, facts=None, run=None, written=None, earnings=None, session=None):
         folder = self.research_root / RUN_DAY
         folder.mkdir(parents=True, exist_ok=True)
         write_json(folder / "research-record.json", {
-            "schema_version": "auto-core-research-record-1.0", "record_day_kst": RUN_DAY, "evaluation_session": LAST,
+            "schema_version": "auto-core-research-record-1.0", "record_day_kst": RUN_DAY,
+            "evaluation_session": session or LAST,
             "written_at": written or (NOW - timedelta(minutes=50)).isoformat(), "writer": "TEST_ONLY",
             "earnings": earnings or {"MU": {"status": "VERIFIED", "announcement_session": DAYS[-30],
                                             "timing": "AFTER_CLOSE", "source_kind": "SEC_FILING",
@@ -516,6 +517,33 @@ class ResearchRecordBuyGateTests(unittest.TestCase):
                 self.assertIn(f"RESEARCH_RECORD_NOT_OK:{reason}", reasons)
                 self.assertEqual(cell["s"], "no")
                 self.assertEqual([t for t in decision["tickets"] if t["side"] == "buy"], [])
+
+    def test_record_of_another_evaluation_session_blocks_buys_only(self):
+        """ri1-session2 (RI-1): today's record names the session before decide's evaluation session (written in
+        range): INVALID with RESEARCH_RECORD_SESSION_MISMATCH, the buy blocked, the sells as with the right record."""
+        def sells(decision):
+            return ([item for item in decision["tickets"] if item["side"] == "sell"],
+                    [item for item in decision["candidates"] if item["side"] == "sell"],
+                    [item for item in decision["blocked"] if item["side"] == "sell"],
+                    (decision["evidence"].get("SOXL") or {}).get("sell"))
+
+        good = self.env()
+        good_decision = good.run()
+        self.assertEqual(good_decision["inputs"]["research_record"]["status"], "OK")
+        self.assertIsNotNone(sells(good_decision)[3])  # the held SOXL has a sell judgment to compare
+        env = self.env()
+        env.write_research(session=DAYS[-2])
+        decision = env.run()
+        self.assertEqual(decision["evaluation_session"], LAST)
+        record = decision["inputs"]["research_record"]
+        self.assertEqual(record["status"], "INVALID")
+        self.assertIn("RESEARCH_RECORD_SESSION_MISMATCH", record["reasons"])
+        self.assertIn({"symbol": "SOXL", "side": "buy", "trigger": "NEW_EVIDENCE"}, decision["candidates"])
+        reasons, cell = self.soxl(decision)
+        self.assertIn("RESEARCH_RECORD_NOT_OK:RESEARCH_RECORD_SESSION_MISMATCH", reasons)
+        self.assertEqual(cell["s"], "no")
+        self.assertEqual([t for t in decision["tickets"] if t["side"] == "buy"], [])
+        self.assertEqual(sells(decision), sells(good_decision))
 
     def test_one_dropped_item_keeps_the_record_ok(self):
         env = self.env()
