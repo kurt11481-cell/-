@@ -80,3 +80,15 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 - 시각: 2026-11-02 21:08:47 KST (harness wake 원문 기준)
 - 실행: 사장이 직접 연 대화형 PowerShell에서 `.\tools\dev-merge.ps1 acc-implhash2 -ApproveAuthority` 실행 후 Enter 한 번. 이 스레드는 실행하지 않는다.
 - 병합 결과: `DEV-MERGE acc-implhash2 MERGED sha=c81ac2e6 mode=ff`(사장 붙여 넣기, 2026-11-02 21:43:54 KST). 커밋 c81ac2e 21:41:45 KST, 파일 2개.
+
+## ② 실행·병합 결정 기록 (basefail-include, 2026-11-02~03)
+- 실행 지시(사장 직접 입력): 실행 스레드 '기준선 복사 목록 수정 실행' 시작 메시지 cmsg_0137MRzn9nuDvvQmVxm6WeX9CRaXXAUugPbrzBEUaHGdPU, 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-02 21:44:39 KST, 원문 "기준선 복사 목록 실행해".
+- Builder: 원격 연결에서 새 세션 시작이 거부돼 실행 스레드가 직접 했다. worktree .claude/worktrees/funny-brahmagupta-57aa0a, 브랜치 worktree-basefail-include, 기준 c81ac2e, 커밋 없음. 보고서 docs/claude/basefail-include-report.md(worktree 안).
+- 정정: 위 17행 "모두 2026-08"은 LMT 후보 파일(workspace/outputs/lmt-instrument-registry-candidate-prep/lmt-instrument-registry-patch-candidate-v1.json)에 대해 틀렸다. 이 파일은 2026-09-02에 만들어졌다. 지시문대로 복사하지 않고 멈췄다. 또 manual-portfolio-analysis 폴더는 본 저장소에서 `??`가 아니었다(.gitignore 146행으로 이미 무시). 지시문대로 줄은 더했다.
+- 사장 결정(직접 입력): 같은 스레드 cmsg_0137MRzn9nuDvvQmVxm6WeX9Lv1nPMw9QVKLgCs6RULcte, 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-02 21:57:18 KST, 원문 "LMT 포함". 바로 앞 질문(LMT 파일을 복사 목록에 넣을지)에 대한 답이다.
+- 결과: 경로 19개(18개 2026-08, LMT 1개 2026-09-02, 합계 9,785,712바이트)·.gitignore 2줄. 기준선 실패 11건 모두 통과. 위 "약 수십 MB"는 약 9.3MiB로 확인.
+- 11/02 승인 소멸: Judge를 그날 열지 못해 11/02 하루 승인이 지났다. 사장 직접 입력 cmsg_0137MRzn9nuDvvQmVxm6WeX97jRPPU843cJSbG81sa8ER5, 2026-11-03 11:44:42 KST, 원문 "계속 진행 해"(바로 앞 메시지 "검토 결과가 오면 병합 스크립트를 만들어 드리겠습니다"에 대한 답)로 11/03 하루 재개했다.
+- Judge: 별도 회사PC 스레드 '기준선 복사 목록 독립 검토'(사장 입력 "기준선 검토 시작" 2026-11-03 15:21:43 KST), 7개 항목 PASS, VERDICT: PASS(docs/claude/basefail-include-judge-report.md, sha256 e120f759…).
+- 병합 승인(카드): cmsg_0137MRzn9nuDvvQmVxm6WeX9QX21RhmbmZu8bmj684J6xd(Judge 스레드, 질문 "기준선 복사 목록(basefail-include)을 오늘 병합할까요?"), 고른 항목 "승인, 오늘 병합"(option_index 0), 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-03 15:40:36 KST. 이어 실행 스레드 직접 입력 cmsg_0137MRzn9nuDvvQmVxm6WeX93wPsZw1bnFiqx8DJbNkof9, 2026-11-03 15:54:25 KST, 원문 "검토 PASS, 병합 스크립트 만들어".
+- 병합 스크립트: worktree docs/claude/basefail-include-merge-2026-11-03.ps1(sha256 18dd313f…). 2026-11-03 KST 안, 23:20~23:45 KST 밖에서만 돈다. 사장이 직접 연 대화형 PowerShell에서 실행한다. 이 스레드는 실행하지 않는다.
+- 병합 결과: 병합 커밋 8f2fdd5(2026-11-03 16:50:23 KST, 작업 커밋 e2c0142, 파일 4개). 사장 보고 "병합 완료" 2026-11-03 17:14:19 KST(cmsg_0137MRzn9nuDvvQmVxm6WeX9FNbUhpnfh4ydfVEJ6jk1Pt). 본 저장소 HEAD의 .worktreeinclude 경로 19개 모두 git 무시·미추적 확인. 효과는 다음 개발 큐 기준선부터(기준선 실패 13→약 2 예상, 확인 필요).
