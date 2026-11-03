@@ -1,2 +1,22 @@
 stock-strategy-system/portfolio_state.json
 stock-strategy-system/alert_runtime_state.json
+# Past outputs read by baseline tests (2026-08, one LMT candidate 2026-09-02); exact paths, git-ignored (basefail-include)
+stock-strategy-system/market_snapshot.example.json
+workspace/outputs/activation/holding-valuation-shadow/2026-08-13/kiwoom-finalized-snapshot.json
+workspace/outputs/activation/holding-valuation-shadow/2026-08-13/session-aware-validation.json
+workspace/outputs/activation/kiwoom-candidate-primary-replay-hardening/20260814-070450/replay_summary.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/kiwoom_daily_snapshot.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/kiwoom_extended_hours_snapshot_v2.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-080351/yfinance_replay_evidence.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/active_provider_smoke_aapl_2026-08-12.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/fault_injection_results_escalated.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/finalized_regular_validation_2026-08-12.json
+workspace/outputs/activation/kiwoom-session-aware-priority/20260814-082800/session_aware_validation.json
+workspace/outputs/activation/kiwoom-yfinance-five-session/20260813-164437/acceptance_summary.json
+workspace/outputs/activation/mvll-v2-shadow/20260814-v3/activation-receipt.json
+workspace/outputs/activation/nbis-v2-shadow/20260814-v4/activation-receipt.json
+workspace/outputs/lmt-instrument-registry-candidate-prep/lmt-instrument-registry-patch-candidate-v1.json
+workspace/outputs/manual-portfolio-analysis/manual-20260829T153208101909Z-c32341e4e7f3/manual-portfolio-analysis.json
+workspace/outputs/portfolio-strategy/2026-08-13/kiwoom_market_snapshot.json
+workspace/outputs/portfolio-strategy/2026-08-13/yfinance_replay_evidence.json
+workspace/outputs/portfolio-strategy/2026-08-13/yfinance_shadow_snapshot.json
