@@ -69,3 +69,17 @@ C-1·C-2가 다른 관문에 이미 막혀 있다는 근거(테스트나 코드)
 - 봉 신선도: 평가 세션 종가가 없으면 build_series가 None을 돌려주고, 그 종목은 CLOSE_MISSING으로 UNK가 된다(rules 223·544~547행). fail-closed다. 위 2차의 "신선도 확인 위치" 미검토 항목은 이것으로 닫는다.
 - 리서치 사실: 공식 도메인이 아니면 버린다. 피해 도메인 사실은 RG1에만 쓰인다. 발표 시각이 판정 시각보다 뒤이거나 요약이 200자를 넘어도 버린다(310~331행).
 - auto_core_replay.py: 일지는 합성 값이다. 쓰는 곳은 workspace/outputs/auto-core/replay/<run-id>/ 두 파일뿐이다(427~428행). 운영 상태를 바꾸지 않는다. 거래소를 모르면 NASDAQ으로 두는 것(424행)은 C-3과 같은 뿌리다.
+
+### RI-1 결정 기록
+- 1차 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9NQaebhrHGyYfpP6G8BQFus "셋 다 진행"(option_index 1)
+  - 시각: 2026-11-03 21:48:48 KST
+  - 계정: user_01KuMGKfZu1SBYxtMmg4vAiH(사장)
+  - 결과: 개발 큐에 올렸다.
+- 개발 큐 실행
+  - ri1-session(Sonnet): STOP_PREFLIGHT authority_requires_opus로 시작하지 못했다. 코드 변경은 없다.
+  - ri1-session2(Opus): NEEDS_APPROVAL. Judge 1회차 PASS, 새 실패 0, 기준선 실패 1(PLTR). 끝난 시각 2026-11-03 23:04 KST(docs/claude/dev-runs/ri1-session2.md).
+- 병합 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9MMnYV6pGs2ohb7Q3iQbhgZ "RI-1 수정(ri1-session2)을 병합할까요?" → "병합 승인"(option_index 0)
+  - 시각: 2026-11-04 08:02:32 KST
+  - 계정: 사장
+  - 실행: 사장이 직접 연 대화형 PowerShell에서 `.\tools\dev-merge.ps1 ri1-session2 -ApproveAuthority`를 실행한다. 이 스레드는 실행하지 않는다.
+- 병합 결과: `DEV-MERGE ri1-session2 MERGED sha=7f4bbad6 mode=rebase`(사장 붙여 넣기, 2026-11-04 08:35:37 KST). 커밋 7f4bbad 2026-11-04 08:05:16 KST. 다음 자동 코어(11/05 06:15 KST)부터 적용된다.
