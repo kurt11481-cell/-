@@ -49,3 +49,27 @@ tools/ 변경이라 **K3 수동 경로**를 거친다. 순서는 다음과 같�
 - 같은 카드로 진행한 나머지 둘:
   - ③-a: diff-v3.2-v3.3.txt를 .diff로 이름만 바꿈. sha256이 같음을 확인했다(b2a48ed5…).
   - RI-1: 개발 큐 ri1-session.
+
+## 날짜가 넘어간 뒤 결정 기록 (2026-11-04)
+- 11/03 카드의 승인은 그날 실행 스레드를 시작하지 못해 자정에 끝났다(당일 1회 규칙).
+- 사장실 직접 입력: cmsg_0137MRzn9nuDvvQmVxm6WeX9Bspy9n5Eb2BrjkzaBn5AeZ, 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-04 08:02:48 KST, 원문 "commit-docs 보호 실행해".
+- 다시 받은 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9JPRyi3hBNjFj57fbW4w2pk, 이 스레드가 이 수정안 cd-guard-proposal-2026-11-03에 대해 올렸다. 질문은 "commit-docs 보호(CD-1, cd-guard)를 오늘 K3로 고칠까요?"였다.
+  - 고른 항목: "승인, 오늘 진행" (option_index 0)
+  - 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+  - 시각: 2026-11-04 08:04:23 KST (harness wake 원문 기준)
+- 범위: 이 수정안 1건, 2026-11-04 하루, 1회. 코디네이터가 실행 스레드를 따로 열지 않기로 해서, 이 스레드가 Builder RC와 별도 Judge RC를 띄운다. 병합은 별도 사장 결정이다.
+
+## 실행·병합 기록 (2026-11-04)
+- Builder: 이 스레드가 회사PC 원격 세션(Opus)으로 띄웠다.
+  - worktree: .claude/worktrees/cd-guard, 브랜치 worktree-cd-guard, 기준 aad5fbe
+  - 바뀐 것: commit-docs.ps1 +98/−1, test_dev_pipeline.py +6, 보고서
+  - 시험: test_dev_pipeline 151건 OK
+  - DryRun: HOLD 1·PLAN 1 확인
+- Judge: 별도 원격 세션(Opus)이다. 9개 항목 모두 PASS(docs/claude/cd-guard-judge-report.md, 마지막 줄 VERDICT: PASS).
+- 병합 스크립트: docs/claude/cd-guard-merge-2026-11-04.ps1. 원격 세션이 쓰고 사장 Copy-Item으로 옮겼다. 고정한 해시는 파일 3개와 Judge 보고서다.
+- 병합 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9PX8dUoUeFsZwijzSYzgYbA "commit-docs 보호(cd-guard)를 위 두 줄로 병합할까요?" → "병합 승인"(option_index 0), 계정 사장, 2026-11-04 09:06:07 KST.
+- 병합: 사장 PowerShell. 작업 커밋 06e559c, 병합 커밋 ea93ce8(2026-11-04 09:04:09 KST), 파일 4개.
+  - 병합 뒤 본 저장소 작업 사본의 commit-docs.ps1·test_dev_pipeline.py 해시는 스크립트에 고정한 값과 같다.
+  - 보고서는 줄바꿈 차이만 있고 내용은 HEAD와 같다.
+  - 카드 탭(09:06)은 실행(09:04)보다 2분 늦게 기록됐다. 실행은 직전 메시지의 두 줄 안내를 따른 것이다.
+- 효과: 이제 헌법 constitution-v*.md와 automation-redesign-2026-10-10.md를 바꾸는 _pending은 23:30 자동 실행과 개발 큐에서 HOLD로 남는다. 커밋은 사장의 `.\tools\commit-docs.ps1 -ApproveProtected` 실행과 Enter 1회로만 된다.
