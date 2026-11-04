@@ -2,7 +2,7 @@
 id: duet-q4-recon-draft-2026-11-03
 type: judgment-draft
 as_of: 2026-11-03 19:3x KST
-status: 초안 — 정식 결정 카드는 fx-3 done(11/04 06:40 dst 첫 실행 확인) 뒤
+status: 결정됨 — a 유지(2026-11-04 08:54 KST, 사장 결정 카드)
 task: duet-q4-recon (관제판, 권한 자리 순번 coreinput2 → dst-label → 이 작업 → cal-2027 → 정책 묶음 A)
 ---
 
@@ -39,3 +39,7 @@ task: duet-q4-recon (관제판, 권한 자리 순번 coreinput2 → dst-label �
 2. 무응답 = a(현행 유지).
 
 결론을 바꿀 조건: deposit-interest-i3가 자동 처리(②/③)로 먼저 결정되고, 다른 HOLD 원인이 3개월 동안 0건이면 c를 다시 볼 수 있다.
+
+## 6. 결정 기록
+- 2026-11-04 08:54 KST 사장 결정 카드에서 "a) 유지 (기록만)"을 골랐다(사장실 회사PC 스레드). 카드는 fx-3 확인(11/04 07:45 판정 OK, reasons 없음) 뒤에 올렸다.
+- 처리: 관제판 duet-q4-recon done · active-decisions.md C절 한 줄. CLAUDE.md·코드·권한 변경 없음.
