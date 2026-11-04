@@ -1697,6 +1697,12 @@ class StaticScriptTests(unittest.TestCase):
                      "Nothing was pushed."):
             self.assertIn(word, commit_docs)
 
+    def test_commit_docs_holds_protected_docs(self):
+        commit_docs = self.read("commit-docs.ps1").decode("ascii")
+        for word in ("authority-paths.txt", "-ApproveProtected", "HOLD", "STOP_NOT_INTERACTIVE",
+                     "card-evidence-registry.json"):
+            self.assertIn(word, commit_docs)
+
     def test_queue_and_lock_wiring(self):
         queue = self.read("dev-queue.ps1").decode("ascii")
         for word in ("Test-LockAlive", "'queue-take'", "'prompt-committed'", "commit-docs.ps1", "dev-run.ps1",
