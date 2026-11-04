@@ -41,4 +41,10 @@
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-11-03T23:32:06Z
+- 병합 커밋: `7f4bbad63f2439605f8e9ae82b7fdeb49ecb2901` · 방식: rebase
+- 사용자 승인(-ApproveAuthority): 2026-11-03T23:05:15Z
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/ri1-session2/ 의 원본 기록입니다.)
