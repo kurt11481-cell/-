@@ -411,9 +411,81 @@ class ProposalFormatTests(unittest.TestCase):
         self.assertIn(checks["status"], {"PASS", "FAIL", "NOT_APPLICABLE"})
         if policy.get("daily_engine_scope") == "leveraged_holding_risk_and_watchlist":
             self.assertEqual(checks["check"], "evaluate_alerts.leveraged_state_integrity_errors")
-            self.assertEqual(checks["status"], "FAIL")  # synthetic tickers are not policy positions
-            self.assertTrue(checks["policy_positions_mismatch"])
-            self.assertIn("POLICY_POSITIONS_MISMATCH", proposal["warnings"])
+            self.assertEqual(checks["status"], "FAIL")  # synthetic tickers are not in the canonical instrument registry
+            self.assertFalse(checks["policy_positions_mismatch"])
+            self.assertNotIn("POLICY_POSITIONS_MISMATCH", proposal["warnings"])
+
+    def test_alert_check_ignores_retired_cost_loss_list_d4(self):
+        """postapply-d4: holdings BE/LITE/SOXL vs the D4-retired list SOXL/MVLL/NBIS; identity from the registry."""
+        policy = load_json(ROOT / "stock-strategy-system/alert_policy.json")
+        policy_before = canonical_hash(policy)
+        self.assertEqual(policy["daily_engine_scope"], "leveraged_holding_risk_and_watchlist")
+        self.assertEqual(set(policy["holding_risk_rules"]["positions"]), {"SOXL", "MVLL", "NBIS"})
+        state = base_state()
+        state["strategy_version"] = policy["strategy_version"]
+        rows = [holding_row("BE", "4", "150.5", evaluation="700", pnl="98"),
+                holding_row("LITE", "2", "80.25", evaluation="200", pnl="39.5"),
+                holding_row("SOXL", "10", "30.75", evaluation="400", pnl="92.5")]
+        results = account_results(utc(datetime.now(timezone.utc) - timedelta(seconds=30)), holdings=rows)
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        verified = {"identity_status": "verified_by_existing_active_policy"}
+        partial = Path(tmp.name) / "registry-partial.json"
+        partial.write_text(json.dumps({"instruments": {"BE": verified, "SOXL": verified}}), encoding="utf-8")
+        full = Path(tmp.name) / "registry-full.json"
+        full.write_text(json.dumps({"instruments": {"BE": verified, "SOXL": verified, "LITE": verified}}),
+                        encoding="utf-8")
+        retired = ("positive holdings contain symbols with neither a holding-risk rule nor a de-minimis exception: ",
+                   "holding-risk policy symbols are not positive verified holdings: ")
+        unheld = [f"missing positive verified {kind} for {symbol}"
+                  for kind in ("holding quantity", "average cost") for symbol in ("MVLL", "NBIS")]
+        identity = "{}: canonical instrument registry record is missing or unverified"
+
+        check = cli.alert_engine_check(policy, registry_path=partial)
+        proposal = make_proposal(state, results=results, check=check)
+        self.assertEqual(proposal["status"], "USER_CONFIRMATION_REQUIRED")
+        preview = apply_module.preview_updated_state(state, proposal)
+        self.assertEqual({ticker for ticker, quantity in preview["holdings"].items() if quantity > 0},
+                         {"BE", "LITE", "SOXL"})
+        result = check(state, proposal)
+        errors = result["errors"]
+        # (가) retired-list comparisons and unheld MVLL/NBIS quantity/cost errors are gone
+        self.assertFalse([error for error in errors if error.startswith(retired)])
+        for error in unheld:
+            self.assertNotIn(error, errors)
+        self.assertNotIn("holding risk position rules are missing", errors)
+        # (나) identity comes from the canonical registry: LITE missing, BE/SOXL verified
+        self.assertIn(identity.format("LITE"), errors)
+        self.assertNotIn(identity.format("BE"), errors)
+        self.assertNotIn(identity.format("SOXL"), errors)
+        self.assertFalse([error for error in errors if "official" in error or "held-instrument identity" in error])
+        self.assertEqual(result["status"], "FAIL")
+        # (다) the retired-list mismatch flag is never raised
+        self.assertFalse(result["policy_positions_mismatch"])
+        self.assertFalse(proposal["post_apply_checks"]["policy_positions_mismatch"])
+        self.assertNotIn("POLICY_POSITIONS_MISMATCH", proposal["warnings"])
+
+        # (라) with LITE verified too, no identity error remains
+        full_result = cli.alert_engine_check(policy, registry_path=full)(state, proposal)
+        self.assertFalse([error for error in full_result["errors"] if "canonical instrument registry" in error])
+        self.assertFalse(full_result["policy_positions_mismatch"])
+
+        # (마) a held symbol's missing average cost is still reported (not dropped)
+        no_cost = copy.deepcopy(proposal)
+        patch = no_cost["proposed_patch"]
+        if "average_cost_usd" in patch:
+            patch["average_cost_usd"].pop("SOXL", None)
+        if "SOXL" in (patch.get("position_updates") or {}):
+            patch["position_updates"]["SOXL"].pop("average_cost", None)
+        self.assertIsNone((apply_module.preview_updated_state(state, no_cost).get("average_cost_usd") or {}).get("SOXL"))
+        no_cost_errors = cli.alert_engine_check(policy, registry_path=full)(state, no_cost)["errors"]
+        self.assertIn("missing positive verified average cost for SOXL", no_cost_errors)
+
+        # an unreadable registry fails closed instead of passing silently
+        missing = cli.alert_engine_check(policy, registry_path=Path(tmp.name) / "absent.json")(state, proposal)
+        self.assertIn("canonical instrument registry is unreadable", missing["errors"])
+        self.assertEqual(missing["status"], "FAIL")
+        self.assertEqual(canonical_hash(policy), policy_before)
 
 
 class LibraryRejectionTests(TempStateCase):

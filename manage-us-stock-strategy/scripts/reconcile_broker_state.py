@@ -49,6 +49,25 @@ DAY_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}")
 LEVERAGED_SCOPE = "leveraged_holding_risk_and_watchlist"
 ALERT_CHECK_NAME = "evaluate_alerts.leveraged_state_integrity_errors"
 KST = timezone(timedelta(hours=9))
+CANONICAL_INSTRUMENT_REGISTRY = REPO_ROOT / "workspace/policies/instrument_registry.json"
+# D4 2026-10-01 cost-basis loss limit retired: holding_risk_rules.positions is no longer a decision rule, so the
+# alert engine's comparison of holdings with that list is dropped from the post-apply check (postapply-d4).
+D4_RETIRED_ERROR_PREFIXES = (
+    "positive holdings contain symbols with neither a holding-risk rule nor a de-minimis exception: ",
+    "holding-risk policy symbols are not positive verified holdings: ",
+)
+D4_RETIRED_ERRORS = frozenset({"holding risk position rules are missing"})
+# D4 2026-10-01: quantity/average-cost errors for retired-list symbols are dropped only when the symbol is not held.
+D4_RETIRED_UNHELD_PREFIXES = (
+    "missing positive verified holding quantity for ",
+    "missing positive verified average cost for ",
+)
+# Identity from the policy-file copy (decision_harness.instrument_registry) is replaced by the canonical registry.
+POLICY_COPY_IDENTITY_SUFFIXES = (
+    ": official instrument identity record is missing",
+    ": held-instrument identity is not verified",
+    ": official issuer identity source is missing",
+)
 
 
 def _messages() -> dict[str, str]:
@@ -70,25 +89,59 @@ def _kst(value: Any, pattern: str = "%Y-%m-%d %H:%M:%S") -> str:
     return parsed.astimezone(KST).strftime(pattern) if parsed else "?"
 
 
-def alert_engine_check(alert_policy: dict[str, Any]) -> Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]:
-    """Run the alert engine's leveraged state-integrity validation on a patched copy of the state."""
+def _is_d4_retired_error(error: str, positive: set[str]) -> bool:
+    """True for alert-engine errors that only compare holdings with the D4-retired cost-loss list (a-d)."""
+    if error in D4_RETIRED_ERRORS or error.startswith(D4_RETIRED_ERROR_PREFIXES):
+        return True
+    for prefix in D4_RETIRED_UNHELD_PREFIXES:
+        if error.startswith(prefix):
+            return error[len(prefix):] not in positive
+    return False
+
+
+def canonical_identity_errors(positive: set[str], registry_path: Path) -> list[str]:
+    """Held-symbol identity from the canonical instrument registry; unreadable registry fails closed."""
+    try:
+        instruments = load_json(Path(registry_path))["instruments"]
+        if not isinstance(instruments, dict):
+            raise TypeError("instruments is not an object")
+    except Exception:  # noqa: BLE001 - any read/parse failure is reported, never raised or passed silently
+        return ["canonical instrument registry is unreadable"]
+    errors = []
+    for symbol in sorted(positive):
+        record = instruments.get(symbol)
+        status = record.get("identity_status") if isinstance(record, dict) else None
+        if not (isinstance(status, str) and status.startswith("verified")):
+            errors.append(f"{symbol}: canonical instrument registry record is missing or unverified")
+    return errors
+
+
+def alert_engine_check(
+    alert_policy: dict[str, Any], *, registry_path: Path = CANONICAL_INSTRUMENT_REGISTRY,
+) -> Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]:
+    """Run the alert engine's leveraged state-integrity validation on a patched copy of the state.
+
+    postapply-d4: errors that only compare holdings with the D4-retired cost-loss list are dropped, and
+    held-instrument identity is checked against the canonical registry instead of the policy-file copy.
+    policy_positions_mismatch stays in the result for schema compatibility and is always False.
+    """
     def check(portfolio: dict[str, Any], proposal: dict[str, Any]) -> dict[str, Any]:
-        from evaluate_alerts import leveraged_state_integrity_errors
+        from evaluate_alerts import finite_number, leveraged_state_integrity_errors
 
         preview = preview_updated_state(portfolio, proposal)
         session_date = proposal["confirmed_snapshot_record"]["as_of"]
-        rules = alert_policy.get("holding_risk_rules") or {}
-        positions = set(rules.get("positions") or {})
-        de_minimis = set(rules.get("de_minimis_manual_exit_positions") or {})
-        positive = {ticker for ticker, quantity in (preview.get("holdings") or {}).items()
-                    if isinstance(quantity, int) and not isinstance(quantity, bool) and quantity > 0}
-        mismatch = bool(positive - positions - de_minimis) or bool(positions - positive)
         if alert_policy.get("daily_engine_scope") != LEVERAGED_SCOPE:
             return {"check": ALERT_CHECK_NAME, "session_date": session_date, "status": "NOT_APPLICABLE",
-                    "errors": [], "policy_positions_mismatch": mismatch}
-        errors = leveraged_state_integrity_errors(preview, alert_policy, session_date)
+                    "errors": [], "policy_positions_mismatch": False}
+        holdings = preview.get("holdings")
+        # Same positive-holding rule as evaluate_alerts.leveraged_state_integrity_errors.
+        positive = {ticker for ticker, quantity in (holdings if isinstance(holdings, dict) else {}).items()
+                    if finite_number(quantity) and int(quantity) > 0}
+        errors = [error for error in leveraged_state_integrity_errors(preview, alert_policy, session_date)
+                  if not _is_d4_retired_error(error, positive) and not error.endswith(POLICY_COPY_IDENTITY_SUFFIXES)]
+        errors.extend(canonical_identity_errors(positive, registry_path))
         return {"check": ALERT_CHECK_NAME, "session_date": session_date, "status": "FAIL" if errors else "PASS",
-                "errors": list(errors), "policy_positions_mismatch": mismatch}
+                "errors": errors, "policy_positions_mismatch": False}
     return check
 
 
