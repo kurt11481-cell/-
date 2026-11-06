@@ -3,7 +3,7 @@ id: llm-iccheck-builder-prompt
 title: "API 시범 1 — 공통 모듈 + 기록 대조 검토자(그날 연구 기록 ↔ 결정 색인, 표시 전용) — llm-iccheck"
 date: 2026-11-06
 class: "general(새 파일만, 코어·정책·주문 경로와 무관). 개발 큐 general: Builder → Judge → READY_TO_MERGE면 Cowork가 dev-merge"
-source: "사장 메시지 '세개 다 시범으로 도입'(2026-11-06 14:26:18 KST, 메시지 cmsg_0137MRzn9nuDvvQmVxm6WeX9WN4WgxbUVKevZGmkb4k24L) + 사장 결정 카드 'A 추가 + B 규칙 개정 검토'(카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9W8YcsLciv5wVPk5mhWRuUT, 2026-11-06 14:41:48 KST, 계정=사장). 설계 docs/claude/api-pilots-2026-11-06.md 3절·4절 시범 1. 개발 큐 등록은 사장 등록 승인 뒤"
+source: "사장 메시지 '세개 다 시범으로 도입'(2026-11-06 14:26:18 KST, 메시지 cmsg_0137MRzn9nuDvvQmVxm6WeX9WN4WgxbUVKevZGmkb4k24L) + 사장 결정 카드 'A 추가 + B 규칙 개정 검토'(카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9W8YcsLciv5wVPk5mhWRuUT, 2026-11-06 14:41:48 KST, 계정=사장). 설계 docs/claude/api-pilots-2026-11-06.md 3절·4절 시범 1. 개발 큐 등록 승인 = 사장 결정 카드 '시범 1부터 차례로'(카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9E3aPheNEEsLywwbJ1nm476, 2026-11-06 16:44:47 KST, 계정=사장), 등록 2026-11-07 KST(통합점검 v3.12.13 첫 실행 확인 뒤)"
 authority: "order_authority=false · quantity_authority 값 변경 없음 · 키움 호출 없음 · 정책·상태·일지·원장·연구 기록·카드 쓰기 없음 · API 키 값을 읽거나 출력하지 않음"
 ---
 
