@@ -1,8 +1,8 @@
 {
   "iccheck": {
-    "enabled": false,
-    "approved_ref": "",
-    "approved_kst": ""
+    "enabled": true,
+    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9UfWGFixKfn53UB3X6dWH1P proposal cmsg_0137MRzn9nuDvvQmVxm6WeX9EqkMxKME1DfAY9ADYjDbuK option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
+    "approved_kst": "2026-11-07 16:18:55 KST"
   },
   "srccheck-submit": {
     "enabled": false,
