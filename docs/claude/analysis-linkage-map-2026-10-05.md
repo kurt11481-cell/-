@@ -2,7 +2,7 @@
 id: analysis-linkage-map
 type: design
 status: current
-as_of: 2026-10-05 (2026-10-12 재설계 T2 행 추가)
+as_of: 2026-10-05 (2026-10-12 재설계 T2 행 추가, 2026-11-07 시나리오 확률 매일 점검·llm-iccheck 행 추가)
 tickers: [ALL]
 evidence_grade: n/a (운영 규칙)
 summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는지의 지도와, 새 작업을 만들 때 지켜야 할 연결 규칙(사용자 상시 지시 2026-10-05).
@@ -51,6 +51,8 @@ summary: 모든 분석·조회·발굴 결과가 어디에 남고 누가 읽는�
 | 자동 운영 코어 decide(화~토 07:45, Windows 작업 InvestmentV2-AutoCoreDecide, 재설계 T2) | workspace/outputs/auto-core/<날짜>/decision.json·compare.json·s7/, LATEST_DECISION.json | 결과 알림(08:50: 푸시 · 통합점검 대시보드 runs.core · 기록 모드 orders 새 문서) · 다음 decide(원장·미분류 주문표) · Cowork 비교 모드 B7 설명(redesign-t2-compare-explained.json) · 일지 decision_journal(기록 모드만) | 연결(10/12 병합, 비교 모드) |
 | 카드 근거 등록부(Cowork, 카드 수락·재작성 때) | docs/claude/card-evidence-registry.json(스키마 auto-core-card-registry: 카드 표 근거·트리거·절 해시·수락 줄) | 자동 운영 코어 decide(주문표 자격·정적 근거) | 연결 — **카드를 고치거나 수락하는 Cowork 세션은 같은 세션에서 등록부 항목·절 해시를 갱신하고 커밋 목록에 넣는다**(안 하면 그 종목 주문표가 CARD_SECTION_CHANGED·REGISTRY_UNCOMMITTED로 막힘) |
 | 결정 일지 채점(Cowork 수시 — 평가·카드·M6 세션에서 읽기 전용 실행, 2026-10-15 결정 learn-loop a. 주 1회 자동 = Windows 작업 InvestmentV2-JournalScore 일 09:20 `--learning`(evo-s2 병합 c3bd452·사용자 등록 2026-10-16, 첫 예약 실행 10/18: 보고서 OK·WEEKLY_LATEST 없음 = 실행기 결함, 수정 evo-s3 — docs/claude/f-evo-loop-s1-weekly-check-2026-10-18.md). 정의: docs/claude/f-evo-loop-s1-preregistration-2026-10-16.md) | workspace/outputs/journal-scores/<시각>/journal-scores.json(5·20·60세션 현금 대비, 주문표 반사실 D; learning 블록 = 관문별 소급·매도 하한·시나리오 대역·트리거 종류·Museum 후보, 표시 전용 D) · workspace/outputs/journal-scores/WEEKLY_LATEST.json | Cowork 카드·M6 세션("직전 결정 결과" + docs/claude/failure-museum.json 칸 채우기), 관문·근거 규칙 병합 확인 세션(docs/claude/gate-rule-epochs.json 한 줄), 관제판 f-evo-loop 2단계 발견, PC 상태 점검 → 08:50 알림 ⑭(주간 작업 실패, evo-s3 병합 67e781d), 다음 리플레이 사전 등록, docs/claude/cpi-shock-review-2026-10-15.md 같은 사후 평가 | 연결(주 1회 자동 + Cowork 수시) — 실행기 수정 evo-s3 병합 67e781d(2026-10-18), WEEKLY_LATEST 첫 확인 10/25 |
+| 시나리오 확률 매일 점검 v2.1(클라우드 예약, 06:45·19:45 KST + 결과 시각 21:45·22:45, 사장 지시 2026-11-06 22:11·22:13, v2.1 적용 2026-11-07 08:24 KST — active-decisions.md 107·135행) | 프로젝트 공유 폴더 scenario-odds/(registry.json·responses.json·out/) · 관제판 db scenarios/<날짜> | 관제판 '시나리오 확률' 칸·'오늘 키움에 넣을 주문' 안 '시나리오 대응' · 문턱 넘음 → 회사 전략 점검(사장실) | 연결(2026-11-07 적용) |
+| API 시범 1 기록 대조 검토자 llm-iccheck(시범, 2026-11-07 병합 559efb9 · 첫 실행 사장 수동 11/07, 매일 실행은 작업 2 실행기 등록·켜기 승인 뒤 07:30 KST) | workspace/outputs/llm/iccheck/<날짜>/review.json·alert.md·failed.md · 사용량 workspace/outputs/llm/usage.jsonl | 사장실 스레드의 10거래일 채점(docs/claude/llm-iccheck-score.md). 화면 연결 없음 — 합격(맞은 비율 ≥ 70%) 때만 통합점검 대시보드 연결을 따로 제안 | 시범(채점 중) |
 
 ## 3. 미연결·남은 일
 - SEC 수집기 → 통합 점검: 연결 완료(10/5 v3.11 적용). 10/6 첫 실행 확인과 5회 대조(onlyInSearch)는 관제판 e-filing-k1·e-filing-k4.
