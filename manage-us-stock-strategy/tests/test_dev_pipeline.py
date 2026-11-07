@@ -1688,6 +1688,12 @@ class StaticScriptTests(unittest.TestCase):
         judge = (PIPELINE / "judge-prompt.md").read_text(encoding="utf-8")
         self.assertIn("`expected failures` 증가(`@expectedFailure`로 실패를 숨김) = 실패(재시도 대상)", judge)
 
+    def test_docs_ops_link_linkage_table(self):
+        judge = (PIPELINE / "judge-prompt.md").read_text(encoding="utf-8")
+        self.assertIn("- G9 연결표(docs/claude/analysis-linkage-map-2026-10-05.md 1절 8번)", judge)
+        readme = (PIPELINE / "README.md").read_text(encoding="utf-8")
+        self.assertIn("`## 연결표`(새 산출이 있을 때", readme)
+
     def test_docs_commit_runner_keeps_commit_docs_safety(self):
         runner = self.read("run-docs-commit.ps1").decode("ascii")
         self.assertIn("commit-docs.ps1", runner)

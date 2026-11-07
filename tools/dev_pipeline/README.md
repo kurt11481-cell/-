@@ -15,7 +15,7 @@
 
 - `<id>`: `^[a-z0-9][a-z0-9-]{1,47}$`. 한 번만 쓴다(같은 id의 run 폴더·worktree·브랜치가 있으면 preflight에서 멈춤).
 - id는 **14자 이하 권장**(지금 저장소·경로 기준). preflight가 정확히 검사한다: `.claude/worktrees/<id>`와 기준선 임시 이름 `_base-<sha8>` 아래 최장 추적 파일 경로가 259, 폴더 경로가 247(UTF-16 단위)을 넘으면 `STOP_PREFLIGHT reason=PATH_TOO_LONG:<필요>>259:max_id=<허용 최대 id 길이>`.
-- 본문: 목표, 바꿀 내용, 테스트, 보고 위치, 그리고 `## Judge 확인 항목`(Judge가 G8로 하나씩 본다).
+- 본문: 목표, 바꿀 내용, 테스트, 보고 위치, `## 연결표`(새 산출이 있을 때 — docs/claude/analysis-linkage-map-2026-10-05.md 1절 8번 6칸, Judge가 G9로 본다), 그리고 `## Judge 확인 항목`(Judge가 G8로 하나씩 본다).
 - 지시문 안에 ```` ```dev-run ```` 펜스 **정확히 1개**, 안은 JSON 한 개, **ASCII만**:
 
 ```dev-run-example
