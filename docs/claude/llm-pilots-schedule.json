@@ -1,0 +1,37 @@
+{
+  "iccheck": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "srccheck-submit": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "srccheck-collect": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "pdfcmp-submit": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "pdfcmp-collect": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "news-submit": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  },
+  "news-collect": {
+    "enabled": false,
+    "approved_ref": "",
+    "approved_kst": ""
+  }
+}
