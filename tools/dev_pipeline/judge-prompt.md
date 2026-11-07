@@ -22,6 +22,7 @@ Grep·Glob은 git이 무시하는 폴더를 건너뛸 수 있다. 바뀐 파일�
 - `expected failures` 증가(`@expectedFailure`로 실패를 숨김) = 실패(재시도 대상). checks.json에는 `EXPECTED_FAILURES_INCREASED`로 적힌다.
 - G7 class: 주문 단계, 주문 도구, 예산, 상한, 종목 상한, 승인 상품, 대조 불변 조건, 정지 스위치(kill switch)를 바꾸면 class_ok=false. quantity_authority를 none/null/false가 아닌 값(예: ORDER_TICKET_HUMAN_ENTRY)으로 추가하면 class_ok=false.
 - G8 task-prompt.md의 "Judge 확인 항목" 각각(없으면 "해당 없음").
+- G9 연결표(docs/claude/analysis-linkage-map-2026-10-05.md 1절 8번): task-prompt.md에 `## 연결표` 절이 있으면 ②(만드는 주체·시각)·③(읽는 점검)·⑤(끊기면 누가 아나) 칸이 원문 위치(파일:줄 또는 예약 trig id)나 '끊김(…)'으로 적혔나, 파일:줄이면 그 줄을 Read해(diff 안이면 diff 기준) 칸 내용과 맞나(trig id는 `trig_`로 시작하는지만). 절이 없는데 이 diff가 새 산출(새 출력 파일·알림·화면 칸·예약·점검 결과 — 테스트·보고 파일 제외)을 만들면 FAIL, 새 산출이 없으면 "해당 없음". 지시문 머리말 date가 2026-11-07 이하인 지시문(전환 전)도 "해당 없음".
 
 ## 출력 (이 순서, 마지막 줄 형식 엄수)
 
