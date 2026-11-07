@@ -5,7 +5,8 @@
   "schedule_kst": "06:15",
   "symbols_extra": [
     "SOXX",
-    "GRID"
+    "GRID",
+    "SPY"
   ],
   "decision_mode": "compare",
   "decision_compare_days_required": 5,
