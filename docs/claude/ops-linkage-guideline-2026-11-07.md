@@ -1,7 +1,7 @@
 ---
 id: ops-link-1107
 type: proposal
-status: adopted (A′·A·B 모두 — 사장 직접 입력 2026-11-07 12:01:27 KST, 기록 절)
+status: applied (A′·A·B 모두 — 사장 직접 입력 2026-11-07 12:01:27 KST. A′ 12:1x 적용 · B 헌법 1.5.0 커밋 80bea7c 13:16 · A 병합 d520c5b 16:15 KST, 기록 절)
 as_of: 2026-11-07 (KST)
 summary: "사장 질문 '설계→운영→행동까지 빈틈 없게를 상위 지침으로 두면 매번 묻지 않아도 되나' 검토 — 한 줄로는 안 됨(같은 뜻의 원칙·지시가 10/05부터 4번), 연결표 6칸(상태 칸 필수)을 설계 문서·재검토 렌즈에 넣는 문서 개정(A′) 권장과 승인 경로"
 consumers: "사장실(결정 카드) · 설계·제안 세션(연결 지도 1절 8번 양식) · 내장 재검토(L3) · 코디네이터(지침 4·8절 문구) · 채택 시 소급 점검(이 스레드)"
@@ -244,6 +244,8 @@ CLAUDE.md 14·16·48~50·58·72~82·111·118·129~131행(sha256 fcf6d25b…) · 
 - **A(CLAUDE.md 111행·judge-prompt.md G9·README 18행)** — K3 수동 경로: Builder(worktree) → 별도 읽기 전용 Judge → 사장 PowerShell 병합(대기·실행 중 개발 run이 없을 때만). 진행은 이 절에 덧붙인다.
   - Builder 12:2x KST(원격 세션, worktree .claude/worktrees/ops-link, 기준 85707c6): 네 파일 목표 해시 일치·test_dev_pipeline 152건 OK. Judge 1차: 항목 8만 FAIL(보고서 머리말에 주문·수량 표지 문자열) → 그 줄을 일반어로 고침. 이어 12절 재검토 2-10·2-11을 받아 지시문 2차(CLAUDE.md 111행 목표 d2f22333…, 급한 카드 늦추지 않음·알림 종류 범위·기존 결정 인용) — worktree CLAUDE.md 한 줄 바이트 치환, Judge는 처음부터 다시.
   - Judge 최종 PASS(12:3x KST, 9항목 모두, docs/claude/ops-link-judge-report.md). 병합 = 사장 PowerShell `docs/claude/ops-link-merge-2026-11-07.ps1`(2026-11-07~11-10 KST, 개발 큐가 비고 llm-runner 등 READY_TO_MERGE run이 먼저 병합된 뒤에만 — 아니면 OPS_LINK_STOP으로 멈춤).
+  - llm-runner 1차는 13:38 KST 병합 전 시험에서 멈춤(켜기 파일 CRLF 체크아웃, main 그대로) → 재시도 llm-runner2 병합 15:55 KST(3947360).
+  - **병합 2026-11-07 16:15:06 KST** — 사장 PowerShell `ops-link-merge-2026-11-07.ps1` → 변경 커밋 017f2c3(5파일: CLAUDE.md·judge-prompt.md·README.md·test_dev_pipeline.py·ops-link-report.md) + 병합 커밋 d520c5b(--no-ff, 사장 '병합완료' 16:18 KST). 회사PC에서 다시 읽어 네 파일 sha256이 목표와 같음(d2f22333·768ee9aa·103a55cf·daa31643). worktree-ops-link 브랜치는 HEAD에 병합됨. G9는 기준 커밋이 d520c5b 뒤인 개발 run부터 적용(devpipe.py는 기준 커밋의 judge-prompt.md를 Judge에 줌).
 - **B(헌법 §2-1 6항, 1.5.0 새 판)** — 초안 + 독립 재검토 2회 → 확정 직접 입력 → 새 파일 constitution-v1.5.0.md(1.4.0 덮어쓰지 않음) → 사장 -ApproveProtected 커밋 → 코디네이터 지침 0절 사본·2절 경로 교체. 진행은 이 절에 덧붙인다.
-  - **확정 2026-11-07 13:08:06 KST** — 사장 직접 입력 "헌법 1.5.0 확정: 12절 안, 저장소 원본, 지침 0절은 §2-1 사본으로 교체"(cmsg_0137MRzn9nuDvvQmVxm6WeX9SDdDkNvT3AZgyCY9D4SoBr) = 12절 (가). 새 파일 docs/claude/constitution-v1.5.0.md 저장 13:1x KST(1,046행 · 24,058바이트 · sha256 2f81cf6aae1645c90b2e4f8b72cb338fd01c0d3e3624f1544a2b381115f73035, 회사PC에서 다시 읽어 일치. §2-1 118~198행 0b1cb813…5c7e 재확인). constitution-v1.4.0.md는 그대로(역사본). 커밋 = 헌법만 담은 _pending/ops-link-1107-constitution.txt → 사장 PowerShell `.\tools\commit-docs.ps1 -ApproveProtected` + Enter 대기(그 실행은 다른 대기 커밋 목록도 함께 커밋한다). '지침 0절은 §2-1 사본으로 교체'는 0절의 §2-1 사본 부분만 1.5.0으로 바꾸고 아래 적용 예 블록은 그대로 두는 것으로 읽었다(최소 변경, 사본 = /mnt/project-files/ops-link-1107/B/guideline-section0-v1.5.0.md) — 코디네이터에 반영 요청. 결정 색인 89·63·145행, 연결 지도 1절 8번(6항 조건 1줄) 반영.
+  - **확정 2026-11-07 13:08:06 KST** — 사장 직접 입력 "헌법 1.5.0 확정: 12절 안, 저장소 원본, 지침 0절은 §2-1 사본으로 교체"(cmsg_0137MRzn9nuDvvQmVxm6WeX9SDdDkNvT3AZgyCY9D4SoBr) = 12절 (가). 새 파일 docs/claude/constitution-v1.5.0.md 저장 13:1x KST(1,046행 · 24,058바이트 · sha256 2f81cf6aae1645c90b2e4f8b72cb338fd01c0d3e3624f1544a2b381115f73035, 회사PC에서 다시 읽어 일치. §2-1 118~198행 0b1cb813…5c7e 재확인). constitution-v1.4.0.md는 그대로(역사본). 커밋 = 헌법만 담은 _pending/ops-link-1107-constitution.txt → 사장 PowerShell `.\tools\commit-docs.ps1 -ApproveProtected` + Enter → **커밋 80bea7c(2026-11-07 13:16 KST, HEAD 내용 sha 일치)**. 같은 실행에서 A′·기록 문서 커밋 179d887. '지침 0절은 §2-1 사본으로 교체'는 0절의 §2-1 사본 부분만 1.5.0으로 바꾸고 아래 적용 예 블록은 그대로 두는 것으로 읽었다(최소 변경, 사본 = /mnt/project-files/ops-link-1107/B/guideline-section0-v1.5.0.md) — 코디네이터에 반영 요청. 결정 색인 89·63·145행, 연결 지도 1절 8번(6항 조건 1줄) 반영.
 - **4주 측정(7절)** — 시작 2026-11-07(A′ 적용일), 판정 재개 2026-12-05 KST, 기한 2026-12-08 KST. 사장 질문으로 처음 드러난 연결 공백 메시지 id: (아직 없음 — 생기면 여기에).
