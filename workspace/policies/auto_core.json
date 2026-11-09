@@ -6,7 +6,8 @@
   "symbols_extra": [
     "SOXX",
     "GRID",
-    "SPY"
+    "SPY",
+    "QQQ"
   ],
   "decision_mode": "compare",
   "decision_compare_days_required": 5,
