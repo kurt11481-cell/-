@@ -203,6 +203,30 @@
       "portfolio_bucket": "research_reference",
       "theme": "defense",
       "subtheme": "defense_technology"
+    },
+    "QQQ": {
+      "legal_issuer_name": "Invesco QQQ Trust, Series 1",
+      "instrument_type": "spot_etf",
+      "security_class": "Exchange-traded fund shares (open-end management investment company since 2025-12-19 after market close; previously a unit investment trust)",
+      "exchange": "The Nasdaq Stock Market LLC",
+      "trading_currency": "USD",
+      "underlying_index": "Nasdaq-100 Index",
+      "sec_cik": "0001067839",
+      "identity_status": "verified_primary_source",
+      "identity_verification_status": "VERIFIED",
+      "official_identity_source_url": "https://www.sec.gov/Archives/edgar/data/1067839/000110465925123273/tm2529177d1_485bpos.htm",
+      "official_identity_source_type": "SEC_485BPOS",
+      "identity_verified_at": "2026-11-09T10:49:40+09:00",
+      "leverage_factor": 1.0,
+      "leverage_factor_status": "verified",
+      "confirmation_proxy": null,
+      "watchlist_approved": false,
+      "new_buy_instrument_approved": false,
+      "short_sale_approved": false,
+      "candidate_status": "active",
+      "portfolio_bucket": "tactical",
+      "theme": "broad_market_index",
+      "subtheme": "nasdaq_100_proceeds_parking"
     }
   }
 }
