@@ -1,0 +1,7 @@
+# fixed 2026-11-10 11:23:34 KST before the first forward forecast (the ledger holds no line with forward=true; first possible start day 2026-11-11)
+# written after the second independent review (its finding M8); not itself independently reviewed yet
+978de63fcfb5a398899a9d88376f7819cd17223731181f5914385236b89a15b8  forecast-forward-rule-2026-11-10.md
+47562537698602c09b4576b32d85b59ddafca770f2c4d1142cb7035f5eb9280f  scripts/fm2_weekly.py
+835f757c8679468beec3cf23ae591fdb966d984fe404a869396e955f1fa1f570  scripts/fetch_weekly.py
+5b098dd5dba6428c02935c6c8e060fb61ff66f263e0e5945150c3f3ea0abb72d  scripts/fm2.py
+2ceee559c43c5f4ceead34689ca4e52ab456267facc7af928dbf6a4ca8c287d3  scripts/fm1.py

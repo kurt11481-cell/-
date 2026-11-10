@@ -1,0 +1,8 @@
+# fixed 2026-11-10 08:54:51 KST before first real-data run
+f385859f9a009eec7c6ad137da1e35df1fd063faffe3ece4d1c6b9305b94e7a4  forecast-model-prereg-2026-11-10.md
+2ceee559c43c5f4ceead34689ca4e52ab456267facc7af928dbf6a4ca8c287d3  scripts/fm1.py
+da319ca9259a00a558fbd62fda812dbe364b20c073f29197c9c6ff9a4bd6683a  scripts/inputs/yh/_SOX.json
+87982d9384fd5c2711c07593de378d45d8fb364e55e297a617f1eeb956484a94  scripts/inputs/yh/_NDX.json
+ab0437d8820e585d6f2e9ebef3ebf338cbdab0811d7ce508f2444660f74458b0  scripts/inputs/yh/_GSPC.json
+38e193e865ad3459727dd18d4392d45e963cd7d1b67e7d0b211bc451f5774b45  scripts/inputs/yh/_TNX.json
+6069e086788399eae7884568783cfe95156858cdf12a267bc0ba1bd1483307a6  scripts/inputs/yh/_IRX.json

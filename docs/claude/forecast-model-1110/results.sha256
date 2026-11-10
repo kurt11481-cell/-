@@ -1,0 +1,48 @@
+# hashes of result files and helper scripts, written after the fact for reproducibility (not a pre-registration)
+# rewritten 2026-11-10 11:23:34 KST; groups below carry the time they were first recorded
+# era table, model results and their inputs (first recorded 2026-11-10 10:18:59 KST)
+8171c7a128a3d913e350651ca107150dc86f09de3323ae1878cdbf1848a17d20  scripts/era_stats.py
+7ecb82b8e1e1f0a6be43a89841573426af5b57140938b40fcb1b95e5bcc0f13b  scripts/era_stats2.py
+e47b89d9fd51e126acb5cd721dcfd2ed1b5fec36600978767476245aa1b46ef9  scripts/fetch_long.py
+bdf2f4807aea0834a9d11e3d9b6a5a93364a96320622e39b7aac20208f1fe938  scripts/runs/era_stats_2026-11-06.json
+cdf16a06628f9f5dbdac2981e27f6405dea9deb68c704487e67112a88e6b970d  scripts/runs/era_stats2_2026-11-06.json
+c65bd95a72b18a4c0b49d0a1aa1bcac54debf1190a0ace730d8a0729b594f078  scripts/runs/fm1_result_2026-11-06.json
+df7271b9846362e5a11d8da429072207ddda8789ddee189744693c6d6da3b651  scripts/runs/fm2_result_2026-11-06.json
+e0d7ed77205923d8270c8435271cdd08775b7caa7dd03fbb4977774591f212ae  scripts/runs/fm2_current_2026-11-06.json
+45d101c95fcb674a27c7c7d6417dc6204f82224db6c22a7440e1aa3ba04f5608  scripts/inputs/yh/_VIX.json
+63c2de200a8fe78c06e3c0bb16f205166447841bc5f600043190520a2d0d0929  scripts/inputs/yh/SPY.json
+66f70e06dbdc925c3d7a207d7bfeba37217cac531667f3715a3be35d81a038e6  scripts/inputs/yh/QQQ.json
+310f0e96591ef8d0b5414a3f31204ad017ae1a1e6b152b9f02ffc2a8489ac87b  scripts/inputs/yh/SOXX.json
+321c9df9fccaed7ee4a6d324453961ddb8f104c8513e6c536f8375d29523a77d  scripts/inputs/yh/RSP.json
+2fc9f9e2a19611a10263182d41651ac27c7de2e16c1f3149bd75014fe6634026  scripts/inputs/yh/TLT.json
+87982d9384fd5c2711c07593de378d45d8fb364e55e297a617f1eeb956484a94  scripts/inputs/yh/_NDX.json
+ab0437d8820e585d6f2e9ebef3ebf338cbdab0811d7ce508f2444660f74458b0  scripts/inputs/yh/_GSPC.json
+da319ca9259a00a558fbd62fda812dbe364b20c073f29197c9c6ff9a4bd6683a  scripts/inputs/yh/_SOX.json
+38e193e865ad3459727dd18d4392d45e963cd7d1b67e7d0b211bc451f5774b45  scripts/inputs/yh/_TNX.json
+# forward track version 1: the script that wrote ledger lines 1-9 and its output (first recorded 2026-11-10 10:25 KST)
+99ff966836bcc51e76b2137c8d6b978924c176bb5094b3b2cc1d2beb3deef89b  scripts/old/fm2_weekly_v1_99ff9668.py
+182bacc5fdf7dd45ba84b3751e5312f0b3a91f171678a4a224b82f7a8dac4386  scripts/runs/fm2_weekly_2026-11-06.json
+# forward track version 2 and the forward rule (recorded 2026-11-10 11:23:34 KST; see forward-rule.sha256)
+978de63fcfb5a398899a9d88376f7819cd17223731181f5914385236b89a15b8  forecast-forward-rule-2026-11-10.md
+47562537698602c09b4576b32d85b59ddafca770f2c4d1142cb7035f5eb9280f  scripts/fm2_weekly.py
+835f757c8679468beec3cf23ae591fdb966d984fe404a869396e955f1fa1f570  scripts/fetch_weekly.py
+# second review: author-side recomputation (recorded 2026-11-10 11:23:34 KST)
+60434846ed02e4b9d103b7d37c205c2a8b9317aa7e21e440b7b5c4fd1c8e01fb  review2/verify2.py
+adf6552919d85af98636105adf972c0bf031c93a6c771fe9fe2a6c64e550148b  review2/verify2.log
+# layer 3: reviews, evidence and the first option snapshot (recorded 2026-11-10 22:25:52 KST; the fixed rule, code and menu are in layer3.sha256)
+bcd2e136bc6a8aaec520696471bd860697c0c8a05e9e560e2f1cdc905a0fa56e  review3/REPORT.md
+c38cd6eabd65968d11ca32e9a7dd02e67df4c8a62b75049367ac0c991c7d084b  review3/RESPONSE.md
+e4a44c7ceeb520a78dd581aa84bc1cf994c69b7ecf14e0d06a7e6c4426513b56  review3/REVIEW2.md
+6f3ab16c86d3e2041f5da8c1f815abb318c3046e79c5dfaeb9399cebf18741b5  review3/REVIEW3.md
+cb30364ed026b0caf9a0472c2677e3ed076c0f3cc270f91c5b44adbcfdf1eae3  review3/admit_vixr_v6.json
+0fef60ab6b780b672e7c88ea38564c232f32f006e311e2668f2a8b5dae7d9d91  review3/bad_summary3.log.txt
+5758c9c787d05ab55e23ce65a47cfeefdba2da824d09f7d9c15577dff46160b8  review3/itest_final.log.txt
+d63e746b4d786ad7358ffd1d4b6943c1f51f906c4a3316c6bd3facf398ba0f13  review3/sim_fut.py
+6ff4805b70500fd1389d9b81e6f2fd748dc222d5b4e4eb4230da97f31a2311ad  review3/sim_fut.log.txt
+9977e17f7769caead14942602808a4168284d85174f85e80888c2a311ebea3a4  review3/t05_rolling.log.txt
+b936d065d973ff76eb0a75e86a85b3b33c5e6810a2c586fcebbacc59dcc1e807  review3/t06_post_all.log.txt
+22aec1cf741834651e08e3d4eb78b2c2d8374a90c23e8cadd651afc0ba87aa98  review3/plumbing_harness.py
+fb45f80dcd13653d65b74a4ea80cedd68f3cd22156a413ecd55d097be49f87e8  review3/plumbing_run1.log.txt
+04698535103b90f5f0447e91c85764eba7e831444b3f82df127398fe2123e927  review3/r3check/r4_weekly.diff
+28bcb154335d4a6a3cc3fa08ed93ac8e7151b0c2f0c6f48cb860278979dd1cea  scripts/inputs/options/2026-11-09.json.gz
+faaf4036db0ee43e6c80fb02210e051c1cd823cca5202b76ad9ed298bde055e8  scripts/inputs/options/MANIFEST.jsonl
