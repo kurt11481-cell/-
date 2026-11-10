@@ -1,0 +1,33 @@
+b01_derive_fullnorm.py       PASS=False failed=['no_lookahead'] {"no_lookahead": {"cut_points": 300, "rows_that_differ": 219}}
+b02_derive_shift.py          PASS=False failed=['no_lookahead'] {"no_lookahead": {"cut_points": 300, "rows_that_differ": 180}}
+b03_derive_centered.py       PASS=False failed=['no_lookahead'] {"no_lookahead": {"cut_points": 300, "rows_that_differ": 240}}
+b04_memo.py                  PASS=False failed=['static'] module-level value of CACHE is not a constant; write into module-level CACHE
+b05_hash.py                  PASS=False failed=['static'] name hash
+b06_counter.py               PASS=False failed=['static'] module-level value of N is not a constant; write into module-level N
+b07_unsorted.py              PASS=False failed=['valid_output'] {"valid_output": {"error": "full pass: ValueError: challenger returned invalid quantiles (need 99 finite ascending values)"}}
+b08_percent.py               PASS=False failed=['units'] {"units": {"width_ratio_min_max": [100.039, 100.039], "width_ratio_median": 100.039, "abs_median_over_sd_max": 0.0, "band": [0.1, 10.0], "median_band": [0.5, 2.0], "median_over_sd_limit": 3.0}}
+b09_nosqrt.py                PASS=False failed=['units'] {"units": {"width_ratio_min_max": [0.063, 0.224], "width_ratio_median": 0.129, "abs_median_over_sd_max": 0.0, "band": [0.1, 10.0], "median_band": [0.5, 2.0], "median_over_sd_limit": 3.0}}
+b10_weeks.py                 PASS=False failed=['units'] {"units": {"width_ratio_min_max": [0.447, 0.447], "width_ratio_median": 0.447, "abs_median_over_sd_max": 0.0, "band": [0.1, 10.0], "median_band": [0.5, 2.0], "median_over_sd_limit": 3.0}}
+b11_open.py                  PASS=False failed=['static'] name open
+b12_builtins.py              PASS=False failed=['static'] module-level value of N is not a constant; module-level value of READ is not a constant; name __builtins__
+b12w_write.py                PASS=False failed=['static'] module-level value of FH is not a constant; module-level value of M is not a constant; module-level value of N
+b13_loader.py                PASS=False failed=['static'] module-level value of N is not a constant; name __loader__
+b14_patch_peek.py            PASS=False failed=['static'] attribute assignment .allclose; module-level value of GET is not a constant; module-level value of np is not a
+b14b_patch_peek_soft.py      PASS=False failed=['static'] attribute assignment .allclose; attribute assignment .array_equal; module-level value of GET is not a constant
+b15_asset_extras.py          PASS=False failed=['api'] {"api": {"error": "full pass: ValueError: challenger refused: asset_extras (per-asset extra files) is not part of this version"}}
+b16_zero_return_nan.py       PASS=False failed=['valid_output'] {"valid_output": {"error": "full pass: ValueError: challenger returned invalid quantiles (need 99 finite ascending values)"}}
+b17_slow.py                  PASS=False failed=['runtime'] {"runtime": {"mean_seconds": 0.04644, "limit": 0.01}}
+b18_shape.py                 PASS=False failed=['valid_output'] {"valid_output": {"error": "full pass: ValueError: challenger returned invalid quantiles (need 99 finite ascending values)"}}
+b19_write.py                 PASS=False failed=['valid_output'] {"valid_output": {"error": "full pass: ValueError: assignment destination is read-only"}}
+b20_patch_fm.py              PASS=False failed=['static'] attribute assignment .quantile; module-level value of np is not a constant; write into module-level np
+b21_fmt_peek.py              PASS=False failed=['static'] attribute .format
+b22_fmt_peek_evade.py        PASS=False failed=['static'] attribute .format
+b23_clock.py                 PASS=False failed=['static'] clock string 'today'
+b26_judge_patch.py           PASS=False failed=['static'] attribute assignment .judge; module-level value of MODS is not a constant; module-level value of TARGET is not
+b27_random.py                PASS=False failed=['static'] attribute .random
+b28_import_random.py         PASS=False failed=['static'] attribute .random; import random
+g00_m1view.py                PASS=True  failed=[] {}
+
+real	2m37.793s
+user	6m28.253s
+sys	0m9.366s

@@ -1,0 +1,14 @@
+/tmp/claude-0/-home-user/a406bf43-090f-5192-964f-c483e7203aaa/scratchpad/review3/work/bad/b16_zero_return_nan.py:11: RuntimeWarning: invalid value encountered in scalar divide
+  sign = V.r[i] / abs(V.r[i])                         # nan when today's return is exactly 0
+## b04_same_module_object => {"points": 8, "differ": 0, "max_abs_diff": 0.0}
+## b04_fresh_module => {"points": 8, "differ": 8, "max_abs_diff": 0.12134894604428355}
+## g00_fresh_module_control => {"points": 8, "differ": 0, "max_abs_diff": 0.0}
+## b05_three_processes_same_call => ["0.0510849099291675", "0.04133870281777645", "0.04721366199470279"]
+## b16_stage => "ValueError: challenger returned invalid quantiles (need 99 finite ascending values)"
+## b16_zero_return_grid_days => {"XLE": {"grid_days": 1150, "grid_days_with_zero_return": 5}, "_N225": {"grid_days": 1314, "grid_days_with_zero_return": 0}, "NVDA": {"grid_days": 1146, "grid_days_with_zero_return": 10}}
+## b22_staged_median_vs_outcome => {"XLE": {"matured_rows": 3384, "median_equals_outcome_share": 0.0, "corr_median_outcome": 0.0}, "XLF": {"matured_rows": 3384, "median_equals_outcome_share": 1.0, "corr_median_outcome": 1.0}}
+## b26_control_alone => {"registered_with_real_admission": [["c01_g00", "2022-01-03"]], "judgement_run": true, "events": [], "status": {"c01_g00": ["shadow", {"20": "shadow"}]}, "forward_weeks": {"c01_g00": 22}}
+## judge_is_original_before => true
+## b26_with_patch_module => {"registered_with_real_admission": [["c01_b26", "2022-01-03"], ["c02_g00", "2022-01-03"]], "judgement_run": true, "events": ["c01_b26 h=20: pass_to_judge", "c02_g00 h=20: pass_to_judge"], "status": {"c01_b26": ["candidate", {"20": "pass_to_judge"}], "c02_g00": ["candidate", {"20": "pass_to_judge"}]}, "forward_weeks": {"c01_b26": 22, "c02_g00": 22}}
+## judge_is_original_after => false
+## init_overwrites_rejected => {"lines_before": 9, "lines_after": 7}

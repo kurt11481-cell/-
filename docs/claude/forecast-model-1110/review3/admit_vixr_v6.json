@@ -1,0 +1,66 @@
+{
+ "module": "vixr.py",
+ "module_sha256": "5be2fd0b774a980cd77239b2318e7cf5cbd680b4afc1e852d359515b3e98f9a6",
+ "asof": "2026-11-06",
+ "tests": {
+  "static": {
+   "pass": true,
+   "refused": []
+  },
+  "api": {
+   "pass": true,
+   "id": "vixr",
+   "extras": {
+    "VIX": "_VIX",
+    "SPX": "_GSPC"
+   },
+   "extra_lag": 1
+  },
+  "valid_output": {
+   "pass": true,
+   "calls": 720,
+   "forecasts": 691,
+   "error": null
+  },
+  "deterministic": {
+   "pass": true,
+   "same_in_another_call_order": true,
+   "rows_that_differ_in_another_process": 0
+  },
+  "no_lookahead": {
+   "pass": true,
+   "cut_points": 300,
+   "rows_that_differ": 0
+  },
+  "runtime": {
+   "pass": true,
+   "mean_seconds": 0.00026,
+   "limit": 0.01
+  },
+  "units": {
+   "pass": true,
+   "width_ratio_min_max": [
+    0.352,
+    1.921
+   ],
+   "width_ratio_median": 0.923,
+   "abs_median_over_sd_max": 1.396,
+   "band": [
+    0.1,
+    10.0
+   ],
+   "median_band": [
+    0.5,
+    2.0
+   ],
+   "median_over_sd_limit": 3.0
+  },
+  "full_grid": {
+   "pass": true,
+   "rows": 73476,
+   "forecasts": 73476,
+   "seconds": 14.7
+  }
+ },
+ "pass": true
+}

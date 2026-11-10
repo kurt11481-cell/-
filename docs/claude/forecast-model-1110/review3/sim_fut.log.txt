@@ -1,0 +1,72 @@
+20 FM2 B1x09 T0s 504 {'drop_futility': 0.173, 'end_harm': 0.04, 'end_inconclusive': 0.788} interim looks max 3
+20 FM2 B1x11 T0s 504 {'drop_futility': 0.218, 'end_harm': 0.026, 'end_inconclusive': 0.756} interim looks max 3
+20 FM2 M1M2avg T0s 504 {'drop_futility': 0.008, 'end_inconclusive': 0.952, 'pass_to_judge': 0.04} interim looks max 3
+20 FM2 M1noisy T0s 504 {'drop_futility': 0.024, 'end_harm': 0.002, 'end_inconclusive': 0.919, 'pass_to_judge': 0.056} interim looks max 3
+20 FM2 M1shift T0s 504 {'drop_futility': 0.062, 'end_harm': 0.002, 'end_inconclusive': 0.911, 'pass_to_judge': 0.026} interim looks max 3
+20 FM2 M1x085 T0s 504 {'drop_futility': 0.054, 'end_harm': 0.006, 'end_inconclusive': 0.921, 'pass_to_judge': 0.02} interim looks max 3
+20 FM2 M1x115 T0s 504 {'drop_futility': 0.044, 'end_harm': 0.002, 'end_inconclusive': 0.871, 'pass_to_judge': 0.083} interim looks max 3
+20 FM2 damp T0s 504 {'drop_futility': 0.03, 'end_harm': 0.002, 'end_inconclusive': 0.935, 'pass_to_judge': 0.034} interim looks max 3
+20 FM2 dupB3 T0s 504 {'drop_futility': 0.046, 'end_harm': 0.018, 'end_inconclusive': 0.873, 'pass_to_judge': 0.063} interim looks max 3
+20 FM2 dupM1 T0s 504 {'drop_futility': 0.038, 'end_harm': 0.002, 'end_inconclusive': 0.897, 'pass_to_judge': 0.063} interim looks max 3
+20 FM2 dupM2 T0s 504 {'drop_futility': 0.014, 'end_harm': 0.006, 'end_inconclusive': 0.95, 'pass_to_judge': 0.03} interim looks max 3
+20 FM2 narrow07 T0s 504 {'drop_futility': 0.139, 'end_harm': 0.042, 'end_inconclusive': 0.819} interim looks max 3
+20 FM2 peek015 T0s 504 {'drop_futility': 0.016, 'end_inconclusive': 0.94, 'pass_to_judge': 0.044} interim looks max 3
+20 FM2 peek030 T0s 504 {'end_coverage': 0.014, 'end_inconclusive': 0.514, 'pass_to_judge': 0.472} interim looks max 3
+20 FM2 peek050 T0s 504 {'end_coverage': 0.038, 'end_inconclusive': 0.05, 'pass_to_judge': 0.913} interim looks max 3
+20 FM2 react T0s 504 {'drop_futility': 0.091, 'end_harm': 0.006, 'end_inconclusive': 0.871, 'pass_to_judge': 0.032} interim looks max 3
+20 FM2 wide15 T0s 504 {'drop_futility': 0.103, 'end_harm': 0.014, 'end_inconclusive': 0.883} interim looks max 3
+20 F0 B1x09 T0s 504 {'drop_futility': 0.093, 'end_harm': 0.018, 'end_inconclusive': 0.883, 'pass_to_judge': 0.006} interim looks max 3
+20 F0 B1x11 T0s 504 {'drop_futility': 0.115, 'end_harm': 0.012, 'end_inconclusive': 0.873} interim looks max 3
+20 F0 M1M2avg T0s 504 {'drop_futility': 0.016, 'end_inconclusive': 0.933, 'pass_to_judge': 0.052} interim looks max 3
+20 F0 M1noisy T0s 504 {'drop_futility': 0.014, 'end_inconclusive': 0.929, 'pass_to_judge': 0.058} interim looks max 3
+20 F0 M1shift T0s 504 {'drop_futility': 0.065, 'end_harm': 0.002, 'end_inconclusive': 0.885, 'pass_to_judge': 0.048} interim looks max 3
+20 F0 M1x085 T0s 504 {'drop_futility': 0.022, 'end_harm': 0.004, 'end_inconclusive': 0.845, 'pass_to_judge': 0.129} interim looks max 3
+20 F0 M1x115 T0s 504 {'drop_futility': 0.032, 'end_inconclusive': 0.958, 'pass_to_judge': 0.01} interim looks max 3
+20 F0 damp T0s 504 {'drop_futility': 0.022, 'end_inconclusive': 0.887, 'pass_to_judge': 0.091} interim looks max 3
+20 F0 dupB3 T0s 504 {'drop_futility': 0.155, 'end_harm': 0.038, 'end_inconclusive': 0.808} interim looks max 3
+20 F0 dupM1 T0s 504 {'drop_futility': 0.028, 'end_harm': 0.008, 'end_inconclusive': 0.867, 'pass_to_judge': 0.097} interim looks max 3
+20 F0 dupM2 T0s 504 {'drop_futility': 0.097, 'end_harm': 0.036, 'end_inconclusive': 0.867} interim looks max 3
+20 F0 narrow07 T0s 504 {'drop_futility': 0.04, 'end_harm': 0.01, 'end_inconclusive': 0.931, 'pass_to_judge': 0.02} interim looks max 3
+20 F0 peek015 T0s 504 {'drop_futility': 0.002, 'end_inconclusive': 0.851, 'pass_to_judge': 0.147} interim looks max 3
+20 F0 peek030 T0s 504 {'end_coverage': 0.03, 'end_inconclusive': 0.357, 'pass_to_judge': 0.613} interim looks max 3
+20 F0 peek050 T0s 504 {'end_coverage': 0.139, 'end_inconclusive': 0.05, 'pass_to_judge': 0.812} interim looks max 3
+20 F0 react T0s 504 {'drop_futility': 0.026, 'end_harm': 0.01, 'end_inconclusive': 0.893, 'pass_to_judge': 0.071} interim looks max 3
+20 F0 wide15 T0s 504 {'drop_futility': 0.196, 'end_harm': 0.024, 'end_inconclusive': 0.78} interim looks max 3
+60 FM2 B1x09 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 FM2 B1x11 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 FM2 M1M2avg T0s 450 {'end_inconclusive': 0.998, 'pass_to_judge': 0.002} interim looks max 2
+60 FM2 M1noisy T0s 450 {'end_inconclusive': 0.984, 'pass_to_judge': 0.016} interim looks max 2
+60 FM2 M1shift T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 FM2 M1x085 T0s 450 {'end_inconclusive': 0.962, 'pass_to_judge': 0.038} interim looks max 2
+60 FM2 M1x115 T0s 450 {'end_inconclusive': 0.993, 'pass_to_judge': 0.007} interim looks max 2
+60 FM2 damp T0s 450 {'end_inconclusive': 0.98, 'pass_to_judge': 0.02} interim looks max 2
+60 FM2 dupB3 T0s 450 {'end_inconclusive': 0.982, 'pass_to_judge': 0.018} interim looks max 2
+60 FM2 dupM1 T0s 450 {'end_inconclusive': 0.982, 'pass_to_judge': 0.018} interim looks max 2
+60 FM2 dupM2 T0s 450 {'end_harm': 0.036, 'end_inconclusive': 0.958, 'pass_to_judge': 0.007} interim looks max 2
+60 FM2 narrow07 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 FM2 peek015 T0s 450 {'end_inconclusive': 0.984, 'pass_to_judge': 0.016} interim looks max 2
+60 FM2 peek030 T0s 450 {'end_coverage': 0.022, 'end_inconclusive': 0.84, 'pass_to_judge': 0.138} interim looks max 2
+60 FM2 peek050 T0s 450 {'end_coverage': 0.116, 'end_inconclusive': 0.533, 'pass_to_judge': 0.351} interim looks max 2
+60 FM2 react T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 FM2 wide15 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 B1x09 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 B1x11 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 M1M2avg T0s 450 {'end_harm': 0.029, 'end_inconclusive': 0.971} interim looks max 2
+60 F0 M1noisy T0s 450 {'end_inconclusive': 0.971, 'pass_to_judge': 0.029} interim looks max 2
+60 F0 M1shift T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 M1x085 T0s 450 {'end_inconclusive': 0.778, 'pass_to_judge': 0.222} interim looks max 2
+60 F0 M1x115 T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 damp T0s 450 {'end_inconclusive': 0.8, 'pass_to_judge': 0.2} interim looks max 2
+60 F0 dupB3 T0s 450 {'end_inconclusive': 0.998, 'pass_to_judge': 0.002} interim looks max 2
+60 F0 dupM1 T0s 450 {'end_inconclusive': 0.958, 'pass_to_judge': 0.042} interim looks max 2
+60 F0 dupM2 T0s 450 {'end_harm': 0.204, 'end_inconclusive': 0.796} interim looks max 2
+60 F0 narrow07 T0s 450 {'end_inconclusive': 0.978, 'pass_to_judge': 0.022} interim looks max 2
+60 F0 peek015 T0s 450 {'end_inconclusive': 0.989, 'pass_to_judge': 0.011} interim looks max 2
+60 F0 peek030 T0s 450 {'end_inconclusive': 0.811, 'pass_to_judge': 0.189} interim looks max 2
+60 F0 peek050 T0s 450 {'end_coverage': 0.044, 'end_inconclusive': 0.311, 'pass_to_judge': 0.644} interim looks max 2
+60 F0 react T0s 450 {'end_inconclusive': 1.0} interim looks max 2
+60 F0 wide15 T0s 450 {'end_harm': 0.004, 'end_inconclusive': 0.996} interim looks max 2
+
+real	1m36.542s
+user	1m32.737s
+sys	0m0.445s

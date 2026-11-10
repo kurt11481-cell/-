@@ -1,0 +1,72 @@
+20 dupB3 F0 T0s 504 {'drop_futility': 0.183, 'end_harm': 0.034, 'end_inconclusive': 0.784} | without futility {'end_harm': 0.103, 'end_inconclusive': 0.897}
+20 dupM1 F0 T0s 504 {'drop_futility': 0.04, 'end_harm': 0.008, 'end_inconclusive': 0.855, 'pass_to_judge': 0.097} | without futility {'end_harm': 0.008, 'end_inconclusive': 0.895, 'pass_to_judge': 0.097}
+20 dupB3 FM2 T0s 504 {'drop_futility': 0.056, 'end_harm': 0.016, 'end_inconclusive': 0.865, 'pass_to_judge': 0.063} | without futility {'end_harm': 0.022, 'end_inconclusive': 0.915, 'pass_to_judge': 0.063}
+20 dupM1 FM2 T0s 504 {'drop_futility': 0.042, 'end_harm': 0.002, 'end_inconclusive': 0.893, 'pass_to_judge': 0.063} | without futility {'end_harm': 0.002, 'end_inconclusive': 0.935, 'pass_to_judge': 0.063}
+20 dupM2 F0 T0s 504 {'drop_futility': 0.117, 'end_harm': 0.034, 'end_inconclusive': 0.849} | without futility {'end_harm': 0.056, 'end_inconclusive': 0.944}
+20 wide15 FM2 T0s 504 {'drop_futility': 0.111, 'end_harm': 0.014, 'end_inconclusive': 0.875} | without futility {'end_harm': 0.038, 'end_inconclusive': 0.962}
+20 wide15 F0 T0s 504 {'drop_futility': 0.26, 'end_harm': 0.018, 'end_inconclusive': 0.722} | without futility {'end_harm': 0.085, 'end_inconclusive': 0.915}
+20 dupM2 FM2 T0s 504 {'drop_futility': 0.018, 'end_harm': 0.006, 'end_inconclusive': 0.946, 'pass_to_judge': 0.03} | without futility {'end_harm': 0.008, 'end_inconclusive': 0.962, 'pass_to_judge': 0.03}
+20 M1x085 FM2 T0s 504 {'drop_futility': 0.065, 'end_harm': 0.006, 'end_inconclusive': 0.909, 'pass_to_judge': 0.02} | without futility {'end_harm': 0.006, 'end_inconclusive': 0.974, 'pass_to_judge': 0.02}
+20 narrow07 FM2 T0s 504 {'drop_futility': 0.159, 'end_harm': 0.04, 'end_inconclusive': 0.802} | without futility {'end_harm': 0.097, 'end_inconclusive': 0.903}
+20 narrow07 F0 T0s 504 {'drop_futility': 0.05, 'end_harm': 0.01, 'end_inconclusive': 0.921, 'pass_to_judge': 0.02} | without futility {'end_harm': 0.02, 'end_inconclusive': 0.96, 'pass_to_judge': 0.02}
+20 M1x085 F0 T0s 504 {'drop_futility': 0.034, 'end_harm': 0.004, 'end_inconclusive': 0.833, 'pass_to_judge': 0.129} | without futility {'end_harm': 0.004, 'end_inconclusive': 0.867, 'pass_to_judge': 0.129}
+20 M1x115 F0 T0s 504 {'drop_futility': 0.048, 'end_inconclusive': 0.942, 'pass_to_judge': 0.01} | without futility {'end_inconclusive': 0.99, 'pass_to_judge': 0.01}
+20 M1x115 FM2 T0s 504 {'drop_futility': 0.048, 'end_harm': 0.002, 'end_inconclusive': 0.867, 'pass_to_judge': 0.083} | without futility {'end_harm': 0.002, 'end_inconclusive': 0.915, 'pass_to_judge': 0.083}
+20 M1noisy F0 T0s 504 {'drop_futility': 0.018, 'end_inconclusive': 0.925, 'pass_to_judge': 0.058} | without futility {'end_inconclusive': 0.942, 'pass_to_judge': 0.058}
+20 M1noisy FM2 T0s 504 {'drop_futility': 0.028, 'end_harm': 0.002, 'end_inconclusive': 0.915, 'pass_to_judge': 0.056} | without futility {'end_harm': 0.002, 'end_inconclusive': 0.942, 'pass_to_judge': 0.056}
+20 M1shift FM2 T0s 504 {'drop_futility': 0.071, 'end_harm': 0.002, 'end_inconclusive': 0.901, 'pass_to_judge': 0.026} | without futility {'end_harm': 0.004, 'end_inconclusive': 0.97, 'pass_to_judge': 0.026}
+20 M1M2avg FM2 T0s 504 {'drop_futility': 0.018, 'end_inconclusive': 0.942, 'pass_to_judge': 0.04} | without futility {'end_inconclusive': 0.96, 'pass_to_judge': 0.04}
+20 M1shift F0 T0s 504 {'drop_futility': 0.073, 'end_harm': 0.002, 'end_inconclusive': 0.877, 'pass_to_judge': 0.048} | without futility {'end_harm': 0.002, 'end_inconclusive': 0.95, 'pass_to_judge': 0.048}
+20 M1M2avg F0 T0s 504 {'drop_futility': 0.026, 'end_inconclusive': 0.923, 'pass_to_judge': 0.052} | without futility {'end_inconclusive': 0.948, 'pass_to_judge': 0.052}
+20 react F0 T0s 504 {'drop_futility': 0.04, 'end_harm': 0.01, 'end_inconclusive': 0.879, 'pass_to_judge': 0.071} | without futility {'end_harm': 0.01, 'end_inconclusive': 0.919, 'pass_to_judge': 0.071}
+20 react FM2 T0s 504 {'drop_futility': 0.107, 'end_harm': 0.004, 'end_inconclusive': 0.857, 'pass_to_judge': 0.032} | without futility {'end_harm': 0.026, 'end_inconclusive': 0.942, 'pass_to_judge': 0.032}
+20 damp F0 T0s 504 {'drop_futility': 0.028, 'end_inconclusive': 0.881, 'pass_to_judge': 0.091} | without futility {'end_inconclusive': 0.909, 'pass_to_judge': 0.091}
+20 damp FM2 T0s 504 {'drop_futility': 0.032, 'end_harm': 0.002, 'end_inconclusive': 0.933, 'pass_to_judge': 0.034} | without futility {'end_harm': 0.002, 'end_inconclusive': 0.964, 'pass_to_judge': 0.034}
+20 peek015 FM2 T0s 504 {'drop_futility': 0.026, 'end_inconclusive': 0.931, 'pass_to_judge': 0.044} | without futility {'end_inconclusive': 0.956, 'pass_to_judge': 0.044}
+20 peek015 F0 T0s 504 {'drop_futility': 0.01, 'end_inconclusive': 0.843, 'pass_to_judge': 0.147} | without futility {'end_inconclusive': 0.853, 'pass_to_judge': 0.147}
+20 peek030 FM2 T0s 504 {'end_coverage': 0.014, 'end_inconclusive': 0.514, 'pass_to_judge': 0.472} | without futility {'end_coverage': 0.014, 'end_inconclusive': 0.514, 'pass_to_judge': 0.472}
+20 peek030 F0 T0s 504 {'end_coverage': 0.03, 'end_inconclusive': 0.357, 'pass_to_judge': 0.613} | without futility {'end_coverage': 0.03, 'end_inconclusive': 0.357, 'pass_to_judge': 0.613}
+20 peek050 FM2 T0s 504 {'end_coverage': 0.038, 'end_inconclusive': 0.05, 'pass_to_judge': 0.913} | without futility {'end_coverage': 0.038, 'end_inconclusive': 0.05, 'pass_to_judge': 0.913}
+20 peek050 F0 T0s 504 {'end_coverage': 0.139, 'end_inconclusive': 0.05, 'pass_to_judge': 0.812} | without futility {'end_coverage': 0.139, 'end_inconclusive': 0.05, 'pass_to_judge': 0.812}
+20 B1x09 FM2 T0s 504 {'drop_futility': 0.188, 'end_harm': 0.04, 'end_inconclusive': 0.772} | without futility {'end_harm': 0.113, 'end_inconclusive': 0.887}
+20 B1x09 F0 T0s 504 {'drop_futility': 0.111, 'end_harm': 0.018, 'end_inconclusive': 0.865, 'pass_to_judge': 0.006} | without futility {'end_harm': 0.038, 'end_inconclusive': 0.956, 'pass_to_judge': 0.006}
+20 B1x11 FM2 T0s 504 {'drop_futility': 0.228, 'end_harm': 0.026, 'end_inconclusive': 0.746} | without futility {'end_harm': 0.105, 'end_inconclusive': 0.895}
+20 B1x11 F0 T0s 504 {'drop_futility': 0.131, 'end_harm': 0.012, 'end_inconclusive': 0.857} | without futility {'end_harm': 0.038, 'end_inconclusive': 0.962}
+60 dupM1 FM2 T0s 450 {'drop_futility': 0.058, 'end_inconclusive': 0.924, 'pass_to_judge': 0.018} | without futility {'end_inconclusive': 0.982, 'pass_to_judge': 0.018}
+60 dupM1 F0 T0s 450 {'drop_futility': 0.018, 'end_inconclusive': 0.94, 'pass_to_judge': 0.042} | without futility {'end_inconclusive': 0.958, 'pass_to_judge': 0.042}
+60 dupB3 F0 T0s 450 {'drop_futility': 0.078, 'end_inconclusive': 0.92, 'pass_to_judge': 0.002} | without futility {'end_inconclusive': 0.998, 'pass_to_judge': 0.002}
+60 dupB3 FM2 T0s 450 {'drop_futility': 0.033, 'end_inconclusive': 0.949, 'pass_to_judge': 0.018} | without futility {'end_inconclusive': 0.982, 'pass_to_judge': 0.018}
+60 dupM2 FM2 T0s 450 {'drop_futility': 0.164, 'end_harm': 0.018, 'end_inconclusive': 0.811, 'pass_to_judge': 0.007} | without futility {'end_harm': 0.036, 'end_inconclusive': 0.958, 'pass_to_judge': 0.007}
+60 dupM2 F0 T0s 450 {'drop_futility': 0.562, 'end_harm': 0.031, 'end_inconclusive': 0.407} | without futility {'end_harm': 0.204, 'end_inconclusive': 0.796}
+60 wide15 FM2 T0s 450 {'drop_futility': 0.273, 'end_inconclusive': 0.727} | without futility {'end_inconclusive': 1.0}
+60 wide15 F0 T0s 450 {'drop_futility': 0.287, 'end_inconclusive': 0.713} | without futility {'end_harm': 0.004, 'end_inconclusive': 0.996}
+60 narrow07 F0 T0s 450 {'drop_futility': 0.122, 'end_inconclusive': 0.856, 'pass_to_judge': 0.022} | without futility {'end_inconclusive': 0.978, 'pass_to_judge': 0.022}
+60 narrow07 FM2 T0s 450 {'drop_futility': 0.298, 'end_inconclusive': 0.702} | without futility {'end_inconclusive': 1.0}
+60 M1x085 FM2 T0s 450 {'drop_futility': 0.04, 'end_inconclusive': 0.922, 'pass_to_judge': 0.038} | without futility {'end_inconclusive': 0.962, 'pass_to_judge': 0.038}
+60 M1x085 F0 T0s 450 {'end_inconclusive': 0.778, 'pass_to_judge': 0.222} | without futility {'end_inconclusive': 0.778, 'pass_to_judge': 0.222}
+60 M1x115 FM2 T0s 450 {'drop_futility': 0.087, 'end_inconclusive': 0.907, 'pass_to_judge': 0.007} | without futility {'end_inconclusive': 0.993, 'pass_to_judge': 0.007}
+60 M1x115 F0 T0s 450 {'drop_futility': 0.129, 'end_inconclusive': 0.871} | without futility {'end_inconclusive': 1.0}
+60 M1noisy FM2 T0s 450 {'drop_futility': 0.058, 'end_inconclusive': 0.927, 'pass_to_judge': 0.016} | without futility {'end_inconclusive': 0.984, 'pass_to_judge': 0.016}
+60 M1noisy F0 T0s 450 {'drop_futility': 0.067, 'end_inconclusive': 0.904, 'pass_to_judge': 0.029} | without futility {'end_inconclusive': 0.971, 'pass_to_judge': 0.029}
+60 M1shift F0 T0s 450 {'drop_futility': 0.08, 'end_inconclusive': 0.92} | without futility {'end_inconclusive': 1.0}
+60 M1shift FM2 T0s 450 {'drop_futility': 0.082, 'end_inconclusive': 0.918} | without futility {'end_inconclusive': 1.0}
+60 M1M2avg FM2 T0s 450 {'drop_futility': 0.044, 'end_inconclusive': 0.953, 'pass_to_judge': 0.002} | without futility {'end_inconclusive': 0.998, 'pass_to_judge': 0.002}
+60 M1M2avg F0 T0s 450 {'drop_futility': 0.167, 'end_harm': 0.02, 'end_inconclusive': 0.813} | without futility {'end_harm': 0.029, 'end_inconclusive': 0.971}
+60 react F0 T0s 450 {'drop_futility': 0.042, 'end_inconclusive': 0.958} | without futility {'end_inconclusive': 1.0}
+60 react FM2 T0s 450 {'drop_futility': 0.089, 'end_inconclusive': 0.911} | without futility {'end_inconclusive': 1.0}
+60 damp FM2 T0s 450 {'drop_futility': 0.06, 'end_inconclusive': 0.92, 'pass_to_judge': 0.02} | without futility {'end_inconclusive': 0.98, 'pass_to_judge': 0.02}
+60 damp F0 T0s 450 {'drop_futility': 0.027, 'end_inconclusive': 0.773, 'pass_to_judge': 0.2} | without futility {'end_inconclusive': 0.8, 'pass_to_judge': 0.2}
+60 peek015 FM2 T0s 450 {'drop_futility': 0.096, 'end_inconclusive': 0.889, 'pass_to_judge': 0.016} | without futility {'end_inconclusive': 0.984, 'pass_to_judge': 0.016}
+60 peek015 F0 T0s 450 {'drop_futility': 0.071, 'end_inconclusive': 0.918, 'pass_to_judge': 0.011} | without futility {'end_inconclusive': 0.989, 'pass_to_judge': 0.011}
+60 peek030 FM2 T0s 450 {'drop_futility': 0.053, 'end_coverage': 0.022, 'end_inconclusive': 0.787, 'pass_to_judge': 0.138} | without futility {'end_coverage': 0.022, 'end_inconclusive': 0.84, 'pass_to_judge': 0.138}
+60 peek030 F0 T0s 450 {'drop_futility': 0.009, 'end_inconclusive': 0.802, 'pass_to_judge': 0.189} | without futility {'end_inconclusive': 0.811, 'pass_to_judge': 0.189}
+60 peek050 FM2 T0s 450 {'end_coverage': 0.116, 'end_inconclusive': 0.533, 'pass_to_judge': 0.351} | without futility {'end_coverage': 0.116, 'end_inconclusive': 0.533, 'pass_to_judge': 0.351}
+60 B1x09 FM2 T0s 450 {'drop_futility': 0.287, 'end_inconclusive': 0.713} | without futility {'end_inconclusive': 1.0}
+60 peek050 F0 T0s 450 {'end_coverage': 0.044, 'end_inconclusive': 0.311, 'pass_to_judge': 0.644} | without futility {'end_coverage': 0.044, 'end_inconclusive': 0.311, 'pass_to_judge': 0.644}
+60 B1x09 F0 T0s 450 {'drop_futility': 0.149, 'end_inconclusive': 0.851} | without futility {'end_inconclusive': 1.0}
+60 B1x11 FM2 T0s 450 {'drop_futility': 0.291, 'end_inconclusive': 0.709} | without futility {'end_inconclusive': 1.0}
+60 B1x11 F0 T0s 450 {'drop_futility': 0.204, 'end_inconclusive': 0.796} | without futility {'end_inconclusive': 1.0}
+
+real	0m56.979s
+user	3m33.155s
+sys	0m2.190s

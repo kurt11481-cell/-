@@ -1,0 +1,92 @@
+asof 2008-03-21 | scored ['c01_dup', 'c02_wide', 'c03_ext'] | skipped {} | judged now ['c01_dup', 'c02_wide', 'c03_ext']
+ c01_dup h=20 forward weeks 59 scored 177 (by challenger 177) gain +0.14% (-0.56 ~ +0.93%) | share 0.226
+ c01_dup h=60 forward weeks 51 scored 153 (by challenger 153) gain -0.60% (-1.98 ~ +0.80%) | share 0.183
+ c01_dup h=250 forward weeks 13 scored 39 (by challenger 39) gain +0.16% (구간 없음) | share 0.188
+ c02_wide h=20 forward weeks 59 scored 177 (by challenger 177) gain +0.32% (-1.00 ~ +1.00%) | share 0.053
+ c02_wide h=60 forward weeks 51 scored 153 (by challenger 153) gain +0.97% (-0.02 ~ +1.99%) | share 0.110
+ c02_wide h=250 forward weeks 13 scored 39 (by challenger 39) gain -0.33% (구간 없음) | share 0.235
+ c03_ext h=20 forward weeks 59 scored 177 (by challenger 177) gain +0.98% (-0.10 ~ +2.21%) | share 0.313
+ c03_ext h=60 forward weeks 51 scored 153 (by challenger 153) gain +1.22% (-1.43 ~ +3.91%) | share 0.228
+ c03_ext h=250 forward weeks 13 scored 39 (by challenger 39) gain +7.29% (구간 없음) | share 0.212
+events ['finding opened: F-width-20', 'finding opened: F-width-60'] | report [] | awaiting judge [] | next menu entry None (no free slot (3 of 3 in use))
+written itest_work3/layer3/runs/shadow_2008-03-21.json
+asof 2008-03-21 | scored ['c01_dup', 'c03_ext', 'c04_badfwd'] | skipped {} | judged now []
+ c01_dup h=20 forward weeks 59 scored 177 (by challenger 177) gain +0.14% (-0.56 ~ +0.93%) | share 0.226
+ c01_dup h=60 forward weeks 51 scored 153 (by challenger 153) gain -0.60% (-1.98 ~ +0.80%) | share 0.183
+ c01_dup h=250 forward weeks 13 scored 39 (by challenger 39) gain +0.16% (구간 없음) | share 0.188
+ c03_ext h=20 forward weeks 59 scored 177 (by challenger 177) gain +0.98% (-0.10 ~ +2.21%) | share 0.313
+ c03_ext h=60 forward weeks 51 scored 153 (by challenger 153) gain +1.22% (-1.43 ~ +3.91%) | share 0.228
+ c03_ext h=250 forward weeks 13 scored 39 (by challenger 39) gain +7.29% (구간 없음) | share 0.212
+ c04_badfwd h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report [] | awaiting judge [] | next menu entry None (no free slot (3 of 3 in use))
+written itest_work3/layer3/runs/shadow_2008-03-21_again.json
+asof 2008-03-28 | scored ['c04_badfwd'] | skipped {'c01_dup': 'registered file missing or changed: module', 'c03_ext': 'issued-forecast file missing or changed: challengers/c03_ext.issued/2008-03-21_001.npz'} | judged now []
+ c04_badfwd h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report [] | awaiting judge [] | next menu entry None (no free slot (3 of 3 in use))
+written itest_work3/layer3/runs/shadow_2008-03-28.json
+asof 2008-04-04 | scored ['c01_dup', 'c04_badfwd'] | skipped {'c03_ext': 'extra input missing or older than asof: _E'} | judged now ['c01_dup', 'c04_badfwd']
+ c01_dup h=20 forward weeks 61 scored 183 (by challenger 183) gain +0.15% (-0.66 ~ +1.05%) | share 0.233
+ c01_dup h=60 forward weeks 30 scored 159 (by challenger 159) gain -0.58% (-2.00 ~ -0.10%) | share 0.184
+ c01_dup h=250 forward weeks 15 scored 45 (by challenger 45) gain +0.11% (구간 없음) | share 0.188
+ c04_badfwd h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report ['c01_dup: 9 forecasts were not issued within 10 days of their start day; they count as no forecast', 'c01_dup h=60: a judgement has been due since 2008-04-04 and is held; the check of the judgement interval is not recorded as passed for this horizon (rule section 5)'] | awaiting judge [] | next menu entry None (no free slot (3 of 3 in use))
+written itest_work3/layer3/runs/shadow_2008-04-04.json
+asof 2008-04-11 | scored ['c01_dup', 'c03_ext', 'c04_badfwd'] | skipped {} | judged now ['c03_ext']
+ c01_dup h=20 forward weeks 62 scored 186 (by challenger 186) gain +0.15% (-0.52 ~ +0.88%) | share 0.233
+ c01_dup h=60 forward weeks 54 scored 162 (by challenger 162) gain -0.59% (-1.80 ~ +0.61%) | share 0.184
+ c01_dup h=250 forward weeks 16 scored 48 (by challenger 48) gain +0.08% (구간 없음) | share 0.188
+ c03_ext h=20 forward weeks 62 scored 186 (by challenger 186) gain +0.88% (-0.30 ~ +2.16%) | share 0.286
+ c03_ext h=60 forward weeks 54 scored 162 (by challenger 162) gain +1.37% (-1.42 ~ +4.19%) | share 0.236
+ c03_ext h=250 forward weeks 16 scored 48 (by challenger 48) gain +6.75% (구간 없음) | share 0.214
+ c04_badfwd h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events ['c01_dup h=60: drop_futility'] | report ['c01_dup: 9 issued forecasts differ when recomputed (a data revision?); the scores use them as issued', 'c03_ext: 18 forecasts were not issued within 10 days of their start day; they count as no forecast'] | awaiting judge [] | next menu entry None (no free slot (3 of 3 in use))
+written itest_work3/layer3/runs/shadow_2008-04-11.json
+asof 2008-07-04 | scored ['c04_badfwd'] | skipped {} | judged now []
+ c04_badfwd h=20 forward weeks 11 scored 33 (by challenger 9) gain -6.41% (구간 없음) | share 0.076
+ c04_badfwd h=60 forward weeks 3 scored 9 (by challenger 9) gain -36.04% (구간 없음) | share 0.131
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report ['c04_badfwd: 99 forecasts were not issued within 10 days of their start day; they count as no forecast'] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-04_after_crash.json
+asof 2008-07-11 | scored ['c04_badfwd'] | skipped {} | judged now []
+ c04_badfwd h=20 forward weeks 12 scored 36 (by challenger 9) gain -5.63% (구간 없음) | share 0.077
+ c04_badfwd h=60 forward weeks 4 scored 12 (by challenger 9) gain -23.73% (구간 없음) | share 0.113
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report ['c04_badfwd: 111 issued forecasts differ when recomputed (a data revision?); the scores use them as issued'] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-11.json
+asof 2008-07-11 | scored ['c04_badfwd'] | skipped {} | judged now []
+ c04_badfwd h=20 forward weeks 12 scored 36 (by challenger 9) gain -5.63% (구간 없음) | share 0.077
+ c04_badfwd h=60 forward weeks 4 scored 12 (by challenger 9) gain -23.73% (구간 없음) | share 0.113
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report ['c04_badfwd: 111 issued forecasts differ when recomputed (a data revision?); the scores use them as issued'] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-11_again.json
+asof 2008-07-11 | scored [] | skipped {'c04_badfwd': 'stage error: ValueError: 3 of 60 new forecasts differ between inputs cut at the start day and inputs cut at asof (simulated)'} | judged now []
+events [] | report ['c04_badfwd was not scored in this run: stage error: ValueError: 3 of 60 new forecasts differ between inputs cut at the start day and inputs cut at asof (simulated)'] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-11_stagefail.json
+asof 2008-07-11 | scored ['c04_badfwd'] | skipped {} | judged now []
+ c04_badfwd h=20 forward weeks 12 scored 36 (by challenger 9) gain -5.63% (구간 없음) | share 0.077
+ c04_badfwd h=60 forward weeks 4 scored 12 (by challenger 9) gain -23.73% (구간 없음) | share 0.113
+ c04_badfwd h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share 0.200
+events [] | report ['c04_badfwd: 111 issued forecasts differ when recomputed (a data revision?); the scores use them as issued'] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-11_again2.json
+asof 2008-07-18 | scored [] | skipped {'c04_badfwd': 'registered file missing or changed: prereg'} | judged now []
+events [] | report [] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-18.json
+asof 2008-07-25 | scored [] | skipped {'c04_badfwd': 'registered file missing or changed: prereg'} | judged now []
+events ['c04_badfwd ended: skipped 2 runs in a row'] | report [] | awaiting judge [{'id': 'c03_ext', 'h': 20}] | next menu entry peek (ok)
+written itest_work3/layer3/runs/shadow_2008-07-25.json
+final status: {"c01_dup": ["ended", {"20": "end_inconclusive", "60": "drop_futility"}], "c02_wide": ["closed", {"20": "shadow"}], "c03_ext": ["closed", {"20": "pass_to_judge"}], "c04_badfwd": ["ended", {"20": "end_unscored"}]}
+rejected lines 5 | log lines 46 | issued files 13
+work dir itest_work3
+itest OK
+
+real	1m1.421s
+user	1m7.464s
+sys	0m8.640s

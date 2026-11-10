@@ -1,0 +1,14 @@
+asof 2026-11-06 | scored ['c01_m1dup', 'c02_widefwd'] | skipped {} | judged now ['c01_m1dup', 'c02_widefwd']
+ c01_m1dup h=20 forward weeks 249 scored 4778 (by challenger 4778) gain +0.00% (-0.04 ~ +0.05%) | share 0.144
+ c01_m1dup h=60 forward weeks 241 scored 4618 (by challenger 4618) gain +0.03% (-0.28 ~ +0.34%) | share 0.170
+ c01_m1dup h=250 forward weeks 201 scored 3858 (by challenger 3858) gain +0.96% (구간 없음) | share 0.189
+ c02_widefwd h=20 forward weeks 249 scored 4778 (by challenger 4348) gain +0.15% (-0.61 ~ +0.84%) | share 0.055
+ c02_widefwd h=60 forward weeks 241 scored 4618 (by challenger 4232) gain -0.10% (-1.34 ~ +1.08%) | share 0.082
+ c02_widefwd h=250 forward weeks 201 scored 3858 (by challenger 3509) gain -1.52% (구간 없음) | share 0.127
+events ['c01_m1dup h=20: end_inconclusive', 'c01_m1dup h=60: end_inconclusive', 'c02_widefwd h=20: end_inconclusive'] | report [] | awaiting judge [] | next menu entry None (no eligible menu entry (menu used up, or its findings are closed or at the challenge limit))
+written /tmp/claude-0/-home-user/a406bf43-090f-5192-964f-c483e7203aaa/scratchpad/l3test3/shadow_test_run1.json
+books OK
+
+real	11m16.240s
+user	28m15.737s
+sys	2m8.107s

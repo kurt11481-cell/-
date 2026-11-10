@@ -1,0 +1,15 @@
+[
+ {
+  "menu_id": "vixr",
+  "module": "vixr.py",
+  "module_sha256": "5be2fd0b774a980cd77239b2318e7cf5cbd680b4afc1e852d359515b3e98f9a6",
+  "finding": "D1",
+  "kind": "history",
+  "judged_horizons": [
+   20
+  ],
+  "route": "menu",
+  "title": "시장 내재 변동성 비율(VIX ÷ S&P 500의 1년 실현 변동성)로 폭을 잡는 전문가",
+  "note": "판정 구간은 20일만. VIX는 30일짜리 값이고, 60일까지 판정하면 자리 하나가 4년 묶인다. 60·250일 값은 기록만 한다. 등록 전에는 실제 결과와 대조해 채점하지 않는다."
+ }
+]

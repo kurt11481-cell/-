@@ -1,0 +1,15 @@
+# FM-2 layer 3 (challenger registration and shadow scoring): rule, code and menu v1 - fixed 2026-11-10 22:23:30 KST, before any challenger is registered
+# reviews: review3/REPORT.md (independent), review3/REVIEW2.md (the fixes), review3/REVIEW3.md (narrow confirmation: pass).
+# the six places of fm3_weekly.py changed after the confirmation were not reviewed (review3/RESPONSE.md, review3/r3check/r4_weekly.diff)
+# a new version is a new file with a new hash record. the books under layer3/ grow every week and are not listed here
+6f8e396db259e6cd57176be263ef85b106745e2040b061390b82652abca469e6  forecast-layer3-rule-2026-11-10.md
+da12b05575e5af89945b94cd32d1428c0344b6f6b73224dd77216bfde4773fef  scripts/fm3_shadow.py
+88a63c7e16a34f79094a015be2177c59f62721cadee287160fd5672c94b122b9  scripts/fm3_weekly.py
+97ea073a50e4a418f4decd3f6b0314e6106c519cc8300292d99af635e0385ee7  scripts/fm3_itest.py
+789be0515dcc38e2fb486d837a0c1053cc0879a79e35ea4bca58a87a2f1b7d29  scripts/fetch_extra.py
+13898b6748933c4d5b46106b8b7557bd93d4b06e08400acd9cbbc5ab87f912b8  scripts/fetch_options.py
+d3268329302812bf076d55fade6d86bccb03c27f6fd1562a3a4a2656655b3690  layer3/menu/MENU.json
+5be2fd0b774a980cd77239b2318e7cf5cbd680b4afc1e852d359515b3e98f9a6  layer3/menu/vixr.py
+47562537698602c09b4576b32d85b59ddafca770f2c4d1142cb7035f5eb9280f  scripts/fm2_weekly.py
+5b098dd5dba6428c02935c6c8e060fb61ff66f263e0e5945150c3f3ea0abb72d  scripts/fm2.py
+2ceee559c43c5f4ceead34689ca4e52ab456267facc7af928dbf6a4ca8c287d3  scripts/fm1.py
