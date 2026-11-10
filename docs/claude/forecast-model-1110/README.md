@@ -1,7 +1,7 @@
 # forecast-model-1110 폴더 안내
 
 - 무엇: 미래 주가 예측 모형(FM-1·FM-2)과 재귀적 자기개선 고리의 문서·코드·기록이다. 표시·채점 전용이다. 주문·정책·상태·자동 코어 입력·한도·권한 변경 0.
-- 주인: 사장실 스레드 '미래 주가 예측 모델 만들기'. 이 안내문 고침: 2026-11-10 22:25 KST.
+- 주인: 사장실 스레드 '미래 주가 예측 모델 만들기'. 이 안내문 고침: 2026-11-10 23:52 KST.
 - 원본: 사장실 프로젝트 파일 /mnt/project-files/forecast-model-1110/. 계산은 클라우드에서만 한다.
 - 사본: 회사PC 코덱스저장소 docs/claude/forecast-model-1110/. 기록용이다. 문서 커밋(매일 23:30 KST)의 git 시각이 '규칙을 먼저 고정하고 자료를 나중에 봤다'는 기록이 된다. 사본에서 계산을 돌리지 않는다. 원본을 고치면 같은 날 사본도 다시 올린다.
 
@@ -26,6 +26,7 @@
 | forward-rule.sha256 | 2026-11-10 11:23 | 전진 채점 규칙, fm2_weekly.py, fetch_weekly.py, fm2.py, fm1.py | 99d392514e8df637e11f9053a7dc51916c52dfb06ee3510016ecd80129832bb8 |
 | layer3.sha256 | 2026-11-10 22:23 | 3층 장치 규칙, fm3_shadow.py, fm3_weekly.py, fm3_itest.py, fetch_extra.py, fetch_options.py, 메뉴 1판(MENU.json · vixr.py), fm2_weekly.py, fm2.py, fm1.py | bd8d5a3f2be744238a09fdd261e63e2a33f7759d34015bd22d25c8fd8d5daeab |
 
+- 문서 커밋 확인(2026-11-10 23:51 KST): 6a7d1ec(2026-11-10 23:30:11 KST — 결정 기록과 앞의 닻 3개) · 66bbc34(2026-11-10 23:30:16 KST — 3층 장치와 layer3.sha256). 커밋 안에서도 닻 4개의 sha256이 위 표와 같다. 전체 번호는 설계서 8-2절에 있다.
 - results.sha256은 결과·통계 파일의 해시 모음이다. 결과가 늘면 다시 쓰므로 고정 닻이 아니다.
 - 해시는 LF 줄바꿈 바이트 기준이다. 사본을 대조할 때는 `git show <커밋>:<경로> | sha256sum`으로 본다. Windows에서 줄바꿈이 바뀐 작업 파일로 재면 다르게 나올 수 있다.
 - 3층의 메뉴(layer3/menu/)는 항목이 늘 수 있다. layer3.sha256에 적힌 것은 1판의 값이다. 그 뒤의 메뉴 상태는 등록할 때마다 layer3/LOG.jsonl의 registered 사건(menu_sha256)에 남는다.
