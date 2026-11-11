@@ -1310,7 +1310,8 @@ class DailyTests(Workspace):
         symbols = {item[0] for item in self.collected}
         self.assertEqual(symbols, {"AAA", "BBB", "NEWW", "SOXX"})
         newcomer = next(item for item in self.collected if item[0] == "NEWW")
-        self.assertEqual(newcomer, ("NEWW", "NASDAQ", "2026-10-14", "2026-04-01"))
+        # first collection starts at max(FIRST_COLLECTION_DAY, today - FIRST_COLLECTION_LOOKBACK_DAYS) (first-collect 2026-11-11).
+        self.assertEqual(newcomer, ("NEWW", "NASDAQ", "2026-10-14", "2026-05-17"))
         self.assertIn(("AAA", "NASDAQ", "2026-10-14", "2026-10-12"), self.collected)
 
     def test_first_failure_stops_the_run(self):

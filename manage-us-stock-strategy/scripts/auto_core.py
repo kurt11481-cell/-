@@ -32,7 +32,7 @@ import argparse
 import json
 import subprocess
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable
@@ -55,6 +55,9 @@ CLOSES_ROOT = REPO_ROOT / "workspace/outputs/regular-session-closes"
 WATCHLIST_PATH = REPO_ROOT / "docs/claude/watchlist-registry.json"
 COLLECT_SCRIPT = Path(__file__).resolve().with_name("collect_30m.ps1")
 FIRST_COLLECTION_DAY = date(2026, 4, 1)
+# Kiwoom 30m data starts at a month boundary that moves forward (2026-04-01 for fetches up to 10/29, 2026-05-01
+# on 11/11), so a fixed first day falls out of it; 150 days keeps >= 31 days of margin.
+FIRST_COLLECTION_LOOKBACK_DAYS = 150
 EXCHANGES = {"ND": "NASDAQ", "NY": "NYSE", "NA": "AMEX"}
 READY_FOR_RECORDING = "\uae30\ub85d \ubaa8\ub4dc \ucf24 \uc900\ube44\ub428"  # "ready to switch recording on" (Korean)
 # "recording mode needed (baseline old)" (Korean): compare mode past 80% of the fill window (T1 r3 C4).
@@ -349,7 +352,8 @@ def daily(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CONF
             exchange, last_session = known_exchange(symbol, closes_root)
             if exchange is None:
                 exchange = resolve_exchange(symbol, runtime=runtime, rate_policy=rate_policy, reader=exchange_reader)
-            oldest = date.fromisoformat(last_session) if last_session else FIRST_COLLECTION_DAY
+            oldest = (date.fromisoformat(last_session) if last_session
+                      else max(FIRST_COLLECTION_DAY, today - timedelta(days=FIRST_COLLECTION_LOOKBACK_DAYS)))
             collector(symbol, exchange, newest=today, oldest=min(oldest, today), profile=profile,
                       pages_root=closes_root / "pages")
             histories.append(history_updater(symbol, exchange, now=now, closes_root=closes_root))
