@@ -117,6 +117,16 @@ authority: order_authority=false · quantity_authority=none · 주문 경로 없
     - 테스트를 fixture NOW와 mock으로 바꿈(11/11·5/1 날짜는 대조 창에 걸려 수집까지 못 감)
   - 남은 확인 필요는 둘이다: QQQ 거래소 조회 결과, 그리고 빈 응답 요청의 실제 반환 코드.
 
+## 6-2. 실행·병합 기록
+
+- **개발 큐:** 11/11 08:55:11 KST 시작, 09:27:27 끝. 결과는 NEEDS_APPROVAL, Judge PASS(2회차), 새 실패 0, 테스트 3497 → 3501, base b2e0f08. 1회차는 보고서 문장에 권한 표지 이름이 들어가 G8 FAIL이었고, 코드는 같다.
+- **diff 확인:** 이 스레드가 workspace/outputs/dev-runs/first-collect/attempt-2/diff.patch를 직접 읽었다. 바뀐 곳은 다음과 같다.
+  - auto_core.py: timedelta import, 상수 FIRST_COLLECTION_LOOKBACK_DAYS = 150과 주석, 352행 else 쪽.
+  - test_auto_core.py:1313 기대값 4/1 → 5/17, 주석 1줄 추가.
+  - 새 테스트 4개.
+- **병합 결정·병합:** 사장이 결과 안내를 받은 뒤 대화형 PowerShell에서 `.\tools\dev-merge.ps1 first-collect -ApproveAuthority`를 직접 실행했다. 커밋은 22769dc(2026-11-11 13:03:56 KST). 사장 보고는 "병합 완료"(13:04:04 KST)다. 병합 뒤 저장소에서 auto_core.py:60·356, test_auto_core.py:1314, 새 테스트 파일이 있는 것을 확인했다.
+- **첫 실행 확인:** 11/12 06:15 KST 코어에서 PLTR·QQQ 이력이 생성됐는지, QQQ 거래소 조회가 됐는지 본다. 확인은 08:10 KST에 예약해 두었다.
+
 ## 7. 되돌리기
 
 병합 커밋을 `git revert`한다. 이미 받은 pages·history 파일은 읽기 전용 수집 결과라 그대로 둬도 된다.
