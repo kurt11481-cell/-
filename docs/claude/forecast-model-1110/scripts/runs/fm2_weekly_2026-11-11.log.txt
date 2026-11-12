@@ -1,0 +1,28 @@
+start 15:03:15 KST
+{'stem': 'XLE', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLF', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLV', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLI', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLP', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLU', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLY', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'XLB', 'class': 'sector', 'first': '1998-12-22', 'last': '2026-11-11', 'rows': 7015, 'n_forecasts': 3453, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'IWM', 'class': 'smallcap', 'first': '2000-05-26', 'last': '2026-11-11', 'rows': 6655, 'n_forecasts': 3237, 'days_abs_ret_gt_30pct': 0}
+{'stem': '_N225', 'class': 'intl', 'first': '1965-01-05', 'last': '2026-11-11', 'rows': 15204, 'n_forecasts': 3948, 'days_abs_ret_gt_30pct': 0}
+{'stem': '_GDAXI', 'class': 'intl', 'first': '1987-12-30', 'last': '2026-11-11', 'rows': 9830, 'n_forecasts': 4095, 'days_abs_ret_gt_30pct': 0}
+{'stem': '_FTSE', 'class': 'intl', 'first': '1984-01-03', 'last': '2026-11-11', 'rows': 10828, 'n_forecasts': 4074, 'days_abs_ret_gt_30pct': 0}
+{'stem': '_HSI', 'class': 'intl', 'first': '1986-12-31', 'last': '2026-11-11', 'rows': 9838, 'n_forecasts': 3972, 'days_abs_ret_gt_30pct': 1}
+{'stem': '_KS11', 'class': 'intl', 'first': '1996-12-11', 'last': '2026-11-11', 'rows': 7363, 'n_forecasts': 3663, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'MU', 'class': 'stock', 'first': '1984-06-01', 'last': '2026-11-11', 'rows': 10695, 'n_forecasts': 4056, 'days_abs_ret_gt_30pct': 0}
+{'stem': 'AMD', 'class': 'stock', 'first': '1980-03-17', 'last': '2026-11-11', 'rows': 11760, 'n_forecasts': 4056, 'days_abs_ret_gt_30pct': 6}
+{'stem': 'PWR', 'class': 'stock', 'first': '1998-02-12', 'last': '2026-11-11', 'rows': 7232, 'n_forecasts': 3585, 'days_abs_ret_gt_30pct': 4}
+{'stem': 'NVDA', 'class': 'stock', 'first': '1999-01-22', 'last': '2026-11-11', 'rows': 6995, 'n_forecasts': 3441, 'days_abs_ret_gt_30pct': 5}
+{'stem': 'MSFT', 'class': 'stock', 'first': '1986-03-13', 'last': '2026-11-11', 'rows': 10246, 'n_forecasts': 4056, 'days_abs_ret_gt_30pct': 1}
+{'stem': 'AMZN', 'class': 'stock', 'first': '1997-05-15', 'last': '2026-11-11', 'rows': 7420, 'n_forecasts': 3696, 'days_abs_ret_gt_30pct': 0}
+asof 2026-11-11 | new forecast lines 9 | new score lines 0
+ pool forward h=20 {'n_matured': 0, 'n_issued': 4, 'status': 'candidate', 'judgement': 'insufficient_sample', 'weeks_needed': 104}
+ pool forward h=60 {'n_matured': 0, 'n_issued': 4, 'status': 'candidate', 'judgement': 'insufficient_sample', 'weeks_needed': 208}
+ pool forward h=250 {'n_matured': 0, 'n_issued': 4, 'status': 'baseline_only', 'judgement': 'not_judged'}
+written scripts/runs/fm2_weekly_2026-11-11.json
+exit=0
+end 15:05:16 KST

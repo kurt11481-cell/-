@@ -6,7 +6,7 @@
   "60": "FM2"
  },
  "last_judgement_quarter": "2026Q4",
- "last_run_asof": "",
+ "last_run_asof": "2026-11-11",
  "interval_check": null,
  "findings": [
   {
@@ -15,7 +15,9 @@
    "source": "forecast-model-design-2026-11-10.md 4 (reading 3), 6 (item 2)",
    "opened": "2026-11-10",
    "status": "open",
-   "challenges": []
+   "challenges": [
+    "c01_vixr"
+   ]
   },
   {
    "id": "D2",
@@ -42,7 +44,43 @@
    "challenges": []
   }
  ],
- "challengers": [],
- "log_seq": 1,
+ "challengers": [
+  {
+   "id": "c01_vixr",
+   "menu_id": "vixr",
+   "finding": "D1",
+   "attempt": 1,
+   "route": "menu",
+   "kind": "history",
+   "judged_horizons": [
+    20
+   ],
+   "judged_pair": {
+    "20": "FM2"
+   },
+   "module": "challengers/c01_vixr.py",
+   "module_sha256": "5be2fd0b774a980cd77239b2318e7cf5cbd680b4afc1e852d359515b3e98f9a6",
+   "prereg": "challengers/c01_vixr.prereg.md",
+   "prereg_sha256": "e702c25a80828763cd7364df7204f6ca71b873ddcce2db5778929ba78d2865ce",
+   "admission": "challengers/c01_vixr.admission.json",
+   "admission_sha256": "2f5518d5169332026f94fc941f61cab0d138241dba8712f9561d48951340e933",
+   "extras": {
+    "VIX": "_VIX",
+    "SPX": "_GSPC"
+   },
+   "extra_lag": 1,
+   "registered_at": "2026-11-12 15:07:50 KST",
+   "asof": "2026-11-11",
+   "t0": "2026-11-13",
+   "status": "shadow",
+   "h_status": {
+    "20": "shadow"
+   },
+   "judged_quarter": "2026Q4",
+   "held": {},
+   "issued": []
+  }
+ ],
+ "log_seq": 3,
  "outbox": {}
 }

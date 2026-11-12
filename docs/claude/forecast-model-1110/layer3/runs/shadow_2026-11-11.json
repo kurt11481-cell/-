@@ -1,0 +1,39 @@
+{
+ "asof": "2026-11-11",
+ "run_at": "2026-11-12 15:06:00 KST",
+ "rule": "forecast-layer3-rule-2026-11-10.md",
+ "code": {
+  "fm3_shadow": "da12b05575e5af89",
+  "fm3_weekly": "88a63c7e16a34f79",
+  "fm2": "5b098dd5dba6428c",
+  "fm1": "2ceee559c43c5f4c"
+ },
+ "menu_sha256": "d3268329302812bf076d55fade6d86bccb03c27f6fd1562a3a4a2656655b3690",
+ "display": {
+  "20": "FM2",
+  "60": "FM2"
+ },
+ "interval_check": null,
+ "slots_used": 0,
+ "skipped": {},
+ "challengers": {},
+ "forward_check": {
+  "20": {
+   "weeks": 0
+  },
+  "60": {
+   "weeks": 0
+  }
+ },
+ "events": [],
+ "held": [],
+ "skip_streak": {},
+ "report": [],
+ "findings_run": false,
+ "judged_now": [],
+ "slots_used_after": 0,
+ "awaiting_judge": [],
+ "next_menu": "vixr",
+ "next_menu_note": "ok",
+ "registry": []
+}

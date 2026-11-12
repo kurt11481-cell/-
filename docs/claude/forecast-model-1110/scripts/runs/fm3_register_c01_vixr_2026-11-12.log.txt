@@ -1,0 +1,1 @@
+{"id": "c01_vixr", "finding": "D1", "attempt": 1, "module_sha256": "5be2fd0b774a980cd77239b2318e7cf5cbd680b4afc1e852d359515b3e98f9a6", "prereg_sha256": "e702c25a80828763cd7364df7204f6ca71b873ddcce2db5778929ba78d2865ce", "t0": "2026-11-13", "judged_pair": {"20": "FM2"}, "status": "shadow"}

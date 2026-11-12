@@ -1,7 +1,7 @@
 # forecast-model-1110 폴더 안내
 
 - 무엇: 미래 주가 예측 모형(FM-1·FM-2)과 재귀적 자기개선 고리의 문서·코드·기록이다. 표시·채점 전용이다. 주문·정책·상태·자동 코어 입력·한도·권한 변경 0.
-- 주인: 사장실 스레드 '미래 주가 예측 모델 만들기'. 이 안내문 고침: 2026-11-10 23:52 KST.
+- 주인: 사장실 스레드 '미래 주가 예측 모델 만들기'. 이 안내문 고침: 2026-11-10 23:52 KST, 2026-11-12 15:10 KST(주간 입력 목록 한 줄).
 - 원본: 사장실 프로젝트 파일 /mnt/project-files/forecast-model-1110/. 계산은 클라우드에서만 한다.
 - 사본: 회사PC 코덱스저장소 docs/claude/forecast-model-1110/. 기록용이다. 문서 커밋(매일 23:30 KST)의 git 시각이 '규칙을 먼저 고정하고 자료를 나중에 봤다'는 기록이 된다. 사본에서 계산을 돌리지 않는다. 원본을 고치면 같은 날 사본도 다시 올린다.
 
@@ -48,7 +48,7 @@
 
 ## 사본에 없는 것과 이름이 다른 것
 
-- scripts/inputs/ — 입력 자료(약 33MB). 원본 폴더에만 있다. 파일마다의 sha256은 위 해시 목록과 results.sha256에 있다. 옵션 시세 스냅샷은 목록(scripts/inputs/options/MANIFEST.jsonl)만 사본에 있다.
+- scripts/inputs/ — 입력 자료(약 33MB). 원본 폴더에만 있다. 파일마다의 sha256은 위 해시 목록과 results.sha256에 있다. 옵션 시세 스냅샷은 목록(scripts/inputs/options/MANIFEST.jsonl)만 사본에 있다. 주간 입력(scripts/inputs/weekly/<asof>/)도 목록 두 개(MANIFEST.json · MANIFEST_EXTRA.json)만 사본에 있다.
 - review2/reviewer/ — 2차 독립 재검토자의 작업 파일 34개. 원본 폴더에만 있다.
 - review3/의 reviewed_v1/ · reviewed_v2/ · reviewed_v3/ · reviewer/ · reviewer2/ · reviewer3/ · r3check/ — 원본 폴더에만 있다.
 - 로그: 저장소가 `*.log`를 git에서 빼므로 사본의 로그는 `.log.txt`다. review2/verify2.log는 사본에서 review2/verify2.log.txt다(내용과 sha256은 같다). review3/ 바로 아래와 r3check/ · reviewer2/ · reviewer3/의 로그는 원본에서도 `.log.txt`다(reviewer/ 안은 검토자가 쓴 이름 그대로다).
