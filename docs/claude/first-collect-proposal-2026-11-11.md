@@ -125,7 +125,14 @@ authority: order_authority=false · quantity_authority=none · 주문 경로 없
   - test_auto_core.py:1313 기대값 4/1 → 5/17, 주석 1줄 추가.
   - 새 테스트 4개.
 - **병합 결정·병합:** 사장이 결과 안내를 받은 뒤 대화형 PowerShell에서 `.\tools\dev-merge.ps1 first-collect -ApproveAuthority`를 직접 실행했다. 커밋은 22769dc(2026-11-11 13:03:56 KST). 사장 보고는 "병합 완료"(13:04:04 KST)다. 병합 뒤 저장소에서 auto_core.py:60·356, test_auto_core.py:1314, 새 테스트 파일이 있는 것을 확인했다.
-- **첫 실행 확인:** 11/12 06:15 KST 코어에서 PLTR·QQQ 이력이 생성됐는지, QQQ 거래소 조회가 됐는지 본다. 확인은 08:10 KST에 예약해 두었다.
+- **첫 실행 결과(11/12 08:1x KST 확인):** 통과.
+  - daily(`auto-core-daily-20261111T211501Z.log`)는 status OK, reasons 없음, exit 0이다. 단계는 reconcile·bars·exposure까지 모두 돌았다(exposure VERIFIED).
+  - 이력 11종목이 모두 CONTIGUOUS다. last_session은 2026-11-11이다.
+  - PLTR: NASDAQ, 135세션, 2026-05-01부터.
+  - QQQ: NASDAQ, 108세션, 2026-06-10부터. 거래소 조회가 됐다(EXCHANGE_UNRESOLVED 없음).
+  - decide(`auto-core-decide-20261111T224501Z.log`)는 OK, exit 0이다.
+  - LATEST·LATEST_DECISION에 UNREGISTERED, POLICY_REGISTRY_MISMATCH, BAR_COLLECTION_FAILED, CLOSE_HISTORY_FAILED가 하나도 없다.
+  - 5절 끝의 '확인 필요'(QQQ 거래소 조회)는 이것으로 풀렸다.
 
 ## 7. 되돌리기
 
