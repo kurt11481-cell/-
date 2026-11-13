@@ -176,6 +176,37 @@ def snapshot_holdings(snapshot: dict[str, Any] | None) -> dict[str, int]:
     return holdings
 
 
+T1_BARS_ISOLATED = "T1_BARS_ISOLATED"
+T1_BARS_ISOLATED_INVALID = "T1_BARS_ISOLATED_INVALID"
+
+
+def t1_isolated(t1: dict[str, Any], *, holdings: Any, benchmarks: Any) -> list[str]:
+    """bar-isolate: the watch-only symbols T1 isolated (steps.bars.isolated), in T1's order. No steps, bars or
+    isolated key means none (old records). A non-empty list of {symbol: non-empty upper-case str, reason: str},
+    no symbol twice and none held or a benchmark is required; anything else stops the run (DecideFailure)."""
+    steps = t1.get("steps")
+    if steps is not None and not isinstance(steps, dict):
+        raise DecideFailure(T1_BARS_ISOLATED_INVALID)
+    bars = (steps or {}).get("bars")
+    if bars is not None and not isinstance(bars, dict):
+        raise DecideFailure(T1_BARS_ISOLATED_INVALID)
+    entries = (bars or {}).get("isolated")
+    if entries is None:
+        return []
+    if not isinstance(entries, list) or not entries:
+        raise DecideFailure(T1_BARS_ISOLATED_INVALID)
+    symbols: list[str] = []
+    for item in entries:
+        symbol = item.get("symbol") if isinstance(item, dict) else None
+        if not isinstance(item, dict) or set(item) != {"symbol", "reason"} or not isinstance(symbol, str) \
+                or not symbol or symbol != symbol.strip().upper() or not isinstance(item["reason"], str):
+            raise DecideFailure(T1_BARS_ISOLATED_INVALID)
+        symbols.append(symbol)
+    if len(set(symbols)) != len(symbols) or set(symbols) & (set(holdings) | set(benchmarks)):
+        raise DecideFailure(T1_BARS_ISOLATED_INVALID)
+    return symbols
+
+
 # ---------------------------------------------------------------------------------------------
 # Broker reads (F6 only: daily order fills and open orders)
 # ---------------------------------------------------------------------------------------------
@@ -623,19 +654,36 @@ def _run(*, decision: dict[str, Any], config: dict[str, Any], mode: str, provena
                or ((registry["entries"].get(symbol) or {}).get("sector")) for symbol in set(holdings) | set(members)}
     benchmarks = {"SOXX"} | {rules.rg2_benchmark(sector) for sector in sectors.values()}
     universe = sorted(set(holdings) | set(members) | benchmarks)
+    # bar-isolate: T1 isolated these watch-only symbols (checked here, after holdings and benchmarks are known).
+    isolated = t1_isolated(t1, holdings=holdings, benchmarks=benchmarks)
     corporate = load_corporate_actions(closes_root, sessions)
     from auto_core import known_exchange
     bars = {}
     for symbol in universe:
         if bars_loader is not None:
-            bars[symbol] = bars_loader(symbol, evaluation_session)
+            loaded = bars_loader(symbol, evaluation_session)
+        else:
+            exchange, _last = known_exchange(symbol, closes_root)
+            loaded = load_symbol(symbol, pages_root=Path(closes_root) / "pages", calendar=calendar,
+                                 corporate_actions=corporate, evaluation_session=evaluation_session,
+                                 exchange=exchange or "NASDAQ")
+        if symbol in isolated:
+            # Pages saved before the failure can still hold the evaluation session (collect_30m saves newest
+            # first): an isolated symbol is never read as OK. A new dict: the loaded one is not changed.
+            bars[symbol] = {**loaded, "status": "ISOLATED", "errors": [T1_BARS_ISOLATED], "split_suspects": []}
             continue
-        exchange, _last = known_exchange(symbol, closes_root)
-        bars[symbol] = load_symbol(symbol, pages_root=Path(closes_root) / "pages", calendar=calendar,
-                                   corporate_actions=corporate, evaluation_session=evaluation_session,
-                                   exchange=exchange or "NASDAQ")
+        bars[symbol] = loaded
+        if bars_loader is not None:
+            continue
         for suspect in bars[symbol]["split_suspects"]:
             exceptions.append(("SPLIT_SUSPECTED", f"\ubd84\ud560 \uc758\uc2ec {suspect} \u2014 \uacf5\uc2dd \ubd84\ud560 \uae30\ub85d \ud544\uc694"))
+    if isolated:
+        # "watch symbol 30m collection failed <codes> - no buy of it today (held sells and exposure judged as usual)
+        # - Cowork checks the cause" (Korean); the reasons stay in T1's result.
+        exceptions.append((T1_BARS_ISOLATED,
+                           "\uad00\uc2ec \uc885\ubaa9 30\ubd84\ubd09 \uc218\uc9d1 \uc2e4\ud328 " + ", ".join(isolated)
+                           + " \u2014 \uc624\ub298 \uadf8 \uc885\ubaa9 \ub9e4\uc218 \ub9c9\ud798(\ubcf4\uc720 \uc885\ubaa9 \ub9e4\ub3c4\u00b7\ub178\ucd9c \ud310\uc815\uc740 \uacc4\uc18d)"
+                           " \u2014 Cowork \uc6d0\uc778 \ud655\uc778"))
     # F6 outcome classification of the unclassified tickets of the ledger source (r2 R2-2: the latest record
     # whose F6 ran, however many HOLD/FAIL records came after it). r3: only tickets whose session has ended, each
     # read over its own order days (issue KST day to the KST day of its session's close).

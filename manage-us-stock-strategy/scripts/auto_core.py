@@ -12,10 +12,13 @@ daily   1 read the kill switch and workspace/policies/auto_core.json, record the
 
 The account reads run before the 30-minute collection so the broker snapshot is judged and (in apply mode)
 written while it is fresh (the proposal expires 15 minutes after the read); a first collection of a new
-symbol can take minutes. There are no retries inside a run: the first failure stops it (status FAIL,
-exit 1) and the next scheduled run is the retry. Running twice on one day gives the same result: the
-reconciliation of an already written snapshot is NO_CHANGE, saved 30-minute pages are reused and the
-compare streak is counted against the previous day's result only.
+symbol can take minutes. There are no retries inside a run: the first failure of a held, configured extra,
+exposure-review or decide benchmark symbol, and any run-wide failure, stops it (status FAIL, exit 1) and the
+next scheduled run is the retry. A watch-only symbol whose own exchange lookup, 30-minute collection or close
+history fails is isolated instead (bar-isolate: steps.bars.isolated; decide blocks its buy and alerts once)
+and the run goes on; when any of those symbol sets cannot be read, nothing is isolated. Running twice on
+one day gives the same result: the reconciliation of an already written snapshot is NO_CHANGE, saved
+30-minute pages are reused and the compare streak is counted against the previous day's result only.
 A run that fails at any step never counts toward the compare streak (it is reset to 0); a run held only
 because a settlement due that day is not shown yet keeps it (no +1, no reset). Kiwoom is read only with the
 policy's token profile alias: without one the run fails before any read.
@@ -92,9 +95,8 @@ def kiwoom_profile(readonly_policy_path: Path) -> str:
 # Symbols and 30-minute collection
 # ---------------------------------------------------------------------------------------------
 
-def symbols_for_run(*, output_directory: Path, state_path: Path, watchlist_path: Path,
-                    extra: list[str]) -> list[str]:
-    """Held symbols (broker read of this run, else the state) + watchlist members + configured extras."""
+def _held_symbols(output_directory: Path, state_path: Path) -> set[str]:
+    """Held symbols: the broker read of this run when it exists, else the state."""
     held: set[str] = set()
     snapshot_path = output_directory / "kiwoom_broker_snapshot.shadow.json"
     if snapshot_path.is_file():
@@ -105,13 +107,70 @@ def symbols_for_run(*, output_directory: Path, state_path: Path, watchlist_path:
         for symbol, quantity in (load_json(state_path).get("holdings") or {}).items():
             if isinstance(quantity, int) and quantity > 0:
                 held.add(str(symbol).upper())
+    return held
+
+
+def _watch_members(watchlist_path: Path) -> set[str]:
     try:
         members = [str(item.get("code") or "").upper() for item in load_json(watchlist_path).get("members") or []
                    if isinstance(item, dict)]
     except (OSError, ValueError) as exc:
         raise StepFailure("WATCHLIST_UNREADABLE") from exc
-    symbols = held | {symbol for symbol in members if symbol} | {str(symbol).upper() for symbol in extra}
+    return {symbol for symbol in members if symbol}
+
+
+def symbols_for_run(*, output_directory: Path, state_path: Path, watchlist_path: Path,
+                    extra: list[str]) -> list[str]:
+    """Held symbols (broker read of this run, else the state) + watchlist members + configured extras."""
+    held = _held_symbols(output_directory, state_path)
+    symbols = held | _watch_members(watchlist_path) | {str(symbol).upper() for symbol in extra}
     return sorted(symbols)
+
+
+# bar-isolate: only these per-symbol failures of an isolatable symbol are isolated; every other reason fails the run.
+ISOLATABLE_REASONS = ("EXCHANGE_UNRESOLVED:", "BAR_COLLECTION_FAILED:", "CLOSE_HISTORY_FAILED:")
+
+
+def exposure_review_symbols(*, alert_policy_path: Path, state_path: Path) -> set[str]:
+    """The symbols the T1 exposure review reads (run_portfolio_exposure_review.run, no cards and no proposals):
+    the configured benchmark and supplement and every held symbol of the ledger's reconstructed snapshots
+    (the ledger next to the state, read only). Any read problem raises."""
+    from apply_user_confirmed_broker_snapshot import default_ledger_path, ledger_status
+    from portfolio_exposure import exposure_config
+    from run_portfolio_exposure_review import read_ledger_entries, reconstruct_snapshots
+
+    config = exposure_config(load_json(alert_policy_path))
+    state = load_json(state_path)
+    if not isinstance(state, dict):
+        raise ValueError("PORTFOLIO_STATE_NOT_OBJECT")
+    ledger_path = default_ledger_path(state_path)
+    status = ledger_status(ledger_path)
+    entries = read_ledger_entries(ledger_path) if status["exists"] and status["chain_ok"] else []
+    snapshots, _, _ = reconstruct_snapshots(state, entries, chain_ok=status["chain_ok"], ledger_exists=status["exists"])
+    symbols = {str(config["benchmark"]), str(config["supplement"])}
+    for snapshot in snapshots:
+        symbols.update(str(symbol) for symbol, quantity in snapshot["holdings"].items()
+                       if isinstance(quantity, int) and quantity > 0)
+    return {symbol.upper() for symbol in symbols}
+
+
+def isolatable_symbols(*, output_directory: Path, state_path: Path, watchlist_path: Path, extra: list[str],
+                       alert_policy_path: Path) -> set[str]:
+    """bar-isolate: watchlist members that are not held, not configured extras, not read by the exposure review
+    and not decide's benchmarks (auto_core_rules RREC_BENCHMARK, RREC_POWER_BENCHMARK). A failure of one of
+    these symbols isolates it; any error reading one of the sets gives the empty set (fail closed: the first
+    failure stops the run as before)."""
+    try:
+        from auto_core_rules import C as rule_constants
+
+        held = _held_symbols(output_directory, state_path)
+        members = _watch_members(watchlist_path)
+        exposure = exposure_review_symbols(alert_policy_path=alert_policy_path, state_path=state_path)
+        benchmarks = {str(rule_constants["RREC_BENCHMARK"]).upper(), str(rule_constants["RREC_POWER_BENCHMARK"]).upper()}
+        extras = {str(symbol).upper() for symbol in extra}
+    except Exception:  # noqa: BLE001 - an unreadable set turns isolation off (fail closed)
+        return set()
+    return members - held - extras - exposure - benchmarks
 
 
 def history_path(symbol: str, closes_root: Path = CLOSES_ROOT) -> Path:
@@ -346,18 +405,31 @@ def daily(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CONF
         runtime = Path(str(readonly["official_runtime_path"])).resolve()
         rate_policy = load_json(paths["rate"])
         today = now.astimezone(KST).date()
-        histories = []
+        histories, isolated = [], []
+        extra = list((config or {}).get("symbols_extra") or [])
+        isolatable = isolatable_symbols(output_directory=output_directory, state_path=paths["state"],
+                                        watchlist_path=watchlist_path, extra=extra, alert_policy_path=paths["alert"])
         for symbol in symbols_for_run(output_directory=output_directory, state_path=paths["state"],
-                                      watchlist_path=watchlist_path, extra=list((config or {}).get("symbols_extra") or [])):
-            exchange, last_session = known_exchange(symbol, closes_root)
-            if exchange is None:
-                exchange = resolve_exchange(symbol, runtime=runtime, rate_policy=rate_policy, reader=exchange_reader)
-            oldest = (date.fromisoformat(last_session) if last_session
-                      else max(FIRST_COLLECTION_DAY, today - timedelta(days=FIRST_COLLECTION_LOOKBACK_DAYS)))
-            collector(symbol, exchange, newest=today, oldest=min(oldest, today), profile=profile,
-                      pages_root=closes_root / "pages")
-            histories.append(history_updater(symbol, exchange, now=now, closes_root=closes_root))
+                                      watchlist_path=watchlist_path, extra=extra):
+            try:
+                exchange, last_session = known_exchange(symbol, closes_root)
+                if exchange is None:
+                    exchange = resolve_exchange(symbol, runtime=runtime, rate_policy=rate_policy, reader=exchange_reader)
+                oldest = (date.fromisoformat(last_session) if last_session
+                          else max(FIRST_COLLECTION_DAY, today - timedelta(days=FIRST_COLLECTION_LOOKBACK_DAYS)))
+                collector(symbol, exchange, newest=today, oldest=min(oldest, today), profile=profile,
+                          pages_root=closes_root / "pages")
+                history = history_updater(symbol, exchange, now=now, closes_root=closes_root)
+            except StepFailure as exc:
+                # bar-isolate: a watch-only symbol's own failure isolates it (no history update); the rest stops.
+                if symbol in isolatable and str(exc).startswith(ISOLATABLE_REASONS):
+                    isolated.append({"symbol": symbol, "reason": str(exc)})
+                    continue
+                raise
+            histories.append(history)
         result["steps"]["bars"] = {"status": "OK", "histories": histories}
+        if isolated:
+            result["steps"]["bars"]["isolated"] = isolated
         # 4 exposure review (read-only).
         result["exposure"] = exposure_runner()
         result["steps"]["exposure"] = {"status": "OK", "path": result["exposure"]["path"]}
