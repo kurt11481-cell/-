@@ -1,0 +1,181 @@
+--- ceo-v1.4.1.py	2026-11-13 05:56:55.188873500 +0000
++++ ceo-v1.5.py	2026-11-13 06:06:26.353592600 +0000
+@@ -35,6 +35,7 @@
+     v=sorted((n for n in (ns or []) if re.match(r'^\d{4}-\d{2}-\d{2}(-\d+)?\.md$',str(n)) and a.isoformat()<=n[:10]<=b.isoformat()),key=lambda n:(n[:10],len(n),n))
+     return v[-1] if v else (f'{b.isoformat()}.md' if ns is None else None)
+ def PRE(ns,a,b):return sorted(n for n in (ns or []) if re.match(r'^\d{4}-\d{2}-\d{2}-.+\.md$',str(n)) and a.isoformat()<=n[:10]<=b.isoformat())
++def SECW(ns,a,b):return sorted(n for n in (ns or []) if re.match(r'^\d{4}-\d{2}-\d{2}\.md$',str(n)) and a.isoformat()<=n[:10]<=b.isoformat() and dt.date.fromisoformat(n[:10]).weekday()<6)
+ RT=[('연구개발',r'judge'),('법률',r'claude-md|agents-md|^artifact-design-rules|^review-stability|policy|constitution|authority|^company-org'),
+     ('투자리서치',r'^(watch-card|watchlist|m6-|l2-|dram|buylow|buy-|cpi-|earnings|external-|next-sandisk|market-|scn27h1|event-strategy|card-|holding|thesis|candidate)'),
+     ('운영관리',r'^(integrated-check|autocore|auto-core|host|board-|dev-dashboard|open-items|fx1009|ceo-weekly|dashboard-|pre-open|c1-host)'),
+@@ -92,6 +93,7 @@
+     nw_=NSW(I.get('nsdw_files'),sun,sat)
+     if nw_:P.append('workspace/outputs/next-sandisk-weekly/'+nw_)
+     P+=['workspace/outputs/pre-open/'+n for n in PRE(I.get('preopen'),sun,sat)][:10]
++    P+=['workspace/outputs/secretary/'+n for n in SECW(I.get('secretary'),sun,sat)][:7]
+     P+=['docs/claude/'+n for n in WDOCS(I.get('week_docs'))[:60]]
+     P=list(dict.fromkeys(P))
+     print(json.dumps([[W+p.replace('/','\\') for p in P[i:i+45]] for i in range(0,len(P),45)],ensure_ascii=False));sys.exit()
+@@ -171,12 +173,16 @@
+     try:B=open(boardtxt,encoding='utf-8').read().strip() or '점검 불완전(스크립트 출력 없음)'
+     except Exception:B='점검 불완전(스크립트 출력 없음)'
+     if C.get('docs') is False:B=B+'\n(R2 미점검 — 문서 시각 읽기 실패: R2 줄은 세지 않음)'
+-    m=re.search(r'RESULT (\d+)건',B);bn=int(m.group(1)) if m else None
+-    if bn is not None and C.get('docs') is False:bn-=len(re.findall(r'^R2 ',B,re.M))
+-    miss=re.findall(r'^미점검 .*',B,re.M)+(['R2 미점검'] if C.get('docs') is False else [])+(['작업 일부만 읽음 — R2·R4·R5·R6 부분 점검'] if C.get('tasks') is False else [])
+-    if bn is None:fd('F-OPS-4','운영관리','관제판 점검 불완전')
++    m=re.search(r'RESULT (\d+)건',B);bn=int(m.group(1)) if m else None;bo=0
++    if bn is not None:
++        bo=len(re.findall(r'^R[456] ',B,re.M));bn-=bo
++        B=re.sub(r'(?m)^R[456] .*\n?','',B).strip()
++        B=re.sub(r'RESULT (\d+)건',lambda z:f'RESULT {int(z.group(1))-bo}건 (R1·R2'+(f' — R4·R5·R6 {bo}건은 주간 보고에서 뺌: 비서 제안이 매일 봄)' if bo else ')'),B,count=1)
++        if C.get('docs') is False:bn-=len(re.findall(r'^R2 ',B,re.M))
++    miss=re.findall(r'^미점검 .*',B,re.M)+(['R2 미점검'] if C.get('docs') is False else [])+(['작업 일부만 읽음 — R2 부분 점검'] if C.get('tasks') is False else [])
++    if bn is None:fd('F-OPS-4','운영관리','관제판 점검 불완전','🟠')
+     else:
+-        if bn>0:fd('F-OPS-4','운영관리',f'관제판 점검 발견 {bn}건(7절 원문)')
++        if bn>0:fd('F-OPS-4','운영관리',f'관제판·예약 기록 장부 어긋남 {bn}건(R1·R2, 7절 원문 — 회사 상태 색에 안 들어감)','ℹ')
+         if miss:fd('F-OPS-5','운영관리','관제판 점검 일부 미점검: '+' / '.join(x[:50] for x in miss))
+     X=L('workspace/outputs/auto-core/LATEST_DECISION.json') or {};ex=X.get('exposure') or {};S7=ex.get('S7') or {};ac=((X.get('dashboard') or {}).get('runCore') or {}).get('account') or {}
+     cu=ac.get('first_cushion_pct');cu=f'{cu*100:.1f}%' if isinstance(cu,(int,float)) else '확인 필요'
+@@ -240,14 +246,14 @@
+         if ln.startswith('#'):last=None
+         m=re.match(r'- (?:⚠ )?(D\d+) (.*)',ln)
+         if m and cur:
+-            q=re.findall(r'· 기한 (\d{4}-\d{2}-\d{2}) · 답 양식',ln);last={'key':cur+' '+m.group(1),'sec':cur,'d':m.group(1),'dl':q[-1] if q else '','q':m.group(2).split(' · 권장')[0][:60],'ans':False};DL.append(last);continue
++            q=re.findall(r'· 기한 (\d{4}-\d{2}-\d{2}) · 답 (?:양식|방법)',ln);last={'key':cur+' '+m.group(1),'sec':cur,'d':m.group(1),'dl':q[-1] if q else '','q':m.group(2).split(' · 권장')[0][:60],'ans':False};DL.append(last);continue
+         if last and re.match(r'^\s*-?\s*답:',ln):last['ans']=True;continue
+         for k in re.findall(r'기본값 기록: (ceo-[\d-]+ D\d+)',ln):dflt.add(k)
+     pid=ids[-1] if ids else ''
+     exp=[x for x in DL if not x['ans'] and x['key'] not in dflt and (not x['dl'] or x['dl']<today)]
+     wait=[x for x in DL if not x['ans'] and x['key'] not in dflt and x not in exp]
+     pl=[f"- 기본값 기록: {x['key']}(기한 {x['dl'] or '없음'}) — 답 없음 → 현행 유지(정책·상태·권한·주문은 바뀌지 않음)" for x in exp] or ['- 기본값으로 닫힌 결정 없음']
+-    wl4=[f"- 답 대기: {x['key']} {x['q']}(기한 {x['dl']}) — 답 양식 `결정 {x['sec']}: {x['d']} <선택>`" for x in wait]
++    wl4=[f"- 답 대기: {x['key']} {x['q']}(기한 {x['dl']}) — 답 방법 `사장실 결정 카드`" for x in wait]
+     nx=[];te=(t+dt.timedelta(days=7)).isoformat();ti=t.isoformat()
+     for e in (L('docs/claude/event-calendar.json') or {}).get('events') or []:
+         if ti<=(e.get('event_date') or '')<=te:nx.append(f"{e['event_date'][5:]} {e.get('label')}")
+@@ -274,7 +280,7 @@
+             else:break
+         return n_
+     SKL=lambda n_:'새로' if n_==1 else f'계속 {n_}주째'
+-    BK=[k for k in re.findall(r'^(R\d \S+)',B,re.M) if k!='R1 제외' and not (C.get('docs') is False and k.startswith('R2 '))];bnew=sum(1 for k in BK if STK(k,1)==1)
++    BK=[k for k in re.findall(r'^(R\d \S+)',B,re.M) if not k.startswith('R1 제외') and not (C.get('docs') is False and k.startswith('R2 '))];bnew=sum(1 for k in BK if STK(k,1)==1)
+     # v1.3 받은 결과(팀별) — 자료마다 팀장이 확인 줄을 쓴다(finalize 검증). 자료가 안 왔거나 낡으면 운영관리 발견 F-OPS-6·F-OPS-7-*
+     now=dt.datetime.fromisoformat(os.environ['CEO_NOW']) if os.environ.get('CEO_NOW') else dt.datetime.now(K)
+     try:now=dt.datetime.fromisoformat(str(I.get('trig_at'))) if I.get('trig_at') else now
+@@ -303,7 +309,7 @@
+     nrec=len(late)+len(fail)+len(unk)+len(okn)
+     if not tl:ib('S-OPS-1','운영관리','예약 작업 출근부','예약 작업 목록을 읽지 못함 — 확인 필요')
+     elif not hasc:ib('S-OPS-1','운영관리','예약 작업 출근부','예약 작업 실행 기록(주기·마지막 실행) 칸이 없음 — 확인 필요')
+-    else:ib('S-OPS-1','운영관리','예약 작업 출근부',f"켜진 반복 작업 {nrec}개 — 제때 {len(okn)} · 안 돎·늦음 {len(late)} · 실패 {len(fail)}"+(f" · 확인 필요 {len(unk)}" if unk else '')+(' (목록 끝까지 못 읽음 — 확인 필요)' if C.get('trig') is False else ''),late+fail+unk+(['제때: '+', '.join(okn)] if okn else []))
++    else:ib('S-OPS-1','운영관리','예약 작업 출근부',f"켜진 반복 작업 {nrec}개 — 제때 {len(okn)} · 안 돎·늦음 {len(late)} · 실패 {len(fail)}"+(f" · 확인 필요 {len(unk)}" if unk else '')+(' (목록 끝까지 못 읽음 — 확인 필요)' if C.get('trig') is False else (' — 이상 없음' if not(late or fail or unk) else '')),late+fail+unk)
+     if late or fail or unk:fd('F-OPS-6','운영관리',f'예약 작업 출근부: 안 돎·늦음 {len(late)}건 · 실패 {len(fail)}건'+(f' · 확인 필요 {len(unk)}건' if unk else '')+' — '+' / '.join((late+fail+unk)[:3]))
+     ib('S-OPS-2','운영관리','자동 운영 코어·결과 알림',f"코어 정상 {okc}/{len(days)} · 알림 줄 {nal}건(푸시 대상 {ptot}) · 독립 대조 일치 {nmt}/{len(days)} · 결과 알림이 통합점검 대시보드에 옮김 {ncc}/{len(RN)}일",CDL)
+     if noc:fd('F-OPS-7-alert','운영관리','코어 결과가 있는데 결과 알림이 통합점검 대시보드에 옮기지 않은 날: '+', '.join(noc))
+@@ -311,14 +317,15 @@
+         for s in x.get('status') or []:
+             if isinstance(s,dict) and s.get('label')==lab:return NW(s.get('value')),s.get('tone')
+         return None,None
+-    CH=[];cbad=[];nfo=0;nst=0;nsv=0;DEC={};NEED={};hl=None;cf={};cl_={}
++    CH=[];CHb=[];cbad=[];nfo=0;nst=0;nsv=0;DEC={};NEED={};hl=None;cf={};cl_={}
+     for d in days:
+         x=RN.get(d)
+-        if not x:CH.append(f'{MDd(d)} 기록 없음');cbad.append(MDd(d)+' 기록 없음');continue
++        if not x:CH.append(f'{MDd(d)} 기록 없음');CHb.append(f'{MDd(d)} 기록 없음');cbad.append(MDd(d)+' 기록 없음');continue
+         v_,tn=stv(x,'점검 상태');fl=x.get('filings') or {};mk=x.get('market') or {};stl=mk.get('stale') in(True,'True','true');sv=bool(x.get('saveticker'))
+         nfo+=fl.get('status')=='OK';nst+=stl;nsv+=sv
+         if tn!='ok':cbad.append(f'{MDd(d)} 점검 상태 {v_ or "확인 필요"}')
+-        CH.append(f"{MDd(d)} {str(x.get('runAt') or '')[11:16]} · 점검 상태 {v_ or '확인 필요'} · 공시 수집 {fl.get('status') or '확인 필요'}(새 {fl.get('newCount','?')}) · SAVE 메모 {mk.get('reportDate') or '없음'}{'(낡음)' if stl else ''} · saveticker {'수집' if sv else '미수집'}")
++        l_=f"{MDd(d)} {str(x.get('runAt') or '')[11:16]} · 점검 상태 {v_ or '확인 필요'} · 공시 수집 {fl.get('status') or '확인 필요'}(새 {fl.get('newCount','?')}) · SAVE 메모 {mk.get('reportDate') or '없음'}{'(낡음)' if stl else ''} · saveticker {'수집' if sv else '미수집'}";CH.append(l_)
++        if tn!='ok' or fl.get('status')!='OK' or stl or not sv:CHb.append(l_)
+         if x.get('headline'):hl=(d,x['headline'])
+         for z in x.get('decisions') or []:
+             t_=NW((z or {}).get('title')) if isinstance(z,dict) else ''
+@@ -329,7 +336,7 @@
+         for z in x.get('claims') or []:
+             if isinstance(z,dict) and str(z.get('id','')).startswith('EXT-'):cf.setdefault(z['id'],z.get('state'));cl_[z['id']]=z.get('state')
+     rok=C.get('runs') is not False
+-    ib('S-OPS-3','운영관리','통합점검 실행 상태',(f"기록 {len(RN)}/{len(days)}일 · 점검 상태 정상 {len(RN)-len([z for z in cbad if '점검 상태' in z])} · 공시 수집 OK {nfo} · SAVE 메모 낡음 {nst}일 · saveticker 수집 {nsv}/{len(RN)}일") if rok else '통합점검 기록(대시보드 runs)을 읽지 못함 — 확인 필요',CH if rok else [])
++    ib('S-OPS-3','운영관리','통합점검 실행 상태',(f"기록 {len(RN)}/{len(days)}일 · 점검 상태 정상 {len(RN)-len([z for z in cbad if '점검 상태' in z])} · 공시 수집 OK {nfo} · SAVE 메모 낡음 {nst}일 · saveticker 수집 {nsv}/{len(RN)}일"+('' if CHb else ' — 이상 없음')) if rok else '통합점검 기록(대시보드 runs)을 읽지 못함 — 확인 필요',CHb if rok else [])
+     if not rok:fd('F-OPS-7-chk','운영관리','통합점검 기록 읽기 실패 — 이번 주 통합점검 결과를 팀에 전달 못 함')
+     elif cbad:fd('F-OPS-7-chk','운영관리','통합점검: '+', '.join(cbad[:4]))
+     ib('S-RES-1','투자리서치','통합점검 내용',(f"기록 {len(RN)}/{len(days)}일 · 최신({MDd(hl[0])}) {CLN(hl[1],110)} · 결정 요청 {len(DEC)}건(같은 제목 1번) · 확인 필요 주제 {len(NEED)}개" if hl else '이번 주 통합점검 기록 없음') if rok else '통합점검 기록을 읽지 못함 — 확인 필요',
+@@ -388,8 +395,29 @@
+     ib('S-RES-7','투자리서치','개장 전 점검 기록',f"이번 주 {len(pr_)}건" if I.get('preopen') is not None else '개장 전 점검 폴더 목록을 읽지 못함 — 확인 필요',PI)
+     mon=(sun+dt.timedelta(days=1)).isoformat()
+     if I.get('preopen') is not None and not any(n.startswith(mon+'-monday') for n in pr_):fd('F-OPS-7-pre','운영관리',f'월요일 개장 전 점검 기록 없음({mon})')
+-    ib('S-OPS-4','운영관리','개발 관제판 점검(R1~R6)',(f'관제판 점검 발견 {bn}건' if bn is not None else '관제판 점검 끝내지 못함')+(' · '+' · '.join(f'{k} {v}' for k,v in sorted({r_:len(re.findall("^"+r_+" ",B,re.M)) for r_ in ('R1','R2','R4','R5','R6')}.items()) if v) if bn else ''),[(SKL(STK(' '.join(l.split()[:2]),1))+' · '+l if re.match(r'^R\d ',l) and not l.startswith('R1 제외') else l) for l in B.split('\n') if re.match(r'^(R\d |미점검 )',l)][:8])
++    ib('S-OPS-4','운영관리','개발 관제판 점검(R1·R2 장부 어긋남)',(f'장부 어긋남 {bn}건' if bn is not None else '관제판 점검 끝내지 못함')+(' · '+' · '.join(f'{k} {v}' for k,v in sorted({r_:len(re.findall("^"+r_+" (?!제외)",B,re.M)) for r_ in ('R1','R2')}.items()) if v) if bn else '')+(f' · R4·R5·R6 {bo}건은 주간 보고에서 뺌(비서 제안이 매일 봄)' if bo else ''),[l for l in B.split('\n') if l.startswith('미점검 ')][:8])
+     ib('S-OPS-5','운영관리','PC 상태 점검',f'PC 상태 {host}',A[:5])
++    if I.get('secretary') is None:ib('S-OPS-8','운영관리','비서 제안 주간','비서 제안 폴더 목록을 읽지 못함 — 확인 필요');fd('F-OPS-7-sec','운영관리','비서 제안 폴더 목록을 읽지 못함 — 이번 주 R4·R5·R6(주간 보고에서 뺀 점검)을 비서가 봤는지 확인 못 함')
++    else:
++        SW=SECW(I.get('secretary'),sun,sat);SS={};SD={};SX=[];SF=[];sdn=0
++        for n_ in SW:
++            tx_=R('workspace/outputs/secretary/'+n_)
++            if tx_ is None:SX.append(n_[5:10]);continue
++            tx_=tx_.replace('\r\n','\n')
++            if not re.search(r'(?m)^## 오늘 제안',tx_):SF.append(n_[5:10]);continue
++            sdn+=1;q_=re.search(r'(?ms)^## 멈춤 의심[^\n]*\n(.*?)(?=^## |\Z)',tx_)
++            for l_ in (q_.group(1).split('\n') if q_ else []):
++                z_=re.match(r'^\s*[-*] +[*`]*([\w][\w.-]*)[*`]* · ',l_)
++                if z_ and z_.group(1) not in ('없음','해당','none'):SS.setdefault(z_.group(1),[]).append(n_[5:10])
++            for l_ in tx_.split('\n'):
++                z_=re.match(r'^\d+\. \[[^\]]*\] (.*)$',l_);k_=re.search(r'계속 (\d+)일째',l_)
++                if z_ and k_ and int(k_.group(1))>=5:
++                    h_=z_.group(1);g_=re.search(r'\(([A-Za-z0-9][\w.]*-[\w.-]+)\)',re.split(r' — ',h_)[0])
++                    t_=g_.group(1) if g_ else re.split(r' — | · ',h_)[0];SD[t_]=max(SD.get(t_,0),int(k_.group(1)))
++        exp_=[(sun+dt.timedelta(days=i)).isoformat() for i in range(1,7)];got_={n[:10] for n in SW}
++        nf_=[d[5:] for d in exp_ if d not in got_]
++        if nf_ or SX or SF:fd('F-OPS-7-sec','운영관리','비서 제안 기록 빠짐 — '+' · '.join(x for x in [('파일 없음 '+', '.join(nf_)) if nf_ else '',('받지 못함 '+', '.join(SX)) if SX else '',('형식 다름 '+', '.join(SF)) if SF else ''] if x)+' (주간 보고에서 뺀 R4·R5·R6을 그날 아무도 안 봤을 수 있음)')
++        ib('S-OPS-8','운영관리','비서 제안 주간',f"비서 제안 기록 {sdn}/6일(월~토) · 멈춤 의심 {len(SS)}건 · 계속 5일 이상 {len(SD)}건"+(f" · 파일 없음 {len(nf_)}일" if nf_ else '')+(f" · 받지 못함 {len(SX)}개({', '.join(SX)})" if SX else '')+(f" · 형식 다름 {len(SF)}개({', '.join(SF)})" if SF else ''),[f"멈춤 의심: {k}({len(v)}일 표시, 마지막 {v[-1]})" for k,v in sorted(SS.items())][:8]+[f'계속 {v}일째: {k}' for k,v in sorted(SD.items(),key=lambda z:(-z[1],z[0]))][:8])
+     STC={};
+     for k,v in T.items():STC.setdefault(v.get('status'),[]).append(k)
+     soon=[f"{k}(기한 {v.get('deadline')})" for k,v in T.items() if v.get('status') in('waiting','planned','paused') and ti<=str(v.get('deadline') or '')[:10]<=te]
+@@ -417,7 +445,7 @@
+     f"- 노출 E {E} ({S7.get('band','확인 필요')}, 세션 {S7.get('session','확인 필요')}) · 멈춤: {pa} · 계좌 검토선 {ac.get('state','확인 필요')}(첫 쿠션 {cu})",
+     f"- 종목 고점 검토: {pk}",f"- 이번 주 주문표 {tk}건 · 열린 주문표 {len(X.get('open_tickets') or [])}건 · 결과 기록 {len(X.get('outcomes') or [])}건",
+     '### 2. 팀별',
+-    f"- 운영관리: 코어 정상 {okc}/{len(days)}(폴더 있는 날 {len([d for d in days if d in cd]) if cd is not None else '확인 필요'}) · 예외 알림 {ptot}건 · 코어가 요청한 사람 손(주문 입력 제외) {len(touch)}건 · PC 상태 {host} · 관제판 점검 발견 {bn if bn is not None else '불완전'}",
++    f"- 운영관리: 코어 정상 {okc}/{len(days)}(폴더 있는 날 {len([d for d in days if d in cd]) if cd is not None else '확인 필요'}) · 예외 알림 {ptot}건 · 코어가 요청한 사람 손(주문 입력 제외) {len(touch)}건 · PC 상태 {host} · 장부 어긋남(R1·R2) {bn if bn is not None else '불완전'}",
+     f"- 투자리서치: 연구 기록 OK {rrok}/{len(days)} · 공식 사실 {facts}건 · 이번 주 카드 수락 {', '.join(ca) or '없음'} · 관심 명단 변경 {', '.join(wh) or '없음'} · 카드 {json.dumps(roles,ensure_ascii=False)}",
+     f"- 연구개발: 진행 개발 {na}/3 · 권한·한도 변경 {len(auth)}/1 · 이번 주 완료 {len(done)}건 · 최근 개발 실행 {dvs} · 채점 주간 출력 {sc}",
+     f"- 법률: {' · '.join(lg)} · 정책 파일 수정 {pcs} · 예약 지시문·설정 수정 {tus}",
+@@ -492,7 +520,7 @@
+     DD.sort(key=lambda z:(not z[0],z[2],z[1],z[3]))
+     Dl=[];hot=0
+     for n,(h_,dd,rk,i,d,lead,wth) in enumerate(DD,1):
+-        hot+=h_;Dl.append(f"- {'⚠ ' if h_ else ''}D{n} {NW(d['question'])} · 권장 {NW(d['recommend'])}"+(f" · 선택지 {NW(d['options'])}" if NW(d.get('options')) else '')+((f" · 주관 {lead}"+(f"(협조 {','.join(wth)})" if wth else '')) if lead else '')+f" · 무응답 시 기본값 현행 유지 · 기한 {dd.isoformat()} · 답 양식 `결정 {U['id']}: D{n} <선택>`")
++        hot+=h_;Dl.append(f"- {'⚠ ' if h_ else ''}D{n} {NW(d['question'])} · 권장 {NW(d['recommend'])}"+(f" · 선택지 {NW(d['options'])}" if NW(d.get('options')) else '')+((f" · 주관 {lead}"+(f"(협조 {','.join(wth)})" if wth else '')) if lead else '')+f" · 무응답 시 기본값 현행 유지 · 기한 {dd.isoformat()} · 답 방법 `사장실 결정 카드(일 10:05 결과 모음이 올림)`")
+     Pl=[];Q=[]
+     for k in TEAMS:
+         ps=sorted(byt[k],key=lambda p:p['rank'])
+@@ -512,14 +540,14 @@
+     if '{{' in S:V.append('자리표시 남음')
+     if V:S=S.replace('<!-- id: ','⚠ 형식 검증 실패: '+' / '.join(V[:4])+'\n<!-- id: ',1)
+     st=U['state'];st['d_hist']=dh;S=re.sub(r'<!-- ceo-state \{.*\} -->',lambda _:'<!-- ceo-state '+json.dumps(st,ensure_ascii=False)+' -->',S)
+-    HD='---\nid: ceo-weekly-report\ntype: report\nstatus: current\nas_of: 각 주 절 머리(최신 = 맨 아래)\ntickers: [ALL]\nevidence: 코어·대조·채점·관제판 값은 결과 파일 그대로(등급은 원 파일 따름) / 팀장 제안·결정 문장 = 주간 팀장회의 LLM(근거 F-id) / 판정·매매 근거 아님\nconsumers: [사장(사용자) · 다음 주간 팀장회의(결정·답 줄) · Cowork(결정 ceo-<날짜> 처리) · 2단계 평가(docs/claude/company-org-plan-2026-10-19.md 7절) · redesign-t4(법률 정리 안건)]\nsummary: 투자_V2 주간 팀장회의 → 사장 보고. 매주 일요일 절을 덧붙인다(덧붙이기만). 조직·규칙 = docs/claude/company-org-plan-2026-10-19.md. 답 줄 형식 = 그 결정 줄 바로 아래 "  - 답: <원문>(<YYYY-MM-DD HH:MM KST>, Cowork)". 답이 없고 기한이 지난 결정은 다음 회의가 5절에 "기본값 기록"으로 닫는다.\n---\n\n# 주간 경영보고 (투자_V2)\n'
++    HD='---\nid: ceo-weekly-report\ntype: report\nstatus: current\nas_of: 각 주 절 머리(최신 = 맨 아래)\ntickers: [ALL]\nevidence: 코어·대조·채점·관제판 값은 결과 파일 그대로(등급은 원 파일 따름) / 팀장 제안·결정 문장 = 주간 팀장회의 LLM(근거 F-id) / 판정·매매 근거 아님\nconsumers: [사장(사용자) · 다음 주간 팀장회의(결정·답 줄) · 사장실 결과 모음(결정 카드, 일 10:05) · Cowork(답 줄 처리) · 2단계 평가(docs/claude/company-org-plan-2026-10-19.md 7절) · redesign-t4(법률 정리 안건)]\nsummary: 투자_V2 주간 팀장회의 → 사장 보고. 매주 일요일 절을 덧붙인다(덧붙이기만). 조직·규칙 = docs/claude/company-org-plan-2026-10-19.md. 답 줄 형식 = 그 결정 줄 바로 아래 "  - 답: <선택>(<YYYY-MM-DD HH:MM KST>, 사장실 카드 또는 Cowork)". 답이 없고 기한이 지난 결정은 다음 회의가 5절에 "기본값 기록"으로 닫는다.\n---\n\n# 주간 경영보고 (투자_V2)\n'
+     pp=U.get('prev_path');pb=open(pp,'rb').read() if pp else b''
+     sb=S.encode('utf-8');body=(pb+(b'' if pb.endswith(b'\n') else b'\n')+b'\n'+sb) if pb else (HD+'\n').encode('utf-8')+sb
+     if not body.startswith(pb):V.append('덧붙이기 검사 실패')
+     os.makedirs('/mnt/user-data/outputs',exist_ok=True);open('/mnt/user-data/outputs/ceo-weekly-report.md','wb').write(body)
+     d8=today.replace('-','');open(f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','w',encoding='utf-8',newline='\n').write(f"docs(claude): ceo weekly report {today} (weekly team-lead meeting)\ndocs/claude/ceo-weekly-report.md\n")
+     fi=sum(1 for f in U['findings'] if f.get('sev')=='ℹ');fc=len(U['findings'])-fi;fn=sum(1 for f in U['findings'] if f.get('sev')!='ℹ' and f.get('weeks',1)==1);bn=U.get('board_n');bw=U.get('bnew');pre=f'⚠ 이번 주 답 필요 {hot}건 · ' if hot else ''
+-    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 새 발견 {fn}건(계속 {fc-fn}건{f' · 참고 {fi}건 별도' if fi else ''}) · 관제판 점검 {(f'새로 {bw}건(전체 {bn}건)' if bw is not None else str(bn)+'건') if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
++    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 새 발견 {fn}건(계속 {fc-fn}건{f' · 참고 {fi}건 별도' if fi else ''}) · 장부 어긋남 {(f'새로 {bw}건(전체 {bn}건)' if bw is not None else str(bn)+'건') if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
+     print(json.dumps({'validation':V or 'OK','D':n,'hot':hot,'push':push,'report':'/mnt/user-data/outputs/ceo-weekly-report.md','report_sha256':hashlib.sha256(body).hexdigest(),'pending':f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','pending_name':f'ceo-weekly-{d8}.txt'},ensure_ascii=False))
+ if mode=='dash':
+     src,out=sys.argv[2:4];tx=open(src,encoding='utf-8',errors='replace').read().replace('\r\n','\n')
+@@ -633,9 +661,9 @@
+                 elif sec=='4':
+                     mb=re.match(r'^- 관제판 결정함 대기 (\d+)건: (.*)$',ln)
+                     if mb:add(w,'boarddec','boarddec',n=int(mb.group(1)),detail=mb.group(2));continue
+-                    mw=re.match(r'^- 답 대기: (ceo-\S+ D\d+) (.*)\(기한 (\S+)\) — 답 양식 `(.*)`$',ln)
++                    mw=re.match(r'^- 답 대기: (ceo-\S+ D\d+) (.*)\(기한 (\S+)\) — 답 (?:양식|방법) `(.*)`$',ln)
+                     if mw:add(w,'wait',f'wait:{len(R)}',title=mw.group(1),plain=mw.group(2),due=mw.group(3),answer=mw.group(4));continue
+-                    md=re.match(r'^- (⚠ )?(D\d+) (.*?) · 권장 (.*?)(?: · 선택지 (.*?))?(?: · 주관 ([^(·]+?)(?:\(협조 ([^)]*)\))?)? · 무응답 시 기본값 현행 유지 · 기한 (\d{4}-\d{2}-\d{2}) · 답 양식 `(.*)`$',ln)
++                    md=re.match(r'^- (⚠ )?(D\d+) (.*?) · 권장 (.*?)(?: · 선택지 (.*?))?(?: · 주관 ([^(·]+?)(?:\(협조 ([^)]*)\))?)? · 무응답 시 기본값 현행 유지 · 기한 (\d{4}-\d{2}-\d{2}) · 답 (?:양식|방법) `(.*)`$',ln)
+                     if md:q_last=add(w,'dec',f'dec:{md.group(2)}',title=md.group(2),plain=md.group(3),detail=md.group(4),label=md.group(5),team=md.group(6),**{'with':md.group(7)},due=md.group(8),answer=md.group(9),kind='급함' if md.group(1) else None,state='warn' if md.group(1) else 'info');continue
+                     ma=re.match(r'^\s*-?\s*답:\s*(.*)$',ln)
+                     if ma and q_last is not None:q_last['reply']=NW(ma.group(1));q_last['state']='ok';continue
