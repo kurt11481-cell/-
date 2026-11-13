@@ -59,7 +59,9 @@ POLICY_EXPECTED = {"target_exposure": 1.55, "reduce_when_exposure_gte": 1.85,
                    "hard_ceiling_when_exposure_gte": 1.9, "single_stock_nominal_cap": 0.4}
 # Rule file 3) buy requirement (2): approved new-buy products (PWR, LITE: user approval 2026-10-08).
 APPROVED_BUY = ("BE", "MU", "NBIS", "DELL", "AMD", "SOXL", "TQQQ", "DRAM", "PWR", "LITE")
-INDEX_ETFS = ("SOXL", "TQQQ", "DRAM")
+INDEX_ETFS = ("SOXL", "TQQQ", "DRAM", "QQQ")
+# Proceeds-parking index ETFs: bought only through the integrated check's proceeds line, never a card buy and never a no-card alert (decision t3-proceeds-qqq-1108).
+PARKING_ETFS = ("QQQ",)
 # Rule file 2-3) (1): not in the policy multipliers but counted as 1x in N (user-approved stocks, MVLL's base).
 ONE_X_UNREGISTERED = ("PWR", "LITE", "MRVL")
 ALLOWED_NO_TICKET = ("DEADBAND", "LOT_ZERO", "CASH_ZERO", "REGRET_ZERO", "G2B_CAP")

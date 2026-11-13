@@ -302,7 +302,7 @@ def alert_candidates(*, decision: dict[str, Any], previous: dict[str, Any] | Non
             states[f"1:{symbol}"] = ",".join(sell.get("ids") or [])
             lines.append((f"1:{symbol}", f"{symbol} \ub9e4\ub3c4 \uadfc\uac70 \ucda9\uc871({sell.get('composition')}) \u2014 \ub9e4\ub3c4\ub294 \uc8fc\ubb38\ud45c\ub85c\ub9cc", True))
         for trigger in result["triggers"]:
-            if trigger["side"] == "alert" and trigger["state"] == "review":
+            if trigger["side"] == "alert" and trigger["state"] == "review" and not (trigger["id"] == "NOCARD" and symbol in tickets_module.PARKING_ETFS):
                 states[f"2:{symbol}:{trigger['id']}"] = "review"
                 lines.append((f"2:{symbol}:{trigger['id']}", f"{symbol} {trigger['name']}({trigger['id']}) \u2014 \uac80\ud1a0 \uac1c\uc2dc(\uadfc\uac70 \uc544\ub2d8)", True))
             if trigger["id"] in ("C1-", "C2-") and held and trigger["state"] == "hit":
@@ -311,7 +311,7 @@ def alert_candidates(*, decision: dict[str, Any], previous: dict[str, Any] | Non
             if trigger["id"] in ("C1+", "C2+") and trigger["state"] == "hit" and result.get("buy_approved"):
                 states[f"9:{symbol}:{trigger['id']}"] = "hit"
                 lines.append((f"9:{symbol}:{trigger['id']}", f"\uacfc\ub9e4\ub3c4 \uacbd\ubcf4 {symbol} {trigger['id']} \u2014 \ub9e4\uc218 \uadfc\uac70 1/2, \ub9e4\uc218 \uc9c0\uc2dc \uc544\ub2d8", True))
-        if result.get("nocard"):
+        if result.get("nocard") and symbol not in tickets_module.PARKING_ETFS:
             states[f"10:{symbol}"] = "review"
             lines.append((f"10:{symbol}", f"\uce74\ub4dc \uc5c6\uc74c {symbol} \u2014 \uacf5\ud1b5 \uaddc\uce59\ub9cc\uc73c\ub85c \uc810\uac80 \uc911", True))
     account = decision["account"]
