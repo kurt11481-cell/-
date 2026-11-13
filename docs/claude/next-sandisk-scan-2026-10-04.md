@@ -1,7 +1,8 @@
 ---
 id: next-sandisk-scan-2026-10-04
 type: leadership-n
-status: current
+status: superseded
+superseded_by: next-sandisk-scan-2026-11-07 (2026-11-13 14:15 KST 수락)
 supersedes:
 as_of: 2026-10-04
 valid_until: 2026-11-07
