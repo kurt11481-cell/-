@@ -13,13 +13,13 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 ## 바꿀 파일 (이 4개만)
 - tools/dev_pipeline/devpipe.py
 - manage-us-stock-strategy/tests/test_dev_pipeline.py (시험 추가만)
-- tools/dev_pipeline/README.md (79행 기준선 정보 reason 목록에 1항목)
+- tools/dev_pipeline/README.md (79행 기준선 정보 reason 목록에 1항목 + 88행 '직전 기준선 = …' 문장만 새 규칙에 맞게)
 - docs/claude/baseline-pyver-report.md (보고)
 
 ## 구현 요구
 1. 새 함수 `previous_baseline_other_python(repo, base, python)`를 만든다.
    - `previous_baseline`(1011~1028행)과 같은 조건으로 고른다: method, base 다름, failures·computed_utc 형식, SHA 형식, `baseline_stopped` 제외, `merge-base --is-ancestor`.
-   - 단 `data.get("python") != python`인 캐시만 본다. 그중 computed_utc가 가장 늦은 조상 1개, 없으면 None.
+   - 단 `isinstance(data.get("python"), str) and data["python"] != python`인 캐시만 본다. 그중 computed_utc가 가장 늦은 조상 1개, 없으면 None.
    - 같은 코드를 두 번 쓰지 말고, 공통 부분을 작은 도우미로 나눠도 된다. 그래도 `previous_baseline`의 서명·결과는 지금과 같아야 한다.
 2. `compare_baseline`(1031~1037행)
    - 같은 판 직전이 있으면 지금과 **똑같은** dict를 낸다(키 3개).
@@ -27,7 +27,7 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 3. `baseline_rose_verdict`(627~641행)
    - `prev_python`이 있고 prev_base가 있으면, 반환 notices 맨 앞에 `BASELINE_PREV_OTHER_PYTHON:<prev_python>`을 둔다.
    - 나머지 분기(0건 → notices만, 1~9 → ROSE 경고, 10 이상 → stop 또는 ACCEPTED)와 그 문자열·튜플 형식은 바꾸지 않는다.
-   - stop일 때도 notices에 `BASELINE_PREV_OTHER_PYTHON`이 남는지, 아니면 지금처럼 `[]`인지는 기존 단언과 맞춰 정한다. 기존 시험 `test_ten_more_failures_stop`은 같은 판이라 영향이 없다. 정한 것을 보고에 쓴다.
+   - **stop일 때는 지금처럼 notices `[]`를 돌려준다**(641행 형식 불변). 다른 판 비교였다는 사실은 캐시의 `prev_python`과 보고에만 남는다. ACCEPTED·1~9 경고일 때는 `BASELINE_PREV_OTHER_PYTHON`이 맨 앞에 붙는다.
 4. `BASELINE_NOTICE_PREFIXES`(94행)에 `"BASELINE_PREV_OTHER_PYTHON"`을 더한다. 그래야 `run_test_checks`(973행)가 정보로 다루고 `DEV-RUN … baseline=`(1979행)에 보인다.
 5. 새 키는 캐시에 쓰인다(`run_baseline_in` 1149~1150행이 compare 결과를 그대로 저장). 다음은 바꾸지 않는다.
    - `cached_baseline`(1057~1075행 부근) 유효성 검사.
@@ -37,9 +37,10 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 
 ## 시험 (test_dev_pipeline.py에 추가 — 기존 BaselineWatch 계열 클래스의 임시 저장소·`cache()` 도우미를 쓴다, 1060~1080행)
 1. 같은 판 직전이 있으면 판이 다른 더 늦은 조상 캐시가 있어도 같은 판을 쓴다. 결과에 `prev_python` 키가 없다.
-2. 같은 판 직전이 없고 판이 다른 조상(실패 0)이 있으면, 지금 실패 13 → `prev_base` = 그 조상, `prev_python` = 그 판, stop `STOP_BASELINE_REGRESSED`.
+2. 같은 판 직전이 없고 판이 다른 조상(실패 0)이 있으면, 지금 실패 13 → `prev_base` = 그 조상, `prev_python` = 그 판, stop `STOP_BASELINE_REGRESSED`, notices `[]`.
 3. 2와 같지만 +3 → stop 없음, notices = [`BASELINE_PREV_OTHER_PYTHON:<판>`, `BASELINE_FAILURES_ROSE:<sha8>:+3`].
-4. 2와 같지만 이 기준 sha8의 accept 파일이 있음 → stop 없음, ACCEPTED 경고.
+4. 2와 같지만 이 기준 sha8의 accept 파일이 있음 → stop 없음, notices = [`BASELINE_PREV_OTHER_PYTHON:<판>`, `BASELINE_FAILURES_ROSE_ACCEPTED:<기준 sha8>:+13`].
+4-1. python 칸이 없거나 문자열이 아닌 캐시는 판이 다른 후보에서 빠진다.
 5. 판이 다른 캐시가 조상이 아니면 빠진다 → `BASELINE_PREV_NONE`.
 6. 판이 다른 조상 캐시가 멈췄고(added ≥ 10) accept가 없으면 빠진다(`baseline_stopped`).
 7. 0건 증가(같은 실패) → notices = [`BASELINE_PREV_OTHER_PYTHON:<판>`]만, stop 없음.
@@ -59,7 +60,7 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 - (c) 시험 결과 마지막 3줄과 추가한 시험 이름
 - (d) 옛 캐시·새 키 호환 확인
 - (e) dev-merge 경로 영향
-- (f) 구현 요구 3의 stop일 때 notices 처리 결정과 이유
+- (f) stop일 때 notices `[]` 유지를 시험으로 확인한 결과
 - (g) 지금 `_baseline/`에 적용하면 다음 기준선 판정 예상: 같은 판 3.15.2 직전 e629c22가 있으므로 판이 다른 비교는 쓰이지 않음 예상(확인 필요)
 
 수량·금액·주문 표지 문자열을 적지 않는다("표지 없음").

@@ -31,9 +31,9 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
    - 없을 때만 1의 함수로 찾는다. 찾으면 같은 세 키에 `"prev_python": <그 캐시의 python>`을 더한다. 못 찾으면 지금처럼 `prev_base: None`이다.
 3. **판정** `baseline_rose_verdict`(627~641행)
    - 기준선에 `prev_python`이 있으면 notices 맨 앞에 `BASELINE_PREV_OTHER_PYTHON:<prev_python>`을 둔다.
-   - 그 뒤 문턱은 지금과 같다: 1~9 경고, 10 이상 STOP, accept면 ACCEPTED. 멈춤 튜플의 형식(`"<prev sha8>:+N"`)도 그대로 둔다.
+   - 그 뒤 문턱은 지금과 같다: 1~9 경고, 10 이상 STOP, accept면 ACCEPTED. 멈춤 튜플의 형식(`"<prev sha8>:+N"`)과 멈출 때 notices `[]`(641행)도 그대로 둔다(다른 판 비교였다는 사실은 캐시 `prev_python`·보고에 남음).
 4. `BASELINE_NOTICE_PREFIXES`(94행)에 `"BASELINE_PREV_OTHER_PYTHON"`을 더한다. 정보 줄이라 검사를 실패시키지 않는다.
-5. `tools/dev_pipeline/README.md` 79행 기준선 정보 reason 목록에 1항목을 더한다.
+5. `tools/dev_pipeline/README.md` 79행 기준선 정보 reason 목록에 1항목을 더하고, 88행 '직전 기준선 = 캐시 중 python·방식이 같고…' 문장을 새 규칙(같은 판 우선 → 판이 다른 조상)에 맞게 고친다.
 
 ## 바꾸지 않는 것
 - 문턱 `BASELINE_ROSE_STOP = 10`, accept 파일 규칙(사장이 직접 만듦, 기준 sha8 한정)
@@ -43,15 +43,16 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 
 ## 효과 예시(두 캐시 파일 값으로 소급 계산)
 - 11/11 b2e0f08d(py3.15.2)는 같은 판 직전이 없었다. 새 규칙이면 03721d5f(py3.13.15, 실패 0)와 비교해 +168 → `STOP_BASELINE_REGRESSED`이다.
-- 그날 first-collect 대신 기준선 멈춤이 보였을 것이다. 사장 선택은 둘이다: 패키지 설치 뒤 다시 돌리거나, accept 파일로 그 기준을 받아들인다.
+- 그날 first-collect 대신 기준선 멈춤이 보였을 것이다. 사장 선택은 둘이다: 패키지 설치 뒤 새 커밋(기준 이동)에서 새 id로 다시 돌리거나(같은 기준·같은 판이면 캐시와 저장된 비교 키를 다시 써서 또 멈춤 — devpipe.py 1059~1075행), accept 파일로 그 기준을 받아들인다.
 
 ## 위험·한계
 - 판이 바뀌면 정당한 차이(판별 skip 등)로 10건 이상 늘 수 있다. 그때는 멈춘다. 원인을 보고 설치하거나 accept 파일로 받아들인다(의도한 동작).
 - 판이 다른 직전 기준선이 오래됐으면, 그 사이 커밋의 회귀도 함께 늘어남으로 잡힌다(안전 쪽).
 - 이미 계산된 캐시 가운데 `prev_base: None`인 것은 다시 비교하지 않는다. 다음 기준 커밋부터 적용된다.
+- '같은 판 우선'이라, 더 오래된 같은 판 기준선이 더 새 다른 판 기준선보다 먼저 뽑힌다. 실패 168건이 든 e629c22(3.15.2)는 앞으로 3.15.2 기준선의 비교점으로 남는다. 11/13 설치가 충분치 않으면 그 가림이 이어진다(다음 기준선 실패 수로 확인 필요).
 
 ## 경로와 승인
-- tools/는 보호 경로라 개발 큐가 고칠 수 없다(authority-paths.txt 8~9행) → **K3 수동 경로**. 선례는 baseline-watch(docs/claude/baseline-watch-proposal-2026-11-01.md, 11/02 병합)다.
+- tools/는 보호 경로라 개발 큐가 고칠 수 없다(devpipe.py 109~117행 PROTECTED_PREFIXES) → **K3 수동 경로**. 선례는 baseline-watch(docs/claude/baseline-watch-proposal-2026-11-01.md, 11/02 병합)다.
 - 실행 당일 이 수정안 id(`baseline-pyver-proposal-2026-11-13`)를 단 사장 결정 카드를 받는다. 받은 날 Builder를 못 띄우면 시작 직전에 다시 받는다.
 - 실행 방법은 둘 중 하나다.
   - 사장실 최상위 메시지로 실행 스레드를 연다.

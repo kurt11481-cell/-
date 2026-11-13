@@ -139,5 +139,6 @@ source_decision: "사장 2026-11-13 14:17 KST 사장실 스레드 직접 입력 
 ## 6. 사장 결정 기록
 - 2026-11-13 14:40:53 KST, 사장 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9PCF1dsnNAnGfBH91YwoK3p("코드 리뷰에서 나온 고칠 것을 어디까지 착수할까요?"), 고른 항목 '급한 2건 + 실행기 점검 착수'(option A), 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH(프로젝트 소유자), 사장실 회사PC 스레드 '회사 시스템 전체 코드 리뷰 (11/13)'.
 - 범위: 2절 #1(H-1)·#3(M-1) 개발 큐, #2(H-2) K3 수동 경로, #2-a Python 3.15 패키지 설치(사장 터미널 한 줄 — 14:4x KST 안내). M-2·L-1·L-2·L-3은 기록만.
-- 순서: qqq-b-core2(진행 중, docs/claude 밖 변경)가 병합된 뒤 #1+#3을 큐에 올린다(동시에 올리면 나중 병합이 STOP_BASE_MOVED). #2는 권한 변경 동시 1건 상한 때문에 그다음. #2는 K3라 이 카드는 착수 방향만이고, 실행 당일 수정안 id를 단 카드를 다시 받는다(CLAUDE.md Change classes: 카드가 수정안 id를 담아야 함).
+- 순서: qqq-b-core2(진행 중, docs/claude 밖 변경)가 병합된 뒤 #1을 큐에 올리고, #1이 병합된 뒤 #3을 올린다(같은 기준에서 둘 다 돌면 나중 병합이 STOP_BASE_MOVED — 큐는 NEEDS_APPROVAL 병합을 기다리지 않고 다음 작업을 시작함). #2는 권한 변경 동시 1건 상한 때문에 그다음. #2는 K3라 이 카드는 착수 방향만이고, 실행 당일 수정안 id를 단 카드를 다시 받는다(CLAUDE.md Change classes: 카드가 수정안 id를 담아야 함).
 - 병합은 각자 사장 `-ApproveAuthority`·PowerShell 한 줄. 이 카드는 병합 승인이 아니다.
+- 지시문(11/13 15:5x KST, 독립 재검토 반영 — 상 3·중 4·하 다수 고침): #1 `bar-isolate-builder-prompt.md`, #3 `runner-deps-builder-prompt.md`(범위 축소 이유 포함), #2 `baseline-pyver-proposal-2026-11-13.md`·`baseline-pyver-builder-prompt.md`·`baseline-pyver-judge-prompt.md`. #1 병합 뒤 따로 올릴 것: 08:40 독립 대조(t2rc-oracle.py)가 격리를 모르는 끊김(예약 작업 변경, 사장 직접 입력 승인).
