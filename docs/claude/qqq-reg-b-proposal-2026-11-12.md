@@ -187,6 +187,6 @@ conflicts: "없음 — strategy-1101 '판 몫은 현금'의 대상은 t3-proceed
 
 ## 11. 결정 기록
 
-- 코드 착수: 사장 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX93iiKsXawoSDw7hVfuU64oQ "QQQ 단계 B 코드 작업을 지금 시작할까요?" — 고른 안 **"착수 — 코드부터"**, 누른 계정 = 사장(user_01KuMGKfZu1SBYxtMmg4vAiH), 2026-11-13 14:13:55 KST, 사장실 회사PC 스레드 'QQQ 등록(K3) 먼저 진행'. 제안 qqq-reg-b-proposal-2026-11-12(이 문서) 7절 1번. → 개발 큐 qqq-b-core(지시문 docs/claude/qqq-b-core-builder-prompt.md).
+- 코드 착수: 사장 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX93iiKsXawoSDw7hVfuU64oQ "QQQ 단계 B 코드 작업을 지금 시작할까요?" — 고른 안 **"착수 — 코드부터"**, 누른 계정 = 사장(user_01KuMGKfZu1SBYxtMmg4vAiH), 2026-11-13 14:13:55 KST, 사장실 회사PC 스레드 'QQQ 등록(K3) 먼저 진행'. 제안 qqq-reg-b-proposal-2026-11-12(이 문서) 7절 1번. → 개발 큐 qqq-b-core(지시문 docs/claude/qqq-b-core-builder-prompt.md) — 2026-11-13 05:20Z(14:20 KST) STOP_PREFLIGHT BLOCK_NOT_ASCII(commit_message의 긴 줄표, id 소모) → 같은 내용으로 새 id **qqq-b-core2**(docs/claude/qqq-b-core2-builder-prompt.md). 병합 명령은 `.\tools\dev-merge.ps1 qqq-b-core2 -ApproveAuthority`.
 - 코드 병합: (대기)
 - 예약 작업 변경 승인: (대기)
