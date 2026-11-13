@@ -1,0 +1,10 @@
+PASS T1 rules: same line count, only lines 1·50·54·81·99·116·133·134·161·332 change — [1, 50, 54, 81, 99, 116, 133, 134, 161, 332]
+PASS T1b rules: changed lines only insert text, except line 161 where the one sentence "3배 비중이 10% 이하면 이 줄을 쓰지 않는다." is replaced and line 133 particle 은→는
+PASS T2 loader: undoing the 6 intended edits gives v3.12.14-L+R2 byte for byte
+PASS T3 loader step 1 rules hash check on the new rules file — RULES 132729 bytes sha256(LF 정규화) 6d6191f06bf57844641d0df39e0e729cc2f4608d849803ab5f0ff69bfd2b1245 MATCH
+PASS T4 loader build/finalize section hash check — build 4320 MATCH | finalize 3054 MATCH
+PASS T5 81행 _h(): today (no QQQ) old == new — ['BE', 'LITE', 'MU', 'PLTR']
+PASS T5b 81행 _h(): with QQQ held, new drops QQQ, old keeps it
+PASS T6 161행 branch spec on 10 states (today = 3x 36.65% → unchanged 3x line) — ['3x-branch(v3.12.13, unchanged)', 'Q2 wait', 'Q2 wait', 'Q1 buy max 17.0%', 'Q1 buy max 5.0%', 'Q3 no-room', 'Q3 no-room', 'Q4 none', 'funding-first(QQQ 다시 사기 보류)', 'Q1 buy max 20.0%']
+PASS T7 size: rules +7007 B, loader +529 B
+H1 PASS 9 / 9
