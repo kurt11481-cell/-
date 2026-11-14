@@ -1,0 +1,124 @@
+{
+ "asof": "2026-11-13",
+ "run_at": "2026-11-14 14:07:37 KST",
+ "rule": "forecast-layer3-rule-2026-11-10.md",
+ "code": {
+  "fm3_shadow": "da12b05575e5af89",
+  "fm3_weekly": "88a63c7e16a34f79",
+  "fm2": "5b098dd5dba6428c",
+  "fm1": "2ceee559c43c5f4c"
+ },
+ "menu_sha256": "d3268329302812bf076d55fade6d86bccb03c27f6fd1562a3a4a2656655b3690",
+ "display": {
+  "20": "FM2",
+  "60": "FM2"
+ },
+ "interval_check": null,
+ "slots_used": 1,
+ "skipped": {},
+ "challengers": {
+  "c01_vixr": {
+   "20": {
+    "forward": {
+     "FM2": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     },
+     "F0": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     }
+    },
+    "state": "not shown for a history-backed challenger (rule section 4)"
+   },
+   "60": {
+    "forward": {
+     "FM2": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     },
+     "F0": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     }
+    },
+    "state": "not shown for a history-backed challenger (rule section 4)"
+   },
+   "250": {
+    "forward": {
+     "FM2": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     },
+     "F0": {
+      "n_issued": 0,
+      "n_issued_by_challenger": 0,
+      "n_scored": 0,
+      "n_scored_by_challenger": 0,
+      "weeks": 0
+     }
+    },
+    "state": "not shown for a history-backed challenger (rule section 4)"
+   },
+   "issued": {
+    "rows": 0,
+    "kept": 0,
+    "changed": 0,
+    "none_kept": 0,
+    "max_abs_diff": 0.0,
+    "new": 0,
+    "new_no_forecast": 0,
+    "late": 0,
+    "orphans": 0,
+    "file": null
+   }
+  }
+ },
+ "forward_check": {
+  "20": {
+   "weeks": 0
+  },
+  "60": {
+   "weeks": 0
+  }
+ },
+ "events": [],
+ "held": [],
+ "skip_streak": {},
+ "report": [],
+ "findings_run": false,
+ "judged_now": [],
+ "slots_used_after": 1,
+ "awaiting_judge": [],
+ "next_menu": null,
+ "next_menu_note": "no eligible menu entry (menu used up, or its findings are closed or at the challenge limit)",
+ "registry": [
+  {
+   "id": "c01_vixr",
+   "finding": "D1",
+   "status": "shadow",
+   "h_status": {
+    "20": "shadow"
+   },
+   "judged_pair": {
+    "20": "FM2"
+   },
+   "t0": "2026-11-13"
+  }
+ ]
+}

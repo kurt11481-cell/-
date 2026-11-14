@@ -1,0 +1,9 @@
+run start 14:07:36 KST
+asof 2026-11-13 | scored ['c01_vixr'] | skipped {} | judged now []
+ c01_vixr h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+ c01_vixr h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+ c01_vixr h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+events [] | report [] | awaiting judge [] | next menu entry None (no eligible menu entry (menu used up, or its findings are closed or at the challenge limit))
+written layer3/runs/shadow_2026-11-13.json
+exit=0
+run end 14:09:21 KST
