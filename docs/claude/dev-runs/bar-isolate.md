@@ -79,4 +79,10 @@ VERDICT: FAIL
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-11-14T00:15:56Z
+- 병합 커밋: `b8f01041517b6c11830b6c09bf885dbb4ec79851` · 방식: rebase
+- 사용자 승인(-ApproveAuthority): 2026-11-13T23:56:54Z
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/bar-isolate/ 의 원본 기록입니다.)
