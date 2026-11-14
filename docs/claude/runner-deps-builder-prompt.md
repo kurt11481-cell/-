@@ -72,6 +72,7 @@ queue_order: bar-isolate 병합 뒤에 큐에 올린다(둘 다 docs/claude 밖�
    - 기존 테스트가 실패하면 고치지 말고 BLOCKED로 보고한다.
    - 특히 지켜야 할 것: `test_auto_core_runner.py`(매개변수 이름과 같은 변수 금지 — 대소문자 무시, `$pythonCommand` 줄 2개, 187~191행 PATH의 진짜 Python으로 `RUNNER_END exit=0`), `test_auto_core_decide.py` 1450~1464행(`-Command` 검사 줄·로그 이름 줄), `test_auto_core.py` 1570~1585행(주문 문자열 없음·ASCII).
 2. 주문 경로 문자열(`/api/us/ordr`, `ust2000x`, `kiwoom_order`, `order_submit`, `place_order`, `kt1000x`)을 넣지 않는다. 키움·예약 작업·정책·상태 파일을 건드리지 않는다.
+   - `order_authority`·`quantity_authority`·`execution_quantity`·`kill_switch` 글자가 든 줄을 어느 파일에도 만들거나 바꾸지 않는다. 보고 머리말도 같다(이 지시문 머리말의 authority 줄을 옮기지 말고 '권한 표지 4종 줄 변경 없음 · 주문 경로 없음 · 키움 호출 없음'처럼 쓴다). 선례: bar-isolate 1회차 Judge FAIL(docs/claude/dev-runs/bar-isolate.md).
 3. 실행하지 않는다: 저장소의 run_auto_core.ps1·auto_core.py·register_auto_core_task.ps1(테스트는 임시 사본만 실행).
    - 테스트는 `python -m unittest discover -s manage-us-stock-strategy/tests -p "<패턴>"` 형식 그대로만 돌린다(앞에 환경 변수나 플래그를 붙이지 않는다). 전체 테스트는 돌리지 않는다.
 4. run_auto_core.ps1(git i/lf, 작업 트리 CRLF)의 줄바꿈을 지킨다. 파일은 ASCII 전용이다.
@@ -80,6 +81,7 @@ queue_order: bar-isolate 병합 뒤에 큐에 올린다(둘 다 docs/claude 밖�
 
 보고에 넣을 것:
 - 바꾼 줄(파일:줄)과 새 테스트 목록.
+- 연결표(아래 절)를 옮기고 ②③⑤ 칸마다 파일:행 또는 trig id를 쓴다. 근거가 없으면 '끊김(메울 변경·승인 경로)'로 쓴다(bar-isolate 1회차 Judge FAIL 사유).
 - 대상 테스트 결과(Ran 수, 실패 0, 건너뜀 수 — Windows 동작 테스트가 실제로 돌았는지)와 `git diff --ignore-cr-at-eol --stat`.
 - 남은 위험:
   - 점검은 시간대 자료만 본다. 저장소 모듈 import 오류는 지금처럼 실행 중 traceback으로만 보인다.
@@ -89,7 +91,7 @@ queue_order: bar-isolate 병합 뒤에 큐에 올린다(둘 다 docs/claude 밖�
 
 | ① 자료·산출 | ② 만드는 주체·시각 | ③ 읽는 점검 — 원문 행 | ④ 바뀌는 행동 — 선 | ⑤ 끊기면 누가 아나 | ⑥ 상태 |
 |---|---|---|---|---|---|
-| 실행기 로그 줄 `RUNNER_FAIL PYTHON_DEPS_MISSING … python=<판>`·종료 코드 4(기존 로그 파일 workspace/outputs/auto-core/logs/auto-core-<명령>-<UTC>.log, 새 파일 없음) | 예약 InvestmentV2-AutoCore 06:15·AutoCoreDecide 07:45 KST(`register_auto_core_task.ps1` 25·27행) → `run_auto_core.ps1` 사전 점검(이번 변경) | 같은 날: 자동 운영 코어 결과 알림 trig_01D5KxMSJgbeRG1ZL5ox3Fna 08:50(`auto-core-alert.txt` 36행 ① "daily 결과 없음" — 기존). 다음 날: PC 상태 점검 05:50(`host_status.ps1` 20행 코어 작업 목록·142~145행 '7일 안 마지막 결과 0 아님 → WARN') → 같은 알림 49행 ⑭ | 사장 알림 → Cowork(사람 단계)가 로그의 이름 있는 실패 줄로 원인·Python 판을 바로 앎 → 사장 터미널 설치 한 줄 안내(11/10 같은 진단 시간 단축). 코어 판정·주문표는 불변 | 알림 예약 미실행은 사장실 결과 모음이 봄. PC 상태 점검 미실행은 같은 알림 ⑭ "PC 상태 점검 결과 없음". 실행기 회귀는 새 테스트 4·5 | 연결 |
+| 실행기 로그 줄 `RUNNER_FAIL PYTHON_DEPS_MISSING … python=<판>`·종료 코드 4(기존 로그 파일 workspace/outputs/auto-core/logs/auto-core-<명령>-<UTC>.log, 새 파일 없음) | 예약 InvestmentV2-AutoCore 06:15·AutoCoreDecide 07:45 KST(`register_auto_core_task.ps1` 25·27행) → `run_auto_core.ps1` 사전 점검(이번 변경) | 같은 날: 자동 운영 코어 결과 알림 trig_01D5KxMSJgbeRG1ZL5ox3Fna 08:50(`auto-core-alert.txt` 36행 ① "daily 결과 없음" — 기존). 다음 날: PC 상태 점검 05:50(`host_status.ps1` 20행 코어 작업 목록·142~145행 '7일 안 마지막 결과 0 아님 → WARN') → 같은 알림 49행 ⑭ | 사장 알림 → Cowork(사람 단계)가 로그의 이름 있는 실패 줄로 원인·Python 판을 바로 앎 → 사장 터미널 설치 한 줄 안내(11/10 같은 진단 시간 단축). 코어 판정·주문표는 불변 | 알림 예약이 안 돌거나 실패하면 사장실 결과 모음 trig_01GrAs6UCfspeTBK3mMncyrd(월~토 09:35)·trig_01XChapmUEKxAcjKF9AFiERJ(일 10:05)(`docs/claude/active-decisions.md` 62행)이 이름을 올림(`docs/claude/scheduled-prompts/room-digest.txt` 2행·5행 list_triggers last_run·28행 '안 돎·늦음·실패'). PC 상태 점검 결과가 없으면 같은 알림 ⑭(`docs/claude/scheduled-prompts/auto-core-alert.txt` 49행 "PC 상태 점검 결과 없음(05:50 미실행)"). 실행기 회귀는 새 테스트 4·5(Builder가 보고 연결표에 `test_auto_core_runner_deps.py` 파일:행으로 적음) | 연결 |
 
 ## Judge 확인 항목
 
@@ -100,4 +102,4 @@ queue_order: bar-isolate 병합 뒤에 큐에 올린다(둘 다 docs/claude 밖�
 4. 성공 경로의 `RUNNER_START` 줄·auto_core.py 호출·종료 코드 전달·로그 이름이 그대로다(기존 `test_auto_core_runner.py` 통과, 테스트 5).
 5. 새 테스트가 바뀐 동작을 실제로 잡는다. 사전 점검을 빼면 테스트 4가 실패한다. Windows 동작 테스트가 건너뛰어지지 않고 돌았는지 보고에서 확인한다.
 6. 대상 테스트가 전부 통과한다.
-7. G9: 연결표 ②③⑤의 원문 행 대조 — register_auto_core_task.ps1 25·27행, auto-core-alert.txt 36·49행, host_status.ps1 20·142~145행.
+7. G9: 연결표 ②③⑤의 원문 행 대조 — register_auto_core_task.ps1 25·27행, auto-core-alert.txt 36·49행, host_status.ps1 20·142~145행, active-decisions.md 62행, room-digest.txt 2·5·28행, 새 테스트 4·5의 파일:행. 칸마다 파일:행·trig id 또는 '끊김(메울 변경·승인 경로)'이 있어야 한다.
