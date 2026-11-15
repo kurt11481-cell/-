@@ -11,7 +11,8 @@ param(
 # decide writes decision.json and LATEST_DECISION.json there.
 # Output of the Python run (and of kiwoomcli inside collect_30m.ps1) is redirected by cmd /c so the bytes
 # are kept as written. No retry: the next scheduled run is the retry. Exit code = the Python exit code
-# (0 OK or HOLD, 1 FAIL); 3 when the runner itself cannot start or the command is not daily or decide.
+# (0 OK or HOLD, 1 FAIL); 3 when the runner itself cannot start or the command is not daily or decide;
+# 4 when the Python runtime cannot load the time zone data (tzdata missing) - the run did not start.
 
 $ErrorActionPreference = "Stop"
 if ($Command -cne "daily" -and $Command -cne "decide") {
@@ -54,6 +55,51 @@ if ([string]::IsNullOrWhiteSpace($PythonPath) -or -not (Test-Path -LiteralPath $
     Write-RunnerLine "RUNNER_FAIL PYTHON_RUNTIME_NOT_FOUND"
     exit 3
 }
+
+# Pre-check (runner-deps): auto_core_reconcile.py and auto_core_decide.py load zoneinfo time zones at import time,
+# so a Python without the time zone data (tzdata) dies before writing any record. The same Python runs the check
+# with no isolation flag (-I/-s/-E/-S): tzdata may sit in the user site-packages. The code uses single quotes only: Windows
+# PowerShell 5.1 does not escape double quotes inside native arguments. The version line is flushed first so it
+# comes before any traceback. Output stays in variables; only the failure lines go to the runner log.
+$depsCode = "import sys; print('%d.%d.%d' % sys.version_info[:3], flush=True); import zoneinfo; zoneinfo.ZoneInfo('Asia/Seoul'); zoneinfo.ZoneInfo('America/New_York')"
+$depsOutput = @()
+$depsExitCode = $null
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    $depsOutput = @(& $PythonPath -c $depsCode 2>&1)
+    $depsExitCode = $LASTEXITCODE
+} catch {
+    $depsOutput = @($depsOutput) + @([string]$_.Exception.Message)
+    $depsExitCode = $null
+} finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
+if ($null -eq $depsExitCode -or $depsExitCode -ne 0) {
+    # Version = first stdout line in the form 1.2.3; error = last non-empty stderr line (else last other stdout line).
+    $depsVersion = "unknown"
+    $depsLastError = ""
+    $depsLastOther = ""
+    foreach ($depsItem in $depsOutput) {
+        $depsText = ([string]$depsItem).Trim()
+        if ($depsText.Length -eq 0) { continue }
+        if ($depsItem -is [System.Management.Automation.ErrorRecord]) {
+            $depsLastError = $depsText
+        } elseif ($depsText -match '^\d+\.\d+\.\d+$') {
+            if ($depsVersion -eq "unknown") { $depsVersion = $depsText }
+        } else {
+            $depsLastOther = $depsText
+        }
+    }
+    if ($depsLastError.Length -eq 0) { $depsLastError = $depsLastOther }
+    if ($depsLastError.Length -eq 0) { $depsLastError = "exit=" + $depsExitCode }
+    $depsLastError = ($depsLastError -replace "[\r\n]+", " ") -replace "[^\x20-\x7E]", "?"
+    if ($depsLastError.Length -gt 300) { $depsLastError = $depsLastError.Substring(0, 300) }
+    Write-RunnerLine ("RUNNER_FAIL PYTHON_DEPS_MISSING zoneinfo=Asia/Seoul,America/New_York python=" + $depsVersion)
+    Write-RunnerLine ("RUNNER_FAIL_DETAIL " + $depsLastError)
+    exit 4
+}
+
 $timezoneId = try { (Get-TimeZone -ErrorAction Stop).Id } catch { "NOT_VERIFIED" }
 Write-RunnerLine ("RUNNER_START utc=" + $stamp + " timezone=" + $timezoneId + " command=" + $Command)
 
