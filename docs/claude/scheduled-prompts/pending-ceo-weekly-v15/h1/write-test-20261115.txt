@@ -1,0 +1,1 @@
+write-test 2026-11-15 room-digest v1.3 apply (B-4 step 1)
