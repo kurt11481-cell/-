@@ -43,4 +43,9 @@
 
 VERDICT: PASS
 
+## 병합
+
+- 병합 시각(UTC): 2026-11-16T06:24:07Z
+- 병합 커밋: `129eb9e7c5236eba86e9a29aa5f9b6bdd469aa29` · 방식: rebase
+
 (이 파일은 tools/dev_pipeline/devpipe.py가 씁니다. 판정 근거는 workspace/outputs/dev-runs/t2rc-isolate/ 의 원본 기록입니다.)
