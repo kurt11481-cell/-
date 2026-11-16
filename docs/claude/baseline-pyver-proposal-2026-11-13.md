@@ -2,7 +2,7 @@
 id: baseline-pyver-proposal-2026-11-13
 title: "기준선 감시가 Python 판이 바뀌어도 꺼지지 않게 — K3 수정안 (코드 리뷰 2차 H-2)"
 date: 2026-11-13
-status: "제안 — 실행 당일 수정안 id를 단 사장 카드 전. 코드·설정·예약 변경 없음"
+status: "병합 완료 — a31de4a(작업 커밋 ff33e59), 2026-11-16 18:48:52 KST, 사장 PowerShell. Builder·Judge PASS"
 source: "docs/claude/code-review-2026-11-13.md 1절 H-2·2절 #2, 사장 결정 카드 '급한 2건 + 실행기 점검 착수'(cmsg_0137MRzn9nuDvvQmVxm6WeX9PCF1dsnNAnGfBH91YwoK3p, 2026-11-13 14:40:53 KST — 착수 방향만, 6절)"
 authority: "order_authority=false · quantity_authority 값 변경 없음 · 키움 호출 없음 · 정책·상태·일지·원장 쓰기 없음"
 ---
@@ -67,3 +67,20 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 | ① 자료·산출 | ② 만드는 주체·시각 | ③ 읽는 점검 — 원문 행 | ④ 바뀌는 행동 — 선 | ⑤ 끊기면 누가 아나 | ⑥ 상태 |
 |---|---|---|---|---|---|
 | 기준선 캐시 `prev_python` 키 + 정보 줄 `BASELINE_PREV_OTHER_PYTHON:<판>`·판이 다른 비교의 `STOP_BASELINE_REGRESSED` | 개발 큐 InvestmentV2-DevQueue(5분마다) → dev-run.ps1 → devpipe.py `run_baseline_in`(1146~1151행)·`compare_baseline`(이번 변경) | devpipe.py `run_test_checks` 973행(notices)·1979행 `DEV-RUN … baseline=` 결과 줄 → `_queue/<날짜>.log`·docs/claude/dev-runs/<id>.md(README 79행) | 판이 바뀌어 실패가 10건 이상 늘면 개발 큐 run이 멈춤 → Cowork가 원인 확인 → 사장 설치 한 줄 또는 accept 파일 | 멈춤은 결과 줄·dev-runs 문서에 바로 보임. 이 비교가 다시 꺼지는 회귀는 새 시험(Judge 확인 항목 2~4)이 잡음 | 연결 |
+
+## 사장 결정 기록 (2026-11-16)
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9DP1xNfXcykMEi1phMeW6G3 (코드 리뷰 2차 스레드가 올린 카드), 질문 "수정안 baseline-pyver-proposal-2026-11-13을 오늘 실행할까요?"
+- 고른 항목: "오늘 실행 baseline-pyver" (option_index 0)
+- 누른 계정: user_01KuMGKfZu1SBYxtMmg4vAiH (프로젝트 소유자 = 사장)
+- 시각: 2026-11-16 16:34:11 KST
+- 범위: 이 수정안 1건, 2026-11-16 KST 하루, 1회. Builder·Judge 실행까지. 병합은 Judge `VERDICT: PASS` 뒤 별도 사장 결정.
+- 원격 제어용 사장 직접 입력: "baseline-pyver 실행해" — 메시지 cmsg_0137MRzn9nuDvvQmVxm6WeX9AoRu1f5VD6WTp1nq41qHZZ, 같은 계정, 2026-11-16 16:55:07 KST(코드 리뷰 2차 스레드). Builder 원격 제어 세션은 이 직접 입력 뒤 시작.
+- 시작 조건 확인(2026-11-16 16:35 KST): 개발 큐(docs/claude/_dev-queue/) 비어 있음, HEAD 129eb9e(t2rc-isolate 병합). '순서' 절의 앞 run(qqq-b-core 계열·bar-isolate b8f0104·runner-deps 92c8546·t2rc-isolate 129eb9e)은 모두 병합됨. devpipe.py·test_dev_pipeline.py·README는 11/07 뒤 바뀌지 않아 이 문서의 행 번호가 그대로 맞다.
+- Builder 기준: 129eb9e, worktree `.claude/worktrees/baseline-pyver`, 브랜치 `worktree-baseline-pyver`.
+
+## 병합 결정 기록 (2026-11-16)
+- Builder: 원격 제어 세션 자기 worktree `.claude/worktrees/goofy-tesla-d71591`(지시의 대체 경로 git switch -C, 브랜치 worktree-baseline-pyver, HEAD 129eb9e). 처음 만든 `.claude/worktrees/baseline-pyver`는 쓰기 훅에 막혀 손대지 않은 채 Builder가 지움. 바뀐 파일 4개, 시험 162건 OK, 커밋 없음. 보고 docs/claude/baseline-pyver-report.md(sha256 da6b7bb4…).
+- Judge: 별도 원격 제어 세션(읽기 전용), docs/claude/baseline-pyver-judge-report.md(sha256 3fcbff0c2a8dadf4401c7107f2a196c604c3b2ba145b4f0dbc8dcf7267551f1a, 7,033 B). 11개 항목 PASS, 시험 162건 직접 재실행 OK, 마지막 줄 `VERDICT: PASS`.
+- 카드: cmsg_0137MRzn9nuDvvQmVxm6WeX9DhQRzaWu3WZjGRcpLjT5Rc, 질문 "baseline-pyver 수정을 오늘 병합할까요?", 고른 항목 "오늘 병합"(option_index 0), 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH, 2026-11-16 18:39:18 KST.
+- 병합 방법: 사장 PowerShell `.\docs\claude\baseline-pyver-merge-2026-11-16.ps1`. 2026-11-16 KST에만 돈다. 파일 4개 해시와 Judge 보고서 해시를 고정하고, 병합 전에 test_dev_pipeline.py 시험을 돌린다. 병합 결과 sha는 병합 뒤 덧붙인다.
+- 병합 결과(2026-11-16 18:49 KST 사장 출력 `MERGED worktree_commit=ff33e599 main=a31de4a` / `BASELINE_PYVER_DONE`): 병합 커밋 a31de4a(부모 129eb9e·ff33e59, 18:48:52 KST). 본 저장소 devpipe.py·README.md·test_dev_pipeline.py 해시가 Judge가 본 값과 같음(0dfeec1c…·959e6739…·e6c87267…). 효과는 다음 Python 판 변경 때 나타난다(지금은 같은 판 3.15.2 직전 기준선이 있어 판이 다른 비교는 안 쓰임 예상, 확인 필요).
