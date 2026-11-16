@@ -91,7 +91,7 @@ BASELINE_CLEANUP_JSON = "baseline-cleanup.json"
 BASELINE_ROSE_STOP = 10  # failures added since the previous baseline: 1-9 warn, this many or more stop
 BASELINE_REGRESSED_TXT = "baseline-regressed.txt"
 # Information only: these never fail a check or a merge retest (run_test_checks keeps them out of "reasons").
-BASELINE_NOTICE_PREFIXES = ("BASELINE_FAILURES_ROSE", "BASELINE_PREV_NONE")
+BASELINE_NOTICE_PREFIXES = ("BASELINE_FAILURES_ROSE", "BASELINE_PREV_NONE", "BASELINE_PREV_OTHER_PYTHON")
 SHA_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 # O3: run records whose sha256 dev-run keeps in memory between steps, and what a Builder's code could
 # change in the main checkout (tracked status lines outside docs/claude/, every file under the watch dirs).
@@ -631,13 +631,16 @@ def baseline_rose_verdict(baseline):
     prev = baseline["prev_base"]
     if prev is None:
         return None, ["BASELINE_PREV_NONE"]
+    # Compared with an ancestor of another python (no same-python one): say so first, except on the stop.
+    lead = (["BASELINE_PREV_OTHER_PYTHON:%s" % baseline["prev_python"]]
+            if isinstance(baseline.get("prev_python"), str) else [])
     added = len(baseline.get("added_failures") or [])
     if added == 0:
-        return None, []
+        return None, lead
     if added < BASELINE_ROSE_STOP:
-        return None, ["BASELINE_FAILURES_ROSE:%s:+%d" % (prev[:8], added)]
+        return None, lead + ["BASELINE_FAILURES_ROSE:%s:+%d" % (prev[:8], added)]
     if baseline.get("baseline_accepted") is True:
-        return None, ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+%d" % (baseline["base"][:8], added)]
+        return None, lead + ["BASELINE_FAILURES_ROSE_ACCEPTED:%s:+%d" % (baseline["base"][:8], added)]
     return ("STOP_BASELINE_REGRESSED", "%s:+%d" % (prev[:8], added)), []
 
 
@@ -1008,16 +1011,16 @@ def baseline_stopped(repo, data):
             and not baseline_accept_path(repo, data["base"]).is_file())
 
 
-def previous_baseline(repo, base, python):
-    """The newest cached baseline of a real ancestor of base with the same python and method that did not stop
-    unaccepted, or None. Skipping a stopped one keeps the stop until the failures are fixed or the user accepts."""
+def newest_ancestor_baseline(repo, base, python_ok):
+    """The newest cached baseline of a real ancestor of base whose python passes python_ok, with the same method,
+    that did not stop unaccepted, or None."""
     candidates = []
     for path in (runs_root(repo) / "_baseline").glob("*.json"):
         try:
             data = read_json(path)
         except (ValueError, OSError):
             continue
-        if (isinstance(data, dict) and data.get("python") == python and data.get("method") == BASELINE_METHOD
+        if (isinstance(data, dict) and python_ok(data.get("python")) and data.get("method") == BASELINE_METHOD
                 and isinstance(data.get("base"), str) and SHA_RE.match(data["base"]) and data["base"] != base
                 and isinstance(data.get("failures"), list) and isinstance(data.get("computed_utc"), str)
                 and not baseline_stopped(repo, data)):
@@ -1028,13 +1031,32 @@ def previous_baseline(repo, base, python):
     return None
 
 
+def previous_baseline(repo, base, python):
+    """The newest cached baseline of a real ancestor of base with the same python and method that did not stop
+    unaccepted, or None. Skipping a stopped one keeps the stop until the failures are fixed or the user accepts."""
+    return newest_ancestor_baseline(repo, base, lambda value: value == python)
+
+
+def previous_baseline_other_python(repo, base, python):
+    """Same choice as previous_baseline, but only among caches whose python is a string other than python."""
+    return newest_ancestor_baseline(repo, base, lambda value: isinstance(value, str) and value != python)
+
+
 def compare_baseline(repo, data):
-    """prev_base, added_failures and removed_failures of a baseline against its previous baseline."""
+    """prev_base, added_failures and removed_failures of a baseline against its previous baseline. Without a
+    same-python one, an ancestor of another python is used and its python is added as prev_python."""
     prev = previous_baseline(repo, data["base"], data["python"])
+    extra = {}
     if prev is None:
-        return {"prev_base": None, "added_failures": [], "removed_failures": []}
+        prev = previous_baseline_other_python(repo, data["base"], data["python"])
+        if prev is None:
+            return {"prev_base": None, "added_failures": [], "removed_failures": []}
+        extra["prev_python"] = prev["python"]
     now, before = set(data["failures"]), set(prev["failures"])
-    return {"prev_base": prev["base"], "added_failures": sorted(now - before), "removed_failures": sorted(before - now)}
+    result = {"prev_base": prev["base"], "added_failures": sorted(now - before),
+              "removed_failures": sorted(before - now)}
+    result.update(extra)
+    return result
 
 
 def remove_temp_worktree(repo, path):
