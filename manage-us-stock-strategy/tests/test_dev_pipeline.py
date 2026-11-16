@@ -1254,6 +1254,103 @@ class BaselineWatchTests(unittest.TestCase):
         self.assertEqual(baseline["prev_base"], self.base)
         self.assertEqual(verdict, (None, []))
 
+    # ---- baseline-pyver: no same-python previous baseline -> the newest ancestor of another python
+
+    OTHER_PYTHON = "3.0.0"
+
+    def other_cache(self, base, failures, utc="2026-11-01T00:00:00Z", python=OTHER_PYTHON, **extra):
+        """A cache file written by another python (its own file name), as a python upgrade leaves it."""
+        data = dict({"base": base, "python": python, "method": devpipe.BASELINE_METHOD, "ran": 100, "skipped": 0,
+                     "counts": {}, "failures": list(failures), "status": "FAILED", "schema": "PASS",
+                     "computed_utc": utc}, **extra)
+        name = devpipe.baseline_cache_name(base, python if isinstance(python, str) else "x")
+        devpipe.write_json(devpipe.runs_root(self.repo) / "_baseline" / name, data)
+        return data
+
+    def other_notice(self):
+        return "BASELINE_PREV_OTHER_PYTHON:%s" % self.OTHER_PYTHON
+
+    def test_pyver_same_python_previous_wins_over_newer_other_python(self):
+        self.assertNotEqual(self.python, self.OTHER_PYTHON)
+        third = self.commit("third")
+        self.cache(self.first, [], "2026-11-01T00:00:00Z")
+        self.other_cache(self.base, [], "2026-11-02T00:00:00Z")
+        baseline, verdict = self.judged(third, failure_names(3))
+        self.assertEqual(baseline["prev_base"], self.first)
+        self.assertNotIn("prev_python", baseline)
+        self.assertNotIn("prev_python", devpipe.compare_baseline(self.repo, baseline))
+        self.assertEqual(verdict, (None, ["BASELINE_FAILURES_ROSE:%s:+3" % self.first[:8]]))
+
+    def test_pyver_other_python_ancestor_ten_or_more_stops_with_no_notices(self):
+        self.other_cache(self.first, [])
+        baseline, verdict = self.judged(self.base, failure_names(13))
+        self.assertEqual((baseline["prev_base"], baseline["prev_python"]), (self.first, self.OTHER_PYTHON))
+        self.assertEqual(verdict, (("STOP_BASELINE_REGRESSED", "%s:+13" % self.first[:8]), []))
+
+    def test_pyver_other_python_ancestor_warning_leads_with_notice(self):
+        self.other_cache(self.first, [])
+        _, verdict = self.judged(self.base, failure_names(3))
+        self.assertEqual(verdict, (None, [self.other_notice(), "BASELINE_FAILURES_ROSE:%s:+3" % self.first[:8]]))
+
+    def test_pyver_other_python_ancestor_accepted_leads_with_notice(self):
+        self.other_cache(self.first, [])
+        self.accept(self.base)
+        _, verdict = self.judged(self.base, failure_names(13))
+        self.assertEqual(verdict, (None, [self.other_notice(),
+                                          "BASELINE_FAILURES_ROSE_ACCEPTED:%s:+13" % self.base[:8]]))
+
+    def test_pyver_cache_without_string_python_is_not_an_other_python_candidate(self):
+        data = self.other_cache(self.first, [], python=315)
+        self.assertIsNone(devpipe.previous_baseline_other_python(self.repo, self.base, self.python))
+        data.pop("python")
+        devpipe.write_json(devpipe.runs_root(self.repo) / "_baseline" / devpipe.baseline_cache_name(self.first, "x"),
+                           data)
+        self.assertIsNone(devpipe.previous_baseline_other_python(self.repo, self.base, self.python))
+        _, verdict = self.judged(self.base, failure_names(13))
+        self.assertEqual(verdict, (None, ["BASELINE_PREV_NONE"]))
+
+    def test_pyver_other_python_non_ancestor_is_left_out(self):
+        run_git(self.repo, "checkout", "-q", "-b", "side", self.first)
+        side = self.commit("side")
+        run_git(self.repo, "checkout", "-q", "main")
+        self.other_cache(side, [])
+        self.assertIsNone(devpipe.previous_baseline_other_python(self.repo, self.base, self.python))
+        baseline, verdict = self.judged(self.base, failure_names(13))
+        self.assertIsNone(baseline["prev_base"])
+        self.assertNotIn("prev_python", baseline)
+        self.assertEqual(verdict, (None, ["BASELINE_PREV_NONE"]))
+
+    def test_pyver_stopped_other_python_ancestor_is_left_out(self):
+        third = self.commit("third")
+        now = failure_names(10)
+        self.other_cache(self.base, now, "2026-11-02T00:00:00Z",
+                         prev_base=self.first, added_failures=now, removed_failures=[])
+        _, verdict = self.judged(third, now)
+        self.assertEqual(verdict, (None, ["BASELINE_PREV_NONE"]))
+        self.other_cache(self.first, [], "2026-11-01T00:00:00Z")
+        self.assertEqual(devpipe.previous_baseline_other_python(self.repo, third, self.python)["base"], self.first)
+        self.accept(self.base)
+        self.assertEqual(devpipe.previous_baseline_other_python(self.repo, third, self.python)["base"], self.base)
+
+    def test_pyver_same_failures_give_only_the_other_python_notice(self):
+        self.other_cache(self.first, failure_names(3))
+        baseline, verdict = self.judged(self.base, failure_names(3))
+        self.assertEqual(baseline["added_failures"], [])
+        self.assertEqual(verdict, (None, [self.other_notice()]))
+
+    def test_pyver_notice_is_information_after_evaluate_tests(self):
+        self.assertIn("BASELINE_PREV_OTHER_PYTHON", devpipe.BASELINE_NOTICE_PREFIXES)
+        self.other_cache(self.first, [])
+        self.cache(self.base, failure_names(3), "2026-11-02T00:00:00Z")
+        baseline = devpipe.cached_baseline(self.repo, self.base)
+        full = {"ran": 100, "skipped": 0, "failures": failure_names(3), "status": "FAILED", "counts": {},
+                "timed_out": False, "pattern": "test_*.py"}
+        stop, reasons, _ = devpipe.evaluate_tests(baseline, [], full, {"result": "PASS"}, [])
+        self.assertIsNone(stop)
+        notices = [item for item in reasons if item.startswith(devpipe.BASELINE_NOTICE_PREFIXES)]
+        self.assertEqual(notices, [self.other_notice(), "BASELINE_FAILURES_ROSE:%s:+3" % self.first[:8]])
+        self.assertEqual([item for item in reasons if item not in notices], [])
+
 
 class BaselineWatchCheckTests(unittest.TestCase):
     """The notice leaves the verdict alone and shows in the result; the stop leaves the list in the run folder."""
@@ -1299,6 +1396,17 @@ class BaselineWatchCheckTests(unittest.TestCase):
                                                   devpipe.collect_changes(self.fx.wt, self.fx.base))
         self.assertIsNone(stop)
         self.assertEqual((tests["reasons"], tests["notices"]), ([], ["BASELINE_FAILURES_ROSE:bbbbbbbb:+9"]))
+
+    def test_other_python_notice_is_a_run_test_checks_notice(self):
+        with mock.patch.object(devpipe, "run_unittest", return_value={
+                "ran": 2, "skipped": 0, "counts": {}, "failures": [], "status": "OK", "timed_out": False,
+                "pattern": "test_*.py"}), mock.patch.object(devpipe, "run_schema_audit", return_value={"result": "MISSING"}):
+            stop, tests = devpipe.run_test_checks(self.fx.run, dict(self.baseline(3), prev_python="3.0.0"),
+                                                  self.run_dir / "merge-tests",
+                                                  devpipe.collect_changes(self.fx.wt, self.fx.base))
+        self.assertIsNone(stop)
+        self.assertEqual((tests["reasons"], tests["notices"]),
+                         ([], ["BASELINE_PREV_OTHER_PYTHON:3.0.0", "BASELINE_FAILURES_ROSE:bbbbbbbb:+3"]))
 
     def test_stop_writes_the_list_and_reaches_the_summary(self):
         devpipe.write_json(self.run_dir / "baseline.json", self.baseline(10))
