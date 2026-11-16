@@ -16,6 +16,7 @@ Read-only. Never imports manage-us-stock-strategy/scripts (no auto_core* module)
   - manage-us-stock-strategy/references/portfolio-exposure-review.md (R1 E = max(N, V), p-earn r1 blackout),
   - policy values read from stock-strategy-system/alert_policy.json.
 Inputs are data files only (decision.json and the files its inputs point to, 30-minute pages, calendar).
+  T1 result steps.bars.isolated (watch-only symbols the core isolated; checked, else ignored).
 
 Commands
   check  --day YYYY-MM-DD [--repo DIR] [--out FILE]   live comparison for one decide run (C1, C2 items)
@@ -1256,8 +1257,10 @@ class Context:
             self.ind[s] = Ind(ser) if ser.dates else None
 
 
-def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, facts, s7_add, s7_reduce, mult_of, c7_facts=None):
-    """Circuit open set (design 1 (1), builder D5/F4). Returns (open list, per-symbol detail)."""
+def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, facts, s7_add, s7_reduce, mult_of, c7_facts=None,
+                        *, isolated=frozenset()):
+    """Circuit open set (design 1 (1), builder D5/F4). Returns (open list, per-symbol detail).
+    isolated: watch-only symbols T1 isolated (t1_isolated); status ISOLATED, no buy or sell judgement (like the core)."""
     out, detail = [], {}
     universe = sorted(set(held) | set(members))
     for sym in universe:
@@ -1267,6 +1270,8 @@ def circuit_for_session(ctx, eval_session, held, members, reg, watch_members, fa
         entry, rstat = registry_status(ctx.repo, reg, sym, is_held, watch_members)
         d = {"role": "held" if is_held else "watch", "registry": rstat}
         detail[sym] = d
+        if sym in isolated:
+            d["status"] = "ISOLATED"; continue
         if ind is None or eval_session not in ind.s.index:
             d["status"] = "NO_DATA"; continue
         if ind.s.split_suspected:
@@ -1323,6 +1328,46 @@ def canon_inputs(day):
             "watchlist": "docs/claude/watchlist-registry.json", "state": "stock-strategy-system/portfolio_state.json",
             "alert_policy": "stock-strategy-system/alert_policy.json",
             "recovery_gate_doc": "docs/claude/recovery-gate-R-REC1-2026-10-09.md"}
+
+
+def t1_isolated(t1, held, members):
+    """bar-isolate pair: the watch-only symbols T1 isolated (steps.bars.isolated) as a frozenset. No steps, bars or
+    isolated key means none (old records). Accepted form = the core's decide check: a non-empty list of dicts with keys
+    exactly symbol and reason, symbol a non-empty upper-case str without outer spaces, reason a str, no symbol twice;
+    in addition every symbol is a watch member (watch list minus held) and not held, SOXX or GRID. Anything else:
+    the isolation is ignored (empty set), so the comparison runs as before and a difference shows as MISMATCH."""
+    try:
+        if not isinstance(t1, dict) or not isinstance(t1.get("steps"), dict):
+            return frozenset()
+        bars = t1["steps"].get("bars")
+        if not isinstance(bars, dict) or "isolated" not in bars:
+            return frozenset()
+        entries = bars["isolated"]
+        if not isinstance(entries, list) or not entries:
+            return frozenset()
+        symbols = []
+        for item in entries:
+            if not isinstance(item, dict) or set(item) != {"symbol", "reason"}:
+                return frozenset()
+            s = item["symbol"]
+            if not isinstance(s, str) or not s or s != s.strip().upper() or not isinstance(item["reason"], str):
+                return frozenset()
+            symbols.append(s)
+        out = frozenset(symbols)
+        if len(out) != len(symbols) or not out <= set(members) or out & (set(held) | {"SOXX", "GRID"}):
+            return frozenset()
+        return out
+    except Exception:
+        return frozenset()
+
+
+def isolated_for_check(repo, day, held, members):
+    """t1_isolated over the canonical T1 result of the day; a read or JSON error means none."""
+    try:
+        t1 = load_json(rel(repo, canon_inputs(day)["t1_result"]))
+    except Exception:
+        return frozenset()
+    return t1_isolated(t1, held, members)
 
 
 def symbols_of_list(xs):
@@ -1534,6 +1579,7 @@ def cmd_check(args):
     held = {h["ticker"]: h.get("held_quantity") for h in snap["holdings"] if (h.get("held_quantity") or 0) > 0}
     wm = {m["code"]: m for m in wl.get("members") or []}
     members = [c for c in wm if c not in held]
+    isolated = isolated_for_check(repo, day, held, members)   # after the input sha check (T1 result sha matched)
     prev_dec = None
     prev_day = None
     for pp in sorted(glob.glob(os.path.join(repo, "workspace/outputs/auto-core", "20??-??-??", "decision.json"))):
@@ -1564,7 +1610,7 @@ def cmd_check(args):
                 if f.get("fact_id") not in seen:
                     seen.add(f.get("fact_id")); c7_facts.append(f)
     opened, detail = circuit_for_session(ctx, ev, set(held), set(members), reg, wm, facts, s7_add, s7_reduce,
-                                         lambda s: mult_of(s) or 1, c7_facts)
+                                         lambda s: mult_of(s) or 1, c7_facts, isolated=isolated)
     core = {(c["symbol"], c["side"]) for c in dec.get("candidates") or []}
     mine = {(c["symbol"], c["side"]) for c in opened}
     res["c1"] = {"oracle_open": sorted([list(x) for x in mine]), "core_candidates": sorted([list(x) for x in core]),
