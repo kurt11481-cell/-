@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-11-06",
-  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한)",
+  "updated_at": "2026-11-17",
+  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님)",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -63,16 +63,16 @@
     },
     "SOXL": {
       "role": "holding",
-      "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
-      "card_section": "## 3. SOXL 카드 (10/1 수락본 유지 + 10/2 갱신)",
-      "section_sha256": "466489c733738045fcc4c545225aac68af7926fcc2f09ae92eb801399ca688b1",
+      "card_doc": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md",
+      "card_section": "## 3. SOXL 보유 카드 v3 (Direxion Daily Semiconductor Bull 3X — 3배 10%까지 줄이는 중)",
+      "section_sha256": "04772bebbeb874b9e6318c34fe5374f9612f7d2c604d13e9aa740f30730164c2",
       "accepted": {
-        "text": "보유 3종목(MVLL·SOXL·NBIS) L2 전면 재검토 카드(2~4절, 2026-10-19 사용자 수락 \"L2 검토 HOLD 3종목 수락\", 판단 HOLD ×3)",
+        "text": "2026-11-17 보유 카드 v3 수락(사장 결정 카드 '옮기기 (TRIM·목표 10%)', 13:01:01 KST, 판단 TRIM·목표 비중 0.10 = strategy-check-1105 '3배 계좌 10%'를 카드에 옮김; 공식 테제 훼손 사실 없어 date 유지 — v2 수락 2026-10-19 'L2 검토 HOLD 3종목 수락')",
         "date": "2026-10-19",
-        "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:10"
+        "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:4"
       },
-      "card_action": "HOLD",
-      "trim_target_weight": null,
+      "card_action": "TRIM",
+      "trim_target_weight": 0.1,
       "trigger_set": "S",
       "sector": null,
       "rg2_benchmark": "SOXX",
@@ -134,38 +134,22 @@
       "kill_refs": [
         {
           "id": "S2",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:130"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:105"
         },
         {
           "id": "S3",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:131"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:106"
         },
         {
           "id": "S7",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:135"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:110"
         },
         {
           "id": "SOXL-KILL",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:121"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:95"
         }
       ],
-      "known_events": [
-        {
-          "date": "2026-10-13",
-          "label": "SEMICON West(10/13–15)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:122"
-        },
-        {
-          "date": "2026-10-15",
-          "label": "TSMC Q3 콘퍼런스(15:00 KST)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:122"
-        },
-        {
-          "date": "2026-10-20",
-          "label": "NVIDIA GTC Berlin(10/20–22, 간접)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:122"
-        }
-      ]
+      "known_events": []
     },
     "NBIS": {
       "role": "holding",
@@ -998,13 +982,13 @@
     },
     "LITE": {
       "role": "holding",
-      "card_doc": "docs/claude/holding-card-LITE-2026-11-04.md",
-      "card_section": "## 2. LITE 보유 카드 v2 (Lumentum Holdings, NASDAQ — Marvell 합병 대기)",
-      "section_sha256": "cc2e6198aaea384e72a2b89a9ededdc47aff3e551ca7636e2f0623ff3ed210f0",
+      "card_doc": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md",
+      "card_section": "## 2. LITE 보유 카드 v3 (Lumentum Holdings, NASDAQ — Marvell 합병 대기)",
+      "section_sha256": "e9a4d931429baac86f571dc29aa78442a37d90bcff496f5f94faa6abdd9040f4",
       "accepted": {
-        "text": "2026-11-04 보유 카드 v2 수락(사장 결정 카드 '갱신본 수락 (HOLD)', 13:31 KST, 판단 HOLD; 11/2 실적 8-K·Marvell 합병 8-K 반영. 합병은 공식 테제 훼손 사실이 아니라 date 유지 — 관심 카드 cardStatus 수락 2026-10-03)",
+        "text": "2026-11-17 보유 카드 v3 수락(사장 결정 카드 '갱신본 수락 (HOLD)', 13:01:04 KST, 판단 HOLD; R5 고점 검토·LT8 다시 쓰기 — Marvell 8-K 11/12·합병 425 5건 반영, 공식 테제 훼손 사실 없어 date 유지 — 관심 카드 cardStatus 수락 2026-10-03)",
         "date": "2026-10-03",
-        "source": "docs/claude/holding-card-LITE-2026-11-04.md:3"
+        "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:4"
       },
       "card_action": "HOLD",
       "trim_target_weight": null,
@@ -1088,7 +1072,7 @@
           "strength": "strong",
           "direction": "+",
           "as_of": "2026-11-02",
-          "source": "docs/claude/holding-card-LITE-2026-11-04.md:37",
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:53",
           "quote": "공식(Lumentum 8-K 2026-11-02 EX-99.1): FQ1 FY27 매출 $1,262.6M(+136.5%), non-GAAP 영업이익률 42.3%, FQ2 가이던스 매출 $1.575~1.625B·영업이익률 45.0~46.0%"
         },
         {
@@ -1097,18 +1081,18 @@
           "strength": "weak",
           "direction": "-",
           "as_of": "2026-11-03",
-          "source": "docs/claude/holding-card-LITE-2026-11-04.md:38",
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:54",
           "quote": "11/2 실적 8-K·Marvell 합병 8-K(LITE 1주=MRVL 4.500주) 뒤 11/2 종가 $684.40(−18.59%)·11/3 $680.16, 발표 전일 10/30 $840.70 아래"
         }
       ],
       "kill_refs": [
         {
           "id": "LT3",
-          "source": "docs/claude/holding-card-LITE-2026-11-04.md:54"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:70"
         },
         {
           "id": "LITE-KILL",
-          "source": "docs/claude/holding-card-LITE-2026-11-04.md:40"
+          "source": "docs/claude/holding-cards-LITE-SOXL-2026-11-17.md:56"
         }
       ],
       "known_events": []
