@@ -178,9 +178,9 @@ authority: "order_authority=false · quantity_authority 값 변경 없음 · 키
 
 | ① 자료·산출 | ② 만드는 주체·시각 | ③ 읽는 점검 — 원문 행 | ④ 바뀌는 행동 — 선 | ⑤ 끊기면 누가 아나 | ⑥ 상태 |
 |---|---|---|---|---|---|
-| 그림자 기록 `workspace/outputs/llm/news/records.jsonl` | Windows 작업 InvestmentV2-LLMPilots(`register_llm_pilots_task.ps1`) → `llm_runner.py` 55~56행 JOBS 칸 news-submit 19:30·news-collect 22:00·23:00 KST → 이 스크립트 | 182일 채점기(별도 작업, 아직 없음) — 사전 등록 `scoring.when` | 없음(그림자). 합격해도 '카드 재검토 알림' 제안까지(별도 승인) — 사전 등록 `scoring.outcomes` | 끊김 — 실행기 하루 기록 `workspace/outputs/llm/runner/<날짜>.json`의 status와 `news/<날짜>/failed.md`·`news/HALT`는 남지만 이를 읽는 예약이 없다. 메울 변경: 사장실 '결과 모음' 예약이 실행기 하루 기록을 읽게 하는 것(예약 작업 변경 승인 경로, 이 작업 밖 — 시범 켜기 제안 때 함께 올린다) | 소비자 예정(시작 + 182일) — 그때까지 화면 연결 없음 |
-| 표시용 요약 `news/<날짜>/digest.md` | 같은 수거 | 사장실 스레드 확인용(설계서 4절 '소비자'). 화면·알림 연결 없음 | 없음(표시 전용) | 위와 같음 | 표시만 |
-| 사용량 `workspace/outputs/llm/usage.jsonl` 줄(pilot news) | 같은 수거 | 이 스크립트 제출 단계 `month_spend` 예산 검사 | 월 한도에 닿으면 제출 멈춤(`BUDGET_STOP`) | 실행기 하루 기록 status BUDGET_STOP | 연결 |
+| 그림자 기록 `workspace/outputs/llm/news/records.jsonl` | Windows 작업 InvestmentV2-LLMPilots(`register_llm_pilots_task.ps1`) → `llm_runner.py` 55~56행 JOBS 칸 news-submit 19:30·news-collect 22:00·23:00 KST → 이 스크립트 | 끊김 — 182일 채점기는 아직 없다(원문 `docs/claude/llm-news-prereg-v1.json:243` `scoring.when`, `docs/claude/api-pilots-2026-11-06.md:150`). 메울 변경: 182일 채점기 작업(별도 개발 큐 작업) · 승인 경로: 사장 개발 큐 등록 | 없음(그림자). 합격해도 '카드 재검토 알림' 제안까지(별도 승인) — 사전 등록 `scoring.outcomes` | 끊김 — 실행기 하루 기록 `workspace/outputs/llm/runner/<날짜>.json`의 status와 `news/<날짜>/failed.md`·`news/HALT`는 남지만 이를 읽는 예약이 없다. 메울 변경: 사장실 '결과 모음' 예약이 실행기 하루 기록을 읽게 하는 것(예약 작업 변경 승인 경로, 이 작업 밖 — 시범 켜기 제안 때 함께 올린다) | 소비자 예정(시작 + 182일) — 그때까지 화면 연결 없음 |
+| 표시용 요약 `news/<날짜>/digest.md` | 같은 수거 | 사람 단계 — 자동으로 읽는 쪽 없음(원문 `docs/claude/api-pilots-2026-11-06.md:150` '사장실 지정 시 표시, 지정 전에는 이 스레드 확인용'). 사장실 지정은 별도 승인 | 없음(표시 전용) | 끊김 — 1행 ⑤와 같은 메울 변경 | 표시만 |
+| 사용량 `workspace/outputs/llm/usage.jsonl` 줄(pilot news) | 같은 수거 | 이 스크립트 제출 단계 `month_spend` 예산 검사 — `manage-us-stock-strategy/scripts/llm_pilot_news.py:436-442` | 월 한도에 닿으면 제출 멈춤(`BUDGET_STOP`) | 끊김 — 실행기 하루 기록 status BUDGET_STOP을 읽는 예약이 없다. 1행 ⑤와 같은 메울 변경 | 연결(예산 검사) · 알림 끊김 |
 
 ## Judge 확인 항목
 1. diff가 허용 파일 3개뿐이고 모두 새 파일이다. 사전 등록 두 파일·켜기 파일·공통 모듈 변화 없음.
