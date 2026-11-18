@@ -25,13 +25,13 @@
     "approved_kst": ""
   },
   "news-submit": {
-    "enabled": false,
-    "approved_ref": "",
-    "approved_kst": ""
+    "enabled": true,
+    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9Dsw5QTnLTiEax2PT344fvi option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
+    "approved_kst": "2026-11-18 13:57:47 KST"
   },
   "news-collect": {
-    "enabled": false,
-    "approved_ref": "",
-    "approved_kst": ""
+    "enabled": true,
+    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9Dsw5QTnLTiEax2PT344fvi option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
+    "approved_kst": "2026-11-18 13:57:47 KST"
   }
 }
