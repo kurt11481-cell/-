@@ -9,7 +9,7 @@
     "SPY",
     "QQQ"
   ],
-  "decision_mode": "compare",
+  "decision_mode": "apply",
   "decision_compare_days_required": 5,
   "decide_schedule_kst": "07:45",
   "reissue_buy_cap_not_above_first": false,
