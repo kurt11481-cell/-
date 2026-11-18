@@ -1,0 +1,271 @@
+{
+  "schema": "llm-news-prereg/1",
+  "id": "llm-news-prereg-v1",
+  "fixed_at_kst": "2026-11-06",
+  "source": "사장 결정 2026-11-06 14:26:18 KST '세개 다 시범으로 도입' (시범 2: 공시·뉴스 요약 + 그림자 점수)",
+  "authority": "CONTEXT_ONLY shadow record. Scores are hidden and connected to nothing until a separate approval after scoring; any trading rule needs a §20 pre-registered test.",
+  "question": "Do Haiku labels on anonymized news headlines predict the next-5-session excess return vs SPY?",
+  "universe": [
+    "MRVL",
+    "NBIS",
+    "MU",
+    "BE",
+    "DELL",
+    "PWR",
+    "LITE",
+    "NVDA",
+    "AVGO",
+    "AMD",
+    "TSM",
+    "ASML",
+    "QCOM",
+    "TXN",
+    "INTC",
+    "AMAT",
+    "LRCX",
+    "KLAC",
+    "ADI",
+    "ARM",
+    "SMCI",
+    "ANET",
+    "COHR",
+    "CIEN",
+    "VRT",
+    "PLTR",
+    "SNDK",
+    "WDC",
+    "MPWR",
+    "ON"
+  ],
+  "aliases": {
+    "MRVL": [
+      "Marvell Technology",
+      "Marvell"
+    ],
+    "NBIS": [
+      "Nebius Group",
+      "Nebius"
+    ],
+    "MU": [
+      "Micron Technology",
+      "Micron"
+    ],
+    "BE": [
+      "Bloom Energy"
+    ],
+    "DELL": [
+      "Dell Technologies",
+      "Dell"
+    ],
+    "PWR": [
+      "Quanta Services",
+      "Quanta"
+    ],
+    "LITE": [
+      "Lumentum Holdings",
+      "Lumentum"
+    ],
+    "NVDA": [
+      "NVIDIA",
+      "Nvidia"
+    ],
+    "AVGO": [
+      "Broadcom"
+    ],
+    "AMD": [
+      "Advanced Micro Devices",
+      "AMD"
+    ],
+    "TSM": [
+      "Taiwan Semiconductor Manufacturing",
+      "Taiwan Semiconductor",
+      "TSMC"
+    ],
+    "ASML": [
+      "ASML Holding",
+      "ASML"
+    ],
+    "QCOM": [
+      "Qualcomm"
+    ],
+    "TXN": [
+      "Texas Instruments"
+    ],
+    "INTC": [
+      "Intel"
+    ],
+    "AMAT": [
+      "Applied Materials"
+    ],
+    "LRCX": [
+      "Lam Research"
+    ],
+    "KLAC": [
+      "KLA Corporation",
+      "KLA Corp",
+      "KLA"
+    ],
+    "ADI": [
+      "Analog Devices"
+    ],
+    "ARM": [
+      "Arm Holdings",
+      "Arm"
+    ],
+    "SMCI": [
+      "Super Micro Computer",
+      "Supermicro",
+      "Super Micro"
+    ],
+    "ANET": [
+      "Arista Networks",
+      "Arista"
+    ],
+    "COHR": [
+      "Coherent"
+    ],
+    "CIEN": [
+      "Ciena"
+    ],
+    "VRT": [
+      "Vertiv Holdings",
+      "Vertiv"
+    ],
+    "PLTR": [
+      "Palantir Technologies",
+      "Palantir"
+    ],
+    "SNDK": [
+      "SanDisk",
+      "Sandisk"
+    ],
+    "WDC": [
+      "Western Digital"
+    ],
+    "MPWR": [
+      "Monolithic Power Systems",
+      "Monolithic Power"
+    ],
+    "ON": [
+      "ON Semiconductor",
+      "onsemi"
+    ]
+  },
+  "masking": {
+    "target": "[COMPANY]",
+    "other_universe": "[OTHER]",
+    "rules": [
+      "ticker symbols are replaced case-sensitively (uppercase as listed) and only in these ticker forms: an exchange prefix NASDAQ or NYSE (prefix in any letter case, with or without spaces around the colon, with or without surrounding parentheses) followed by XXX, e.g. (NASDAQ: MU), NASDAQ:MU, Nasdaq: MU; XXX alone inside parentheses, e.g. (MU); $XXX; XXX.O; or a standalone uppercase token of 3 or more letters",
+      "aliases are replaced as whole words; aliases listed in case_sensitive_aliases are replaced case-sensitively, all other aliases case-insensitively",
+      "the target becomes [COMPANY]; every other universe member becomes [OTHER] by the same rules",
+      "URLs are removed"
+    ],
+    "case_sensitive_aliases": [
+      "Arm",
+      "Coherent",
+      "Dell",
+      "Intel",
+      "Micron",
+      "Quanta"
+    ]
+  },
+  "model": {
+    "id": "claude-haiku-5-5",
+    "route": "message_batches",
+    "effort": "low",
+    "max_tokens": 1024,
+    "output": "structured (output_config.format json_schema)",
+    "server_side_fallback": false
+  },
+  "label_system_prompt": "You score short news items about one publicly traded U.S. company whose name and ticker have been replaced with [COMPANY]. Names of some other companies may be replaced with [OTHER].\nFor each item decide whether the news, judged only from the given text, is more likely good or bad for [COMPANY]'s share price over the next five trading days.\nRules:\n1. Use only the given title and summary. Do not try to identify the company and do not use outside knowledge about which company it is.\n2. Answer \"good\" or \"bad\" only when the text itself gives a clear reason (results, guidance, orders, contracts, regulation, litigation, ratings, management changes, supply, demand, financing).\n3. Answer \"unknown\" when the item is not mainly about [COMPANY], when the effect is mixed or unclear, or when the text is only a price move without a reason.\n4. reason: one short English sentence, at most 80 characters, naming the decisive fact from the text.\nReturn only the JSON object required by the schema.",
+  "label_schema": {
+    "type": "object",
+    "properties": {
+      "label": {
+        "type": "string",
+        "enum": [
+          "good",
+          "bad",
+          "unknown"
+        ]
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "label",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "user_message_template": "Title: {title}\nSummary: {summary}",
+  "item_rule": {
+    "source": "yfinance Ticker(symbol).news, fetched at submission time",
+    "include": "items first seen at this submission whose published time is within 24 hours before submission",
+    "dedupe": "by item id; the first sighting wins",
+    "empty_text": "items with empty title are skipped"
+  },
+  "timing": {
+    "submit_kst": "19:30 daily",
+    "collect_kst": [
+      "22:00",
+      "23:00"
+    ],
+    "target_session": "s(d) = the first U.S. regular session whose open is after the submission time on KST day d",
+    "sample_rule": "a label enters the sample only if its batch result was received before the open of s(d); later results are kept in the record but excluded (no shifting to a later session)",
+    "received_at": "the KST time at which the collection script received the batch result (not the batch end time)",
+    "collect_note": "30 minutes before the summer (22:30 KST) and winter (23:30 KST) U.S. regular open, so the runner's 10-minute interval cannot push a normal collection past the open"
+  },
+  "unit": {
+    "definition": "(symbol, s(d)): items of all KST record days d that share the same target session s(d) are pooled into one unit (e.g. Saturday, Sunday and Monday KST map to the same Monday session)",
+    "score": "mean of labels mapped good=+1, bad=-1, unknown=0 over the items of that unit",
+    "groups": "score > 0 positive, score < 0 negative, score = 0 excluded"
+  },
+  "outcome": {
+    "R": "(close of session s(d)+4 / open of s(d)) - (SPY close of s(d)+4 / SPY open of s(d))",
+    "prices": "daily bars from Yahoo via yfinance at scoring time (split-adjusted)"
+  },
+  "primary_statistic": {
+    "D": "mean(R | positive) - mean(R | negative)",
+    "test": "weekly block bootstrap by ISO week of s(d), 10000 replicates, seed 20261106",
+    "pass_if": "one-sided 95% lower bound of D > 0 AND D > D_base"
+  },
+  "baseline": {
+    "D_base": "same D with groups from the sign of the prior excess return (close s(d)-1 / close s(d)-6) - (SPY same)"
+  },
+  "minimums": {
+    "n_positive": 60,
+    "n_negative": 60,
+    "run_success_share": "submissions that produced labels before the open on >= 70% of U.S. trading days in the period"
+  },
+  "scoring": {
+    "when": "start date + 182 days, once (start = first submission day, written as the first line of records.jsonl)",
+    "outcomes": {
+      "pass": "propose a card-review alert (separate approval)",
+      "fail": "question closed (NO_CHANGE)",
+      "inconclusive": "minimums not met: ask once; no answer = closed"
+    }
+  },
+  "halt": [
+    "response model is neither claude-haiku-5-5 nor claude-haiku-5-5-YYYYMMDD (a hyphen followed by exactly 8 digits)",
+    "HTTP 404 model not found",
+    "prereg sha256 mismatch"
+  ],
+  "record": {
+    "path": "workspace/outputs/llm/news/records.jsonl",
+    "fields": [
+      "symbol",
+      "item_id",
+      "published_at",
+      "first_seen_at",
+      "submitted_at",
+      "received_at",
+      "label",
+      "reason",
+      "model",
+      "prev_sha256"
+    ],
+    "integrity": "append-only; each line carries the sha256 of the previous line"
+  }
+}
