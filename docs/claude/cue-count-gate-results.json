@@ -1,0 +1,4145 @@
+{
+ "generated_at_kst": "2026-11-18T11:45:41+09:00",
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v595-x86_64-with-glibc2.39"
+ },
+ "prior_stop_records": [],
+ "contract": {
+  "raw_sha256": "9fd73d42f815b3fc59cd4efd59bde1f7563f2422a9e9673e2d12ae9d57990a89",
+  "runner_sha256": "6b79a6f4acb2cf98e5a4f3eb8f4417afae27a268ae7009fe54cb1aca3d0ff660",
+  "fixed_at": "2026-11-18T11:41:34+09:00",
+  "amended_at": []
+ },
+ "pinned": {
+  "soxl": {
+   "path": "stock-strategy-system/backtests/fx5b_inputs_2026-10-09/kiwoom_raw/SOXL_kiwoom_usa06012_daily_adj1_20261009.json",
+   "sha256": "e8faa3ac68bf2c283b2c4ae84c232cbb60a3a2b61dddc7869dee03c37aba980f"
+  },
+  "sources": {
+   "path": "stock-strategy-system/backtests/fx5b_inputs_2026-10-09/kiwoom_raw_sources.json",
+   "sha256": "62eeb50f4ff19012cb59de5c215092028d6cb33ab2a3d835a07d8924b1e819e6"
+  },
+  "dgs3mo": {
+   "path": "stock-strategy-system/backtests/rule1028_a3_inputs_2026-10-28/fred/DGS3MO.csv",
+   "sha256": "739d4ce160fb4f294837e2573d29b5f9a0f4e4642f15e100d841870849c8230a"
+  },
+  "core_rules": {
+   "path": "manage-us-stock-strategy/scripts/auto_core_rules.py",
+   "sha256": "ba979d234ea95644c6bb78456e8f500974060ab96c23f8dafe97281acaa4ea6a"
+  },
+  "core_tickets": {
+   "path": "manage-us-stock-strategy/scripts/auto_core_tickets.py",
+   "sha256": "4e9deac04772cfda5e4776da3a1dee8426cebe4edaee12b1f661713175786b64"
+  },
+  "exposure": {
+   "path": "manage-us-stock-strategy/scripts/portfolio_exposure.py",
+   "sha256": "9a5360c58f55b18a36c906c011132588152e85cd20cce6bc768288a7a1b1fb09"
+  },
+  "registry": {
+   "path": "docs/claude/card-evidence-registry.json",
+   "sha256": "9a46c3464f545be8976b72a050e8da15a316649ce70e1cdbd6a29e6110c5b3c9"
+  }
+ },
+ "inputs": {
+  "placeholders_dropped": 0,
+  "provisional_row_dropped": "2026-10-08",
+  "first": "2010-04-05",
+  "last": "2026-10-07",
+  "rows": 4151,
+  "sessions_per_year": {
+   "2010": 187,
+   "2011": 252,
+   "2012": 250,
+   "2013": 252,
+   "2014": 252,
+   "2015": 252,
+   "2016": 252,
+   "2017": 251,
+   "2018": 251,
+   "2019": 252,
+   "2020": 253,
+   "2021": 252,
+   "2022": 251,
+   "2023": 250,
+   "2024": 252,
+   "2025": 250,
+   "2026": 192
+  },
+  "gaps_of_5_days_or_more": [
+   [
+    "2010-05-28",
+    "2010-06-02",
+    5
+   ],
+   [
+    "2010-06-04",
+    "2010-06-09",
+    5
+   ],
+   [
+    "2012-10-26",
+    "2012-10-31",
+    5
+   ]
+  ],
+  "close_outside_high_low": 0,
+  "zero_volume_rows": 0,
+  "zero_volume_days": [],
+  "adjustment_flag_rows": [
+   {
+    "day": "2015-05-20",
+    "upd_stkpc_tp": "3231",
+    "upd_rt": -75.0,
+    "close_ratio": 1.005224617409906
+   },
+   {
+    "day": "2021-03-02",
+    "upd_stkpc_tp": "3231",
+    "upd_rt": -93.333,
+    "close_ratio": 0.9057779469503126
+   }
+  ],
+  "adjustment_flags_on_dropped_rows": [],
+  "min_close_ratio": [
+   "2020-03-16",
+   0.6140640513519131
+  ],
+  "max_close_ratio": [
+   "2025-04-09",
+   1.5478787878787879
+  ],
+  "extreme_close_ratios": [],
+  "identity": [
+   {
+    "day": "2026-09-15",
+    "reference": 102.33,
+    "ratio": 0.9999022769471317
+   },
+   {
+    "day": "2026-10-01",
+    "reference": 153.75,
+    "ratio": 0.999609756097561
+   }
+  ],
+  "source_record": {
+   "ticker": "SOXL",
+   "exchange": "NYSE",
+   "called_kst": "2026-10-09 16:37",
+   "rows": 4152,
+   "first": "2010-04-05",
+   "last": "2026-10-08"
+  }
+ },
+ "checks": {
+  "truncation_cuts": 15,
+  "truncation_cut_days": [
+   "2010-07-20",
+   "2010-08-30",
+   "2010-10-27",
+   "2010-11-09",
+   "2012-07-19",
+   "2014-08-01",
+   "2016-08-10",
+   "2018-08-21",
+   "2020-04-29",
+   "2020-08-31",
+   "2020-09-02",
+   "2022-09-12",
+   "2024-09-23",
+   "2026-06-02",
+   "2026-06-04"
+  ],
+  "evidence_sessions": 4086
+ },
+ "design": {
+  "symbol": "SOXL",
+  "multiplier": 3,
+  "target_weight": 0.516,
+  "reduce_gte": 1.85,
+  "hard_gte": 1.9,
+  "add_lte": 1.25,
+  "warmup": 65,
+  "account_opens": "2010-07-12",
+  "judged_window": [
+   "2010-07-13",
+   "2026-10-07"
+  ],
+  "halves": [
+   [
+    "2010-07-13",
+    "2018-12-31"
+   ],
+   [
+    "2019-01-02",
+    "2026-10-07"
+   ]
+  ],
+  "costs_bp": [
+   10.0,
+   50.0
+  ],
+  "card_triggers": [
+   {
+    "id": "S4",
+    "kind": "ema20_below_twice",
+    "side": "-",
+    "strength": "weak",
+    "params": {}
+   },
+   {
+    "id": "S5",
+    "kind": "ema_below_unrecovered",
+    "side": "-",
+    "strength": "weak",
+    "params": {
+     "ema": 50,
+     "sessions": 2
+    }
+   },
+   {
+    "id": "S6",
+    "kind": "drop_alert",
+    "side": "alert",
+    "strength": "review",
+    "params": {
+     "one_day": 0.2,
+     "five_day": 0.25
+    }
+   },
+   {
+    "id": "S8",
+    "kind": "close_at_or_below",
+    "side": "alert",
+    "strength": "review",
+    "params": {
+     "price": "98.66"
+    }
+   }
+  ]
+ },
+ "gates": {
+  "Q1": {
+   "pass": true,
+   "U": 6,
+   "G": 267
+  },
+  "Q2": {
+   "pass": true,
+   "U_mdd": -0.66045331547616,
+   "G_mdd": -0.6788583935507673
+  },
+  "Q3": {
+   "pass": true,
+   "U_cagr": 0.33470272040435844,
+   "G_cagr": 0.3390450447321187,
+   "U_calmar": 0.5067772582276332,
+   "G_calmar": 0.4994341205074366
+  },
+  "Q4": {
+   "pass": false,
+   "halves": [
+    true,
+    false
+   ],
+   "full": false
+  },
+  "Q5": {
+   "pass": false,
+   "q2": true,
+   "q3": false
+  },
+  "Q6": {
+   "pass": true,
+   "halves": [
+    [
+     true,
+     true
+    ],
+    [
+     true,
+     true
+    ]
+   ]
+  },
+  "Q7": {
+   "pass": true,
+   "episodes": 118,
+   "blocked_days": 532
+  },
+  "champion_ahead": {
+   "pass": false
+  }
+ },
+ "verdict": "INCONCLUSIVE",
+ "judged": {
+  "full_10bp": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "G": {
+    "cagr": 0.3390450447321187,
+    "mdd": -0.6788583935507673,
+    "calmar": 0.4994341205074366,
+    "sessions": 4085,
+    "total": 112.60311203628628,
+    "avg_weight": 0.5655776323274483,
+    "avg_exposure": 1.696732896982345,
+    "max_exposure": 2.1876257277037485,
+    "sessions_hard": 267,
+    "sessions_reduce_zone": 607,
+    "sessions_add_zone": 21,
+    "reduce_episodes": 118,
+    "longest_episode_sessions": 34,
+    "blocked_days": 532,
+    "sell_tickets": 75,
+    "sell_fills": 62,
+    "buy_tickets": 21,
+    "buy_fills": 13,
+    "sell_steps": {
+     "1/3": 74,
+     "1/2": 1
+    }
+   },
+   "U": {
+    "cagr": 0.33470272040435844,
+    "mdd": -0.66045331547616,
+    "calmar": 0.5067772582276332,
+    "sessions": 4085,
+    "total": 106.77630486623215,
+    "avg_weight": 0.5497782867557801,
+    "avg_exposure": 1.6493348602673406,
+    "max_exposure": 1.9290543913391835,
+    "sessions_hard": 6,
+    "sessions_reduce_zone": 65,
+    "sessions_add_zone": 29,
+    "reduce_episodes": 64,
+    "longest_episode_sessions": 2,
+    "blocked_days": 0,
+    "sell_tickets": 65,
+    "sell_fills": 57,
+    "buy_tickets": 29,
+    "buy_fills": 17,
+    "sell_steps": {
+     "1/3": 0,
+     "1/2": 65
+    }
+   },
+   "F_G": {
+    "cagr": 0.34279918558657196,
+    "mdd": -0.6627089652677753,
+    "calmar": 0.517269576167662,
+    "sessions": 4085,
+    "total": 117.87761126344722
+   },
+   "F_U": {
+    "cagr": 0.3365724194411117,
+    "mdd": -0.651843646615726,
+    "calmar": 0.5163391883752262,
+    "sessions": 4085,
+    "total": 109.2499352276526
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4009
+  },
+  "full_50bp": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "G": {
+    "cagr": 0.33860943049637826,
+    "mdd": -0.6765909979723168,
+    "calmar": 0.5004639900784383,
+    "sessions": 4085,
+    "total": 112.00550669596848,
+    "avg_weight": 0.5658566690206642,
+    "avg_exposure": 1.6975700070619928,
+    "max_exposure": 2.188292035324079,
+    "sessions_hard": 269,
+    "sessions_reduce_zone": 611,
+    "sessions_add_zone": 20,
+    "reduce_episodes": 120,
+    "longest_episode_sessions": 34,
+    "blocked_days": 536,
+    "sell_tickets": 75,
+    "sell_fills": 62,
+    "buy_tickets": 20,
+    "buy_fills": 13,
+    "sell_steps": {
+     "1/3": 74,
+     "1/2": 1
+    }
+   },
+   "U": {
+    "cagr": 0.32818982516201056,
+    "mdd": -0.6612209755669199,
+    "calmar": 0.49633910188742275,
+    "sessions": 4085,
+    "total": 98.56028800867816,
+    "avg_weight": 0.550008724258031,
+    "avg_exposure": 1.650026172774093,
+    "max_exposure": 1.9297370993075411,
+    "sessions_hard": 7,
+    "sessions_reduce_zone": 64,
+    "sessions_add_zone": 30,
+    "reduce_episodes": 63,
+    "longest_episode_sessions": 2,
+    "blocked_days": 0,
+    "sell_tickets": 64,
+    "sell_fills": 55,
+    "buy_tickets": 30,
+    "buy_fills": 16,
+    "sell_steps": {
+     "1/3": 0,
+     "1/2": 64
+    }
+   },
+   "F_G": {
+    "cagr": 0.3421870622792351,
+    "mdd": -0.663075357207988,
+    "calmar": 0.5160605933540985,
+    "sessions": 4085,
+    "total": 117.00219534250766
+   },
+   "F_U": {
+    "cagr": 0.3359393107861175,
+    "mdd": -0.6521871549120064,
+    "calmar": 0.5150964845841569,
+    "sessions": 4085,
+    "total": 108.40642218667995
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4009
+  },
+  "halves_10bp": [
+   {
+    "window": [
+     "2010-07-13",
+     "2018-12-31"
+    ],
+    "G": {
+     "cagr": 0.22855020472830812,
+     "mdd": -0.4627914959063888,
+     "calmar": 0.4938513493656291,
+     "sessions": 2133,
+     "total": 4.710144774991414,
+     "avg_weight": 0.5638691276882419,
+     "avg_exposure": 1.6916073830647258,
+     "max_exposure": 2.0136683025999518,
+     "sessions_hard": 117,
+     "sessions_reduce_zone": 276,
+     "sessions_add_zone": 5,
+     "reduce_episodes": 43,
+     "longest_episode_sessions": 34,
+     "blocked_days": 250,
+     "sell_tickets": 26,
+     "sell_fills": 24,
+     "buy_tickets": 5,
+     "buy_fills": 4,
+     "sell_steps": {
+      "1/3": 25,
+      "1/2": 1
+     }
+    },
+    "U": {
+     "cagr": 0.2288954663991476,
+     "mdd": -0.4598083733415018,
+     "calmar": 0.4978062159584594,
+     "sessions": 2133,
+     "total": 4.723741942270444,
+     "avg_weight": 0.5560207493758749,
+     "avg_exposure": 1.6680622481276246,
+     "max_exposure": 1.8851637172625804,
+     "sessions_hard": 0,
+     "sessions_reduce_zone": 27,
+     "sessions_add_zone": 10,
+     "reduce_episodes": 27,
+     "longest_episode_sessions": 1,
+     "blocked_days": 0,
+     "sell_tickets": 27,
+     "sell_fills": 23,
+     "buy_tickets": 10,
+     "buy_fills": 6,
+     "sell_steps": {
+      "1/3": 0,
+      "1/2": 27
+     }
+    },
+    "F_G": {
+     "cagr": 0.22582429625910305,
+     "mdd": -0.4839755171626068,
+     "calmar": 0.46660272730951036,
+     "sessions": 2133,
+     "total": 4.603788831495299
+    },
+    "F_U": {
+     "cagr": 0.2236637806109698,
+     "mdd": -0.478937079843581,
+     "calmar": 0.4670003431014728,
+     "sessions": 2133,
+     "total": 4.520737618875227
+    },
+    "hold": {
+     "cagr": 0.30707637075934513,
+     "mdd": -0.72608905320688,
+     "calmar": 0.4229183313026092,
+     "sessions": 2133,
+     "total": 8.647273358805151
+    },
+    "sessions_weight_differs": 2057
+   },
+   {
+    "window": [
+     "2019-01-02",
+     "2026-10-07"
+    ],
+    "G": {
+     "cagr": 0.47117930235805816,
+     "mdd": -0.6788583935507673,
+     "calmar": 0.6940759764250036,
+     "sessions": 1952,
+     "total": 18.89496177642135,
+     "avg_weight": 0.5674445587595319,
+     "avg_exposure": 1.7023336762785957,
+     "max_exposure": 2.1876257277037485,
+     "sessions_hard": 150,
+     "sessions_reduce_zone": 331,
+     "sessions_add_zone": 16,
+     "reduce_episodes": 75,
+     "longest_episode_sessions": 20,
+     "blocked_days": 282,
+     "sell_tickets": 49,
+     "sell_fills": 38,
+     "buy_tickets": 16,
+     "buy_fills": 9,
+     "sell_steps": {
+      "1/3": 49,
+      "1/2": 0
+     }
+    },
+    "U": {
+     "cagr": 0.4607643890416919,
+     "mdd": -0.66045331547616,
+     "calmar": 0.6976486880219528,
+     "sessions": 1952,
+     "total": 17.82969322398913,
+     "avg_weight": 0.542956989230851,
+     "avg_exposure": 1.6288709676925528,
+     "max_exposure": 1.9290543913391835,
+     "sessions_hard": 6,
+     "sessions_reduce_zone": 38,
+     "sessions_add_zone": 19,
+     "reduce_episodes": 37,
+     "longest_episode_sessions": 2,
+     "blocked_days": 0,
+     "sell_tickets": 38,
+     "sell_fills": 34,
+     "buy_tickets": 19,
+     "buy_fills": 11,
+     "sell_steps": {
+      "1/3": 0,
+      "1/2": 38
+     }
+    },
+    "F_G": {
+     "cagr": 0.48456204875705566,
+     "mdd": -0.663974464271496,
+     "calmar": 0.7297901874716082,
+     "sessions": 1952,
+     "total": 20.340583915421277
+    },
+    "F_U": {
+     "cagr": 0.4711247089773769,
+     "mdd": -0.6470648516597065,
+     "calmar": 0.7280950398850329,
+     "sessions": 1952,
+     "total": 18.889243799412203
+    },
+    "hold": {
+     "cagr": 0.5418017439853062,
+     "mdd": -0.905055487053021,
+     "calmar": 0.5986392566377158,
+     "sessions": 1952,
+     "total": 27.607175646726272
+    },
+    "sessions_weight_differs": 1952
+   }
+  ]
+ },
+ "report_only": {
+  "by_year_10bp": {
+   "2010": {
+    "sessions": 121,
+    "SOXL": 0.4470302188259814,
+    "G_return": 0.32384375139579924,
+    "U_return": 0.3038324357257145,
+    "G_avg_exposure": 1.69109459291668,
+    "U_avg_exposure": 1.6603036829224527
+   },
+   "2011": {
+    "sessions": 252,
+    "SOXL": -0.48067690830532894,
+    "G_return": -0.23081926280504816,
+    "U_return": -0.21478913353629403,
+    "G_avg_exposure": 1.5660183372761065,
+    "U_avg_exposure": 1.5582543178123287
+   },
+   "2012": {
+    "sessions": 250,
+    "SOXL": 0.03582158539403757,
+    "G_return": 0.017566152446628402,
+    "U_return": 0.06537541092567212,
+    "G_avg_exposure": 1.544659269584377,
+    "U_avg_exposure": 1.6435384543046485
+   },
+   "2013": {
+    "sessions": 252,
+    "SOXL": 1.566711289602856,
+    "G_return": 0.7219057106592843,
+    "U_return": 0.7483431492318846,
+    "G_avg_exposure": 1.7595145491592978,
+    "U_avg_exposure": 1.7371266253165945
+   },
+   "2014": {
+    "sessions": 252,
+    "SOXL": 0.953233657858136,
+    "G_return": 0.5074619171651067,
+    "U_return": 0.4896455846391423,
+    "G_avg_exposure": 1.775974733470106,
+    "U_avg_exposure": 1.7450065085223592
+   },
+   "2015": {
+    "sessions": 252,
+    "SOXL": -0.20569648420115705,
+    "G_return": -0.06404682751317359,
+    "U_return": -0.06984217566378226,
+    "G_avg_exposure": 1.6982999899209408,
+    "U_avg_exposure": 1.6416279438503885
+   },
+   "2016": {
+    "sessions": 252,
+    "SOXL": 1.1329560735096371,
+    "G_return": 0.6090486666137873,
+    "U_return": 0.5685356348066177,
+    "G_avg_exposure": 1.7439152328184049,
+    "U_avg_exposure": 1.6902339908163222
+   },
+   "2017": {
+    "sessions": 251,
+    "SOXL": 1.4150358559457823,
+    "G_return": 0.7436253433734821,
+    "U_return": 0.6955409722137853,
+    "G_avg_exposure": 1.8138521025815404,
+    "U_avg_exposure": 1.7411080694706629
+   },
+   "2018": {
+    "sessions": 251,
+    "SOXL": -0.3957993430355239,
+    "G_return": -0.1914867371337341,
+    "U_return": -0.1854826451171071,
+    "G_avg_exposure": 1.6299452224843722,
+    "U_avg_exposure": 1.5911173117815691
+   },
+   "2019": {
+    "sessions": 252,
+    "SOXL": 2.2983852094547155,
+    "G_return": 1.025566387671815,
+    "U_return": 1.003350553732255,
+    "G_avg_exposure": 1.6860751909757088,
+    "U_avg_exposure": 1.6423512290897735
+   },
+   "2020": {
+    "sessions": 253,
+    "SOXL": 0.6974053334206594,
+    "G_return": 0.752250869679711,
+    "U_return": 0.6770270597145727,
+    "G_avg_exposure": 1.7545758097204531,
+    "U_avg_exposure": 1.6796884611354932
+   },
+   "2021": {
+    "sessions": 252,
+    "SOXL": 1.1868026572176387,
+    "G_return": 0.6276821082748412,
+    "U_return": 0.6064170291221511,
+    "G_avg_exposure": 1.7624497978658993,
+    "U_avg_exposure": 1.6631875130612492
+   },
+   "2022": {
+    "sessions": 251,
+    "SOXL": -0.8578150272018821,
+    "G_return": -0.5924703675304277,
+    "U_return": -0.5859542677692628,
+    "G_avg_exposure": 1.597786395812034,
+    "U_avg_exposure": 1.495488501911019
+   },
+   "2023": {
+    "sessions": 250,
+    "SOXL": 2.247156153050672,
+    "G_return": 1.1002508016098211,
+    "U_return": 1.161242784482425,
+    "G_avg_exposure": 1.7222752465931648,
+    "U_avg_exposure": 1.645952629472457
+   },
+   "2024": {
+    "sessions": 252,
+    "SOXL": -0.13025477707006372,
+    "G_return": 0.05168191909125186,
+    "U_return": 0.042765397247014336,
+    "G_avg_exposure": 1.6899187181461737,
+    "U_avg_exposure": 1.6346695137639289
+   },
+   "2025": {
+    "sessions": 250,
+    "SOXL": 0.5389967045038448,
+    "G_return": 0.5635008804374673,
+    "U_return": 0.5360458322061208,
+    "G_avg_exposure": 1.6912488186935222,
+    "U_avg_exposure": 1.6290433623025502
+   },
+   "2026": {
+    "sessions": 192,
+    "SOXL": 2.780870806566738,
+    "G_return": 1.4469092570802897,
+    "U_return": 1.4341384138098174,
+    "G_avg_exposure": 1.7173668771100568,
+    "U_avg_exposure": 1.6434679992426984
+   }
+  },
+  "G_blocked_days_with_U_sell_ticket": 33,
+  "G_blocked_days_with_U_sell_filled": 30,
+  "evidence": {
+   "sessions": 4085,
+   "sessions_by_kind": {
+    "trend_break": 1620,
+    "rebound_fail": 214,
+    "new_low": 594,
+    "overheat": 708,
+    "overheat_fade": 240,
+    "false_breakout": 745
+   },
+   "sessions_by_number_of_kinds": {
+    "0": 1164,
+    "1": 1810,
+    "2": 1024,
+    "3+": 87
+   },
+   "basis_met_sessions": 1111,
+   "common_only_sessions": 1301,
+   "basis_met_combinations": {
+    "rebound_fail+trend_break": 129,
+    "new_low+rebound_fail+trend_break": 38,
+    "new_low+trend_break": 546,
+    "false_breakout+overheat": 139,
+    "overheat+overheat_fade": 55,
+    "false_breakout+overheat+overheat_fade": 27,
+    "false_breakout+trend_break": 66,
+    "false_breakout+overheat_fade": 84,
+    "false_breakout+overheat_fade+trend_break": 9,
+    "overheat_fade+trend_break": 1,
+    "false_breakout+new_low+trend_break": 8,
+    "overheat+rebound_fail": 3,
+    "false_breakout+rebound_fail+trend_break": 3,
+    "false_breakout+new_low+overheat_fade+trend_break": 2,
+    "false_breakout+rebound_fail": 1
+   }
+  },
+  "blocked_days_by_kinds": {
+   "false_breakout": 71,
+   "none": 164,
+   "overheat": 279,
+   "overheat_fade": 12,
+   "rebound_fail": 2,
+   "trend_break": 4
+  },
+  "blocked_days_by_year": {
+   "2010": 17,
+   "2011": 19,
+   "2013": 46,
+   "2014": 31,
+   "2015": 2,
+   "2016": 47,
+   "2017": 84,
+   "2018": 4,
+   "2019": 18,
+   "2020": 59,
+   "2021": 28,
+   "2022": 25,
+   "2023": 40,
+   "2024": 32,
+   "2025": 39,
+   "2026": 41
+  },
+  "no_ticket_reasons": {
+   "G_10": {
+    "BASIS_NOT_MET": 532
+   },
+   "G_50": {
+    "BASIS_NOT_MET": 536
+   },
+   "U_10": {},
+   "U_50": {}
+  },
+  "unfilled": {
+   "G_10": {
+    "sell": 13,
+    "buy": 8
+   },
+   "G_50": {
+    "sell": 13,
+    "buy": 7
+   },
+   "U_10": {
+    "sell": 8,
+    "buy": 12
+   },
+   "U_50": {
+    "sell": 9,
+    "buy": 14
+   }
+  },
+  "G_episodes": [
+   {
+    "first": "2010-10-27",
+    "last": "2010-11-09",
+    "sessions": 10,
+    "max_exposure": 1.9963858992864143,
+    "blocked_days": 9,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2010-11-22",
+    "last": "2010-11-22",
+    "sessions": 1,
+    "max_exposure": 1.852641117199489,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2010-11-24",
+    "last": "2010-11-29",
+    "sessions": 3,
+    "max_exposure": 1.8877917818615408,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2010-12-01",
+    "last": "2010-12-07",
+    "sessions": 5,
+    "max_exposure": 1.9562276443630051,
+    "blocked_days": 4,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2011-01-06",
+    "last": "2011-02-07",
+    "sessions": 22,
+    "max_exposure": 2.005502688077738,
+    "blocked_days": 19,
+    "sell_tickets": 3
+   },
+   {
+    "first": "2013-05-10",
+    "last": "2013-05-10",
+    "sessions": 1,
+    "max_exposure": 1.8640865637419344,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2013-05-14",
+    "last": "2013-05-14",
+    "sessions": 1,
+    "max_exposure": 1.8531732524767803,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2013-07-12",
+    "last": "2013-07-17",
+    "sessions": 4,
+    "max_exposure": 1.8668126836361403,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2013-09-10",
+    "last": "2013-09-11",
+    "sessions": 2,
+    "max_exposure": 1.8584929791401876,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2013-09-16",
+    "last": "2013-10-07",
+    "sessions": 16,
+    "max_exposure": 1.8896308350770648,
+    "blocked_days": 16,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2013-10-10",
+    "last": "2013-11-11",
+    "sessions": 23,
+    "max_exposure": 1.9292526377318868,
+    "blocked_days": 22,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2013-12-31",
+    "last": "2013-12-31",
+    "sessions": 1,
+    "max_exposure": 1.8667011028264218,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2014-01-08",
+    "last": "2014-01-08",
+    "sessions": 1,
+    "max_exposure": 1.8649122564144078,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2014-02-14",
+    "last": "2014-02-27",
+    "sessions": 9,
+    "max_exposure": 1.8713718287934769,
+    "blocked_days": 8,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2014-04-01",
+    "last": "2014-04-03",
+    "sessions": 3,
+    "max_exposure": 1.877113542687651,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2014-04-24",
+    "last": "2014-04-24",
+    "sessions": 1,
+    "max_exposure": 1.8532655901819115,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2014-05-27",
+    "last": "2014-06-09",
+    "sessions": 10,
+    "max_exposure": 1.9475994796957714,
+    "blocked_days": 9,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2014-06-16",
+    "last": "2014-06-23",
+    "sessions": 6,
+    "max_exposure": 1.872433416244515,
+    "blocked_days": 6,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2014-06-25",
+    "last": "2014-06-25",
+    "sessions": 1,
+    "max_exposure": 1.8558459822466502,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2014-06-27",
+    "last": "2014-06-30",
+    "sessions": 2,
+    "max_exposure": 1.8718659280137748,
+    "blocked_days": 1,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2014-11-26",
+    "last": "2014-12-01",
+    "sessions": 3,
+    "max_exposure": 1.8878473593823424,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2015-02-24",
+    "last": "2015-02-24",
+    "sessions": 1,
+    "max_exposure": 1.861916889870133,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2015-10-22",
+    "last": "2015-10-26",
+    "sessions": 3,
+    "max_exposure": 1.9204853099766073,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2016-06-23",
+    "last": "2016-06-23",
+    "sessions": 1,
+    "max_exposure": 1.85363258237478,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2016-07-14",
+    "last": "2016-08-12",
+    "sessions": 22,
+    "max_exposure": 2.006454885486866,
+    "blocked_days": 20,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2016-09-29",
+    "last": "2016-10-10",
+    "sessions": 8,
+    "max_exposure": 1.9002003922991615,
+    "blocked_days": 8,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2016-10-24",
+    "last": "2016-10-27",
+    "sessions": 4,
+    "max_exposure": 1.8734143429260315,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2016-10-31",
+    "last": "2016-10-31",
+    "sessions": 1,
+    "max_exposure": 1.8569156751272442,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2016-11-07",
+    "last": "2016-11-09",
+    "sessions": 3,
+    "max_exposure": 1.8683301762972624,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2016-11-11",
+    "last": "2016-11-29",
+    "sessions": 12,
+    "max_exposure": 2.0136683025999518,
+    "blocked_days": 10,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2017-01-25",
+    "last": "2017-01-30",
+    "sessions": 4,
+    "max_exposure": 1.878317301372582,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2017-02-01",
+    "last": "2017-03-21",
+    "sessions": 34,
+    "max_exposure": 1.9810917326872084,
+    "blocked_days": 33,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2017-03-30",
+    "last": "2017-03-30",
+    "sessions": 1,
+    "max_exposure": 1.8502324199001525,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2017-04-25",
+    "last": "2017-04-25",
+    "sessions": 1,
+    "max_exposure": 1.8572965701262063,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2017-04-27",
+    "last": "2017-04-27",
+    "sessions": 1,
+    "max_exposure": 1.8683023429198413,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2017-05-01",
+    "last": "2017-05-01",
+    "sessions": 1,
+    "max_exposure": 1.8515570312970302,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2017-05-09",
+    "last": "2017-05-17",
+    "sessions": 7,
+    "max_exposure": 1.9720057303553151,
+    "blocked_days": 6,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2017-05-24",
+    "last": "2017-06-09",
+    "sessions": 12,
+    "max_exposure": 1.9723493781191097,
+    "blocked_days": 11,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2017-09-15",
+    "last": "2017-09-22",
+    "sessions": 6,
+    "max_exposure": 1.8907550381399405,
+    "blocked_days": 6,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2017-09-27",
+    "last": "2017-10-20",
+    "sessions": 18,
+    "max_exposure": 1.9935855434383505,
+    "blocked_days": 16,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2017-11-03",
+    "last": "2017-11-10",
+    "sessions": 6,
+    "max_exposure": 1.8979795459944397,
+    "blocked_days": 5,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2018-01-18",
+    "last": "2018-01-23",
+    "sessions": 4,
+    "max_exposure": 1.8840454073803488,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2018-01-26",
+    "last": "2018-01-26",
+    "sessions": 1,
+    "max_exposure": 1.8598952508490352,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2019-03-15",
+    "last": "2019-03-22",
+    "sessions": 6,
+    "max_exposure": 1.92811787281446,
+    "blocked_days": 5,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2019-04-03",
+    "last": "2019-04-10",
+    "sessions": 6,
+    "max_exposure": 1.8759863114426234,
+    "blocked_days": 5,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2019-04-17",
+    "last": "2019-04-25",
+    "sessions": 6,
+    "max_exposure": 1.9132488513927277,
+    "blocked_days": 5,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2019-11-04",
+    "last": "2019-11-06",
+    "sessions": 3,
+    "max_exposure": 1.887730592440786,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2019-12-12",
+    "last": "2019-12-13",
+    "sessions": 2,
+    "max_exposure": 1.865097229640004,
+    "blocked_days": 1,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2020-01-02",
+    "last": "2020-01-02",
+    "sessions": 1,
+    "max_exposure": 1.8543972697198825,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2020-01-13",
+    "last": "2020-01-14",
+    "sessions": 2,
+    "max_exposure": 1.8583491823415599,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-01-16",
+    "last": "2020-01-17",
+    "sessions": 2,
+    "max_exposure": 1.8803403771137317,
+    "blocked_days": 1,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2020-04-29",
+    "last": "2020-04-29",
+    "sessions": 1,
+    "max_exposure": 1.8696796520014525,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-05-20",
+    "last": "2020-05-20",
+    "sessions": 1,
+    "max_exposure": 1.8977320746420125,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-05-22",
+    "last": "2020-06-04",
+    "sessions": 9,
+    "max_exposure": 1.9968497940038237,
+    "blocked_days": 7,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2020-07-09",
+    "last": "2020-07-09",
+    "sessions": 1,
+    "max_exposure": 1.8633606264575109,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2020-08-03",
+    "last": "2020-08-10",
+    "sessions": 6,
+    "max_exposure": 1.8820741114837616,
+    "blocked_days": 6,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-08-12",
+    "last": "2020-09-02",
+    "sessions": 16,
+    "max_exposure": 1.9646408311731411,
+    "blocked_days": 14,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2020-10-09",
+    "last": "2020-10-20",
+    "sessions": 8,
+    "max_exposure": 1.9035947029708913,
+    "blocked_days": 8,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-11-04",
+    "last": "2020-11-11",
+    "sessions": 6,
+    "max_exposure": 1.973118288392403,
+    "blocked_days": 4,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2020-11-16",
+    "last": "2020-11-17",
+    "sessions": 2,
+    "max_exposure": 1.8695630622311943,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2020-11-19",
+    "last": "2020-12-09",
+    "sessions": 14,
+    "max_exposure": 2.052175202423531,
+    "blocked_days": 13,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2020-12-15",
+    "last": "2020-12-15",
+    "sessions": 1,
+    "max_exposure": 1.8739258525395739,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2021-01-07",
+    "last": "2021-01-07",
+    "sessions": 1,
+    "max_exposure": 1.8804558713722077,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2021-01-14",
+    "last": "2021-01-14",
+    "sessions": 1,
+    "max_exposure": 1.85694323845387,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2021-01-19",
+    "last": "2021-01-19",
+    "sessions": 1,
+    "max_exposure": 1.8789298975946116,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2021-08-04",
+    "last": "2021-08-05",
+    "sessions": 2,
+    "max_exposure": 1.8645515849589374,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-08-27",
+    "last": "2021-08-30",
+    "sessions": 2,
+    "max_exposure": 1.8664469840863092,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-09-03",
+    "last": "2021-09-07",
+    "sessions": 2,
+    "max_exposure": 1.8590069616412408,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-09-13",
+    "last": "2021-09-17",
+    "sessions": 5,
+    "max_exposure": 1.885743820070192,
+    "blocked_days": 5,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-09-23",
+    "last": "2021-09-27",
+    "sessions": 3,
+    "max_exposure": 1.8717192979149861,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-10-28",
+    "last": "2021-11-11",
+    "sessions": 11,
+    "max_exposure": 2.0599399737644495,
+    "blocked_days": 9,
+    "sell_tickets": 2
+   },
+   {
+    "first": "2021-12-07",
+    "last": "2021-12-08",
+    "sessions": 2,
+    "max_exposure": 1.882834233006195,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2021-12-27",
+    "last": "2021-12-29",
+    "sessions": 3,
+    "max_exposure": 1.8924676467726171,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2022-01-03",
+    "last": "2022-01-04",
+    "sessions": 2,
+    "max_exposure": 1.8838747912471405,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2022-07-20",
+    "last": "2022-07-22",
+    "sessions": 3,
+    "max_exposure": 1.9144322018421294,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2022-07-27",
+    "last": "2022-08-19",
+    "sessions": 18,
+    "max_exposure": 2.0117700348455263,
+    "blocked_days": 18,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2022-08-25",
+    "last": "2022-08-25",
+    "sessions": 1,
+    "max_exposure": 1.9205622536375033,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2022-11-10",
+    "last": "2022-11-10",
+    "sessions": 1,
+    "max_exposure": 1.8823874531320524,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2022-11-15",
+    "last": "2022-11-15",
+    "sessions": 1,
+    "max_exposure": 1.8634968284300268,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2022-11-30",
+    "last": "2022-11-30",
+    "sessions": 1,
+    "max_exposure": 1.8597207761034884,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-01-23",
+    "last": "2023-01-23",
+    "sessions": 1,
+    "max_exposure": 1.9005875181145393,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2023-02-01",
+    "last": "2023-02-03",
+    "sessions": 3,
+    "max_exposure": 1.9217704308595778,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-02-07",
+    "last": "2023-02-09",
+    "sessions": 3,
+    "max_exposure": 1.9085115446659688,
+    "blocked_days": 3,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-02-13",
+    "last": "2023-02-16",
+    "sessions": 4,
+    "max_exposure": 1.905745483289639,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-03-16",
+    "last": "2023-03-16",
+    "sessions": 1,
+    "max_exposure": 1.8567336996205388,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-03-20",
+    "last": "2023-03-21",
+    "sessions": 2,
+    "max_exposure": 1.8670126608389974,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-03-23",
+    "last": "2023-03-24",
+    "sessions": 2,
+    "max_exposure": 1.9004019447537717,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-03-29",
+    "last": "2023-04-04",
+    "sessions": 5,
+    "max_exposure": 1.9309514244234003,
+    "blocked_days": 5,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-04-10",
+    "last": "2023-04-10",
+    "sessions": 1,
+    "max_exposure": 1.8532750504282232,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-05-18",
+    "last": "2023-05-23",
+    "sessions": 4,
+    "max_exposure": 1.9020433957407779,
+    "blocked_days": 4,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-05-25",
+    "last": "2023-06-01",
+    "sessions": 5,
+    "max_exposure": 2.0741532561679605,
+    "blocked_days": 2,
+    "sell_tickets": 3
+   },
+   {
+    "first": "2023-06-12",
+    "last": "2023-06-20",
+    "sessions": 6,
+    "max_exposure": 1.9076414760526275,
+    "blocked_days": 6,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-06-30",
+    "last": "2023-07-03",
+    "sessions": 2,
+    "max_exposure": 1.875000095718689,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-07-12",
+    "last": "2023-07-17",
+    "sessions": 4,
+    "max_exposure": 1.9403518797588655,
+    "blocked_days": 3,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2023-12-15",
+    "last": "2023-12-15",
+    "sessions": 1,
+    "max_exposure": 1.8534248116764989,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-12-19",
+    "last": "2023-12-19",
+    "sessions": 1,
+    "max_exposure": 1.8572746759420964,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2023-12-22",
+    "last": "2023-12-22",
+    "sessions": 1,
+    "max_exposure": 1.851268143123995,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2024-01-23",
+    "last": "2024-01-25",
+    "sessions": 3,
+    "max_exposure": 1.8900418062997821,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2024-02-08",
+    "last": "2024-03-07",
+    "sessions": 20,
+    "max_exposure": 2.0773884264594638,
+    "blocked_days": 17,
+    "sell_tickets": 3
+   },
+   {
+    "first": "2024-06-12",
+    "last": "2024-06-21",
+    "sessions": 7,
+    "max_exposure": 1.958927870444549,
+    "blocked_days": 7,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2024-07-02",
+    "last": "2024-07-11",
+    "sessions": 7,
+    "max_exposure": 1.9906638305912678,
+    "blocked_days": 6,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2025-05-13",
+    "last": "2025-05-15",
+    "sessions": 3,
+    "max_exposure": 1.8718677788476468,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2025-06-10",
+    "last": "2025-06-10",
+    "sessions": 1,
+    "max_exposure": 1.8744346265664813,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2025-06-26",
+    "last": "2025-07-08",
+    "sessions": 8,
+    "max_exposure": 1.8987259923598239,
+    "blocked_days": 7,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2025-08-13",
+    "last": "2025-08-14",
+    "sessions": 2,
+    "max_exposure": 1.8549717532426042,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2025-09-15",
+    "last": "2025-10-08",
+    "sessions": 18,
+    "max_exposure": 2.0862706134094706,
+    "blocked_days": 15,
+    "sell_tickets": 3
+   },
+   {
+    "first": "2025-10-27",
+    "last": "2025-11-03",
+    "sessions": 6,
+    "max_exposure": 1.9056802101516692,
+    "blocked_days": 6,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2025-11-05",
+    "last": "2025-11-05",
+    "sessions": 1,
+    "max_exposure": 1.8680150308178858,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2025-12-03",
+    "last": "2025-12-03",
+    "sessions": 1,
+    "max_exposure": 1.8621536560422842,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2025-12-05",
+    "last": "2025-12-11",
+    "sessions": 5,
+    "max_exposure": 1.9063609706018365,
+    "blocked_days": 5,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2026-01-02",
+    "last": "2026-01-06",
+    "sessions": 3,
+    "max_exposure": 1.9624922530403377,
+    "blocked_days": 2,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2026-01-13",
+    "last": "2026-01-13",
+    "sessions": 1,
+    "max_exposure": 1.853217824848798,
+    "blocked_days": 1,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2026-01-15",
+    "last": "2026-01-15",
+    "sessions": 1,
+    "max_exposure": 1.8778582712162126,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2026-01-28",
+    "last": "2026-01-28",
+    "sessions": 1,
+    "max_exposure": 1.898143988898882,
+    "blocked_days": 0,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2026-04-13",
+    "last": "2026-05-08",
+    "sessions": 20,
+    "max_exposure": 2.1876257277037485,
+    "blocked_days": 15,
+    "sell_tickets": 5
+   },
+   {
+    "first": "2026-05-26",
+    "last": "2026-06-04",
+    "sessions": 8,
+    "max_exposure": 2.076239115349108,
+    "blocked_days": 7,
+    "sell_tickets": 1
+   },
+   {
+    "first": "2026-06-08",
+    "last": "2026-06-09",
+    "sessions": 2,
+    "max_exposure": 1.8860939182974652,
+    "blocked_days": 2,
+    "sell_tickets": 0
+   },
+   {
+    "first": "2026-06-11",
+    "last": "2026-07-01",
+    "sessions": 14,
+    "max_exposure": 2.119025857566521,
+    "blocked_days": 14,
+    "sell_tickets": 0
+   }
+  ],
+  "events": {
+   "G": [
+    {
+     "day": "2010-08-30",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2478,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2010-11-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9704,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2010-12-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9513,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-01-19",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9455,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2011-02-02",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0055,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-02-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8869,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-08-04",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1497,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2013-05-14",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8532,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2013-11-11",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8959,
+     "kinds": [
+      "rebound_fail",
+      "trend_break"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-01-08",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8649,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-02-27",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8704,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-06-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9476,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-06-30",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8719,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-12-01",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8629,
+     "kinds": [
+      "false_breakout",
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2015-02-24",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8619,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2015-08-24",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1974,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2015-10-26",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8775,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-08-11",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0003,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-08-12",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8575,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-11-28",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0081,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-11-29",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8513,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-03-21",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9319,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-04-27",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8683,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2017-05-17",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8749,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-06-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8794,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-10-19",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9877,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-10-20",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.85,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-11-10",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8671,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2018-01-26",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8599,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2018-10-24",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2098,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2018-10-26",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2177,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2019-03-22",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.866,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-04-10",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8695,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-04-25",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8741,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-11-06",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8717,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-12-13",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8533,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-01-02",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8544,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2020-01-17",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8803,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-03-09",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2378,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-11",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2296,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2020-03-12",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2307,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-16",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.0568,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-17",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1225,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2020-06-03",
+     "side": "sell",
+     "step": "1/3",
+     "why": "MINIMAX_REGRET",
+     "exposure": 1.9968,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-06-04",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8633,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-07-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8634,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-09-01",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9646,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-09-02",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8792,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2020-11-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9467,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2020-11-11",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9529,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-12-09",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9933,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-12-15",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8739,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-01-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8805,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-01-14",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8569,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2021-01-19",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8789,
+     "kinds": [
+      "false_breakout",
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-11-10",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9995,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-11-11",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8868,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2022-03-07",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2271,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-03-14",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1852,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-04-06",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2493,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-05-09",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2235,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-05-11",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2023,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-07-01",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1783,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-10-11",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2294,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-11-10",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8824,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2022-11-15",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8635,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2023-01-23",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9006,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-05-30",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0737,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2023-05-31",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0228,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-06-01",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8926,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-07-17",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9404,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-12-22",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8513,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-01-25",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8843,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2024-03-05",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.038,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-03-06",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.916,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-03-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8551,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2024-07-11",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9217,
+     "kinds": [
+      "false_breakout",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-08-02",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2379,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-03-06",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2068,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2025-03-10",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1588,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-04-03",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2019,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-05-15",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8577,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-06-10",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8744,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-07-08",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8969,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-10-06",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0863,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2025-10-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0401,
+     "kinds": [
+      "false_breakout",
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-10-08",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9332,
+     "kinds": [
+      "false_breakout",
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-01-06",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9625,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-01-15",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8779,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-01-28",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8981,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-04",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.1744,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-05",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.03,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-06",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9519,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2026-05-07",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.892,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-08",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8745,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-06-04",
+     "side": "sell",
+     "step": "1/3",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 2.0336,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    }
+   ],
+   "U": [
+    {
+     "day": "2010-08-30",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2478,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2010-10-27",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8783,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2010-11-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8687,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-01-10",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8676,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-02-04",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8567,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2011-07-18",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2386,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2011-07-29",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2473,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2011-08-08",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1877,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2011-08-10",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2321,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2011-08-18",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1718,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2011-10-28",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.865,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2012-02-16",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8612,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2012-06-01",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2149,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2013-02-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8679,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2013-02-05",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8691,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2013-05-06",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8566,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2013-07-12",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8592,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2013-12-23",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8512,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-03-04",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8668,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-06-05",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8574,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2014-11-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8556,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2015-03-02",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8852,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2015-03-20",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8717,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2015-08-20",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2219,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2016-07-14",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8538,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-08-09",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.855,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-10-06",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8564,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2016-12-15",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8632,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-03-10",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8505,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2017-05-16",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8655,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2017-05-22",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8505,
+     "kinds": [
+      "false_breakout",
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-09-19",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8548,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2017-09-29",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.863,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2017-10-27",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8611,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2018-01-17",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8507,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2018-10-24",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1729,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2018-10-25",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2201,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2019-03-21",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8864,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2019-04-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8635,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2019-04-16",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8505,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-11-05",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.853,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2019-12-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8548,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-03-09",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2241,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-11",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.216,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2020-03-12",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2287,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-16",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.0549,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2020-03-17",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1206,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2020-04-29",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8695,
+     "kinds": [
+      "false_breakout"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-06-03",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8522,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-07-20",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8605,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2020-09-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8831,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-11-06",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8674,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2020-12-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.851,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-01-07",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8628,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-02-11",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.858,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-11-04",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9085,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2021-12-07",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8674,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-01-27",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2024,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-01-28",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2421,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-02-22",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2458,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-04-12",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2495,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-04-14",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2318,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2022-04-21",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2486,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-06-13",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1517,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2022-09-23",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2201,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2023-02-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9054,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-05-26",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9291,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-07-13",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8605,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-10-25",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2493,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2023-11-17",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8619,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2023-12-14",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8899,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-01-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8685,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-03-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8891,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-06-13",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8706,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2024-08-02",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.165,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-03-06",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2051,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2025-03-10",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.1571,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-04-03",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2019,
+     "kinds": [],
+     "filled": true
+    },
+    {
+     "day": "2025-05-13",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8629,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-06-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.883,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-08-13",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8536,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-10-01",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8631,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2025-10-27",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8712,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-01-15",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8589,
+     "kinds": [
+      "overheat",
+      "overheat_fade"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-02-25",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8508,
+     "kinds": [],
+     "filled": false
+    },
+    {
+     "day": "2026-04-10",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8906,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-04-17",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8683,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-04-24",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.924,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-06",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9222,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2026-05-07",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8616,
+     "kinds": [
+      "false_breakout",
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-05-11",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8531,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": false
+    },
+    {
+     "day": "2026-05-22",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.8527,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-06-02",
+     "side": "sell",
+     "step": "1/2",
+     "why": "WITHIN_REGRET_BUDGET",
+     "exposure": 1.9241,
+     "kinds": [
+      "overheat"
+     ],
+     "filled": true
+    },
+    {
+     "day": "2026-07-17",
+     "side": "buy",
+     "step": "1",
+     "why": "REFILL_TO_TARGET",
+     "exposure": 1.2249,
+     "kinds": [],
+     "filled": true
+    }
+   ]
+  },
+  "variant_G_vs_H_hard_ceiling_only": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "G": {
+    "cagr": 0.3390450447321187,
+    "mdd": -0.6788583935507673,
+    "calmar": 0.4994341205074366,
+    "sessions": 4085,
+    "total": 112.60311203628628,
+    "avg_weight": 0.5655776323274483,
+    "avg_exposure": 1.696732896982345,
+    "max_exposure": 2.1876257277037485,
+    "sessions_hard": 267,
+    "sessions_reduce_zone": 607,
+    "sessions_add_zone": 21,
+    "reduce_episodes": 118,
+    "longest_episode_sessions": 34,
+    "blocked_days": 532,
+    "sell_tickets": 75,
+    "sell_fills": 62,
+    "buy_tickets": 21,
+    "buy_fills": 13,
+    "sell_steps": {
+     "1/3": 74,
+     "1/2": 1
+    }
+   },
+   "H": {
+    "cagr": 0.3342637132443278,
+    "mdd": -0.6651089574705155,
+    "calmar": 0.5025698563970188,
+    "sessions": 4085,
+    "total": 106.20309213617192,
+    "avg_weight": 0.556418622712397,
+    "avg_exposure": 1.6692558681371907,
+    "max_exposure": 2.042585755380009,
+    "sessions_hard": 34,
+    "sessions_reduce_zone": 282,
+    "sessions_add_zone": 23,
+    "reduce_episodes": 106,
+    "longest_episode_sessions": 16,
+    "blocked_days": 211,
+    "sell_tickets": 68,
+    "sell_fills": 58,
+    "buy_tickets": 23,
+    "buy_fills": 14,
+    "sell_steps": {
+     "1/3": 37,
+     "1/2": 31
+    }
+   },
+   "F_G": {
+    "cagr": 0.34279918558657196,
+    "mdd": -0.6627089652677753,
+    "calmar": 0.517269576167662,
+    "sessions": 4085,
+    "total": 117.87761126344722
+   },
+   "F_H": {
+    "cagr": 0.33921080427870254,
+    "mdd": -0.6564444717815207,
+    "calmar": 0.516739524606126,
+    "sessions": 4085,
+    "total": 112.8312901683866
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4004
+  },
+  "variant_GH_gate_with_flat_half_vs_U": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "GH": {
+    "cagr": 0.341022411497127,
+    "mdd": -0.6614894317400195,
+    "calmar": 0.5155372030662413,
+    "sessions": 4085,
+    "total": 115.3532714407295,
+    "avg_weight": 0.5565046181459102,
+    "avg_exposure": 1.669513854437731,
+    "max_exposure": 2.1373855387601286,
+    "sessions_hard": 190,
+    "sessions_reduce_zone": 457,
+    "sessions_add_zone": 26,
+    "reduce_episodes": 95,
+    "longest_episode_sessions": 24,
+    "blocked_days": 405,
+    "sell_tickets": 51,
+    "sell_fills": 44,
+    "buy_tickets": 26,
+    "buy_fills": 13,
+    "sell_steps": {
+     "1/3": 1,
+     "1/2": 50
+    }
+   },
+   "U": {
+    "cagr": 0.33470272040435844,
+    "mdd": -0.66045331547616,
+    "calmar": 0.5067772582276332,
+    "sessions": 4085,
+    "total": 106.77630486623215,
+    "avg_weight": 0.5497782867557801,
+    "avg_exposure": 1.6493348602673406,
+    "max_exposure": 1.9290543913391835,
+    "sessions_hard": 6,
+    "sessions_reduce_zone": 65,
+    "sessions_add_zone": 29,
+    "reduce_episodes": 64,
+    "longest_episode_sessions": 2,
+    "blocked_days": 0,
+    "sell_tickets": 65,
+    "sell_fills": 57,
+    "buy_tickets": 29,
+    "buy_fills": 17,
+    "sell_steps": {
+     "1/3": 0,
+     "1/2": 65
+    }
+   },
+   "F_GH": {
+    "cagr": 0.3392447704027506,
+    "mdd": -0.6565037268365226,
+    "calmar": 0.5167446223610345,
+    "sessions": 4085,
+    "total": 112.87809966787438
+   },
+   "F_U": {
+    "cagr": 0.3365724194411117,
+    "mdd": -0.651843646615726,
+    "calmar": 0.5163391883752262,
+    "sessions": 4085,
+    "total": 109.2499352276526
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4009
+  },
+  "variant_no_loc_price": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "G": {
+    "cagr": 0.33615222186906313,
+    "mdd": -0.6759690893099999,
+    "calmar": 0.49728933938709063,
+    "sessions": 4085,
+    "total": 108.6894130015367,
+    "avg_weight": 0.567803838681565,
+    "avg_exposure": 1.7034115160446952,
+    "max_exposure": 2.2035931868178937,
+    "sessions_hard": 275,
+    "sessions_reduce_zone": 611,
+    "sessions_add_zone": 16,
+    "reduce_episodes": 132,
+    "longest_episode_sessions": 34,
+    "blocked_days": 541,
+    "sell_tickets": 69,
+    "sell_fills": 69,
+    "buy_tickets": 16,
+    "buy_fills": 16,
+    "sell_steps": {
+     "1/3": 66,
+     "1/2": 3
+    }
+   },
+   "U": {
+    "cagr": 0.32539975433753354,
+    "mdd": -0.6518693244820707,
+    "calmar": 0.49917942464323384,
+    "sessions": 4085,
+    "total": 95.22365702177903,
+    "avg_weight": 0.5525024461068792,
+    "avg_exposure": 1.6575073383206373,
+    "max_exposure": 1.9076347008252914,
+    "sessions_hard": 1,
+    "sessions_reduce_zone": 62,
+    "sessions_add_zone": 18,
+    "reduce_episodes": 62,
+    "longest_episode_sessions": 1,
+    "blocked_days": 0,
+    "sell_tickets": 62,
+    "sell_fills": 62,
+    "buy_tickets": 18,
+    "buy_fills": 18,
+    "sell_steps": {
+     "1/3": 0,
+     "1/2": 62
+    }
+   },
+   "F_G": {
+    "cagr": 0.3436624400474233,
+    "mdd": -0.6642175627568878,
+    "calmar": 0.517394389002641,
+    "sessions": 4085,
+    "total": 119.12253850455497
+   },
+   "F_U": {
+    "cagr": 0.3376585254187441,
+    "mdd": -0.6537371725609422,
+    "calmar": 0.5165050108685186,
+    "sessions": 4085,
+    "total": 110.7112223071812
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4009
+  },
+  "variant_zero_cash_interest": {
+   "window": [
+    "2010-07-13",
+    "2026-10-07"
+   ],
+   "G": {
+    "cagr": 0.3305979051810255,
+    "mdd": -0.6781106969095332,
+    "calmar": 0.48752793118839505,
+    "sessions": 4085,
+    "total": 101.52707829133062,
+    "avg_weight": 0.5675169098186698,
+    "avg_exposure": 1.7025507294560092,
+    "max_exposure": 2.2086590838686226,
+    "sessions_hard": 289,
+    "sessions_reduce_zone": 636,
+    "sessions_add_zone": 19,
+    "reduce_episodes": 118,
+    "longest_episode_sessions": 34,
+    "blocked_days": 561,
+    "sell_tickets": 75,
+    "sell_fills": 62,
+    "buy_tickets": 19,
+    "buy_fills": 13,
+    "sell_steps": {
+     "1/3": 74,
+     "1/2": 1
+    }
+   },
+   "U": {
+    "cagr": 0.31825671821157164,
+    "mdd": -0.6628633091372749,
+    "calmar": 0.48012420332298505,
+    "sessions": 4085,
+    "total": 87.15318063274259,
+    "avg_weight": 0.5513245461358489,
+    "avg_exposure": 1.6539736384075467,
+    "max_exposure": 1.9446335158548607,
+    "sessions_hard": 6,
+    "sessions_reduce_zone": 65,
+    "sessions_add_zone": 26,
+    "reduce_episodes": 64,
+    "longest_episode_sessions": 2,
+    "blocked_days": 0,
+    "sell_tickets": 65,
+    "sell_fills": 55,
+    "buy_tickets": 26,
+    "buy_fills": 16,
+    "sell_steps": {
+     "1/3": 0,
+     "1/2": 65
+    }
+   },
+   "F_G": {
+    "cagr": 0.33604277889213274,
+    "mdd": -0.6720405384530166,
+    "calmar": 0.5000334945056681,
+    "sessions": 4085,
+    "total": 108.5438611692444
+   },
+   "F_U": {
+    "cagr": 0.32944884518740136,
+    "mdd": -0.661419924723369,
+    "calmar": 0.4980933184394006,
+    "sessions": 4085,
+    "total": 100.10122114031861
+   },
+   "hold": {
+    "cagr": 0.41441117687381945,
+    "mdd": -0.905055487053021,
+    "calmar": 0.4578848289436888,
+    "sessions": 4085,
+    "total": 274.98124348732284
+   },
+   "sessions_weight_differs": 4009
+  }
+ }
+}
