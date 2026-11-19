@@ -1,7 +1,7 @@
 ---
 id: watch-card-PWR-2026-10-03
 type: card
-status: current
+status: superseded (2026-11-19 v2 watch-card-PWR-2026-11-19.md 수락으로 대체 — 사장 결정 카드 "둘 다 갱신본 수락" 17:21 KST, 매수 후보 고르는 기준 재검토 스레드. 원래 상태: current)
 supersedes: 
 as_of: 2026-10-03
 valid_until: 확인 필요
