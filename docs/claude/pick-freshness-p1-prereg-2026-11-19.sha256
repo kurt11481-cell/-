@@ -1,0 +1,6 @@
+raw_bytes_sha256=75fabd93b2e5330efacf8650a48fe7c0a504855058335f3d92fe2cb3c45f684c
+lf_normalized_sha256=75fabd93b2e5330efacf8650a48fe7c0a504855058335f3d92fe2cb3c45f684c
+script=docs/claude/pick_freshness_replay.py
+script_raw_bytes_sha256=fe9654ac2143b4a864c4906cd11a682672d5e7e44a31427ec1a3bf36049819de
+script_lf_normalized_sha256=fe9654ac2143b4a864c4906cd11a682672d5e7e44a31427ec1a3bf36049819de
+fixed_at=2026-11-19T22:20:00+09:00 before any replay run (user card 'P1 고정 — 모름은 안 셈' 21:59:45 KST)
