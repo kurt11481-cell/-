@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-11-17",
-  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님)",
+  "updated_at": "2026-11-19",
+  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-19: BE known_events의 '2026-11-23 대기 허가 결정 기한(2차)' 제거 — 주 환경부·개발사가 기한 포기, 12/7 공청회 연기·새 날짜 없음(ABQ Journal 11/06, dc-loan-sale-impact-2026-11-19.md 5절 2번). 카드·판단·절 해시 불변 / 2026-11-19: MU·PWR 관심 카드 v2(재검토 갱신 · PWR 3분기 실적 8-K 2026-10-29) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"둘 다 갱신본 수락\", 17:21 KST) — card_doc·card_section·절 해시·static_evidence(SE1·SE2 갱신, SE3 이벤트 반응 − 약)·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -269,9 +269,9 @@
     },
     "MU": {
       "role": "watch",
-      "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
-      "card_section": "## 6. MU 관심 카드 (신규, 미보유)",
-      "section_sha256": "c570530ab738c24049f5072ef58f6c1bc8701c1b673c7c349c0ea3d5a64ab318",
+      "card_doc": "docs/claude/watch-card-MU-2026-11-19.md",
+      "card_section": "# MU (Micron Technology, NASDAQ) 관심 카드 v2 (2026-11-19, 재검토 갱신, 미보유)",
+      "section_sha256": "3f7a9a0f971a2070c46948da15a602e3f4ee1d8bc6e1c29601b4216ac2608221",
       "accepted": {
         "text": "cardStatus 수락(2026-10-02)",
         "date": "2026-10-02",
@@ -358,58 +358,48 @@
           "strength": "strong",
           "direction": "+",
           "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:353",
-          "quote": "공식 수치가 기대 상회: 매출 $54.23B, non-GAAP 총이익률 87.0%, EPS $33.42(컨센서스 $31.83, 제3자), FQ1 가이던스 매출 $61.5B±$1.5B(컨센서스 $56.8B), EPS $38.15±$1.00(컨센서스 $36.02)"
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:25",
+          "quote": "공식(FQ4 FY26 8-K 2026-09-30, v1과 같은 분기): 매출 $54.23B, non-GAAP 총이익률 87.0%, EPS $33.42, FQ1 가이던스 매출 $61.5B±$1.5B, EPS $38.15±$1.00. 10/02 이후 새 실적 발표 없음"
         },
         {
           "id": "MU-SE2",
           "e1_kind": "valuation",
           "strength": "neutral",
           "direction": "+",
-          "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:354",
-          "quote": "불명확. 위스퍼링 EPS $34.14에 못 미쳤고(SAVE 이미지, 외부 가설) FQ1 총이익률 가이던스 약 86.25%가 기대 86.7%보다 낮음. 반면 10/1 정규장 반응은 호재를 흡수. 산술: 시총 $1.24T(키움 기본 주식수)"
+          "as_of": "2026-11-19",
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:26",
+          "quote": "11/18 종가 $704.89(키움). FQ1 가이던스 EPS 연환산 $152.6 기준 약 4.6배(산술)"
         },
         {
           "id": "MU-SE3",
           "e1_kind": "event_reaction",
           "strength": "weak",
-          "direction": "+",
-          "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:355",
-          "quote": "10/1: 시가 -1.0%, 최저 -4.0%, 종가 +3.03%(잠정), 거래량 3,403만 주(직전 20세션 평균 약 2,500만 주의 1.36배). \"호재 뒤 하락\" 아님"
+          "direction": "-",
+          "as_of": "2026-11-19",
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:27",
+          "quote": "FQ4 발표(9/30 장 뒤) P0 $1,065.11 → 10/01 +3.0% → 10세션 뒤(10/15) $931.24, P0 대비 −12.6%(주간 재채점 S7 = 0)"
         }
       ],
       "kill_refs": [
         {
           "id": "U3",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:384"
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:55"
         },
         {
           "id": "MU-KILL",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:370"
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:43"
         }
       ],
       "known_events": [
         {
-          "date": "2026-10-13",
-          "label": "SEMICON West(10/13–15)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:371"
-        },
-        {
-          "date": "2026-10-15",
-          "label": "TSMC Q3 콘퍼런스(15:00 KST)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:371"
-        },
-        {
-          "date": "2026-10-20",
-          "label": "NVIDIA GTC Berlin(10/20–22, 간접)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:371"
-        },
-        {
           "date": "2026-12-09",
-          "label": "Micron 자사주 매입 시작(회사 언급)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:371"
+          "label": "Micron 자사주 매입 시작(회사 언급, 2차)",
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:44"
+        },
+        {
+          "date": "2027-01-14",
+          "label": "Micron 연례 주총(8-K 2026-11-05)",
+          "source": "docs/claude/watch-card-MU-2026-11-19.md:44"
         }
       ]
     },
@@ -545,13 +535,7 @@
           "source": "docs/claude/holding-card-BE-2026-11-06.md:40"
         }
       ],
-      "known_events": [
-        {
-          "date": "2026-11-23",
-          "label": "뉴멕시코 환경부 대기 허가 결정 기한(2차)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:210"
-        }
-      ]
+      "known_events": []
     },
     "DELL": {
       "role": "watch",
@@ -846,9 +830,9 @@
     },
     "PWR": {
       "role": "watch",
-      "card_doc": "docs/claude/watch-card-PWR-2026-10-03.md",
-      "card_section": "# PWR (Quanta Services, NYSE) 관심 카드 v1 (2026-10-03, 신규, 미보유)",
-      "section_sha256": "c34a38e68cc29826afbd6d469792629b96b5a2c8b14ae2e8d0c7db92789b4e24",
+      "card_doc": "docs/claude/watch-card-PWR-2026-11-19.md",
+      "card_section": "# PWR (Quanta Services, NYSE) 관심 카드 v2 (2026-11-19, 3분기 실적 갱신, 미보유)",
+      "section_sha256": "e9f59703c6fbf5bb160298728b515ce40ccefbb0c9c3265518053eb7189265f4",
       "accepted": {
         "text": "cardStatus 수락(2026-10-03)",
         "date": "2026-10-03",
@@ -934,49 +918,44 @@
           "e1_kind": "thesis",
           "strength": "strong",
           "direction": "+",
-          "as_of": "2026-10-03",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:23",
-          "quote": "공식(Quanta 2분기 보도자료): 매출 $9.56B(+41.1%), 순이익 $451.4M, 희석 EPS $2.96·조정 $4.24, 영업현금흐름 $1.1B·FCF $0.9B, **총 백로그 $53.4B(전년 $35.8B, +49%)**, 12개월 백로그 $32.3B"
+          "as_of": "2026-11-19",
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:25",
+          "quote": "매출 $12.01B(전년 $7.63B, +57.4%), 조정 EPS $6.06(전년 $3.33), 총 백로그 $63.73B(전년 $39.17B, +62.7% · 6/30 $53.4B 대비 +19%), 12개월 백로그 $38.45B"
         },
         {
           "id": "PWR-SE2",
           "e1_kind": "valuation",
           "strength": "neutral",
           "direction": "+",
-          "as_of": "2026-10-03",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:24",
-          "quote": "종가 ÷ FY26 조정 EPS 가이던스 중간값 $16.70 = 40.5배(산술). 외부 예상 PER 36.7. 시총 $101.7B(키움 시가총액 필드와 일치). 연초 대비 +60.3%(SOXX +95.9%보다 덜 오름)"
+          "as_of": "2026-11-19",
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:26",
+          "quote": "11/18 종가 $602.41(키움) ÷ FY26 조정 EPS 가이던스 중간값 $18.10 = 약 33.3배(산술, v1 40.5배). GAAP EPS 중간값 $12.77 기준 약 47배"
         },
         {
           "id": "PWR-SE3",
           "e1_kind": "event_reaction",
           "strength": "weak",
-          "direction": "+",
-          "as_of": "2026-10-03",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:25",
-          "quote": "2분기 실적 발표 세션(7/30) 종가 $657.98, 전일 $561.14 대비 +17.3%. 이후 발표 전일 종가 아래 복귀 없음(최저 8/28 $602.70)"
+          "direction": "-",
+          "as_of": "2026-11-19",
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:27",
+          "quote": "그 사이 11/03 $657.00 → 11/05 $509.06(P0 대비 −16.1%), 11/04~11/10 다섯 세션 종가가 P0 아래(야후 일봉)"
         }
       ],
       "kill_refs": [
         {
           "id": "PW3",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:52"
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:55"
         },
         {
           "id": "PWR-KILL",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:40"
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:43"
         }
       ],
       "known_events": [
         {
-          "date": "2026-10-29",
-          "label": "3분기 실적 외부 추정(확인 필요)",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:41"
-        },
-        {
           "date": "2026-12-24",
-          "label": "EO 14420 시행규칙(서명 후 120일 ≈ 12/24)",
-          "source": "docs/claude/watch-card-PWR-2026-10-03.md:41"
+          "label": "EO 14420 시행규칙(서명 후 120일 ≈ 12/24, 확인 필요)",
+          "source": "docs/claude/watch-card-PWR-2026-11-19.md:44"
         }
       ]
     },
