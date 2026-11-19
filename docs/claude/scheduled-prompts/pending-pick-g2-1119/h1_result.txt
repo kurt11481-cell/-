@@ -1,0 +1,58 @@
+PASS T1 rules: same line count, only lines 1·161 change — [1, 161]
+PASS T1a rules line 1: old line kept whole after the new header
+PASS T1b rules line 161: exactly one old phrase replaced, text before and after it identical
+PASS T1c new 161 text names: ①③④⑤가 모두 통과이면서 ②에 매수 가능 현금 부족 밖의 막힘 사유가 하나도 없는 행
+PASS T1c new 161 text names: 상품 승인 없음
+PASS T1c new 161 text names: S7 추가 매수 멈춤
+PASS T1c new 161 text names: 추가 매수 멈춤(S7 …)
+PASS T1c new 161 text names: 종목 상한
+PASS T1c new 161 text names: R5 추가 매수 멈춤
+PASS T1c new 161 text names: '… 없음'은 사유가 아니고
+PASS T1c new 161 text names: 현금 액수를 적은 것만으로는 막힘 사유가 아니며
+PASS T1c new 161 text names: 막힘 사유 없이 ② 상태가 확인 필요인 행은 지금처럼 센다
+PASS T1c new 161 text names: 134행 재원 줄
+PASS T1c new 161 text names: Q1·Q3 대신
+PASS T1d 134행 ② 정의에 새 문구가 가리키는 사유가 다 있다(상품 승인 없음 · S7 add_recommendations 멈춤 · R5 추가 매수 멈춤 · 매수 가능 현금 — 글자는 실기록 표기에 맞춤)
+PASS T1e 이미 정한 일 줄의 Q1~Q4 · 관문 ⓐⓑⓒ · 상한 w 문장은 그대로
+PASS T2 loader: undoing the intended edits gives v3.12.16-L+R2 byte for byte
+PASS T3 loader step 1 rules hash check on the new rules file — RULES 135954 bytes sha256(LF 정규화) 003dfb76d70ea204e83bb219740b07a201377c0773a55644e01c7efe94707b31 MATCH
+PASS T4 build·finalize·fix1 section hash check (3 MATCH) — build 4320 MATCH | finalize 3054 MATCH | fix1 1179 MATCH
+PASS T4b build·finalize·fix1 bodies identical to v3.12.16-L+R2
+PASS T5 1 PLTR ② 상품 승인 없음(살 수 없음) — old HOLD → new Q1
+PASS T5 2 LITE(추가) ② R5 추가 매수 멈춤 — old HOLD → new Q1
+PASS T5 2b BE(추가) ② S7 추가 매수 멈춤 — old HOLD → new Q1
+PASS T5 2c MU ② 종목 상한 — old HOLD → new Q1
+PASS T5 3 MU ② 통과(살 수 있음) — old HOLD → new HOLD
+PASS T5 4 MU ② 현금 부족만 · QQQ 보유(134 재원 줄과 같은 날) — old HOLD → new HOLD
+PASS T5 5 MU ② 현금 부족만 · QQQ 없음 — old HOLD → new HOLD
+PASS T5 6 MU ② 확인 필요(막힘 사유 없음) — 모르면 바꾸지 않음 — old HOLD → new HOLD
+PASS T5 6b MU ② 확인 필요 + 상품 승인 없음 — old HOLD → new Q1
+PASS T5 7 MU ② 현금 부족 + 상품 승인 없음 — old HOLD → new Q1
+PASS T5 8 ①③④⑤ 통과 행 없음 — old Q1 → new Q1
+PASS T5 9 Q3 상태(자리 < 1주) + PLTR — old HOLD → new Q3
+PASS T5 10 관문 닫힘 + PLTR — 지금도 Q2 — old Q2 → new Q2
+PASS T5 10b 통과 행 + c < q — 지금도 Q4 — old Q4 → new Q4
+PASS T5 10c c를 못 구함 — 판단 보류 — old UNKNOWN → new UNKNOWN
+PASS T5 10d ① 막힘 + ② 현금 부족만(오독 잡기) — old Q1 → new Q1
+PASS T5 10e PLTR(못 삼) + MU(현금 부족만·QQQ 보유) — old HOLD → new HOLD
+PASS T5 11 SOXL·QQQ 행은 어느 판에서도 세지 않음 — old Q1 → new Q1
+PASS T5 12 PLTR(못 삼) + MU(삼) — old HOLD → new HOLD
+PASS T6 new: no QQQ buy→sell alternation while MU 1주를 못 삼 — ['HOLD', 'HOLD', 'HOLD', 'HOLD']
+PASS T6b (비교) 설계 초안 문구는 사고팔기가 되풀이됨 — 그래서 QQQ 보유 조건을 뺐다 — ['Q1', 'SELL_QQQHOLD', 'Q1', 'SELL_QQQHOLD']
+PASS T6c (공개) ②의 현금 밖 사유가 풀렸다 걸렸다 하면 새 문구는 QQQ 왕복이 생김 — 옛 문구는 내내 보류 — new ['Q1', 'SELL_QQQ+HOLD', 'Q1', 'SELL_QQQ+HOLD', 'Q1', 'SELL_QQQ+HOLD'] / old ['HOLD', 'HOLD', 'HOLD', 'HOLD', 'HOLD', 'HOLD']
+PASS T7 2026-11-11 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-11 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 - → new -
+PASS T7 2026-11-12 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-12 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['BE', 'LITE', 'MU', 'DELL', 'PWR', 'PLTR'] → new ['MU', 'DELL', 'PWR']
+PASS T7 2026-11-13 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-13 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['BE', 'LITE', 'MU', 'DELL', 'PWR', 'PLTR'] → new ['MU', 'DELL', 'PWR']
+PASS T7 2026-11-14 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-14 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['BE', 'LITE', 'MU', 'DELL', 'PWR', 'PLTR'] → new ['MU', 'DELL', 'PWR']
+PASS T7 2026-11-17 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-17 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['BE', 'LITE', 'MU', 'DELL', 'PWR', 'PLTR'] → new ['MU', 'DELL', 'PWR']
+PASS T7 2026-11-18 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-18 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['BE', 'LITE', 'MU', 'DELL', 'PWR', 'PLTR'] → new ['MU', 'DELL', 'PWR']
+PASS T7 2026-11-19 what-if: ② 칸 글자를 모두 분류함(모르는 사유 0) — []
+PASS T7b 2026-11-19 what-if: 새 문구가 보류시키는 행 = 기대 목록 — old 보류 행 ['DELL'] → new ['DELL']
+T7 summary 2026-11-11 old:- new:- | 2026-11-12 old:BE,LITE,MU,DELL,PWR,PLTR new:MU,DELL,PWR | 2026-11-13 old:BE,LITE,MU,DELL,PWR,PLTR new:MU,DELL,PWR | 2026-11-14 old:BE,LITE,MU,DELL,PWR,PLTR new:MU,DELL,PWR | 2026-11-17 old:BE,LITE,MU,DELL,PWR,PLTR new:MU,DELL,PWR | 2026-11-18 old:BE,LITE,MU,DELL,PWR,PLTR new:MU,DELL,PWR | 2026-11-19 old:DELL new:DELL
+H1 56 / 56 PASS
