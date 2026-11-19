@@ -1,0 +1,7 @@
+# swing shadow ledger pre-registration — FIXED 2026-11-19 22:35:51 KST (user card '엄격 세트 (권장)', cmsg_0137MRzn9nuDvvQmVxm6WeX9WGm9E6BbUwDqttBY71g7QF)
+faf3cd905c357d9983aedd323ab308f47828b58cc87dadbc5eb290d8ef35e34e  docs/claude/swing-prereg-draft-2026-11-19.md
+5a7762ccc5c7216357a8e6a3e076c307b6f97c5d705e6b69ae40ef02a17c01c0  docs/claude/swing_shadow_ledger.py
+# constants: FIX_DATE=2026-11-19 POPULATION=MU,DELL,PWR,LITE,BE,PLTR,CRWD HOLD_SESSIONS=20 COST_BP_ROUND_TRIP=50 BETA_LOOKBACK=120 BETA_MIN_OBS=60 BETA_CLIP=None ROOT_OF=ai_dc_power:MU,DELL,PWR,LITE,BE;software:PLTR,CRWD CLUSTER_RULE=overlap JUDGE_AT=12,24,36,48 DEADLINE=2032-11-19 MIN_MEAN_EXCESS=0 PASS_T=2.3 CLOSE_T=-1 MAX_DATA_LOSS=0.10 ADVERSE_EXCESS=-0.50
+# selftest: OK (28 checks) 2026-11-19 cloud copy
+# 2026-11-19 22:5x KST amendment: section 3-1 live-only row filled from card 3 (재량 주문으로 시작, cmsg_0137MRzn9nuDvvQmVxm6WeX9FEcmL8jpArggztLa33ZfGy). Judged rows unchanged; code unchanged.
+694c94b6ebb329654dd93a25c2af256638e800cfd02f8cb51540d7c69a4f1d16  docs/claude/swing-prereg-draft-2026-11-19.md
