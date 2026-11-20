@@ -75,3 +75,13 @@ authority: "읽기·docs/claude 문서 쓰기만. order_authority=false · quant
 - 사장 결정 카드 '오류 기록 고치기(개발 큐)'(cmsg_0137MRzn9nuDvvQmVxm6WeX9G2jN3URHaiDhhPkAaJbUV6, 2026-11-19 19:41:54 KST, 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH) → 지시문 llm-newsdiag-builder-prompt.md 작성, 개발 큐 _dev-queue/llm-newsdiag.txt 등록.
 - Fable 조언 1번(medium): 지적 8건 중 7건 반영(연결표 ③④⑤ 파일:줄 · 기존 산출 행을 표 밖 한 줄로 · 재시도 성공 때 낡은 fetch-errors.json 지움 · 메시지 정리 순서·type 칸 · 쓰기 OSError 삼킴 · 줄 번호·금지어·LF·Judge 근거). 1건(인용 문서 커밋 여부)은 _pending/llm-newsdiag-2026-11-19.txt로 처리(개발 큐가 실행 전 commit-docs를 돌림 — tools/dev_pipeline/README.md 9행).
 - 참고: stdout 마지막 줄은 기존 시험(516행)이 고정해 그대로 둔다. 원인은 실행기 하루 기록이 아니라 news/<날짜>/fetch-errors.json·failed.md에 남는다.
+- 병합 9d93ff7(2026-11-20 사장 실행, workspace/outputs/dev-runs/LATEST.json `DEV-MERGE llm-newsdiag MERGED`).
+
+## 6. 원인 확인 (2026-11-20 19:41 KST)
+
+- 19:30 news-submit 또 FETCH_FAILED. fetch-errors.json: 30/30 모두 같은 오류 — `SSLError: Failed to perform, curl: (77) error adding trust anchors from locations: CAfile: C:\Users\???\AppData\Roaming\Python\Python315\site-packages\certifi\cacert.pem CApath: none`.
+- 뜻: Yahoo 차단(①)도 반환 꼴(②)도 아니다. yfinance가 쓰는 curl_cffi가 인증서 묶음 파일을 열지 못해 Yahoo에 접속도 못 했다. 파일은 있다(Test-Path True). 경로에 한글 사용자 이름이 있어(로그에 ???로 찍힘) curl이 비ASCII 경로를 못 여는 것이 가장 가능성 큰 원인이다(확인 필요 — 이 PC에서 직접 시험하지 않음).
+- 실행 Python은 C:\Python315(PATH 첫 python, 사용자 site-packages에 yfinance 1.8.0·curl_cffi 0.17.0·certifi 2026.10.23). 3절에 적은 'Python313'은 Desktop Commander 셸의 PATH 기준이라 틀렸다 — 예약 작업은 python315-tzdata 기록대로 3.15를 쓴다.
+- 환경 변수 SSL_CERT_FILE·CURL_CA_BUNDLE·REQUESTS_CA_BUNDLE·PYTHONPATH·PYTHONUSERBASE 없음(사용자·시스템).
+- 고칠 자리(설치본 읽기): curl_cffi requests/session.py 268·315~319행(Session verify, 환경 변수 없으면 그대로), utils.py 915~922행(verify가 문자열이면 CAINFO로 씀) · yfinance base.py 82행 Ticker(session=) · _http.py 61행 기본 Session(impersonate="chrome") · data.py 136~150행 curl_cffi Session 허용.
+- 사장 결정 카드 '스크립트에서 고침(개발 큐)'(cmsg_0137MRzn9nuDvvQmVxm6WeX9WPJfBVNfJ7ktcnpBrnjqPf, 2026-11-20 19:56:21 KST, 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH) → 지시문 llm-newsca-builder-prompt.md, 개발 큐 llm-newsca.
