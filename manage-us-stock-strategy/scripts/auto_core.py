@@ -9,6 +9,7 @@ daily   1 read the kill switch and workspace/policies/auto_core.json, record the
           the benchmark, then the regular-session close histories (build --update, never changes a close)
         4 the exposure review (run_portfolio_exposure_review.py, read-only)
         5 workspace/outputs/auto-core/<YYYY-MM-DD>/result.json and workspace/outputs/auto-core/LATEST.json
+        6 (best effort, after 5) swing watch list closes -> swing-bars.json, never changes the result
 
 The account reads run before the 30-minute collection so the broker snapshot is judged and (in apply mode)
 written while it is fresh (the proposal expires 15 minutes after the read); a first collection of a new
@@ -32,9 +33,12 @@ decide  redesign T2 (auto_core_decide.py): judgments, buy requirements and gates
 from __future__ import annotations
 
 import argparse
+import functools
 import json
+import re
 import subprocess
 import sys
+import time
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -61,6 +65,15 @@ FIRST_COLLECTION_DAY = date(2026, 4, 1)
 # Kiwoom 30m data starts at a month boundary that moves forward (2026-04-01 for fetches up to 10/29, 2026-05-01
 # on 11/11), so a fixed first day falls out of it; 150 days keeps >= 31 days of margin.
 FIRST_COLLECTION_LOOKBACK_DAYS = 150
+# swing-bars: after the core result is written, the swing shadow watch list's closes are collected best effort.
+SWING_WATCH_PATH = REPO_ROOT / "docs/claude/swing-watch.json"
+SWING_FILE = "swing-bars.json"
+SWING_SCHEMA_VERSION = "auto-core-swing-bars-1.0"
+SWING_LIST_SCHEMA = "swing-watch-1"
+SWING_SYMBOL_PATTERN = re.compile(r"[A-Z][A-Z0-9.]{0,11}")
+SWING_TIME_BUDGET_MIN = 20
+SWING_SYMBOL_TIMEOUT_S = 600
+SWING_REASON_MAX = 200
 EXCHANGES = {"ND": "NASDAQ", "NY": "NYSE", "NA": "AMEX"}
 READY_FOR_RECORDING = "\uae30\ub85d \ubaa8\ub4dc \ucf24 \uc900\ube44\ub428"  # "ready to switch recording on" (Korean)
 # "recording mode needed (baseline old)" (Korean): compare mode past 80% of the fill window (T1 r3 C4).
@@ -203,14 +216,14 @@ def resolve_exchange(symbol: str, *, runtime: Path, rate_policy: dict[str, Any],
 
 
 def collect_bars(symbol: str, exchange: str, *, newest: date, oldest: date, profile: str,
-                 pages_root: Path, runner: Callable[..., Any] = subprocess.run) -> None:
+                 pages_root: Path, runner: Callable[..., Any] = subprocess.run, timeout: int = 3600) -> None:
     """Run collect_30m.ps1 (read-only kiwoomcli usa06011). Saved pages are reused; no retry."""
     command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                "-File", str(COLLECT_SCRIPT), "-Symbol", symbol, "-Exchange", exchange,
                "-Newest", newest.strftime("%Y%m%d"), "-Oldest", oldest.strftime("%Y%m%d"),
                "-KiwoomProfile", profile, "-OutRoot", str(pages_root)]
     completed = runner(command, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                       check=False, timeout=3600)
+                       check=False, timeout=timeout)
     if completed.returncode != 0:
         raise StepFailure(f"BAR_COLLECTION_FAILED:{symbol}:{completed.returncode}")
 
@@ -236,6 +249,114 @@ def update_history(symbol: str, exchange: str, *, now: datetime, closes_root: Pa
         raise StepFailure(f"CLOSE_HISTORY_FAILED:{symbol}:{exc}") from exc
     return {"symbol": symbol, "last_session": history["last_session"], "sessions": history["session_count"],
             "continuity": history["continuity"]["status"]}
+
+
+# ---------------------------------------------------------------------------------------------
+# swing-bars: the swing shadow watch list's closes (best effort, after the core result is written)
+# ---------------------------------------------------------------------------------------------
+
+class SwingListInvalid(ValueError):
+    """The swing watch list exists but cannot be used; nothing is collected (status LIST_INVALID)."""
+
+
+def _short(text: str) -> str:
+    return text[:SWING_REASON_MAX]
+
+
+def read_swing_watch(path: Path) -> list[str] | None:
+    """The swing watch list's symbols (deduplicated, sorted); None when the file does not exist."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as exc:
+        raise SwingListInvalid(_short(f"LIST_UNREADABLE:{type(exc).__name__}:{exc}")) from exc
+    if not isinstance(data, dict):
+        raise SwingListInvalid("LIST_NOT_OBJECT")
+    if data.get("schema") != SWING_LIST_SCHEMA:
+        raise SwingListInvalid(_short(f"LIST_SCHEMA_MISMATCH:{data.get('schema')!r}"))
+    symbols = data.get("symbols")
+    if not isinstance(symbols, list):
+        raise SwingListInvalid("LIST_SYMBOLS_NOT_LIST")
+    for symbol in symbols:
+        if not isinstance(symbol, str) or not SWING_SYMBOL_PATTERN.fullmatch(symbol):
+            raise SwingListInvalid(_short(f"LIST_SYMBOL_INVALID:{symbol!r}"))
+    return sorted(set(symbols))
+
+
+def _verified_sessions(symbol: str, closes_root: Path) -> int:
+    """Sessions the swing shadow ledger can use (verified with a close); an unreadable history is a failure."""
+    try:
+        history = json.loads(history_path(symbol, closes_root).read_text(encoding="utf-8-sig"))
+        sessions = history.get("sessions") or []
+        return sum(1 for item in sessions if isinstance(item, dict) and item.get("verified") is True
+                   and item.get("close") not in (None, ""))
+    except (OSError, ValueError, AttributeError) as exc:
+        raise StepFailure(f"CLOSE_HISTORY_UNREADABLE:{symbol}:{type(exc).__name__}") from exc
+
+
+def _swing_reason(symbol: str, exc: Exception) -> str:
+    if isinstance(exc, StepFailure):
+        return _short(str(exc))
+    if isinstance(exc, subprocess.TimeoutExpired):
+        # The command line is not repeated here (paths and the profile alias).
+        return _short(f"BAR_COLLECTION_TIMEOUT:{symbol}:{exc.timeout}")
+    return _short(f"UNEXPECTED_ERROR:{symbol}:{type(exc).__name__}:{exc}")
+
+
+def write_swing_record(output_directory: Path, record: dict[str, Any]) -> None:
+    """Writes swing-bars.json; a write failure is swallowed (the core result is already written)."""
+    try:
+        write_json(Path(output_directory) / SWING_FILE, record)
+    except Exception:  # noqa: BLE001 - best effort, never reaches the core result
+        pass
+
+
+def collect_swing_bars(*, watch_path: Path, output_directory: Path, run_day: str, core_symbols: list[str],
+                       runtime: Path, rate_policy: dict[str, Any], profile: str | None, today: date, now: datetime,
+                       closes_root: Path, collector: Callable[..., None],
+                       history_updater: Callable[..., dict[str, Any]],
+                       exchange_reader: Callable[..., list[dict[str, Any]]] | None,
+                       clock: Callable[[], float]) -> dict[str, Any] | None:
+    """Collects the 30-minute bars and close histories of the swing watch list's symbols that the core run did
+    not collect, with the core loop's exchange, first-collection and history rules. Every per-symbol failure is
+    recorded and the next symbol goes on; a symbol is not started when less than one symbol timeout is left of
+    the step's time budget (it and the rest are deferred). Writes swing-bars.json only, returns its record, or
+    None (nothing written) when the list file does not exist."""
+    record: dict[str, Any] = {"schema_version": SWING_SCHEMA_VERSION, "run_day_kst": run_day, "status": "OK",
+                              "histories": [], "failed": [], "deferred": []}
+    try:
+        listed = read_swing_watch(watch_path)
+    except SwingListInvalid as exc:
+        record.update(status="LIST_INVALID", reason=_short(str(exc)))
+        write_swing_record(output_directory, record)
+        return record
+    if listed is None:
+        return None
+    targets = sorted(set(listed) - {str(symbol).upper() for symbol in core_symbols})
+    start = clock()
+    budget = SWING_TIME_BUDGET_MIN * 60
+    for index, symbol in enumerate(targets):
+        if budget - (clock() - start) < SWING_SYMBOL_TIMEOUT_S:
+            record["deferred"] = targets[index:]
+            break
+        try:
+            exchange, last_session = known_exchange(symbol, closes_root)
+            if exchange is None:
+                exchange = resolve_exchange(symbol, runtime=runtime, rate_policy=rate_policy, reader=exchange_reader)
+            oldest = (date.fromisoformat(last_session) if last_session
+                      else max(FIRST_COLLECTION_DAY, today - timedelta(days=FIRST_COLLECTION_LOOKBACK_DAYS)))
+            collector(symbol, exchange, newest=today, oldest=min(oldest, today), profile=profile,
+                      pages_root=closes_root / "pages")
+            history = history_updater(symbol, exchange, now=now, closes_root=closes_root)
+            record["histories"].append({"symbol": symbol, "sessions": history.get("sessions"),
+                                        "verified_sessions": _verified_sessions(symbol, closes_root)})
+        except Exception as exc:  # noqa: BLE001 - one symbol's failure never stops the step or the run
+            record["failed"].append({"symbol": symbol, "reason": _swing_reason(symbol, exc)})
+    if record["failed"] or record["deferred"]:
+        record["status"] = "PARTIAL"
+    write_swing_record(output_directory, record)
+    return record
 
 
 # ---------------------------------------------------------------------------------------------
@@ -347,8 +468,12 @@ def daily(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CONF
           provenance: dict[str, Any] | None = None, policy_paths: dict[str, Path] | None = None,
           closes_root: Path = CLOSES_ROOT, watchlist_path: Path = WATCHLIST_PATH,
           evidence_root: Path | None = None,
-          provenance_source: Callable[[], dict[str, Any]] | None = None) -> dict[str, Any]:
-    """provenance_source computes the provenance again just before an apply-mode write (default git)."""
+          provenance_source: Callable[[], dict[str, Any]] | None = None,
+          swing_watch_path: Path | None = None,
+          swing_collector: Callable[..., None] = functools.partial(collect_bars, timeout=SWING_SYMBOL_TIMEOUT_S),
+          swing_clock: Callable[[], float] = time.monotonic) -> dict[str, Any]:
+    """provenance_source computes the provenance again just before an apply-mode write (default git).
+    swing_watch_path None (the default; only main passes SWING_WATCH_PATH) skips the swing-bars step."""
     paths = {**POLICY_PATHS, **(policy_paths or {})}
     # A fixed clock is passed down only when the caller fixes one (tests); otherwise each step reads the
     # real clock, so a snapshot is never stamped earlier than its own reads.
@@ -409,8 +534,9 @@ def daily(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CONF
         extra = list((config or {}).get("symbols_extra") or [])
         isolatable = isolatable_symbols(output_directory=output_directory, state_path=paths["state"],
                                         watchlist_path=watchlist_path, extra=extra, alert_policy_path=paths["alert"])
-        for symbol in symbols_for_run(output_directory=output_directory, state_path=paths["state"],
-                                      watchlist_path=watchlist_path, extra=extra):
+        core_symbols = symbols_for_run(output_directory=output_directory, state_path=paths["state"],
+                                       watchlist_path=watchlist_path, extra=extra)
+        for symbol in core_symbols:
             try:
                 exchange, last_session = known_exchange(symbol, closes_root)
                 if exchange is None:
@@ -447,7 +573,23 @@ def daily(*, output_root: Path = AUTO_OUTPUT_ROOT, config_path: Path = core.CONF
     required = int((config or {}).get("compare_days_required") or 3)
     if mode == "compare" and result["compare"]["streak"] >= required:
         result["next_action_for_user"] = READY_FOR_RECORDING
-    return _finish(result, output_root, output_directory, stale=stale)
+    finished = _finish(result, output_root, output_directory, stale=stale)
+    # 6 swing-bars (best effort): only after the core result and LATEST are written, only on an OK or HOLD day
+    # (the early halted-config HOLD and every FAIL returned above). It never rewrites them, adds no key to the result and
+    # leaves the return value and the exit code to the core result.
+    if swing_watch_path is not None and finished.get("status") in ("OK", "HOLD"):
+        try:
+            collect_swing_bars(
+                watch_path=swing_watch_path, output_directory=output_directory, run_day=day,
+                core_symbols=core_symbols, runtime=runtime, rate_policy=rate_policy, profile=profile, today=today,
+                now=now, closes_root=closes_root, collector=swing_collector, history_updater=history_updater,
+                exchange_reader=exchange_reader, clock=swing_clock)
+        except Exception as exc:  # noqa: BLE001 - the swing step never reaches the core result
+            write_swing_record(output_directory, {
+                "schema_version": SWING_SCHEMA_VERSION, "run_day_kst": day, "status": "PARTIAL",
+                "reason": _short(f"UNEXPECTED_ERROR:{type(exc).__name__}:{exc}"),
+                "histories": [], "failed": [], "deferred": []})
+    return finished
 
 
 def _finish(result: dict[str, Any], output_root: Path, output_directory: Path, *, stale: bool = False
@@ -491,7 +633,7 @@ def main(argv: list[str] | None = None) -> int:
                           "no_action": decision["no_action"]["value"],
                           "next_action_for_user": decision["next_action_for_user"]}, ensure_ascii=True))
         return 1 if decision["status"] == "FAIL" else 0
-    result = daily(output_root=args.output_root, config_path=args.config)
+    result = daily(output_root=args.output_root, config_path=args.config, swing_watch_path=SWING_WATCH_PATH)
     print(json.dumps({"status": result["status"], "mode": result["mode"], "reasons": result["reasons"][:5],
                       "streak": result["compare"]["streak"], "next_action_for_user": result["next_action_for_user"]},
                      ensure_ascii=True))
