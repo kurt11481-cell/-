@@ -91,8 +91,10 @@ EXTERNAL_CLASSES = ("DEPOSIT", "WITHDRAWAL", "FX")
 SIGNED_BY_MEMO_CLASSES = ("DIVIDEND", "FEE_TAX_INTEREST", "CORPORATE_ACTION")
 CLOCK = re.compile(r"([01]\d|2[0-3]):?([0-5]\d):?([0-5]\d)")
 # recon-dt: ust21150 ord_dt is the U.S. (ET) order day (observed 2026-10-21/22; the Kiwoom spec names no time
-# zone). Its fills lie within that day's 04:00-20:00 ET (pre-market to after-hours); zoneinfo moves the KST
-# bounds with daylight saving time.
+# zone). Its fills lie after D-1 20:00 ET and not after D 20:00 ET; zoneinfo moves the KST bounds with daylight
+# saving time. recon-dayfill (K3, user card 2026-11-20): a fill before D 04:00 ET is a Kiwoom day-session fill
+# (segment DAY_SESSION) whose ord_dt is its KST fill day = the next U.S. trading day D (observed 2026-11-19 SOXL:
+# order 11:34:06, fill 12:44:27 KST under ord_dt 20261119 = 22:44 ET on 11/18).
 US_DAY_OPEN, US_DAY_CLOSE = time(4, 0), time(20, 0)
 # cf-b2n (B2-N, user decisions 2026-10-23/25): an outflow missing from the transaction history (withdrawal, FX)
 # passes I3 only when the snapshot residual equals the residual of the ust21132 deposit by U.S. trading day.
@@ -269,9 +271,12 @@ def _kst_moment(clock: time, order_day: date, low: datetime, high: datetime, *, 
 
 def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     """Every filled order row, with its KST fill time. ord_dt is the U.S. (ET) order day D: the fill clock is
-    on the KST day D or D+1 that puts it within D 04:00-20:00 ET (else FILL_TIME_OUTSIDE_US_SESSION, e.g. a
-    Kiwoom day-session fill), and the order clock on the KST day that puts it after D-1 20:00 ET and not after
-    the fill (else FILL_TIME_INVALID)."""
+    on the KST day D or D+1 that puts it after D-1 20:00 ET and not after D 20:00 ET (else
+    FILL_TIME_OUTSIDE_US_SESSION), and the order clock on the KST day that puts it after D-1 20:00 ET and not
+    after the fill (else FILL_TIME_INVALID). A fill before D 04:00 ET is a Kiwoom day-session fill (recon-dayfill,
+    observed 2026-11-19 SOXL: ord_dt = its KST fill day = the next U.S. trading day D): it carries
+    "segment": "DAY_SESSION" and its ET date may be D-1; any other fill's ET date must be D (else
+    FILL_SESSION_DATE_MISMATCH). Its session is D either way."""
     fills: dict[tuple[str, str], dict[str, Any]] = {}
     errors: list[str] = []
     for result in dated_results:
@@ -312,8 +317,9 @@ def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any
             if ordered_at is None or filled_at is None:
                 errors.append(f"FILL_TIME_INVALID:{label}")
                 continue
-            moment = _kst_moment(filled_at, order_day, datetime.combine(order_day, US_DAY_OPEN, tzinfo=ET),
-                                 datetime.combine(order_day, US_DAY_CLOSE, tzinfo=ET))
+            moment = _kst_moment(filled_at, order_day,
+                                 datetime.combine(order_day - timedelta(days=1), US_DAY_CLOSE, tzinfo=ET),
+                                 datetime.combine(order_day, US_DAY_CLOSE, tzinfo=ET), low_open=True)
             if moment is None:
                 errors.append(f"FILL_TIME_OUTSIDE_US_SESSION:{label}")
                 continue
@@ -321,12 +327,16 @@ def parse_fills(dated_results: list[dict[str, Any]]) -> tuple[list[dict[str, Any
                                                                    tzinfo=ET), moment, low_open=True) is None:
                 errors.append(f"FILL_TIME_INVALID:{label}")
                 continue
-            if moment.astimezone(ET).date() != order_day:
+            day_session = moment < datetime.combine(order_day, US_DAY_OPEN, tzinfo=ET)
+            allowed = {order_day - timedelta(days=1), order_day} if day_session else {order_day}
+            if moment.astimezone(ET).date() not in allowed:
                 errors.append(f"FILL_SESSION_DATE_MISMATCH:{label}")
                 continue
             item = {"order_date": _ymd(order_day), "ticker": ticker, "side": side, "quantity": filled,
                     "price": str(price), "filled_at_kst": moment.isoformat(),
                     "session_date": order_day.isoformat()}
+            if day_session:
+                item["segment"] = "DAY_SESSION"
             key = (_ymd(order_day), order_number)
             if key in fills and fills[key] != item:
                 errors.append(f"FILL_ROW_DUPLICATE_CONFLICT:{label}")
@@ -540,8 +550,10 @@ def fill_settlement(fills: list[dict[str, Any]], day_trade_results: list[dict[st
     sessions are matched to dates in order: the sessions settling on one date, together, must equal that
     date's amounts within the fee range on each side (|settlement - gross| <= gross x 0.5% + 0.50), and a
     settled date's rows must carry exactly their quantities. A date can only hold fills from earlier KST days,
-    so slots and rows dated on or before the first fill's KST day belong to fills before the baseline and are
-    never counted (that cash is already in the baseline; a settlement does not move the order-available cash).
+    and a U.S. session S settles no earlier than KST S + 2 business days (recon-dayfill, observed 2026-11-19), so
+    slots and rows dated on or before the base day (the earliest over the sessions of the later of the session's
+    last KST fill day and S + 1 day) belong to fills before the baseline and are never counted (that cash is
+    already in the baseline; a settlement does not move the order-available cash).
 
     T1 r3 C4: a settlement due today (KST, `today`) shows no amount before the broker's morning processing (D0
     has no slot amounts and the trade row comes later). (a) When the previous run read that date's pending
@@ -554,7 +566,8 @@ def fill_settlement(fills: list[dict[str, Any]], day_trade_results: list[dict[st
     sessions, errors = fill_sessions(fills, day_trade_results)
     if errors:
         return Decimal("0"), [], errors
-    first_day = min(item["last_fill_day"] for item in sessions)
+    first_day = min(max(item["last_fill_day"], date.fromisoformat(item["session_date"]) + timedelta(days=1))
+                    for item in sessions)
     sides = {key for item in sessions for key in item["quantities"]}
     dated: dict[date, dict[str, Any]] = {}
     for row in trades:

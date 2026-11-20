@@ -1,7 +1,9 @@
 """recon-dt commit 1: ust21150 ord_dt is the U.S. (ET) order day.
 
-The KST day of a fill is the one of {ord_dt, ord_dt + 1} that puts cntr_time within ord_dt 04:00-20:00 ET; the
-order clock lies after ord_dt - 1 20:00 ET and not after the fill. Anything else holds (fail closed). The rows
+The KST day of a fill is the one of {ord_dt, ord_dt + 1} that puts cntr_time after ord_dt - 1 20:00 ET and not after
+ord_dt 20:00 ET (recon-dayfill K3 2026-11-20: a fill before ord_dt 04:00 ET is a Kiwoom day-session fill, segment
+DAY_SESSION); the order clock lies after ord_dt - 1 20:00 ET and not after the fill. Anything else holds (fail
+closed). The rows
 replay the 2026-10-21 ET order day behind the 2026-10-22/23 HOLDs (docs/claude/recon-hold-2026-10-23.md); account
 data and amounts are synthetic (TEST_ONLY). No network, no Kiwoom runtime.
 """
@@ -91,7 +93,8 @@ class OrderDayIsUsDayTests(unittest.TestCase):
                          ("2026-10-22T00:00:03+09:00", "2026-10-21"))
 
     def test_winter_time_moves_the_kst_bounds_one_hour(self):
-        # 2026-11-02 (EST, UTC-5): 20:00 ET = 10:00 KST on 11/03, 04:00 ET = 18:00 KST on 11/02.
+        # 2026-11-02 (EST, UTC-5): 20:00 ET = 10:00 KST on 11/03, 04:00 ET = 18:00 KST on 11/02, and 11/01 20:00 ET
+        # = 10:00 KST on 11/02 (the window's open lower end; before 04:00 ET a fill is a day-session fill).
         rows = [row("0000001", "AAA", SELL, 1, "10.0000", "08:29:00", "08:30:00"),
                 row("0000002", "AAA", SELL, 1, "10.0000", "09:59:00", "10:00:00"),
                 row("0000003", "AAA", SELL, 1, "10.0000", "18:00:00", "18:00:00")]
@@ -100,19 +103,31 @@ class OrderDayIsUsDayTests(unittest.TestCase):
         self.assertEqual(sorted(item["filled_at_kst"] for item in fills),
                          ["2026-11-02T18:00:00+09:00", "2026-11-03T08:30:00+09:00", "2026-11-03T10:00:00+09:00"])
         self.assertEqual({item["session_date"] for item in fills}, {"2026-11-02"})
+        # 10:30 KST on 11/02 = 20:30 ET on 11/01: a day-session fill of the 11/02 session.
         late = [row("0000004", "AAA", SELL, 1, "10.0000", "10:29:00", "10:30:00")]
-        self.assertEqual(self.parse("20261102", late), ([], ["FILL_TIME_OUTSIDE_US_SESSION:20261102:0"]))
+        fills, errors = self.parse("20261102", late)
+        self.assertEqual(errors, [])
+        self.assertEqual([(item["filled_at_kst"], item["session_date"], item.get("segment")) for item in fills],
+                         [("2026-11-02T10:30:00+09:00", "2026-11-02", "DAY_SESSION")])
+        # 17:59:59 KST on 11/02 = 03:59:59 ET on 11/02: still before 04:00 ET, a day-session fill.
         early = [row("0000005", "AAA", SELL, 1, "10.0000", "17:59:00", "17:59:59")]
-        self.assertEqual(self.parse("20261102", early), ([], ["FILL_TIME_OUTSIDE_US_SESSION:20261102:0"]))
-        # Summer time (EDT, UTC-4): 09:30 KST on 10/22 is 20:30 ET on 10/21 (outside), 09:00 KST is 20:00 (inside).
+        fills, errors = self.parse("20261102", early)
+        self.assertEqual(errors, [])
+        self.assertEqual([(item["filled_at_kst"], item["session_date"], item.get("segment")) for item in fills],
+                         [("2026-11-02T17:59:59+09:00", "2026-11-02", "DAY_SESSION")])
+        # Summer time (EDT, UTC-4): 09:30 KST on 10/21 is 20:30 ET on 10/20 (a day-session fill), but the order at
+        # 08:00 KST on 10/21 is 19:00 ET on 10/20, before the order window; 09:00 KST on 10/22 is 20:00 ET (inside).
         self.assertEqual(self.parse("20261021", [row("1", "AAA", SELL, 1, "10.0000", "08:00:00", "09:30:00")]),
-                         ([], ["FILL_TIME_OUTSIDE_US_SESSION:20261021:0"]))
+                         ([], ["FILL_TIME_INVALID:20261021:0"]))
         self.assertEqual(self.parse("20261021", [row("1", "AAA", SELL, 1, "10.0000", "08:00:00", "09:00:00")])[1], [])
 
-    def test_kiwoom_day_session_fill_holds(self):
-        # 12:00 KST is 23:00 ET on either candidate day: outside every U.S. hour of the order day.
+    def test_kiwoom_day_session_fill_counts_on_its_order_day(self):
+        # 12:00 KST on 10/21 is 23:00 ET on 10/20: a Kiwoom day-session fill of the 10/21 session (recon-dayfill).
         rows = [row("0000001", "AAA", BUY, 1, "10.0000", "11:50:00", "12:00:00")]
-        self.assertEqual(self.parse("20261021", rows), ([], ["FILL_TIME_OUTSIDE_US_SESSION:20261021:0"]))
+        fills, errors = self.parse("20261021", rows)
+        self.assertEqual(errors, [])
+        self.assertEqual([(item["filled_at_kst"], item["session_date"], item.get("segment")) for item in fills],
+                         [("2026-10-21T12:00:00+09:00", "2026-10-21", "DAY_SESSION")])
 
     def test_order_after_fill_or_outside_its_window_holds(self):
         later = [row("0000001", "AAA", SELL, 1, "10.0000", "06:20:00", "06:13:18")]

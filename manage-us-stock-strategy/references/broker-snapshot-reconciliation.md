@@ -241,12 +241,16 @@ Invariants (all must pass before anything is recorded; `auto_core_reconcile.py`)
 - Fills come only from broker fill records. `ord_dt` is the U.S. (ET) order
   day D (observed 2026-10-21/22: after-hours fills at 06:13-06:40 KST on 10/22
   carry 20261021; the Kiwoom spec names no time zone). A fill's KST time is
-  `cntr_time` on the KST day D or D+1 that puts it within D 04:00-20:00 ET
-  (zoneinfo, so the KST bounds move with daylight saving time); its session is
-  D. `ord_time` is placed the same way after D-1 20:00 ET and not after the
-  fill. A fill outside that window (`FILL_TIME_OUTSIDE_US_SESSION`, e.g. a
-  Kiwoom day-session fill, never observed), an order time that fits nowhere
-  (`FILL_TIME_INVALID`) or a fill later than the snapshot
+  `cntr_time` on the KST day D or D+1 that puts it after D-1 20:00 ET and not
+  after D 20:00 ET (zoneinfo, so the KST bounds move with daylight saving
+  time); its session is D. A fill before D 04:00 ET is a Kiwoom day-session
+  fill (`segment: DAY_SESSION`; recon-dayfill K3, user card 2026-11-20): its
+  `ord_dt` is its KST fill day, the next U.S. trading day D (observed
+  2026-11-19 SOXL: order 11:34:06, fill 12:44:27 KST under `ord_dt` 20261119 =
+  22:44 ET on 11/18), and its amounts still bind to the ust21610 read of D.
+  `ord_time` is placed the same way after D-1 20:00 ET and not after the
+  fill. A fill outside that window (`FILL_TIME_OUTSIDE_US_SESSION`), an order
+  time that fits nowhere (`FILL_TIME_INVALID`) or a fill later than the snapshot
   (`FILL_AFTER_SNAPSHOT`) holds. Only fills after the last record's
   `as_of_timestamp` count. Average cost is the
   broker's `frgn_stk_book_uv` and is not part of the explanation.
