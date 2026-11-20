@@ -35,8 +35,9 @@ are labeled 비교 중 and are not entered.
   USER_TERMINAL, and runs reconcile apply and journal apply only with the Windows Python on the company PC (Desktop
   Commander), never the VM shell (device_bash). Other Claude Code sessions, Codex, scheduled LLM tasks, Judge sessions and subagents never run apply.
   When the auto-core reconciliation holds, the manual path (propose -> confirmation -> apply) is the official exit:
-  after the S5 activation record it needs --cash-flow-evidence (propose refuses without it), and to clear a fill-reason
-  HOLD the record date (as_of, KST) must be after the KST date of the last fill that caused it. Before applying,
+  after the S5 activation record it needs --cash-flow-evidence (propose refuses without it). Before a manual
+  reconciliation, check that day's HOLD reasons and the read window in auto_core_reconcile.py instead of a fixed
+  date rule. Before applying,
   read manage-us-stock-strategy/references/broker-snapshot-reconciliation.md.
 - Review-journal entries (stock-strategy-system/decision_journal.json) are append-only and written only through
   `portfolio_review_journal.py`, or by the auto-core decide run in recording mode only (decision_mode apply; entries

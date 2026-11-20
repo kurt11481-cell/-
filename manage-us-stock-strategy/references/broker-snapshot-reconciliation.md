@@ -266,10 +266,8 @@ python manage-us-stock-strategy/scripts/reconcile_broker_state.py propose --cash
 Manual reconciliation as the official exit from an auto-core HOLD (R4): when the
 auto-core reconciliation holds, the manual path (propose, confirmation, apply)
 is the official way out. After S5 activation it needs the cash-flow evidence
-above. To clear a fill-reason HOLD, the record date (as_of, KST) must be after
-the KST date of the last fill that caused the HOLD (auto_core_reconcile.py fill
-window and fill-error rules; docs/claude/recon-dayfill-1120-proposal-2026-11-20.md
-section 1).
+above. Before a manual reconciliation, check that day's HOLD reasons and the
+read window in auto_core_reconcile.py instead of a fixed date rule.
 
 ### 5. Auto-core path (redesign T1, `reconcile_broker_state.py auto`)
 

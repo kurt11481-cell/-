@@ -122,3 +122,11 @@ test_reconcile_broker_state 57 OK · test_approval_human_check 28 OK · test_cas
 
 # 7. 커밋
 브랜치 `worktree-cowork-to-room-k3`(기준 22d44cf). 코드 커밋 693719b, 이 보고서는 그 뒤 커밋에 들어 있다. Judge는 브랜치 머리 커밋을 판정한다.
+
+# 8. 2회차 (수정안 3판, Judge J10 FAIL 정정)
+- 사장 3판 이어가기 승인(2026-11-20 14:14:06 KST 결정 카드). 기준 커밋 2b58d14.
+- 바꾼 것: R4의 기록일 숫자 조건("기록일(as_of, KST)은 그 HOLD를 낳은 마지막 체결 KST 날짜 뒤여야 한다")을 두 곳에서 지웠다. R4의 나머지(자동 코어 HOLD 때 수동 대조 propose → 확인 → apply가 공식 탈출구, S5 활성 뒤 `--cash-flow-evidence` 필수·없으면 propose 거부)는 그대로 두고, "수동 대조 전에 그날 HOLD 사유와 auto_core_reconcile.py 조회 창을 확인한다(고정 날짜 규칙 대신)" 한 문장을 더했다.
+  - CLAUDE.md:37~41 (38~40행 문장 교체, 줄 수 동일)
+  - manage-us-stock-strategy/references/broker-snapshot-reconciliation.md:266~270 (R4 단락, recon-dayfill 1절 인용 포함 4줄 → 2줄)
+- 다른 줄·파일은 건드리지 않음. 줄끝 CRLF 유지.
+- 재시험: test_cowork_to_room_k3 33 OK, test_reconcile_broker_state 57 OK, test_approval_human_check 28 OK (실패·건너뜀 0).
