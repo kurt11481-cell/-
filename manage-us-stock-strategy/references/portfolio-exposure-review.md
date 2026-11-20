@@ -332,7 +332,13 @@ python manage-us-stock-strategy/scripts/portfolio_review_journal.py apply --prop
 in the current conversation, or from the user's own terminal
 (`--confirmed-via USER_TERMINAL`). Claude Code, Codex, scheduled tasks and Judge
 sessions never run it and never type or guess the code (`.claude/settings.json`
-denies the command and direct edits of the journal file). Values in a proposal
+denies the command and direct edits of the journal file). cowork-to-room-k3:
+the CEO-office company-PC project thread may also record `line_review_completed`
+and `peak_review_card_completed`, only from a message the user typed in that
+thread (no card tap), with `--confirmed-via PROJECT_THREAD_USER_DECISION` and
+`--user-message "<message id> | <account id> | <KST time> | <verbatim text>"`
+whose fourth field holds the proposal's code; `s5_activation` is never recorded
+from the thread (CLAUDE.md Hard safety). Values in a proposal
 are copied from the review; they are never typed by hand. Without an activation
 entry the lines are not judged and R0 applies.
 

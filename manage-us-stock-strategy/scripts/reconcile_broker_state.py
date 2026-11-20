@@ -2,12 +2,18 @@
 """I0 broker reconciliation: propose (read-only), show, user-confirmed apply, and the auto-core path.
 
 propose  Read the Kiwoom account (read-only), build one proposal, never write state.
+         cowork-to-room-k3 R3: once the decision journal holds the S5 activation record, propose refuses
+         before any Kiwoom read unless --cash-flow-evidence is given (a corrupt journal also refuses).
 show     Render the proposal difference table for the user (deterministic).
 apply    Write the proposal to portfolio state only with the user's confirmation code.
          Run apply only in Cowork after the user typed "confirm <code>" in that conversation,
          or from the user's own terminal (--confirmed-via USER_TERMINAL: run by hand in an
          interactive console only, no pipe or NUL, then Enter pressed once). Agents, scheduled
          tasks, Claude Code, Codex and Judge sessions never run it.
+         cowork-to-room-k3: the CEO-office company-PC project thread may also run it, only after the user
+         typed "confirm <code>" in that thread, with --confirmed-via PROJECT_THREAD_USER_DECISION and
+         --user-message "<message id> | <account id> | <KST time> | <verbatim text>" (code in the fourth
+         field; a card tap is never a reconciliation confirmation).
 auto     Redesign T1 F4 (run by the auto-core Windows task): the same read plus transaction history,
          daily fills and day trades, judged by invariants I1-I5 (auto_core_reconcile.py). In mode
          "compare" (workspace/policies/auto_core.json) it never writes and records would_apply; in mode
@@ -33,7 +39,7 @@ from apply_user_confirmed_broker_snapshot import (
 from cash_flow_evidence import CashFlowError, build_declaration, read_ledger_blocks
 from kiwoom_broker_shadow import DEFAULT_PORTFOLIO_STATE_PATH, PROPOSAL_SCHEMA_VERSION, reconciliation_proposal
 from run_kiwoom_broker_shadow import collect_broker_snapshot, repo_relative
-from validation_common import file_hash, load_json, validate_instance, write_json
+from validation_common import PROJECT_THREAD_METHOD, file_hash, load_json, validate_instance, write_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -274,6 +280,14 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
         raise SystemExit("KIWOOM_RUNTIME_PATH_MISMATCH")
     broker_policy = load_json(args.broker_policy)
     state_path = Path(args.portfolio_state)
+    # cowork-to-room-k3 R3: after the S5 activation record, a manual reconciliation without cash-flow evidence is
+    # refused before any Kiwoom read (the auto path reads its own evidence and is unchanged).
+    rejection = activation_evidence_rejection(args.journal, args.cash_flow_evidence)
+    if rejection is not None:
+        key = ("propose_cash_flow_evidence_required" if rejection == CASH_FLOW_EVIDENCE_REQUIRED
+               else "propose_cash_flow_rejected")
+        print(messages[key].format(reason=rejection))
+        return 2
     # S5 R6: the declaration is validated before any broker read. Evidence is a saved, sanitized
     # transaction-history file; this command reads no extra broker API for it.
     declaration = None
@@ -327,6 +341,30 @@ def cmd_propose(args: argparse.Namespace, reader: Callable[..., list[dict[str, A
     return 2 if status == "BLOCKED" else 0
 
 
+CASH_FLOW_EVIDENCE_REQUIRED = "CASH_FLOW_EVIDENCE_REQUIRED_AFTER_ACTIVATION"
+
+
+def activation_evidence_rejection(journal_path: Path, cash_flow_evidence: Path | None) -> str | None:
+    """R3 reason code, or None. Reads the journal with the same functions as the auto path: a missing journal is
+    no activation (as before), a corrupt or unreadable one fails closed."""
+    from portfolio_exposure import journal_view
+    from portfolio_review_journal import load_journal
+
+    try:
+        journal = load_journal(Path(journal_path))
+        view = journal_view(journal)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return "DECISION_JOURNAL_UNREADABLE: " + (str(exc) or type(exc).__name__)
+    # Both statuses: journal_view turns an OK journal CORRUPT on its own (e.g. two activations) and then returns no
+    # activation, which must never read as "not activated".
+    for status, errors in ((journal.get("status"), journal.get("errors")), (view.get("status"), view.get("errors"))):
+        if status not in ("OK", "MISSING"):
+            return "DECISION_JOURNAL_" + str(status) + ": " + ", ".join(map(str, errors or []))
+    if view.get("activation") and cash_flow_evidence is None:
+        return CASH_FLOW_EVIDENCE_REQUIRED
+    return None
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     proposal = load_json(resolve_proposal_path(args.proposal, args.output_root))
     print("\n".join(render_proposal(proposal)))
@@ -346,7 +384,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         proposal = load_json(proposal_path)
         if not isinstance(proposal, dict) or proposal.get("schema_version") != PROPOSAL_SCHEMA_VERSION:
             raise ValueError("PROPOSAL_TYPE_NOT_KIWOOM")
-        if args.confirmed_via == "COWORK_CHAT_USER_MESSAGE" and not (args.user_message or "").strip():
+        if args.confirmed_via in ("COWORK_CHAT_USER_MESSAGE", PROJECT_THREAD_METHOD) and not (
+                args.user_message or "").strip():
             print(messages["apply_user_message_required"])
             return 2
         if args.portfolio_state is not None:
@@ -359,7 +398,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
         confirmation = {
             "confirmed": True, "proposal_id": proposal.get("proposal_id"), "bundle_id": proposal.get("bundle_id"),
             "confirm_code": code, "confirmation_method": args.confirmed_via,
-            "user_message": args.user_message if args.user_message else code,
+            # Only the terminal path falls back to the code; the thread path never does (required above).
+            "user_message": args.user_message if args.user_message or args.confirmed_via == PROJECT_THREAD_METHOD
+            else code,
         }
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         audit = apply_confirmed(
@@ -515,13 +556,18 @@ def build_parser() -> argparse.ArgumentParser:
                          help="S5 R6: sanitized transaction-history evidence from cash_flow_evidence.py normalize")
     propose.add_argument("--declare-cash-flow-usd",
                          help="S5 R6: user-declared net deposit (+) or withdrawal (-) in USD, e.g. 500.00")
+    propose.add_argument("--journal", type=Path, default=REPO_ROOT / "stock-strategy-system/decision_journal.json",
+                         help="cowork-to-room-k3 R3: decision journal read for the S5 activation record")
     show = commands.add_parser("show", help="render the proposal difference table")
     show.add_argument("--proposal", default="latest")
     show.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     apply = commands.add_parser("apply", help="apply one proposal after the user's explicit confirmation code")
     apply.add_argument("--confirm", required=True, help="confirmation code the user typed for this proposal")
     apply.add_argument("--confirmed-via", required=True, choices=CONFIRMATION_METHODS)
-    apply.add_argument("--user-message", help="the user's confirmation message, verbatim (required for Cowork)")
+    apply.add_argument("--user-message",
+                       help="the user's confirmation message, verbatim (required for Cowork); for "
+                            "PROJECT_THREAD_USER_DECISION the four fields '<message id> | <account id> | "
+                            "<KST time> | <verbatim text>' with the code in the fourth field")
     apply.add_argument("--proposal", default="latest")
     apply.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     apply.add_argument("--portfolio-state", type=Path)

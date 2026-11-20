@@ -152,12 +152,58 @@ recorded or inferred.
 8. Ask the user to rerun the manual analysis and confirm
    `broker_diff_status=MATCH`.
 
+#### 2a. CEO-office company-PC project thread (cowork-to-room-k3)
+
+The interactive Claude Code project thread (사장실 회사PC 스레드) follows the same
+steps 1-8 with two differences:
+
+- Step 5: only a message the user typed in that thread themselves (harness mark
+  from=human trust=principal) that contains `확인 <code>` for exactly the
+  immediately preceding proposal, the same KST day, once. A decision-card tap is
+  never a reconciliation confirmation. Text relayed by a coordinator or another
+  Claude, a card from another thread or an earlier day, a card closed by Claude,
+  summaries and scheduled turns are not confirmations.
+- Step 6: the thread uses only this method, never `COWORK_CHAT_USER_MESSAGE` or
+  `USER_TERMINAL`:
+
+   ```
+   python manage-us-stock-strategy/scripts/reconcile_broker_state.py apply --confirm <code> --confirmed-via PROJECT_THREAD_USER_DECISION --user-message "<message id> | <account id> | <KST time> | <verbatim text>"
+   ```
+
+  The library requires four non-empty fields (`user_` account, time ending in
+  `KST`) and searches the code only in the fourth (verbatim) field
+  (`PROJECT_THREAD_MESSAGE_INVALID`, `CONFIRM_CODE_NOT_IN_USER_MESSAGE`).
+  After apply the same session runs `show` and the manual analysis and confirms
+  `broker_diff_status=MATCH`.
+
+`propose` still needs the Windows Kiwoom runtime; the thread runs it only where
+the project instructions allow it, otherwise Cowork runs it.
+
 The confirmation code is a mistake guard, not proof of a human: any agent that
 can read the proposal can read the code. The real controls are this rule, the
 recorded user message, and the library checks (unresolved fields, expiry, state
-hash and revision, proposal integrity, code match, ledger continuity). Claude
-Code denies `reconcile_broker_state.py apply` and direct edits of the state,
-ledger and backups.
+hash and revision, proposal integrity, code match, ledger continuity). The same
+holds for the project thread: the script cannot tell who typed the four fields
+or which session chose the method; the harness mark and this rule are the human
+control. The Claude Code deny rules on `reconcile_broker_state.py apply` and on
+direct edits of the state, ledger and backups are written for Claude Code's own
+Bash and PowerShell tools (`.claude/settings.json` permissions). The project
+thread's company-PC shells (device_bash, Desktop Commander start_process and
+interact_with_process) are named only in the PreToolUse hook matcher; the hook
+(`.claude/hooks/kiwoom_order_block.py`) refuses Kiwoom order tools and order
+markers, including a whole `--confirm` flag. Whether the deny rules and the hook
+actually fire in a project thread has not been tested directly (확인 필요). If the
+hook fires there, a thread apply command line is refused by its `--confirm` flag
+(fail closed, nothing written); if not, a thread apply is controlled by these
+documented rules only.
+
+The thread runs reconcile apply and journal apply only with the Windows Python
+on the company PC (Desktop Commander), never with the company-PC VM shell
+(device_bash, Linux Python on the mounted folder): an atomic replace through the
+mounted folder has not been tested, and a failed replace after the ledger line
+is written would leave `STATE_CHANGED_OUTSIDE_LEDGER`. Running through Desktop
+Commander does not make it `USER_TERMINAL`; the method stays
+`PROJECT_THREAD_USER_DECISION`.
 
 Undo: v1 has no restore command. A wrong value is corrected by a new proposal
 (the broker is the reference). Each apply first writes
@@ -188,8 +234,16 @@ run apply.
 
 ### 4. S5 cash-flow declaration (R6, optional inputs of propose)
 
-After the S5 activation record exists, every reconciliation should carry the
-cash-flow block so that review lines can be judged
+After the S5 activation record exists, every manual reconciliation must carry
+the cash-flow block (cowork-to-room-k3 R3): `propose` reads the decision journal
+(`--journal`, default `stock-strategy-system/decision_journal.json`) before any
+Kiwoom read and refuses with `CASH_FLOW_EVIDENCE_REQUIRED_AFTER_ACTIVATION`
+(exit 2, no output folder) when the activation record exists and
+`--cash-flow-evidence` is missing. A corrupt or unreadable journal is also
+refused; a missing journal file means no activation. Cowork and the project
+thread never pass `--journal` to `propose` (the option exists for tests; a
+non-default path that does not exist would read as "no activation"). The block
+lets review lines be judged
 (see [portfolio-exposure-review.md](portfolio-exposure-review.md)):
 
 ```powershell
@@ -206,7 +260,14 @@ python manage-us-stock-strategy/scripts/reconcile_broker_state.py propose --cash
   are never cash flows.
 - `show` prints the block in the same table. Apply records it in the ledger
   entry only; no state field is written for it and `timing_plan` stays untouched.
-- Without the two options, propose, show and apply behave exactly as before.
+- Before the S5 activation record (or with no journal file), without the two
+  options, propose, show and apply behave exactly as before.
+
+Manual reconciliation as the official exit from an auto-core HOLD (R4): when the
+auto-core reconciliation holds, the manual path (propose, confirmation, apply)
+is the official way out. After S5 activation it needs the cash-flow evidence
+above. Before a manual reconciliation, check that day's HOLD reasons and the
+read window in auto_core_reconcile.py instead of a fixed date rule.
 
 ### 5. Auto-core path (redesign T1, `reconcile_broker_state.py auto`)
 

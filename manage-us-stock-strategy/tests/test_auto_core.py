@@ -1053,10 +1053,13 @@ class LibraryTests(Workspace):
         with self.assertRaisesRegex(ValueError, "CONFIRM_CODE_MISMATCH"):
             apply_module.apply_confirmed(state_path=self.state_path, proposal=proposal, confirmation=confirmation,
                                          audit_path=self.root / "audit.json")
-        self.assertEqual(apply_module.CONFIRMATION_METHODS, ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL"))
+        # cowork-to-room-k3: the CEO-office thread method is the one addition; AUTO_CORE_INVARIANTS stays out.
+        self.assertEqual(apply_module.CONFIRMATION_METHODS,
+                         ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", "PROJECT_THREAD_USER_DECISION"))
         apply_parser = cli.build_parser()._subparsers._group_actions[0].choices["apply"]
         method = next(action for action in apply_parser._actions if action.dest == "confirmed_via")
-        self.assertEqual(tuple(method.choices), ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL"))
+        self.assertEqual(tuple(method.choices),
+                         ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", "PROJECT_THREAD_USER_DECISION"))
 
     def test_human_code_path_still_applies(self):
         proposal, _ = self.proposal()

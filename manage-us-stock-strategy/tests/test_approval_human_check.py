@@ -266,7 +266,9 @@ class ReconcileApplyTests(reconcile_fixtures.TempStateCase):
             code = cli.main(["propose", "--readonly-policy", str(policies["readonly"]),
                              "--rate-policy", str(policies["rate"]), "--broker-policy", str(policies["broker"]),
                              "--alert-policy", str(policies["alert"]), "--portfolio-state", str(self.state_path),
-                             "--output-root", str(self.output_root)],
+                             "--output-root", str(self.output_root),
+                             # cowork-to-room-k3: never the default (real) decision journal.
+                             "--journal", str(self.directory / "decision_journal.json")],
                             reader=lambda requests, **kwargs: reconcile_fixtures.account_results(retrieved_at))
         self.assertEqual(code, 0)
         self.code = load_json(cli.resolve_proposal_path("latest", self.output_root))["confirm_code"]

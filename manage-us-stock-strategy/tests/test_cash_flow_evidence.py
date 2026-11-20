@@ -312,7 +312,8 @@ class ReconcileCliTests(TempStateCase):
                 "propose", "--readonly-policy", str(self.policies["readonly"]), "--rate-policy",
                 str(self.policies["rate"]), "--broker-policy", str(self.policies["broker"]), "--alert-policy",
                 str(self.policies["alert"]), "--portfolio-state", str(self.state_path), "--output-root",
-                str(self.output_root), *extra], reader=reader)
+                str(self.output_root), "--journal", str(self.directory / "decision_journal.json"), *extra],
+                reader=reader)
         return code, output.getvalue()
 
     def show(self) -> str:

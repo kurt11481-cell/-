@@ -2,8 +2,8 @@
   "locale": "ko-KR",
   "messages": {
     "propose_no_change": "브로커와 상태 일치. 조정 필요 없음.",
-    "propose_values": "브로커와 상태가 다릅니다. Cowork에서 \"조정 확인해줘\"라고 보내 주세요. 유효: {expires_kst} KST까지.",
-    "propose_metadata_only": "보유·평단·현금은 브로커와 같고 브로커 확인 기록만 오래됐습니다. Cowork에서 \"조정 확인해줘\"라고 보내 주세요. 유효: {expires_kst} KST까지.",
+    "propose_values": "브로커와 상태가 다릅니다. Cowork 또는 사장실 회사PC 스레드에서 \"조정 확인해줘\"라고 보내 주세요. 유효: {expires_kst} KST까지.",
+    "propose_metadata_only": "보유·평단·현금은 브로커와 같고 브로커 확인 기록만 오래됐습니다. Cowork 또는 사장실 회사PC 스레드에서 \"조정 확인해줘\"라고 보내 주세요. 유효: {expires_kst} KST까지.",
     "propose_blocked": "조정 제안을 만들 수 없습니다: {codes}",
     "propose_path": "제안 파일: {path}",
     "show_header": "[조정 제안] 키움 조회 {retrieved_kst} KST (유효 {minutes}분, {expires_hm}까지)",
@@ -36,6 +36,7 @@
     "show_fills_none": "최근 체결(표시): 없음",
     "show_fills_some": "최근 체결(표시): 있음 ({items})",
     "propose_cash_flow_rejected": "입출금 신고를 받을 수 없습니다: {reason}",
+    "propose_cash_flow_evidence_required": "조정 제안을 만들지 않았습니다({reason}): S5 활성 기록이 있어 입출금 증거 파일이 필요합니다. 키움 거래내역을 저장한 뒤 cash_flow_evidence.py normalize --raw <저장 파일> --from <YYYY-MM-DD> --to <YYYY-MM-DD> --output <evidence.json>으로 증거 파일을 만들고 propose --cash-flow-evidence <evidence.json>으로 다시 실행해 주세요. 키움 조회는 하지 않았습니다.",
     "show_cash_flow_none": "입출금 신고(S5): 거래내역 {period_from}~{period_to}에 입출금·환전 없음. HWM 조정 없음.",
     "show_cash_flow_declared": "입출금 신고(S5): {declared} USD 신고 (거래내역 {period_from}~{period_to}의 입출금·환전 합계 {net} USD). 확인하면 검토선 HWM에 같은 금액을 반영합니다.",
     "show_cash_flow_partial": "입출금 신고(S5): {declared} USD만 신고했습니다 (입출금·환전 합계 {net} USD, 미신고 {remainder} USD). 미신고분이 남아 검토선 판정과 채우기·신규 매수 권고가 멈춥니다.",
@@ -48,7 +49,7 @@
     "show_expired": "이 제안은 만료됐습니다({expires_hm} KST). Windows에서 제안 명령만 다시 실행해 주세요.",
     "apply_success": "revision {before} → {after} 적용. 백업: {backup}",
     "apply_rejected": "적용하지 않았습니다: {reason}",
-    "apply_user_message_required": "적용하지 않았습니다: Cowork 확인에는 사용자가 보낸 확인 메시지 원문(--user-message)이 필요합니다.",
+    "apply_user_message_required": "적용하지 않았습니다: Cowork 확인과 사장실 회사PC 스레드 확인에는 사용자가 보낸 확인 메시지 원문(--user-message)이 필요합니다(스레드는 \"<메시지 id> | <계정 id> | <KST 시각> | <원문>\" 4칸, 원문 칸에 확인 코드).",
     "apply_terminal_not_interactive": "적용하지 않았습니다: 사장 터미널에서 직접 실행하고 Enter를 한 번 눌러야 합니다(대화형 콘솔 아님 — 입력이나 출력이 파이프·리다이렉트·헤드리스 셸이거나, Enter 없이 입력이 끝났습니다)."
   }
 }

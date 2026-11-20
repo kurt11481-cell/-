@@ -14,7 +14,10 @@ from typing import Any, Callable
 
 from cash_flow_evidence import SETTLED_STATUSES, declaration_block_errors
 from kiwoom_broker_shadow import PATCH_FIELDS, PROPOSAL_SCHEMA_VERSION, proposal_content_hash
-from validation_common import canonical_hash, load_json, validate_instance
+from validation_common import (
+    PROJECT_THREAD_METHOD, canonical_hash, load_json, project_thread_code_in_verbatim, project_thread_message_valid,
+    validate_instance,
+)
 
 
 PROTECTED_NON_PORTFOLIO_NAMES = {
@@ -27,7 +30,9 @@ PINNED_PROPOSAL_SCHEMAS = {
     SCREENSHOT_SCHEMA_VERSION: SCHEMA_DIRECTORY / "broker-reconciliation-proposal.schema.json",
     PROPOSAL_SCHEMA_VERSION: SCHEMA_DIRECTORY / "kiwoom-reconciliation-proposal.schema.json",
 }
-CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL")
+# cowork-to-room-k3: the CEO-office company-PC thread applies with the user's own typed "confirm <code>" message only; its
+# user_message is the four harness fields and the code must be in the fourth (verbatim) field.
+CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", PROJECT_THREAD_METHOD)
 # Redesign T1 F4: the auto-core writes only through apply_auto_core, never through apply_confirmed.
 AUTO_CORE_METHOD = "AUTO_CORE_INVARIANTS"
 AUTO_CORE_INVARIANTS = ("I1", "I2", "I3", "I4", "I5")
@@ -277,7 +282,13 @@ def apply_confirmed(*, state_path: Path, proposal: dict[str, Any], confirmation:
         if confirmation.get("confirmation_method") not in CONFIRMATION_METHODS:
             raise ValueError("CONFIRMATION_METHOD_INVALID")
         message = confirmation.get("user_message")
-        if not isinstance(message, str) or proposal["confirm_code"] not in message.upper():
+        if confirmation["confirmation_method"] == PROJECT_THREAD_METHOD:
+            # Checked here, not only in the CLI: a code in the id or account field must never pass.
+            if not project_thread_message_valid(message):
+                raise ValueError("PROJECT_THREAD_MESSAGE_INVALID")
+            if not project_thread_code_in_verbatim(message, proposal["confirm_code"]):
+                raise ValueError("CONFIRM_CODE_NOT_IN_USER_MESSAGE")
+        elif not isinstance(message, str) or proposal["confirm_code"] not in message.upper():
             raise ValueError("USER_CONFIRMATION_MESSAGE_REQUIRED")
         expires_at = _parse_utc(proposal.get("expires_at"))
         if expires_at is None or current_time > expires_at:
