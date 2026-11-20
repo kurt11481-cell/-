@@ -1074,5 +1074,136 @@ class NewsTests(unittest.TestCase):
         self.assertEqual(self.factory.batches.calls, [])
 
 
+CA_BYTES = b"-----BEGIN CERTIFICATE-----\nFAKE-CA-FOR-TEST\n-----END CERTIFICATE-----\n"
+
+
+class CaBundleTests(unittest.TestCase):
+    """ascii_ca_bundle and default_fetcher (llm-newsca). Relative paths only: the
+    temp folder itself may sit under a non-ASCII user folder."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        cwd = contextlib.chdir(self.tmp.name)
+        cwd.__enter__()
+        self.addCleanup(cwd.__exit__, None, None, None)
+
+    @staticmethod
+    def put_source(folder, data=CA_BYTES):
+        src = Path(folder) / "cacert.pem"
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_bytes(data)
+        return str(src)
+
+    def test_ascii_ca_bundle_ascii_source_returns_none(self):
+        src = self.put_source("src-ascii")
+        self.assertTrue(src.isascii())
+        self.assertIsNone(MODULE.ascii_ca_bundle(src, copy_dir="copy/"))
+        self.assertFalse(Path("copy").exists())
+
+    def test_ascii_ca_bundle_copies_non_ascii_source(self):
+        src = self.put_source("src-\u00e9")
+        self.assertFalse(src.isascii())
+        out = MODULE.ascii_ca_bundle(src, copy_dir="copy/")
+        self.assertIsNotNone(out)
+        self.assertTrue(out.isascii())
+        self.assertEqual(Path(out), Path("copy") / MODULE.CA_COPY_NAME)
+        self.assertEqual(Path(out).read_bytes(), CA_BYTES)
+        self.assertEqual(sorted(p.name for p in Path("copy").iterdir()), [MODULE.CA_COPY_NAME])
+
+    def test_ascii_ca_bundle_skips_rewrite_when_same(self):
+        src = self.put_source("src-\u00e9")
+        with mock.patch.object(MODULE, "_write_ca_copy", wraps=MODULE._write_ca_copy) as writer:
+            first = MODULE.ascii_ca_bundle(src, copy_dir="copy/")
+            self.assertEqual(writer.call_count, 1)
+            second = MODULE.ascii_ca_bundle(src, copy_dir="copy/")
+            self.assertEqual(writer.call_count, 1)
+        self.assertEqual(first, second)
+        self.assertEqual(Path(second).read_bytes(), CA_BYTES)
+
+    def test_ascii_ca_bundle_non_ascii_copy_dir_returns_none(self):
+        src = self.put_source("src-\u00e9")
+        self.assertIsNone(MODULE.ascii_ca_bundle(src, copy_dir="copy-\u00e9/"))
+        self.assertFalse(Path("copy-\u00e9").exists())
+
+    def test_ascii_ca_bundle_oserror_returns_none(self):
+        src = self.put_source("src-\u00e9")
+        Path("copy").write_bytes(b"not a folder")
+        self.assertIsNone(MODULE.ascii_ca_bundle(src, copy_dir="copy/"))
+        self.assertEqual(Path("copy").read_bytes(), b"not a folder")
+
+    def test_ascii_ca_bundle_missing_source_returns_none(self):
+        self.assertIsNone(MODULE.ascii_ca_bundle("src-\u00e9/missing.pem", copy_dir="copy/"))
+        self.assertFalse((Path("copy") / MODULE.CA_COPY_NAME).exists())
+
+    def test_ascii_ca_bundle_rewrites_tampered_copy(self):
+        src = self.put_source("src-\u00e9")
+        out = MODULE.ascii_ca_bundle(src, copy_dir="copy/")
+        Path(out).write_bytes(b"tampered")
+        with mock.patch.object(MODULE, "_write_ca_copy", wraps=MODULE._write_ca_copy) as writer:
+            again = MODULE.ascii_ca_bundle(src, copy_dir="copy/")
+        self.assertEqual(writer.call_count, 1)
+        self.assertEqual(again, out)
+        self.assertEqual(Path(out).read_bytes(), CA_BYTES)
+        self.assertEqual(sorted(p.name for p in Path("copy").iterdir()), [MODULE.CA_COPY_NAME])
+
+    @staticmethod
+    def fake_modules():
+        session_obj = object()
+        session_cls = mock.Mock(return_value=session_obj)
+        ticker = mock.Mock(side_effect=lambda symbol, **kw: SimpleNamespace(news=[{"s": symbol}]))
+        modules = {
+            "yfinance": SimpleNamespace(Ticker=ticker),
+            "curl_cffi": SimpleNamespace(),
+            "curl_cffi.requests": SimpleNamespace(Session=session_cls),
+        }
+        return modules, session_cls, session_obj, ticker
+
+    def test_default_fetcher_uses_session_when_bundle_given(self):
+        modules, session_cls, session_obj, ticker = self.fake_modules()
+        bundle = mock.Mock(return_value="C:\\ascii\\certifi-cacert.pem")
+        with mock.patch.dict(sys.modules, modules), \
+                mock.patch.dict(MODULE._FETCH_STATE, {}, clear=True), \
+                mock.patch.object(MODULE, "ascii_ca_bundle", bundle):
+            self.assertEqual(MODULE.default_fetcher("MU"), [{"s": "MU"}])
+            self.assertEqual(MODULE.default_fetcher("NVDA"), [{"s": "NVDA"}])
+        self.assertEqual(bundle.call_count, 1)
+        session_cls.assert_called_once_with(impersonate="chrome", verify="C:\\ascii\\certifi-cacert.pem")
+        self.assertEqual(ticker.call_args_list,
+                         [mock.call("MU", session=session_obj), mock.call("NVDA", session=session_obj)])
+
+    def test_default_fetcher_plain_ticker_when_none(self):
+        modules, session_cls, _session_obj, ticker = self.fake_modules()
+        bundle = mock.Mock(return_value=None)
+        with mock.patch.dict(sys.modules, modules), \
+                mock.patch.dict(MODULE._FETCH_STATE, {}, clear=True), \
+                mock.patch.object(MODULE, "ascii_ca_bundle", bundle):
+            self.assertEqual(MODULE.default_fetcher("MU"), [{"s": "MU"}])
+            self.assertEqual(MODULE.default_fetcher("NVDA"), [{"s": "NVDA"}])
+        self.assertEqual(bundle.call_count, 1)
+        session_cls.assert_not_called()
+        self.assertEqual(ticker.call_args_list, [mock.call("MU"), mock.call("NVDA")])
+
+    def test_default_fetcher_session_error_reaches_fetch_detail(self):
+        modules, session_cls, _session_obj, ticker = self.fake_modules()
+        session_cls.side_effect = RuntimeError("session down")
+        bundle = mock.Mock(return_value="C:\\ascii\\certifi-cacert.pem")
+        with mock.patch.dict(sys.modules, modules), \
+                mock.patch.dict(MODULE._FETCH_STATE, {}, clear=True), \
+                mock.patch.object(MODULE, "ascii_ca_bundle", bundle):
+            raw, error = MODULE.fetch_items_detail("MU")
+        self.assertIsNone(raw)
+        self.assertEqual(error, {"symbol": "MU", "kind": "exception", "type": "RuntimeError",
+                                 "message": "session down"})
+        ticker.assert_not_called()
+
+    def test_ca_copy_constants_and_no_verify_off(self):
+        self.assertEqual(MODULE.CA_COPY_DIR, Path("C:/ProgramData/InvestmentV2"))
+        self.assertEqual(MODULE.CA_COPY_NAME, "certifi-cacert.pem")
+        text = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn("verify=False", text)
+        self.assertNotIn("SSL_VERIFYPEER", text)
+
+
 if __name__ == "__main__":
     unittest.main()

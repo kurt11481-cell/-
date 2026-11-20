@@ -13,7 +13,9 @@ labels to workspace/outputs/llm/news/records.jsonl and write the display digest
 Symbols, aliases, masking rules, the label prompt and schema, the message
 template and the record fields all come from the pre-registration
 docs/claude/llm-news-prereg-v1.json, pinned by sha256. Writes only under
-workspace/outputs/llm/. No existing task reads these files.
+workspace/outputs/llm/, plus one copy of the certifi CA bundle (CA_COPY_NAME
+under CA_COPY_DIR) when the bundle path is not ASCII. No existing task reads
+these files.
 
 Usage: python manage-us-stock-strategy/scripts/llm_pilot_news.py --phase submit|collect [--day YYYY-MM-DD] [--dry-run]
 """
@@ -23,6 +25,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -63,6 +66,13 @@ SUMMARY_MAX_CHARS = 2000
 LOOKBACK_DAYS = 3
 ERROR_MESSAGE_MAX_CHARS = 200
 ERROR_TYPE_MAX_CHARS = 80
+
+# curl (under curl_cffi) cannot open a CA bundle whose path is not ASCII, so a
+# copy of the certifi bundle is kept at this ASCII path for the news fetch.
+CA_COPY_DIR = Path("C:/ProgramData/InvestmentV2")
+CA_COPY_NAME = "certifi-cacert.pem"
+# per-process cache of the news fetch: "bundle" (path or None), "session"
+_FETCH_STATE = {}
 
 BATCH_SCHEMA = "llm-news-batch-1"
 FETCH_ERRORS_SCHEMA = "llm-news-fetch-errors-1"
@@ -297,10 +307,72 @@ def mask_item_text(text, target, prereg) -> str:
 
 # ---------------------------------------------------------------- news items
 
+def _write_ca_copy(target, data) -> None:
+    """Write data to target atomically: temp file in the same folder, fsync, replace."""
+    tmp = target.with_name(target.name + ".tmp")
+    try:
+        with open(tmp, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, target)
+    except OSError:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+        raise
+
+
+def ascii_ca_bundle(src=None, copy_dir=None):
+    """ASCII path of a CA bundle copy, or None to keep the default fetch.
+
+    None when the source path is already ASCII, when certifi is missing, when
+    the copy folder path is not ASCII, or on any OSError. The copy is compared
+    with the source on every call and rewritten when it differs or is missing.
+    """
+    if src is None:
+        try:
+            import certifi  # imported here so tests run without it
+        except ImportError:
+            return None
+        src = certifi.where()
+    if str(src).isascii():
+        return None
+    if copy_dir is None:
+        copy_dir = CA_COPY_DIR
+    if not str(copy_dir).isascii():
+        return None
+    folder = Path(copy_dir)
+    target = folder / CA_COPY_NAME
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        data = Path(src).read_bytes()
+        try:
+            current = target.read_bytes()
+        except FileNotFoundError:
+            current = None
+        if current != data:
+            _write_ca_copy(target, data)
+    except OSError:
+        return None
+    return str(target)
+
+
 def default_fetcher(symbol):
     import yfinance  # imported here so tests run without it
 
-    return yfinance.Ticker(symbol).news
+    if "bundle" not in _FETCH_STATE:
+        _FETCH_STATE["bundle"] = ascii_ca_bundle()
+    bundle = _FETCH_STATE["bundle"]
+    if bundle is None:
+        return yfinance.Ticker(symbol).news
+    if "session" not in _FETCH_STATE:
+        from curl_cffi.requests import Session
+
+        _FETCH_STATE["session"] = Session(impersonate="chrome", verify=bundle)
+    return yfinance.Ticker(symbol, session=_FETCH_STATE["session"]).news
 
 
 def _printable_ascii(text) -> str:
