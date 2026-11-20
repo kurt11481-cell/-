@@ -61,8 +61,11 @@ REASON_MAX_CHARS = 200
 TITLE_MAX_CHARS = 300
 SUMMARY_MAX_CHARS = 2000
 LOOKBACK_DAYS = 3
+ERROR_MESSAGE_MAX_CHARS = 200
+ERROR_TYPE_MAX_CHARS = 80
 
 BATCH_SCHEMA = "llm-news-batch-1"
+FETCH_ERRORS_SCHEMA = "llm-news-fetch-errors-1"
 RECORDS_SCHEMA = "llm-news-records-1"
 COLLECTED_SCHEMA = "llm-news-collected-1"
 
@@ -300,16 +303,90 @@ def default_fetcher(symbol):
     return yfinance.Ticker(symbol).news
 
 
-def fetch_items(symbol, fetcher=None):
-    """Raw news list of symbol, or None when the fetch failed."""
+def _printable_ascii(text) -> str:
+    return "".join(ch if " " <= ch <= "~" else "?" for ch in text)
+
+
+def _clean_error_message(exc) -> str:
+    """str(exc) with addresses hidden, one line, printable ASCII, at most ERROR_MESSAGE_MAX_CHARS."""
+    try:
+        text = _URL.sub("[url]", str(exc))
+        for ch in ("\r", "\n", "\t"):
+            text = text.replace(ch, " ")
+        return _printable_ascii(text)[:ERROR_MESSAGE_MAX_CHARS]
+    except Exception:
+        return ""
+
+
+def _clean_type_name(name) -> str:
+    return _printable_ascii(str(name))[:ERROR_TYPE_MAX_CHARS]
+
+
+def fetch_items_detail(symbol, fetcher=None):
+    """(raw news list, None) on success, or (None, error dict) when the fetch failed.
+
+    The error dict keeps why it failed (diagnosis only):
+    {"symbol", "kind": "exception" | "not_list", "type", "message"}.
+    """
     fetcher = fetcher if fetcher is not None else default_fetcher
     try:
         raw = fetcher(symbol)
-    except Exception:
-        return None
+    except Exception as exc:
+        return None, {
+            "symbol": symbol,
+            "kind": "exception",
+            "type": _clean_type_name(type(exc).__name__),
+            "message": _clean_error_message(exc),
+        }
     if not isinstance(raw, (list, tuple)):
-        return None
-    return list(raw)
+        return None, {
+            "symbol": symbol,
+            "kind": "not_list",
+            "type": _clean_type_name(type(raw).__name__),
+            "message": "",
+        }
+    return list(raw), None
+
+
+def fetch_items(symbol, fetcher=None):
+    """Raw news list of symbol, or None when the fetch failed."""
+    return fetch_items_detail(symbol, fetcher)[0]
+
+
+def fetch_errors_path(root, day) -> Path:
+    return day_dir_for(root, day) / "fetch-errors.json"
+
+
+def _write_fetch_errors(root, day, stamp, errors, total) -> None:
+    """Write the per-symbol fetch errors of this attempt; an OSError never stops the submit."""
+    path = fetch_errors_path(root, day)
+    doc = {
+        "schema": FETCH_ERRORS_SCHEMA,
+        "day": day,
+        "written_kst": stamp,
+        "symbols_failed": len(errors),
+        "symbols_total": total,
+        "errors": errors,
+    }
+    try:
+        atomic_write_text(path, json.dumps(doc, ensure_ascii=True, sort_keys=True, indent=1) + "\n")
+    except OSError:
+        try:
+            tmp = path.with_name(path.name + ".tmp")
+            if tmp.is_file():
+                tmp.unlink()
+        except OSError:
+            pass
+
+
+def _remove_fetch_errors(root, day) -> None:
+    """Remove a fetch-errors.json left by an earlier attempt; an OSError never stops the submit."""
+    path = fetch_errors_path(root, day)
+    try:
+        if path.exists():
+            path.unlink()
+    except OSError:
+        pass
 
 
 def _parse_epoch(value):
@@ -444,14 +521,26 @@ def run_submit(day, *, repo_root=REPO_ROOT, client_factory=None, fetcher=None, n
     # 6. fetch in pre-registered order
     fetched = []
     symbols_failed = 0
+    fetch_errors = []
     for sym in prereg["universe"]:
-        raw = fetch_items(sym, fetcher)
+        raw, error = fetch_items_detail(sym, fetcher)
         if raw is None:
             symbols_failed += 1
+            fetch_errors.append(error)
             continue
         fetched.append((sym, raw))
+    # diagnosis only: why each symbol failed (latest attempt); never written by the dry run
+    if not dry_run:
+        if fetch_errors:
+            _write_fetch_errors(root, day, stamp, fetch_errors, len(prereg["universe"]))
+        else:
+            _remove_fetch_errors(root, day)
     if not fetched:
-        return fail("FETCH_FAILED", REASON_KO["fetch_failed"], "symbols_failed=%d" % symbols_failed)
+        first = fetch_errors[0] if fetch_errors else None
+        reason = REASON_KO["fetch_failed"]
+        if first is not None:
+            reason += " [" + first["symbol"] + " " + first["type"] + "]"
+        return fail("FETCH_FAILED", reason, "symbols_failed=%d" % symbols_failed)
 
     # 7. pick: first sighting only, published within FRESH_HOURS before now
     seen = read_seen(root)

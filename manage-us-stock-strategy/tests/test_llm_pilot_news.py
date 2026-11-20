@@ -525,6 +525,160 @@ class NewsTests(unittest.TestCase):
         self.assertEqual(line, "llm-news %s SUBMITTED items=2 requests=4 symbols_failed=2" % DAY)
         self.assertEqual(self.batch_doc()["counts"]["symbols_failed"], 2)
 
+    # ------------------------------------------------------------ 6-1. fetch error diagnosis
+    def fetch_errors(self, day=DAY):
+        return json.loads((self.day_dir(day) / "fetch-errors.json").read_text(encoding="utf-8"))
+
+    def test_fetch_items_detail_exception(self):
+        exc = RuntimeError("rate limited https://x.example/a?b=1\nmore")
+        raw, error = MODULE.fetch_items_detail("MU", Fetcher({"MU": exc}))
+        self.assertIsNone(raw)
+        self.assertEqual(error["symbol"], "MU")
+        self.assertEqual(error["kind"], "exception")
+        self.assertEqual(error["type"], "RuntimeError")
+        self.assertIn("[url]", error["message"])
+        self.assertNotIn("x.example", error["message"])
+        self.assertNotIn("https", error["message"])
+        for ch in ("\n", "\r", "\t"):
+            self.assertNotIn(ch, error["message"])
+        self.assertLessEqual(len(error["message"]), 200)
+        self.assertEqual(error["message"], "rate limited [url] more")
+        self.assertEqual(set(error), {"symbol", "kind", "type", "message"})
+        ok_raw, ok_error = MODULE.fetch_items_detail("MU", Fetcher({"MU": [{"a": 1}]}))
+        self.assertEqual((ok_raw, ok_error), ([{"a": 1}], None))
+        self.assertEqual(MODULE.fetch_items_detail("MU", Fetcher({"MU": ({"a": 1},)})), ([{"a": 1}], None))
+
+    def test_fetch_items_detail_not_list(self):
+        raw, error = MODULE.fetch_items_detail("MU", Fetcher({"MU": {"a": 1}}))
+        self.assertIsNone(raw)
+        self.assertEqual(error, {"symbol": "MU", "kind": "not_list", "type": "dict", "message": ""})
+        _raw, none_error = MODULE.fetch_items_detail("MU", Fetcher({"MU": None}))
+        self.assertEqual(none_error["kind"], "not_list")
+        self.assertEqual(none_error["type"], "NoneType")
+
+    def test_fetch_items_detail_non_ascii_and_long(self):
+        exc = RuntimeError("가나\t" + "x" * 500)
+        _raw, error = MODULE.fetch_items_detail("MU", Fetcher({"MU": exc}))
+        self.assertEqual(len(error["message"]), 200)
+        self.assertTrue(error["message"].isascii())
+        self.assertTrue(error["message"].startswith("?? x"))
+        self.assertTrue(all(" " <= ch <= "~" for ch in error["message"]))
+        long_type = type("E" + "가" + "r" * 120, (Exception,), {})
+        _raw, error = MODULE.fetch_items_detail("MU", Fetcher({"MU": long_type("m")}))
+        self.assertEqual(len(error["type"]), 80)
+        self.assertTrue(error["type"].startswith("E?r"))
+
+        class BadStr(Exception):
+            def __str__(self):
+                raise ValueError("no text")
+
+        _raw, error = MODULE.fetch_items_detail("MU", Fetcher({"MU": BadStr()}))
+        self.assertEqual((error["kind"], error["type"], error["message"]), ("exception", "BadStr", ""))
+
+    def test_fetch_items_detail_keeps_interrupts(self):
+        for exc in (KeyboardInterrupt(), SystemExit(3)):
+            def raiser(_symbol, _exc=exc):
+                raise _exc
+
+            with self.assertRaises(type(exc)):
+                MODULE.fetch_items_detail("MU", raiser)
+
+    def test_all_fetches_failed_writes_errors(self):
+        universe = PREREG["universe"]
+        feed = {sym: RuntimeError("down for %s" % sym) for sym in universe}
+        code, status, line = self.submit(feed)
+        self.assertEqual((code, status), (11, "FETCH_FAILED"))
+        self.assertEqual(line, "llm-news %s FETCH_FAILED symbols_failed=30" % DAY)
+        self.assertEqual(self.factory.batches.calls, [])
+        doc = self.fetch_errors()
+        self.assertEqual(doc["schema"], "llm-news-fetch-errors-1")
+        self.assertEqual(doc["day"], DAY)
+        self.assertEqual(doc["written_kst"], NOW.isoformat(timespec="seconds"))
+        self.assertEqual((doc["symbols_failed"], doc["symbols_total"]), (30, 30))
+        self.assertEqual([e["symbol"] for e in doc["errors"]], list(universe))
+        self.assertTrue(all(e["kind"] == "exception" and e["type"] == "RuntimeError" for e in doc["errors"]))
+        self.assertEqual(doc["errors"][0]["message"], "down for %s" % universe[0])
+        self.assertTrue((self.day_dir() / "fetch-errors.json").read_bytes().isascii())
+        failed = (self.day_dir() / "failed.md").read_text(encoding="utf-8")
+        self.assertIn("[%s RuntimeError]" % universe[0], failed)
+        self.assertIn("(FETCH_FAILED)", failed)
+        self.assertEqual(failed, "검토 못 함: 기사 가져오기 실패 [%s RuntimeError] (FETCH_FAILED)\n" % universe[0])
+
+    def test_some_fetches_failed_writes_errors(self):
+        feed = basic_feed()
+        feed["AMD"] = None
+        feed["TSM"] = RuntimeError("down")
+        code, status, line = self.submit(feed)
+        self.assertEqual((code, status), (0, "SUBMITTED"))
+        self.assertEqual(line, "llm-news %s SUBMITTED items=2 requests=4 symbols_failed=2" % DAY)
+        self.assertEqual(self.batch_doc()["counts"]["symbols_failed"], 2)
+        doc = self.fetch_errors()
+        self.assertEqual((doc["symbols_failed"], doc["symbols_total"]), (2, 30))
+        universe = PREREG["universe"]
+        expected = sorted(["AMD", "TSM"], key=universe.index)
+        self.assertEqual([e["symbol"] for e in doc["errors"]], expected)
+        by_symbol = {e["symbol"]: e for e in doc["errors"]}
+        self.assertEqual(by_symbol["AMD"], {"symbol": "AMD", "kind": "not_list", "type": "NoneType", "message": ""})
+        self.assertEqual(by_symbol["TSM"], {"symbol": "TSM", "kind": "exception", "type": "RuntimeError",
+                                            "message": "down"})
+        self.assertFalse((self.day_dir() / "failed.md").exists())
+
+    def test_dry_run_writes_no_fetch_errors(self):
+        feed = basic_feed()
+        feed["TSM"] = RuntimeError("down")
+        code, status, line = self.submit(feed, key=False, dry_run=True)
+        self.assertEqual((code, status), (0, "DRY_RUN"))
+        self.assertEqual(line, "llm-news %s DRY_RUN items=2 symbols_failed=1" % DAY)
+        self.assertFalse((self.root / "workspace").exists())
+        all_failed = {sym: RuntimeError("down") for sym in PREREG["universe"]}
+        code, status, _line = self.submit(all_failed, key=False, dry_run=True)
+        self.assertEqual((code, status), (11, "FETCH_FAILED"))
+        self.assertFalse((self.root / "workspace").exists())
+
+    def test_no_fetch_errors_file_when_all_ok(self):
+        self.assertEqual(self.submit()[:2], (0, "SUBMITTED"))
+        self.assertFalse((self.day_dir() / "fetch-errors.json").exists())
+
+    def test_stale_fetch_errors_removed_when_retry_ok(self):
+        all_failed = {sym: RuntimeError("down") for sym in PREREG["universe"]}
+        self.assertEqual(self.submit(all_failed)[:2], (11, "FETCH_FAILED"))
+        self.assertTrue((self.day_dir() / "fetch-errors.json").exists())
+        code, status, line = self.submit()
+        self.assertEqual((code, status), (0, "SUBMITTED"))
+        self.assertEqual(line, "llm-news %s SUBMITTED items=2 requests=4 symbols_failed=0" % DAY)
+        self.assertFalse((self.day_dir() / "fetch-errors.json").exists())
+        self.assertFalse((self.day_dir() / "failed.md").exists())
+
+    def test_fetch_errors_overwritten_by_latest_attempt(self):
+        all_failed = {sym: RuntimeError("down") for sym in PREREG["universe"]}
+        self.assertEqual(self.submit(all_failed)[:2], (11, "FETCH_FAILED"))
+        all_failed = {sym: ValueError("again") for sym in PREREG["universe"]}
+        later = NOW + timedelta(minutes=5)
+        self.assertEqual(self.submit(all_failed, now=later)[:2], (11, "FETCH_FAILED"))
+        doc = self.fetch_errors()
+        self.assertEqual(doc["written_kst"], later.isoformat(timespec="seconds"))
+        self.assertTrue(all(e["type"] == "ValueError" for e in doc["errors"]))
+        self.assertIn("[%s ValueError]" % PREREG["universe"][0],
+                      (self.day_dir() / "failed.md").read_text(encoding="utf-8"))
+
+    def test_fetch_errors_write_oserror_does_not_change_outcome(self):
+        (self.day_dir() / "fetch-errors.json").mkdir(parents=True)
+        feed = basic_feed()
+        feed["AMD"] = None
+        feed["TSM"] = RuntimeError("down")
+        code, status, line = self.submit(feed)
+        self.assertEqual((code, status), (0, "SUBMITTED"))
+        self.assertEqual(line, "llm-news %s SUBMITTED items=2 requests=4 symbols_failed=2" % DAY)
+        self.assertEqual(self.batch_doc()["counts"]["symbols_failed"], 2)
+        self.assertTrue((self.day_dir() / "fetch-errors.json").is_dir())
+        self.assertFalse((self.day_dir() / "fetch-errors.json.tmp").exists())
+        # removing a stale file fails the same way and still does not change the outcome
+        (self.day_dir(DAY2) / "fetch-errors.json").mkdir(parents=True)
+        code, status, line = self.submit(feed=day2_feed(), day=DAY2, now=NOW2)
+        self.assertEqual((code, status), (0, "SUBMITTED"))
+        self.assertEqual(line, "llm-news %s SUBMITTED items=2 requests=4 symbols_failed=0" % DAY2)
+        self.assertTrue((self.day_dir(DAY2) / "fetch-errors.json").is_dir())
+
     # ------------------------------------------------------------ 7. budget, key, halt
     def seed_usage(self, cost, pilot="news", ts="2026-11-03T22:00:00+09:00"):
         self.usage.parent.mkdir(parents=True, exist_ok=True)
