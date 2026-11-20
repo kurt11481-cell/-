@@ -1,7 +1,7 @@
 ---
 id: watch-card-CRWD-2026-11-14
 type: card
-status: draft
+status: "superseded — 2026-11-20 v1(watch-card-CRWD-2026-11-20.md)로 대체, 사장 수락 15:59:32 KST. 이 v0은 수락된 적 없음"
 as_of: 2026-11-14
 valid_until: 확인 필요
 tickers: [CRWD]

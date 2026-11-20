@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-11-19",
-  "updated_by": "Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-19: BE known_events의 '2026-11-23 대기 허가 결정 기한(2차)' 제거 — 주 환경부·개발사가 기한 포기, 12/7 공청회 연기·새 날짜 없음(ABQ Journal 11/06, dc-loan-sale-impact-2026-11-19.md 5절 2번). 카드·판단·절 해시 불변 / 2026-11-19: MU·PWR 관심 카드 v2(재검토 갱신 · PWR 3분기 실적 8-K 2026-10-29) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"둘 다 갱신본 수락\", 17:21 KST) — card_doc·card_section·절 해시·static_evidence(SE1·SE2 갱신, SE3 이벤트 반응 − 약)·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지",
+  "updated_at": "2026-11-20",
+  "updated_by": "Cowork (2026-11-20: CRWD 관심 카드 v1 수락 등록 — 결정 카드 15:59:32 KST '수락', 새 항목 CRWD) / Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-19: BE known_events의 '2026-11-23 대기 허가 결정 기한(2차)' 제거 — 주 환경부·개발사가 기한 포기, 12/7 공청회 연기·새 날짜 없음(ABQ Journal 11/06, dc-loan-sale-impact-2026-11-19.md 5절 2번). 카드·판단·절 해시 불변 / 2026-11-19: MU·PWR 관심 카드 v2(재검토 갱신 · PWR 3분기 실적 8-K 2026-10-29) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"둘 다 갱신본 수락\", 17:21 KST) — card_doc·card_section·절 해시·static_evidence(SE1·SE2 갱신, SE3 이벤트 반응 − 약)·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -1225,6 +1225,132 @@
         {
           "id": "PLTR-KILL",
           "source": "docs/claude/watch-card-PLTR-2026-11-03.md:47"
+        }
+      ],
+      "known_events": []
+    },
+    "CRWD": {
+      "role": "watch",
+      "card_doc": "docs/claude/watch-card-CRWD-2026-11-20.md",
+      "card_section": "# CRWD (CrowdStrike Holdings, NASDAQ) 관심 카드 v1 (2026-11-20, SEC 원문 재작성, 미보유)",
+      "section_sha256": "5d31464d55a1d0fcedd27c96755b4dcaf1eca11c87bfb0a9b880810bef13495f",
+      "accepted": {
+        "text": "사용자 수락 2026-11-20 15:59:32 KST 결정 카드 'CRWD 관심 카드 새 판(v1)을 수락할까요?' → '수락' (관심 유지·상품 승인 아님)",
+        "date": "2026-11-20",
+        "source": "docs/claude/watch-card-CRWD-2026-11-20.md:4"
+      },
+      "card_action": "WATCH",
+      "trim_target_weight": null,
+      "trigger_set": "CR",
+      "sector": "N1 사이버보안",
+      "rg2_benchmark": "SOXX",
+      "official_domains": [
+        "crowdstrike.com",
+        "sec.gov"
+      ],
+      "c8": {
+        "one_day": 0.1,
+        "five_day": null,
+        "source": "docs/claude/watch-card-CRWD-2026-11-20.md:69"
+      },
+      "card_triggers": [
+        {
+          "id": "CR1",
+          "kind": "earnings_notice",
+          "side": "info",
+          "strength": "info",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:62"
+        },
+        {
+          "id": "CR4",
+          "kind": "good_news_drop",
+          "side": "-",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:65"
+        },
+        {
+          "id": "CR5",
+          "kind": "new_high_hold",
+          "side": "+",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:66"
+        },
+        {
+          "id": "CR6",
+          "kind": "pullback_rebound",
+          "side": "+",
+          "strength": "weak",
+          "params": {
+            "band": 0.015
+          },
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:67"
+        },
+        {
+          "id": "CR7",
+          "kind": "ema20_below_twice",
+          "side": "-",
+          "strength": "weak",
+          "params": {},
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:68"
+        },
+        {
+          "id": "CR8",
+          "kind": "drop_alert",
+          "side": "alert",
+          "strength": "review",
+          "params": {
+            "one_day": 0.1,
+            "five_day": null
+          },
+          "active_when": "held_or_member",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:69"
+        }
+      ],
+      "static_evidence": [
+        {
+          "id": "CRWD-SE1",
+          "e1_kind": "thesis",
+          "strength": "strong",
+          "direction": "+",
+          "as_of": "2026-08-26",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:25",
+          "quote": "매출 $1.47B(+26% YoY), 구독 매출 $1.40B(+27%), ARR $5.84B(+25% YoY), 순신규 ARR $332.8M(+51% YoY, 사상 최대)"
+        },
+        {
+          "id": "CRWD-SE2",
+          "e1_kind": "valuation",
+          "strength": "weak",
+          "direction": "-",
+          "as_of": "2026-11-20",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:26",
+          "quote": "FY27 non-GAAP EPS 가이던스 중간값 $1.255 기준 약 194배"
+        },
+        {
+          "id": "CRWD-SE3",
+          "e1_kind": "event_reaction",
+          "strength": "strong",
+          "direction": "+",
+          "as_of": "2026-11-20",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:27",
+          "quote": "Q2 발표(8/26 장 뒤) P0 $189.43 → 8/27 $228.00(+20.4%) → 반응일 뒤 10세션(9/11) $206.67, P0 대비 +9.1%"
+        }
+      ],
+      "kill_refs": [
+        {
+          "id": "CR3",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:64"
+        },
+        {
+          "id": "CRWD-KILL",
+          "source": "docs/claude/watch-card-CRWD-2026-11-20.md:52"
         }
       ],
       "known_events": []

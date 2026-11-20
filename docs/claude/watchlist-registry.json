@@ -224,10 +224,10 @@
    },
    "s1Basis": "공식 8-K 2026-08-26(Q2 FY27): 순신규 ARR $333M, +51% YoY 가속, FY27 순신규 ARR 성장 가이던스 34%로 630bp 상향 — https://www.sec.gov/Archives/edgar/data/1535527/000153552726000029/crwd-20260826xex991.htm",
    "since": "2026-11-14",
-   "card": "docs/claude/watch-card-CRWD-2026-11-14.md",
+   "card": "docs/claude/watch-card-CRWD-2026-11-20.md",
    "triggerSet": "CRWD",
    "capExempt": false,
-   "cardStatus": "자동 작성 초안(미수락, 2026-11-14)",
+   "cardStatus": "수락(2026-11-20 15:59:32 KST 결정 카드, v1 — SEC 원문 재작성, v0 자동 초안 대체)",
    "scoredAt": "2026-11-14"
   }
  ],
