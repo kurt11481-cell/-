@@ -41,6 +41,28 @@ def file_hash(path: str | Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+# journal-venue / cowork-to-room-k3: the confirmation method of the CEO-office company-PC project thread, shared
+# by the reconciliation apply and the decision journal (defined once here so neither imports the other).
+PROJECT_THREAD_METHOD = "PROJECT_THREAD_USER_DECISION"
+
+
+def project_thread_message_valid(message: Any) -> bool:
+    """journal-venue: "<message or card id> | user_<account> | <time> KST | <verbatim text>", no empty field."""
+    if not isinstance(message, str):
+        return False
+    fields = [field.strip() for field in message.split("|", 3)]
+    return (len(fields) == 4 and all(fields) and fields[1].startswith("user_")
+            and fields[2].endswith("KST"))
+
+
+def project_thread_code_in_verbatim(message: Any, code: Any) -> bool:
+    """cowork-to-room-k3: the code is searched only in the fourth (verbatim) field of a valid thread message,
+    never in the id, account or time fields."""
+    if not project_thread_message_valid(message) or not isinstance(code, str) or not code.strip():
+        return False
+    return code.strip().upper() in message.split("|", 3)[3].upper()
+
+
 def parse_datetime(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:

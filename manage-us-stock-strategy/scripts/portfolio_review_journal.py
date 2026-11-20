@@ -19,7 +19,11 @@ apply   append the entry. Run apply only in Cowork after the user typed "confirm
         and never type or guess the code.
         journal-venue: --confirmed-via PROJECT_THREAD_USER_DECISION is run by the CEO-office company-PC
         project thread in the session where the user typed the decision or tapped that thread's decision card;
-        user_message is "<message or card id> | <account id> | <KST time> | <verbatim text or card option>" (no code).
+        user_message is "<message or card id> | <account id> | <KST time> | <verbatim text or card option>"; for the card entries
+        (card_decision, card_user_decision) only, no code is needed in it.
+        cowork-to-room-k3: the thread may also record line_review_completed and peak_review_card_completed, only
+        from the user's own typed message (no card tap) whose fourth (verbatim) field holds the proposal's code;
+        never s5_activation. The thread runs apply only with the Windows Python on the company PC.
 verify  check the journal hash chain
 
 Redesign T2 F7: in recording mode the auto-core appends core_decision, order_ticket and ticket_outcome
@@ -47,7 +51,10 @@ from portfolio_exposure import (
     JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW, review_activation_blockers, review_content_hash,
 )
 from validate_holding_card import validate_card
-from validation_common import canonical_hash, load_json, validate_instance, write_json
+from validation_common import (
+    PROJECT_THREAD_METHOD, canonical_hash, load_json, project_thread_code_in_verbatim,
+    project_thread_message_valid as _project_thread_message_valid, validate_instance, write_json,
+)
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -70,7 +77,11 @@ S5_ENTRY_TYPES = (JOURNAL_ACTIVATION, JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
 CARD_ENTRY_TYPES = (JOURNAL_CARD_DECISION, JOURNAL_CARD_USER_DECISION)
 # journal-venue: the user's decision in the CEO-office company-PC project thread (typed message or that thread's
 # card tap) is the confirmation itself; its user_message holds the four harness fields instead of the code.
-PROJECT_THREAD_METHOD = "PROJECT_THREAD_USER_DECISION"
+# PROJECT_THREAD_METHOD is defined once in validation_common (shared with the reconciliation apply).
+# cowork-to-room-k3: the thread may also record the two S5 review completions, from the user's own typed message only,
+# with the proposal's code in the fourth (verbatim) field. s5_activation stays outside the thread.
+PROJECT_THREAD_CODE_ENTRY_TYPES = (JOURNAL_LINE_REVIEW, JOURNAL_PEAK_REVIEW)
+PROJECT_THREAD_ENTRY_TYPES = CARD_ENTRY_TYPES + PROJECT_THREAD_CODE_ENTRY_TYPES
 CONFIRMATION_METHODS = ("COWORK_CHAT_USER_MESSAGE", "USER_TERMINAL", PROJECT_THREAD_METHOD)
 # hnd-check: the refusal of user_terminal_rejection (USER_TERMINAL apply here and in reconcile_broker_state.py).
 TERMINAL_NOT_INTERACTIVE = "USER_TERMINAL_NOT_INTERACTIVE"
@@ -185,10 +196,13 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
     if not isinstance(code, str) or not isinstance(entry["user_message"], str):
         return "CONFIRMATION_FIELDS_INVALID"
     if entry["confirmation_method"] == PROJECT_THREAD_METHOD:
-        if entry_type not in CARD_ENTRY_TYPES:
+        if entry_type not in PROJECT_THREAD_ENTRY_TYPES:
             return "PROJECT_THREAD_ENTRY_TYPE_INVALID"
         if not project_thread_message_valid(entry["user_message"]):
             return "PROJECT_THREAD_MESSAGE_INVALID"
+        if entry_type in PROJECT_THREAD_CODE_ENTRY_TYPES and not project_thread_code_in_verbatim(
+                entry["user_message"], code):
+            return "CONFIRM_CODE_NOT_IN_USER_MESSAGE"
     elif code not in entry["user_message"].upper():
         return "CONFIRM_CODE_NOT_IN_USER_MESSAGE"
     expected_fields = CARD_DECISION_FIELDS if entry_type == JOURNAL_CARD_DECISION else PAYLOAD_FIELDS[entry_type]
@@ -238,12 +252,11 @@ def _entry_inconsistency(entry: dict[str, Any], decisions: dict[str, dict[str, A
 
 
 def project_thread_message_valid(message: Any) -> bool:
-    """journal-venue: "<message or card id> | user_<account> | <time> KST | <verbatim text>", no empty field."""
-    if not isinstance(message, str):
-        return False
-    fields = [field.strip() for field in message.split("|", 3)]
-    return (len(fields) == 4 and all(fields) and fields[1].startswith("user_")
-            and fields[2].endswith("KST"))
+    """journal-venue: "<message or card id> | user_<account> | <time> KST | <verbatim text>", no empty field.
+
+    cowork-to-room-k3: the rule lives in validation_common (shared with the reconciliation apply); same name and
+    behaviour here."""
+    return _project_thread_message_valid(message)
 
 
 def _auto_core_inconsistency(entry: dict[str, Any]) -> str | None:
@@ -554,10 +567,13 @@ def apply_proposal_entries(*, journal_path: Path, proposal: dict[str, Any], conf
         raise JournalError("CONFIRMATION_METHOD_INVALID")
     message = confirmation.get("user_message")
     if confirmation["confirmation_method"] == PROJECT_THREAD_METHOD:
-        if proposal["entry_type"] not in CARD_ENTRY_TYPES:
+        if proposal["entry_type"] not in PROJECT_THREAD_ENTRY_TYPES:
             raise JournalError("PROJECT_THREAD_ENTRY_TYPE_INVALID")
         if not project_thread_message_valid(message):
             raise JournalError("PROJECT_THREAD_MESSAGE_INVALID")
+        if proposal["entry_type"] in PROJECT_THREAD_CODE_ENTRY_TYPES and not project_thread_code_in_verbatim(
+                message, proposal["confirm_code"]):
+            raise JournalError("CONFIRM_CODE_NOT_IN_USER_MESSAGE")
     elif not isinstance(message, str) or proposal["confirm_code"] not in message.upper():
         raise JournalError("USER_CONFIRMATION_MESSAGE_REQUIRED")
     # Expiry and the recorded time use the real clock; a caller's now can only move time forward.

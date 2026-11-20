@@ -847,7 +847,9 @@ class CliTests(TempStateCase):
         code, output = self.run_cli([
             "propose", "--readonly-policy", str(self.policies["readonly"]), "--rate-policy", str(self.policies["rate"]),
             "--broker-policy", str(self.policies["broker"]), "--alert-policy", str(self.policies["alert"]),
-            "--portfolio-state", str(self.state_path), "--output-root", str(self.output_root)], reader=reader)
+            "--portfolio-state", str(self.state_path), "--output-root", str(self.output_root),
+            # cowork-to-room-k3: a temporary journal (absent = no S5 activation), never the default real one.
+            "--journal", str(self.directory / "decision_journal.json")], reader=reader)
         self.assertEqual(len(calls), 1)
         self.assertEqual([item["operation"] for item in calls[0][0]], list(ALL_OPERATIONS))
         return code, output
@@ -885,7 +887,8 @@ class CliTests(TempStateCase):
         with self.assertRaises(SystemExit):
             self.run_cli(["propose", "--runtime", str(self.directory), "--readonly-policy",
                           str(self.policies["readonly"]), "--portfolio-state", str(self.state_path),
-                          "--output-root", str(self.output_root)], reader=lambda *a, **k: [])
+                          "--output-root", str(self.output_root),
+                          "--journal", str(self.directory / "decision_journal.json")], reader=lambda *a, **k: [])
 
     def test_apply_requires_the_code(self):
         self.propose()
@@ -949,7 +952,7 @@ class CliTests(TempStateCase):
 
     def test_ledger_and_backup_options_are_removed(self):
         elsewhere = str(self.directory / "elsewhere")
-        for argv in (["propose", "--ledger", elsewhere],
+        for argv in (["propose", "--ledger", elsewhere, "--journal", str(self.directory / "decision_journal.json")],
                      ["apply", "--confirm", "00000000", "--confirmed-via", "USER_TERMINAL", "--ledger", elsewhere],
                      ["apply", "--confirm", "00000000", "--confirmed-via", "USER_TERMINAL",
                       "--backup-directory", elsewhere]):
