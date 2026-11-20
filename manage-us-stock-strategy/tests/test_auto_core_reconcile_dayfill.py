@@ -5,8 +5,8 @@ D 04:00 ET is a Kiwoom day-session fill (segment DAY_SESSION) whose ord_dt is it
 bind to the ust21610 read of D (else FILL_AMOUNT_UNAVAILABLE, fail closed). Settlement slots and rows dated on or
 before max(last KST fill day, D + 1 day) belong to sessions before the baseline.
 
-Pre-registered tests T1-T12 of docs/claude/recon-dayfill-k3-proposal-2026-11-20.md section 4 (T3 is not here: see
-BLOCKED.md). The 2026-11-19 SOXL row replays the observation behind the 2026-11-20 HOLD; account data, record
+Pre-registered tests T1-T12 of docs/claude/recon-dayfill-k3-proposal-2026-11-20.md section 4, 3rd edition
+(T3 order time 10:00:01). The 2026-11-19 SOXL row replays the observation behind the 2026-11-20 HOLD; account data, record
 times and cash amounts other than the observed ones are synthetic (TEST_ONLY). No network, no Kiwoom runtime.
 """
 
@@ -74,6 +74,14 @@ class DayFillWindowTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(fills[0]["filled_at_kst"], "2026-11-03T10:00:00+09:00")
         self.assertNotIn("segment", fills[0])
+
+    def test_t3_est_one_second_after_the_lower_end(self):
+        # 10:00:01 KST on 11/02 = 20:00:01 ET on 11/01 (EST): just inside the window, a day-session fill.
+        fills, errors = self.parse("20261102", [row("1", "AAA", SELL, 1, "10.0000", "10:00:01", "10:00:01")])
+        self.assertEqual(errors, [])
+        self.assertEqual(len(fills), 1)
+        self.assertEqual((fills[0]["filled_at_kst"], fills[0]["segment"]),
+                         ("2026-11-02T10:00:01+09:00", "DAY_SESSION"))
 
     def test_t3b_est_day_session_fill_after_et_midnight(self):
         # 15:00 KST on 11/02 = 01:00 ET on 11/02: a day-session fill whose ET date is D itself.

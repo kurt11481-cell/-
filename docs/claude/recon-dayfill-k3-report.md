@@ -3,15 +3,16 @@ id: recon-dayfill-k3-report
 title: "계좌 대조 — 키움 주간거래 체결 인정 — Builder 보고"
 date: 2026-11-20
 class: "K3 수동 경로 Builder(worktree). Judge 전. 병합은 사장 본인 터미널 -ApproveAuthority"
-source: "docs/claude/recon-dayfill-k3-proposal-2026-11-20.md(2판) · docs/claude/recon-dayfill-k3-builder-prompt.md"
-status: "BLOCKED(T3 1건) — 나머지 완료"
+source: "docs/claude/recon-dayfill-k3-proposal-2026-11-20.md(3판 — T3 주문 시각 10:00:01, 착수 승인 2026-11-20 11:12:57 KST) · docs/claude/recon-dayfill-k3-builder-prompt.md"
+status: "완료(3판 T3 반영) — Judge 대기"
 ---
 
 # recon-dayfill-k3 Builder 보고
 
 ## 0. 결론
-구현 요구 1~5, 사전 등록 시험 T1·T2·T3b·T4~T12(11개 + T10 보강 1개 = 새 시험 12개), 기존 파일 4개 단언 변경을 끝냈다. 기준선 대비 새 실패 0.
-**T3 한 건은 수정안 2절(주문 시각 창 안 바꿈)과 충돌**해 넣지 않고 BLOCKED.md(worktree 루트, 커밋 안 함)에 적었다: 주문 10:00:00 KST 11/02 = 11/01 20:00:00 ET가 주문 창의 열린 아래 끝과 정확히 같아 `FILL_TIME_INVALID`. 3판(T3 주문 시각 10:00:01 권장)과 새 착수 승인 전에는 Judge로 넘기지 않는다.
+구현 요구 1~5, 사전 등록 시험 T1~T12 전부(T3b 포함 12개 + T10 보강 1개 = 새 시험 13개), 기존 파일 4개 단언 변경을 끝냈다. 기준선 대비 새 실패 0. Judge로 넘길 수 있다.
+
+**3판 반영(2026-11-20)**: 2판 T3(주문 10:00:00)은 주문 시각 창의 열린 아래 끝(11/01 20:00:00 ET)과 같아 2절과 동시에 만족할 수 없어 BLOCKED였다. 사장 3판 승인(11:12:57 KST, 주문 시각만 10:00:01, 기대값 그대로)에 따라 T3을 그대로 더했다. 코드(auto_core_reconcile.py)는 바꾸지 않았다. BLOCKED.md는 이 브랜치에 커밋된 적 없음. 3판 커밋은 keen-mestorf worktree(다른 세션 소유라 쓰기 막힘) 대신 clever-mayer worktree의 브랜치 `worktree-recon-dayfill-k3-t3`(7eb9b2b 위 1커밋, fast-forward 가능)에 있다.
 
 ## 1. 바뀐 줄
 | 파일:행(이후 기준) | 내용 |
@@ -25,24 +26,24 @@ status: "BLOCKED(T3 1건) — 나머지 완료"
 | scripts/auto_core_reconcile.py:569~570 | 요구 2-1: `first_day = min(max(last_fill_day, session_date + 1일))` |
 | references/broker-snapshot-reconciliation.md:244~253 | 요구 4: ord_dt·체결 창·DAY_SESSION·ust21610 묶임 문장 |
 | tests/test_auto_core_reconcile_orddt.py | 4절 4개 단언 + 독스트링·주석(아래 3절) |
-| tests/test_auto_core_reconcile_dayfill.py(새) | T1·T2·T3b·T4~T12 |
+| tests/test_auto_core_reconcile_dayfill.py(새) | T1~T12(T3b 포함) |
 
 손대지 않음(요구 5 확인): `_kst_moment`, 주문 시각 창, FILL_TIME_INVALID·FILL_AFTER_SNAPSHOT, fill_sessions, `_assign`·`_bundle_failures`, carried·D0, plan_reads·FILL_WINDOW_MAXIMUM_DAYS, OPEN_ORDERS, unverified_outflow·ledger_days, I1·I4·I5, 권한 값. 새 키움 호출·쓰기 경로 없음.
 
 ## 2. 시험
 명령(모두 `PYTHONDONTWRITEBYTECODE=1`):
-- `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_auto_core_reconcile*.py"` — 기준선 56개 OK → 이후 68개 OK.
-- `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_auto_core*.py"` — 기준선 631개 실패 1·skip 1 → 이후 643개 실패 1·skip 1. 실패는 둘 다 같은 기존 실패 `test_auto_core_decide.RegistryTests.test_real_registry_is_schema_valid_and_every_hash_matches (symbol='SOXL')`(실제 등록부 해시, 이 변경과 무관). **새 실패 0.**
+- `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_auto_core_reconcile*.py"` — 기준선 56개 OK → 2판 68개 OK → 3판(T3 추가) 69개 OK.
+- `python -m unittest discover -s manage-us-stock-strategy/tests -p "test_auto_core*.py"` — 기준선 631개 실패 1·skip 1 → 2판 643개 → 3판 644개 실패 1·skip 1. 실패는 둘 다 같은 기존 실패 `test_auto_core_decide.RegistryTests.test_real_registry_is_schema_valid_and_every_hash_matches (symbol='SOXL')`(실제 등록부 해시, 이 변경과 무관). **새 실패 0.**
 - `python manage-us-stock-strategy/scripts/validate_schema_contracts.py` — errors [].
 - 지시문의 `pytest` 전체 실행은 하지 않았다(코디네이터 지시의 unittest 두 묶음으로 대신).
-- 변경 감지 확인: 새 시험을 바꾸기 전 코드(HEAD의 auto_core_reconcile.py)에 돌리면 12개 중 10개 실패(T2·T10은 '안 바뀜' 확인이라 통과) — T11·T12가 first_day 변경을, 나머지가 체결 창 변경을 잡는다.
+- 변경 감지 확인: 새 시험을 바꾸기 전 코드(HEAD의 auto_core_reconcile.py)에 돌리면 13개 중 11개 실패(T3도 옛 코드에서 실패 확인, T2·T10은 '안 바뀜' 확인이라 통과) — T11·T12가 first_day 변경을, 나머지가 체결 창 변경을 잡는다.
 
 새 시험(test_auto_core_reconcile_dayfill.py):
 | 수정안 | 시험 이름 |
 |---|---|
 | T1 | DayFillWindowTests.test_t1_observed_nov19_soxl_day_session_fill |
 | T2 | DayFillWindowTests.test_t2_est_upper_end_is_the_after_hours_close |
-| T3 | (없음 — BLOCKED) |
+| T3 | DayFillWindowTests.test_t3_est_one_second_after_the_lower_end (3판: 주문·체결 10:00:01 KST 11/02 → 2026-11-02T10:00:01+09:00, DAY_SESSION, 오류 없음) |
 | T3b | DayFillWindowTests.test_t3b_est_day_session_fill_after_et_midnight |
 | T4 | DayFillWindowTests.test_t4_edt_one_second_after_the_lower_end |
 | T5 | DayFillWindowTests.test_t5_day_session_order_after_fill_holds |
@@ -70,7 +71,6 @@ status: "BLOCKED(T3 1건) — 나머지 완료"
 ④ 11/21(토) 06:15의 d1 슬롯 주말 규칙.
 
 ## 5. 남은 위험
-- **T3 미포함(BLOCKED)**: 3판 결정 전에는 사전 등록 시험이 다 갖춰지지 않았다. 권장 A안(주문 10:00:01)이면 이 브랜치 코드로 기대대로 나온다(실측).
 - 참조 문서 같은 파일 276~277행("slots and rows dated on or before the first counted fill's KST day")은 지시문 범위(241~250행) 밖이라 고치지 않았다 — 새 기준일(max(마지막 KST 체결일, 세션+1일))과 문구가 어긋난다. 병합 뒤 문서 변경으로 맞추기 권함.
 - T12처럼 정규 세션 체결이 KST 자정 전(겨울 23:30~24:00 KST 대)인 경우 기준일이 하루 늦어진다(의도된 변경). 그 세션의 정산이 KST S+1에 오는 일이 있으면 그 금액은 기준 전 몫으로 빠져 CASH_CHANGE_NOT_EXPLAINED로 HOLD(fail-closed, 잘못 기록되지는 않음).
 - `segment` 키가 reconcile.json `fills` 목록에 새로 나타날 수 있다. auto-core 스키마는 fills 항목을 검사하지 않음(schemas/auto-core-*.json에 filled_at_kst 없음 확인), auto_core.py는 fills 항목을 읽지 않음(Grep 확인).
