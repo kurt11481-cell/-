@@ -5,3 +5,8 @@ faf3cd905c357d9983aedd323ab308f47828b58cc87dadbc5eb290d8ef35e34e  docs/claude/sw
 # selftest: OK (28 checks) 2026-11-19 cloud copy
 # 2026-11-19 22:5x KST amendment: section 3-1 live-only row filled from card 3 (재량 주문으로 시작, cmsg_0137MRzn9nuDvvQmVxm6WeX9FEcmL8jpArggztLa33ZfGy). Judged rows unchanged; code unchanged.
 694c94b6ebb329654dd93a25c2af256638e800cfd02f8cb51540d7c69a4f1d16  docs/claude/swing-prereg-draft-2026-11-19.md
+# 2026-11-20 11:3x KST amendment: section 3-2 population widening recorded (same variant, 3 row 12 (c)); cards 07:30:42 '장비+소프트웨어 보강' + 11:30:32 'NOW·SNOW·DDOG'. Judged rows unchanged; code unchanged.
+5c121d760fa1cbd3bf7721eb321f9a974cb4f2f814bab14a1635bd8fb8962d8a  docs/claude/swing-prereg-draft-2026-11-19.md
+ba7813b5d1d8b7066f32d7a5dbff1e58ca3bddb288ca0cf1f9208f62b98a347a  docs/claude/swing-roots.jsonl
+# 2026-11-20 12:0x KST amendment: section 3-2 earnings '+' sentence for the 6 widened names (card 11:55:29 '상향·다음 분기 성장'). Judged rows unchanged; code unchanged.
+17f58bb365f9b2ebf3dd51163ab63f3f2994b535e2cb77bdca02609ae0dde9f3  docs/claude/swing-prereg-draft-2026-11-19.md
