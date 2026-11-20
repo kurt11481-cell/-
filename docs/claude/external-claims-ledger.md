@@ -89,6 +89,7 @@ summary: 외부 주장 원장(추가 전용). 외부 주장 강도 0, 공식 확
 - 최종 기한: 2026-11-30 · 결과: - · 인용 결정: -
 - 보강(2026-10-27, "원장 등록 수락 … 4" 10:14 KST, 외부자료/AI의 병목은 _돈_ (도조 10/24, 삼성증권 슬라이드 "26년 CAPEX 컨센 1,398 / 실제 1,400")): 메타 3분기 발표에서 2026 설비투자 범위를 1,300억~1,450억 → 1,350억~1,450억 달러로 좁힘(하단만 상향, 하향 아님, 2차 보도 https://letsdatascience.com/news/meta-narrows-2026-capital-spending-range-to-135-billion-145-46f12e07). 4사 중 1사 확인, 판정 기준은 바꾸지 않음
 - 보강(2026-11-01, 사용자 결정 카드 "3배 먼저 줄이기 + 구조 목표" 2026-11-01 21:34 KST, 사장실 회사PC 스레드 카드 선택 — strategy-1101 · 원자료: 첨부 PDF 「TS Lombard의 AI버블 붕괴 리포트 분석」(fmkorea·Lusit 10/28 00:09; 외부자료 폴더에는 저장하지 않음)): TS Lombard Dario Perkins "Wargaming the AI crash"(2026-10-22, 유료 원문 미열람)는 붕괴 계기를 하이퍼스케일러 설비투자 '증가율 둔화'(자금 고리를 끊는 2차 도함수)로 본다. 글이 밝힌 출처 exencialrp(https://exencialrp.substack.com/p/ts-lombard-sees-s-and-p-500-down, 2026-10-24 글, 2026-11-01 KST 열람): "If the AI capex boom reverses, TS Lombard assumes the S&P 500 falls 30%" · "US tech stocks fall 40%" · 약 20조 달러 · "The working date for the turn is early 2028, and the note says that date could slip" · AI 관련 부채 2027년 말 2.9조 달러, 2028~2030 누적 부도율 35%·회수율 25~50% → 신용 손실 1,250억~1,900억 달러 · 권고 "Global stocks now, government bonds later" — 글과 일치. 글의 "비기술주 −20%"는 이 출처에 없음(확인 필요). 2차 보도(WebSearch 1회, zerohedge https://www.zerohedge.com/markets/wargaming-ai-crash-ts-lombard-sees-20-trillion-wipeout-only-mild-recession 등)의 "2028년 4월까지 AI 관련 주식 −40%"는 같은 가정의 다른 표현 · 등급 일부확인(시나리오, 예측 아님). 이 항목 틀림 기준의 "2027 증가율 둔화를 명시"와 같은 신호를 붕괴 계기로 본다. 판정·확인 조건 변경 없음
+- 보강(2026-11-20 20:59:41 KST 사장 결정 카드 "보강 1줄 + 새 항목 2건"(cmsg_0137MRzn9nuDvvQmVxm6WeX9P2MAPRQaMusULHqerU1vHx, 누른 계정 = 사장), 사장실 스레드 '드러켄밀러 AI 인프라 견해 전략 반영 검토' · 원자료: iConnections TomorrowX Summit 2026-11-18 대담 영어 자막(YouTube 6r3D-CMJkuI, 회사PC yt-dlp 2026-11-20 — C:\Users\금동한\yt-dlp-test\out\6r3D-CMJkuI.en.vtt) 12:05~12:35): Stan Druckenmiller "Infrastructure may be a great tactical trade because they they've really been washed out positions and but I don't think they're going to be the engine they were to provide that scoop they did for us the last four years, but I think use cases could." 이 항목 틀림 기준과 같은 방향의 견해이나 공식 사실 아님(전망, 기간·수치 없음). 듀케인 13F(2026-09-30, SEC 0001536411-26-000011 원문 XML): TSMC 5.40% → 0.33%, AMD·Lam Research·Arm 0 — 9/30 롱 주식만이고 본인은 11/18에 "주식 거의 평평"이라 함. 판정·확인 조건 변경 없음. 분석: /mnt/project-files/druckenmiller-1120/druckenmiller-ai-infra-review-2026-11-20.md
 
 ### EXT-20261003-05 · 전력(EO 14420) · 상태: 대기
 - 접수: 2026-10-03 · 라우트: R4(새 분야 후보) · 원자료: 외부자료/_레포트_ 트럼프, 오마이갓 (전력) 비상사태 - 주식 - 에펨코리아.pdf · 출처: fmkorea·도조(9/1, 원 리포트 8/31 "글로벌 전력기기/에너지", 기관명 미표기)
@@ -639,6 +640,41 @@ summary: 외부 주장 원장(추가 전용). 외부 주장 강도 0, 공식 확
 - 최종 기한: 2027-03-31 · 결과: - · 인용 결정: -
 - 분석: docs/claude/external-pdf-review-2026-11-19.md 4절
 
+### EXT-20261120-01 · SOXL·LITE·BE(공통 시장환경 — AI 설비 '지난 4년 같은 엔진 아님': 드러켄밀러 11/18) · 상태: 대기(표시 중)
+- 접수: 2026-11-20 (2026-11-20 20:59:41 KST 사장 결정 카드 "보강 1줄 + 새 항목 2건"(cmsg_0137MRzn9nuDvvQmVxm6WeX9P2MAPRQaMusULHqerU1vHx, 누른 계정 = 사장), 사장실 스레드 '드러켄밀러 AI 인프라 견해 전략 반영 검토') · 라우트: P(시장 해석 참고, 표시 전용 — 기간·비교 대상은 이 검토가 정한 대리 기준) · 원자료: iConnections TomorrowX Summit 2026-11-18 대담 영어 자막(YouTube 6r3D-CMJkuI, 회사PC yt-dlp 2026-11-20 — C:\Users\금동한\yt-dlp-test\out\6r3D-CMJkuI.en.vtt) 12:05~12:35 · 출처: Stan Druckenmiller(듀케인 패밀리 오피스)
+- 주장(원문 기준): "Infrastructure may be a great tactical trade because they they've really been washed out positions and but I don't think they're going to be the engine they were to provide that scoop they did for us the last four years, but I think use cases could."
+- 주장 변형(대리 시험 대상): 1년 동안 SOXX가 QQQ(회사가 판 돈을 두기로 한 곳, t3-proceeds-qqq-1108)를 뚜렷이 앞서지 못한다. 발언에는 기간·비교 대상이 없다
+- 공식 출처: 없음 · 등급: 미확인(전망)
+- 연결: 2026-12-31 SCN-27H1 정기 재검토(경보판 G3 ④ SOXX/SPY 상대 추세, strategy-revision-2026-11-01.md 175·176행) · 2027-03-31 '3배 0' 결정(그날까지의 중간값 표시만) · EXT-20261003-03 · SOXL·LITE·BE 카드 재수락(규칙 12)
+- 공식 트리거 후보: 없음 — 가격 비교(회사 공식 발표와 무관)
+- 기준값: 수락 뒤 첫 미국 정규장 종가 = 2026-11-20(미국 날짜) 종가 SOXX·QQQ(키움 수정주가 일봉 — 분할 보정, 배당 미포함). 등록 전에 값을 조회하지 않았고, 다음 거래일 행이 생긴 뒤 첫 통합 점검(2026-11-24 화)이 이 줄 아래 '기준값 기록' 보강으로 남길 값을 결과 제안에 적는다
+- 확인 조건: 2027-11-23 (날짜 조건 — 기준일 1년 뒤 첫 거래일 2027-11-22(월)의 다음 거래일 행이 생긴 뒤 첫 통합 점검)
+- 확인 방법: 키움 수정주가 일봉 SOXX·QQQ(SOXX 2026-11-05 3:1 분할 보정 확인). 보강 줄이 있으면 그것
+- 맞음 기준(제안, 기준값 보기 전 고정): SOXX 수익률 − QQQ 수익률 ≤ +5%p
+- 틀림 기준(제안): SOXX 수익률 − QQQ 수익률 ≥ +15%p
+- 미정: 그 사이, 조회 실패
+- 결과 시 행동: 기록만(외부 강도 0, 카드 판단 입력 아님). 확정 때 3절 'Stan Druckenmiller' 행에 쌓되 '대리 기준 · 1년으로는 다년 주장을 판정 못 함'을 함께 적는다. 노출·규칙 변경 없음
+- 표시 만료: 2027-11-23 · 최종 기한: 2027-12-14 · 결과: - · 인용 결정: -
+- R0로 남기는 부분: 개빈 베이커 '인프라 건설은 철도처럼 수십 년'(Inside Wall Street 한국어 자동 자막뿐, 원문 미대조 — 규칙 9) · '단기 매매 자리'(기간 없음) · 13F 변화(EXT-20261003-03 보강 줄)
+- 분석: /mnt/project-files/druckenmiller-1120/druckenmiller-ai-infra-review-2026-11-20.md 4·5절
+
+### EXT-20261120-02 · CRWD·PLTR(AI 연구소가 보안을 직접 판다: 드러켄밀러 11/18) · 상태: 대기
+- 접수: 2026-11-20 (2026-11-20 20:59:41 KST 사장 결정 카드 "보강 1줄 + 새 항목 2건"(cmsg_0137MRzn9nuDvvQmVxm6WeX9P2MAPRQaMusULHqerU1vHx, 누른 계정 = 사장), 사장실 스레드 '드러켄밀러 AI 인프라 견해 전략 반영 검토') · 라우트: R1 · 원자료: iConnections TomorrowX Summit 2026-11-18 대담 영어 자막(YouTube 6r3D-CMJkuI, 회사PC yt-dlp 2026-11-20 — C:\Users\금동한\yt-dlp-test\out\6r3D-CMJkuI.en.vtt) 12:45~13:15 · 출처: Stan Druckenmiller
+- 주장(원문 기준): "if you have the number one intelligence in the world, you can start selling tasks instead of tokens and you can create your own businesses. Doesn't take a genius cybersecurity. Who's going to compete with these guys in cybersecurity? They created the problem, so now they're ones they could have swarms of agents defending us from them."
+- 공식 출처: 없음 · 등급: 미확인(전망)
+- 기준선(접수 전부터 있던 것 — 판정에서 뺌, 회사 페이지 원문 대조 확인 필요): 앤트로픽 Claude Code Security · Project Glasswing(CrowdStrike 창립 회원, 2026-04) · 오픈AI Codex Security(2026-03 연구 미리보기). 이해 상충: 이 항목을 쓴 Claude는 앤트로픽 모델 — 외부 공식 발표 사실만 쓴다
+- 연결: CRWD 관심 카드(watch-card-CRWD-2026-11-20.md) thesis·'틀릴 수 있는 이유' 후보 — 12/01 실적 뒤 다시 쓰는 세션이 읽음(규칙 12) · PLTR 카드 재수락. NOW·SNOW·DDOG는 카드가 생길 때(지금은 읽는 곳 없음). 스윙 사전 등록 모집단·뿌리는 바꾸지 않음
+- 공식 트리거 후보(규칙 13 — 후보일 뿐 트리거 아님): CRWD − = CrowdStrike 8-K Ex.99.1·실적 원고가 순신규 ARR 전년 대비 감소 또는 연간 순신규 ARR 성장 가이던스 하향을 밝히고 같은 문서에서 AI 모델 회사와의 경쟁·가격 압력을 이유로 들면 / + = CrowdStrike 8-K·보도자료가 AI 모델 회사 경유 판매·공동 제품의 ARR 또는 계약 금액을 수치로 밝히면. 코어 사실 종류 kind: 확인 필요
+- 확인 조건: 2027-11-30 (날짜 조건). 그 전 CRWD 실적(첫 회 2026-12-01 장 뒤)마다 카드 재작성 세션이 트리거 후보만 봄
+- 확인 방법: anthropic.com·openai.com·blog.google 공식 발표, CrowdStrike 8-K. 보강 줄이 있으면 그것, 없으면 WebSearch 1회
+- 맞음 기준: 2026-11-21~2027-11-30에 앤트로픽·오픈AI·구글 중 한 곳이 자기 이름의 보안 제품·서비스를 정식 출시(일반 제공 + 유료 가격 공개)했다고 공식 발표(기준선 제품의 미리보기 연장은 제외)
+- 틀림 기준: 그런 발표 없음
+- 미정: 제한 출시·미리보기만, 조회 실패
+- 결과 시 행동: 맞음 → CRWD·PLTR 카드 재수락 때 '틀릴 수 있는 이유' 후보(강도 0, 규칙 1·7 — 원장은 트리거 기준·강도를 바꾸지 않음) / 틀림 → 기록만
+- 최종 기한: 2027-12-10 · 결과: - · 인용 결정: -
+- R0로 남기는 부분: 브래드 거스트너 '지능이 좋아질수록 나빠지는 것은 갖지 말라'(한국어 자동 자막, 원문 미대조) · 의료 활용처 · '2027년 하반기 경기 실망 경계'(원문 11:55, 방향만 — 12/31 SCN 재검토 자료 1줄)
+- 분석: /mnt/project-files/druckenmiller-1120/druckenmiller-ai-infra-review-2026-11-20.md 4·5절
+
 ## 3. 출처 기록 (검증 우선순위 전용, 근거 강도에 쓰지 않음)
 
 | 출처 | 항목 수 | 원문 명시 | 공식확인 | 번역·요약 강도 과장 | 결과 맞음/틀림 | 메모 |
@@ -693,6 +729,7 @@ summary: 외부 주장 원장(추가 전용). 외부 주장 강도 0, 공식 확
 | fmkorea·NVDA가미래다(메리츠 영상 요약) | 1 | 예(메리츠 김선우 발표 영상 표기) | 0(영상·보고서 원문 미대조) | 요약자가 하이닉스 환원 150조 원 오류 가능 표시 | -/- | 출처당 10건 미만이라 비율 미사용. R0(EXT-20261119-02 4번) |
 | fmkorea·제로콜라는생수야 | 2 | 아니오(차트 해석, 개인 견해) | 0 | 해당 없음(본인 견해) | -/- | 출처당 10건 미만이라 비율 미사용. R0(EXT-20261119-02 5·6번) |
 | fmkorea·벽진벽진 | 1 | 아니오(차트 이미지, 출처 미표기) | WTI 11/17·휘발유·경유 FRED 대략 일치(11/19) | 해당 없음 | -/- | 출처당 10건 미만이라 비율 미사용. R0(EXT-20261119-02 7번) |
+| Stan Druckenmiller(iConnections TomorrowX 2026-11-18, 영어 자막 직접) | 3 | 예(본인 발언, 영상 원문) | 13F 2026-09-30 SEC 원문 대조(11/20) | 해당 없음(본인 발언) | -/- | 출처당 10건 미만이라 비율 미사용. EXT-20261003-03 보강 · EXT-20261120-01(P, 대리 기준) · EXT-20261120-02(R1). 베이커·거스트너는 원문 미대조라 채점 대상 아님 |
 
 ## 4. 보관 (만료·R0)
 
