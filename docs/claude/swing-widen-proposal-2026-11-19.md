@@ -1,7 +1,7 @@
 ---
 id: swing-widen-proposal-2026-11-19
 type: proposal
-status: 제안 2판(사장 카드 전). 예약 지시문·코드·정책을 바꾸지 않았다
+status: 제안 2판 · 방향 결정(사장 카드 2026-11-20 07:30:42 KST '장비+소프트웨어 보강'). 예약 지시문·코드·정책은 아직 바꾸지 않았다
 as_of: 2026-11-19 23:3x KST (2판 — Fable 검토 8건 반영, 6절)
 summary: "스윙 그림자 장부 판정을 빠르게 하려고 통합 점검이 공식 실적 사실을 모으는 종목을 넓히는 안. 순서 = 종가 수집(개발 큐) → 뿌리 적기 → 통합 점검 새 판(B종류: H1 + 독립 검토 뒤 예약 작업 변경 승인 1회). 오늘 밤 6-C 판(v3.12.18)에는 묶지 않는다."
 source_decision: "사장 직접 입력 2026-11-19 22:52:20 KST '\"예약 작업 변경 승인\" 안 준비해줘'(앞 답 22:50의 '모집단 넓히기' 안을 가리킨다고 읽음) · 카드 3 22:51:58 '재량 주문으로 시작'"
@@ -45,11 +45,11 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 
 ### ① 종가 수집 (코드 — 개발 큐)
 - 지금 수집 대상은 symbols_for_run(auto_core.py 122~127행, 알파벳 순)이 정한다. 격리는 세 가지 사유만 되고(131·424~427행) 그 밖의 실패는 그날 코어 FAIL이다. 격리된 종목은 decide가 '관심 종목 30분봉 수집 실패' 알림을 낸다(auto_core_decide.py 680~686행). 그래서 isolatable_symbols에 넣는 것만으로는 안 된다.
-- 바꿀 것: 스윙 관찰 종목(docs/claude/swing-watch.json, 종목 코드만)은 **코어 종목 수집이 모두 끝난 뒤 따로 마지막 단계에서** 모은다. 이 단계의 어떤 실패도 코어를 FAIL로 만들지 않고 steps.bars.isolated에 넣지 않는다(별도 키, 예 steps.bars.swing). decide·알림은 이 키를 읽지 않는다.
+- 바꿀 것: 스윙 관찰 종목(docs/claude/swing-watch.json, 종목 코드만)은 **코어 종목 수집이 모두 끝난 뒤 따로 마지막 단계에서** 모은다. 이 단계의 어떤 실패도 코어를 FAIL로 만들지 않고 steps.bars.isolated에 넣지 않는다. 결과는 코어 result.json을 다 쓴 뒤 별도 파일 auto-core/<날짜>/swing-bars.json에만 적는다(2026-11-20 지시문 swing-bars-builder-prompt.md에서 '별도 키'를 '별도 파일'로 바꿈). decide·알림은 이 파일을 읽지 않는다.
 - Judge 확인: 스윙 종목 실패를 넣은 시험에서 decide 결과·알림이 바이트 동일 · 주문표·노출·매수 요건에 스윙 종목이 나타나지 않음.
 - decide의 universe는 보유·관심·벤치마크뿐이라(651~656행) 스윙 종목 종가가 판정에 들어가지 않는다.
 - 첫 수집은 150일 전까지 거슬러 간다(60·63·419행) → 약 100세션이라 β 최소 60관측을 채울 수 있다. 그 세션이 verified true로 적히는지는 확인 필요.
-- 개발 지시문에는 '## 연결표'를 넣는다(ops-link-1107, Judge G9). auto_core.py가 보호 경로인지(-ApproveAuthority 필요)는 확인 필요.
+- 개발 지시문에는 '## 연결표'를 넣는다(ops-link-1107, Judge G9). auto_core.py는 권한 경로다(tools/dev_pipeline/authority-paths.txt — 큐 등록에 사장 결정, 병합에 -ApproveAuthority 필요, 2026-11-20 확인).
 
 ### ② 뿌리 적기
 - swing-roots.jsonl에 한 종목 한 줄: {"symbol", "root", "added_on", "criterion": "a"}. **다시 적지 않는다.** 종목·뿌리는 이 줄을 적기 전에만 바꾼다(엿보기 길 차단 — 첫 신호를 본 뒤 뿌리를 고쳐 다음 신호부터 넣는 길을 막음).
@@ -75,6 +75,8 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 
 종목은 예시다. ② 단계에서 줄을 적기 전까지만 바꿀 수 있다.
 
+**결정 기록 (2026-11-20 07:30:42 KST, 사장 카드):** '장비 + 소프트웨어 보강 (권장)'. 새 뿌리 '반도체 장비'(AMAT·LRCX·KLAC)와 소프트웨어 뿌리 보강 3종목으로 간다. 소프트웨어 3종목 이름은 아직 정하지 않았다(확인 필요). ② 뿌리 줄을 적기 전에 정하고, 적은 뒤에는 바꾸지 않는다. 이 카드는 방향 결정이다. ①은 개발 큐 승인, ③은 H1·독립 검토 뒤 사장 직접 입력이 따로 필요하다.
+
 ## 3. 승인과 연결
 
 - **③은 B종류다**(코어 입력 official_facts에 줄을 더함 — active-decisions 33행: "코어 입력은 H1+독립 검토 뒤"). H1 + 독립 검토 뒤 사장 직접 입력 `예약 작업 변경 승인: 보유·관심 종목 통합 점검`. K3 해당 여부(코어 입력·한도에 닿는지)는 검토에서 먼저 판정한다 — 이 안은 한도·주문표에 닿지 않게 설계했다.
@@ -82,7 +84,7 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 
 | 연결표 칸 | 내용 |
 |---|---|
-| ① 자료 | official_facts의 스윙 관찰 사실 · 스윙 관찰 종목 종가(steps.bars.swing) |
+| ① 자료 | official_facts의 스윙 관찰 사실 · 스윙 관찰 종목 종가(history 파일 · 별도 파일 auto-core/<날짜>/swing-bars.json — 지시문 swing-bars-builder-prompt.md, result에 키를 더하지 않음) |
 | ② 만드는 주체 | 통합 점검 예약(06:40) · 자동 운영 코어 마지막 단계 |
 | ③ 읽는 점검 | swing_shadow_ledger.py --new-lines(신호 난 주, 손 실행) · 관제판 swing-1119 resume.date(secretary-daily.txt 17행) |
 | ④ 바뀌는 행동 | 판정 지점 사장 카드(몫 키우기·새 진입 멈춤) |
@@ -90,7 +92,7 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 
 ## 4. 확인 필요
 
-- 6-C(v3.12.18)의 실적 사실 문장 원문 · 새 종목 과거 종가의 verified 표시 · auto_core.py 보호 경로 여부 · 로컬 SEC 피드가 이 종목을 받는지(받으면 sec.gov 조회를 피드 읽기로) · 블록이 늘리는 실행 시간이 07:45 코어 창에 주는 영향 · 예시 종목 실적일.
+- 6-C(v3.12.18)의 실적 사실 문장 원문 · 새 종목 과거 종가의 verified 표시 · 로컬 SEC 피드가 이 종목을 받는지(받으면 sec.gov 조회를 피드 읽기로) · 블록이 늘리는 실행 시간이 07:45 코어 창에 주는 영향 · 예시 종목 실적일.
 
 ## 5. 이미 바로잡은 것
 
