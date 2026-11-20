@@ -31,7 +31,7 @@ class ConstantTests(unittest.TestCase):
     def test_1_lists(self):
         self.assertEqual(tickets.INDEX_ETFS, ("SOXL", "TQQQ", "DRAM", "QQQ"))
         self.assertEqual(tickets.PARKING_ETFS, ("QQQ",))
-        self.assertEqual(tickets.APPROVED_BUY, OLD_APPROVED_BUY)
+        self.assertEqual(tickets.APPROVED_BUY[:10], OLD_APPROVED_BUY)
         self.assertNotIn("QQQ", tickets.APPROVED_BUY)
 
 

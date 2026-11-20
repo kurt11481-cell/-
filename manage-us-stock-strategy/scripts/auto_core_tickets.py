@@ -57,8 +57,8 @@ S = {name: value for name, (value, _source) in SIZING.items()}
 # Policy values the code relies on; checked against alert_policy through the S7 review on every run.
 POLICY_EXPECTED = {"target_exposure": 1.55, "reduce_when_exposure_gte": 1.85,
                    "hard_ceiling_when_exposure_gte": 1.9, "single_stock_nominal_cap": 0.4}
-# Rule file 3) buy requirement (2): approved new-buy products (PWR, LITE: user approval 2026-10-08).
-APPROVED_BUY = ("BE", "MU", "NBIS", "DELL", "AMD", "SOXL", "TQQQ", "DRAM", "PWR", "LITE")
+# Rule file 3) buy requirement (2): approved new-buy products (PWR, LITE: user approval 2026-10-08; PLTR, CRWD: user approval 2026-11-20 swing-k3-1120).
+APPROVED_BUY = ("BE", "MU", "NBIS", "DELL", "AMD", "SOXL", "TQQQ", "DRAM", "PWR", "LITE", "PLTR", "CRWD")
 INDEX_ETFS = ("SOXL", "TQQQ", "DRAM", "QQQ")
 # Proceeds-parking index ETFs: bought only through the integrated check's proceeds line, never a card buy and never a no-card alert (decision t3-proceeds-qqq-1108).
 PARKING_ETFS = ("QQQ",)

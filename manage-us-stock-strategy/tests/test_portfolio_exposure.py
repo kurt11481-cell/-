@@ -104,12 +104,12 @@ class PolicyValueTests(unittest.TestCase):
         self.assertEqual((config["hwm_initial"], config["hwm_initial_as_of"]), (Decimal("28473.94"), "2026-09-30"))
         self.assertEqual(config["multipliers"], {
             "SOXL": 3, "TQQQ": 3, "MVLL": 2, "BE": 1, "MU": 1, "NBIS": 1, "DELL": 1, "AMD": 1, "DRAM": 1,
-            "PWR": 1, "LITE": 1, "QQQ": 1})
+            "PWR": 1, "LITE": 1, "PLTR": 1, "CRWD": 1, "QQQ": 1})
         self.assertEqual(config["grades"], {
             "REVIEW_LINE_WITHOUT_PAUSE": "C", "REVIEW_LINE_WITH_PAUSE": "D", "EXPOSURE_HARD_CEILING": "D",
             "EXPOSURE_ABOVE_BAND": "B", "PEAK_REVIEW": "B", "FAIL_CLOSED_UNVERIFIED": "B", "ADD_RECOMMENDATION": "B"})
         section = policy["portfolio_exposure_policy"]
-        self.assertEqual(section["card_stock_core"], ["BE", "MU", "NBIS", "DELL", "AMD", "PWR", "LITE"])
+        self.assertEqual(section["card_stock_core"], ["BE", "MU", "NBIS", "DELL", "AMD", "PWR", "LITE", "PLTR", "CRWD"])
         self.assertIs(section["order_authority"], False)
         self.assertEqual(section["quantity_authority"], "none")
         self.assertIsNone(section["execution_quantity"])

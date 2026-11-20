@@ -74,7 +74,7 @@ class RealPolicyValueTests(unittest.TestCase):
         self.assertIn("QQQ", section["allowed_index_etfs"])
         self.assertEqual(section["allowed_index_etfs"], ["SOXL", "TQQQ", "DRAM", "QQQ"])
         self.assertEqual(section["add_default"], "card_add_stock_else_SOXL")
-        self.assertEqual(section["card_stock_core"], CARD_STOCK_CORE_BEFORE)
+        self.assertEqual(section["card_stock_core"][:7], CARD_STOCK_CORE_BEFORE)
         self.assertEqual(section["thresholds"]["hard_ceiling_when_exposure_gte"], 1.9)
         self.assertNotIn("QQQ", section["single_stock_cap_exempt"])
         self.assertEqual((section["order_authority"], section["quantity_authority"], section["execution_quantity"]),
