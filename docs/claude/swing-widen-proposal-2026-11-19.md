@@ -102,3 +102,32 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 
 - 원문 확인: auto_core_tickets.py 94~110행 · auto_core_inputs.py 270~330·360~375행 · research-record schema · 로더 v3.12.17-L+R2 65행 · 규칙 파일 v3.12.17 4·48·117·130·133행 · active-decisions.md 33행 · 재설계 스레드 회신(기준 판 v3.12.17, 6-C는 v3.12.18).
 - Fable 조언 1회(추론 노력 high, 23시대): 8건 모두 반영 — 1 B종류·로더 ㉰ · 2 종가 수집 범위(마지막 단계·별도 키) · 3 하이퍼스케일러 제외 · 4 새 기준 대신 기준 (a) · 5 블록 문안(2세션 창·"+"만·fact_id 형식·보고 줄) · 6 뿌리 한 번만·교체 전 --new-lines · 7 우연 통과 상승·새 종목 무실력 위험 · 8 사전 등록 기록 문안·사이드카. 1판의 '뿌리 2개 약 1~1.3년'은 우연 통과를 빠뜨린 어림이라 바꿈.
+
+## 7. 교체 안 — v3.12.20 (2026-11-21 07:4x KST)
+
+**판 번호가 바뀐 까닭.** 11/20 19:05 KST에 '스윙 종목 상품 승인 넓히기'가 같은 이름 v3.12.19를 먼저 적용했다. 그 규칙 파일은 134행 상품 승인 목록에 PLTR·CRWD를 더한 것이다(scheduled-prompts/README.md 102행). 그래서 이 안의 v3.12.19 초안(pending-swing-1120/, 6926131a…)은 쓰지 않는다. 같은 내용을 새 v3.12.19 위에 다시 얹어 **v3.12.20**으로 만들었다.
+
+**선행 확인(11/21 07:3x KST).**
+- 종가 첫 수집이 통과했다. auto-core/2026-11-21/swing-bars.json의 status는 OK이고 failed·deferred가 없다.
+- AMAT·LRCX·KLAC·NOW·SNOW·DDOG는 각각 110세션이 모두 verified다(기준: β 60 이상, 검토 61 이상).
+- 같은 날 result.json의 status는 OK다.
+- 하루 25%를 넘는 변동은 NOW 2026-10-29 한 번(×0.732)뿐이다. 분할 꼴(×0.2·×0.25)은 아니다. 실적 하락으로 보이며 원인은 확인 필요.
+
+| 칸 | 내용 |
+|---|---|
+| ① 지금 | 로더 scheduled-prompts/integrated-check-daily.txt `394d55e0…` · 규칙 파일 docs/claude/integrated-check-prompt-v3.12.19-2026-11-20.txt `e1d0de82…`(LF) |
+| ② 바꿀 것 | 로더 `7a9be86a…`(29,935자) · 규칙 파일 `8ff5847d35691f4e97b266db866146a8291863656fb9f70310ed5c213e5f48e7`(407행, LF). 보관본은 scheduled-prompts/pending-swing-1121/에 있다 |
+| ③ diff | 규칙 파일은 v3.12.19 대비 1행 머리말과 401~407행 '스윙 관찰' 블록 추가뿐이다(블록 본문은 초안과 같고, 판 표시만 v3.12.20). 로더는 v3.12.19-L+R2 대비 1·4·14·20·34·49·54~56·69·89행으로, 초안이 v3.12.18-L+R2에 준 diff와 같은 자리·같은 내용이다(경로·해시·판 표시만 v3.12.20). build·finalize·fix1 구간은 바꾸지 않았다 |
+| ④ 그대로인 것 | 일정(화~토 06:40) · 모델 · 폴더 · 권한 모드 · 다른 예약 |
+| ⑤ 되돌리기 | 예약 trig_01YWzNq847nJfNgDUnnukBqP의 지시문을 pending-swing-1121/integrated-check-daily-v3.12.19.txt(교체 때 지금 로더를 복사해 둠, `394d55e0…`)로 되돌린다. 그동안 -earn-sw 사실이 남아도 그림자 장부 밖에서는 쓰이지 않는다(블록 ⑥) |
+| ⑥ 적용 순서(사장 직접 입력 뒤) | ⓐ `swing_shadow_ledger.py --new-lines`를 먼저 돌려 지금까지의 신호를 기록한다 ⓑ 규칙 파일을 docs/claude/integrated-check-prompt-v3.12.20-2026-11-21.txt로 복사하고 LF 해시를 확인한다 ⓒ 지금 로더를 보관한다 ⓓ 예약 지시문을 바꾸고 scheduled-prompts/integrated-check-daily.txt를 갱신한다 ⓔ README에 기록한다 ⓕ 사전 등록 3-2절과 사이드카에 'v3.12.20 sha 8ff5847d…' 줄을 덧붙인다 |
+
+- 내용 검토는 초안 때 Fable 1회(③ 블록 문안)로 했다. 이번에 다시 얹은 일은 기계적 변환이다. diff 자리가 같은지는 원문으로 확인했다(다시 부르지 않음).
+- 로더 길이 제한은 확인 필요다. 29,935자로, 지금 판 29,033자보다 902자 길다.
+
+## 적용 기록 (2026-11-21)
+
+- 10:52 KST 사장 비서실 직접 지시로 trig_01YWzNq847nJfNgDUnnukBqP 지시문 교체 — 응답 "prompt re-signed by 금동한", 저장된 지시문 sha256 7a9be86a…(pending-swing-1121/integrated-check-daily.txt와 바이트 일치). 이름·일정·모델·폴더 그대로.
+- ⑥ ⓐ --new-lines 실행(새 줄 없음) · ⓑ 규칙 파일 LF 해시 8ff5847d… 일치 · ⓒ 지금 로더 394d55e0… 보관(pending-swing-1121/integrated-check-daily-v3.12.19.txt) · ⓓ 교체·보관본 갱신(7a9be86a…, build·finalize·fix1 MATCH) · ⓔ README 표·변경 기록 · ⓕ 사전 등록 3-2절 적용 줄·사이드카 새 해시 줄(888df5b0…).
+- 확인 필요: ~~별도 `예약 작업 변경 승인` 직접 입력 기록 없음(비서실 직접 지시를 승인으로 봄)~~ [정정 11:0x KST, 사장실 스레드: 사장 직접 입력 "예약 작업 변경 승인: 보유 관심 종목 통합 점검" 2026-11-21 09:13:44 KST(가운뎃점 빠짐, 같은 승인으로 봄), cmsg_0137MRzn9nuDvvQmVxm6WeX9RwZohdZM9K2Kf9ZP7kiorL] · 독립 검토는 초안 Fable 1회(H1 증거 없음) · 로더 길이 29,935자 한도 · 첫 실행 2026-11-24 06:40 KST의 1단계 MATCH 8ff5847d·스윙 관찰 줄.
+- 사장실 스레드 대조(11:0x KST): get_trigger 지시문 29,935자 sha256 7a9be86a…가 보관본과 글자까지 같음(CR 0). --new-lines의 '새 줄 없음'은 교체 전 09:2x KST에 사장실 스레드가 신호 2줄(PWR 10/29·LITE 11/02, ic_prompt_sha256 394d55e0…)을 swing-signal-ledger.jsonl(e228df6a…)에 먼저 붙였기 때문이다.
