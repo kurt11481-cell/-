@@ -2,7 +2,7 @@
 id: ic-record-gaps-1118
 title: 통합 점검 기록 어긋남 3건 원인과 재발 방지 안
 date: 2026-11-18
-status: 2절 착수 2026-11-18 11:26:12 KST(결정 카드) · 예약 작업 변경 승인 11:38:04 KST(사장 직접 입력) · 지시문 교체 2026-11-18 12:55 KST 적용(비서실, 첫 실행 11/19 06:40)
+status: 완료 — 2절 적용 2026-11-18 12:55 KST(비서실), 첫 실행 11/19 06:40 확인(대시보드 ① = 코어, compare SAME 8/8)
 authority: order_authority=false · quantity_authority=none
 ---
 
@@ -94,3 +94,10 @@ authority: order_authority=false · quantity_authority=none
 - 다음: 사장이 회사PC 비서실(Cowork) 대화에 교체 한 줄 입력 + PC 앱 승인 창 → 교체 뒤 get_trigger 본문 해시 대조 → 첫 실행 확인.
 - 2026-11-18 12:55 KST 적용(비서실): 사장 직접 지시 12:42 "trig_01YWzNq847nJfNgDUnnukBqP 지시문을 docs/claude/scheduled-prompts/pending-ic-earnlabel-1118/integrated-check-daily.txt로 교체, 이름·일정·모델·폴더 그대로" → update_trigger 응답 "prompt re-signed by 금동한"(updated_at 2026-11-18T03:55:24Z). 넣은 본문 598628aa…(39,174 B). 이름·일정·모델·폴더 2개·자동 승인 불변. 보관본 scheduled-prompts/integrated-check-daily.txt = 598628aa…, build·finalize·fix1 MATCH. 응답 본문 바이트 해시 대조는 못 함(확인 필요) — 11/19 06:40 첫 실행의 1단계 MATCH(bcee847a)·fix1 MATCH·(6) 결과 줄로 확인.
 - 2026-11-18 13:0x KST 해시 대조(사장실 회사PC 스레드): get_trigger 응답 prompt 본문 39,174 B·CR 0·sha256 598628aaf94693bc7277579ef1d55a7a808e24bfb28087831e3b3704feeedfca = pending 파일과 바이트 일치. 일정 CRON_TZ=Asia/Seoul 40 6 * * 2-6·모델 claude-sonnet-5-5·폴더 2개·권한 auto·켜짐 불변. 위 '확인 필요' 풀림. 남은 확인 = 11/19 06:40 첫 실행.
+
+### 첫 실행 확인 (2026-11-19 08:0x KST)
+- 11/19 06:40 실행: 연구 기록 research-records/2026-11-19 있음(written_at 06:51:52 KST, writer 'v3.12.15-L+R2' — build 해시를 지키려 일부러 그대로 둔 칸, 정상). earnings = DELL·CRWD VERIFIED.
+- 규칙 133행 문장이 판정 단계에서 바로 먹혔다: BE·LITE·MU·PWR·PLTR ① = "막힘 — 실적 일정 확인 못 함(코어와 같음, 매수만 막음)", DELL·CRWD = 통과(금지 구간 시작 전), SOXL = 지수 ETF 통과.
+- 대시보드 runs 2026-11-19(version 1) ① 칸이 위와 같음 → (6) 고칠 칸 0, update 없음(version 1 그대로). 08:00 시점 core 칸은 아직 없음(08:50 알림이 씀).
+- 07:45 코어 비교 compare.json buyReq:*:1 8칸 모두 SAME — 그 전 4일의 B5 P_EARN_R1_UNVERIFIED_IS_BLACKOUT 3~5건 → 0건.
+- (6) 단계 보고 원문 줄은 읽지 않음(고칠 칸이 0이라 결과는 같음). 남은 것 없음 — 완료.

@@ -1,0 +1,44 @@
+PASS T1 rules: same line count, only lines 1·133 change — [1, 133]
+PASS T1b rules: both changed lines only insert text
+PASS T2 loader: undoing the intended edits gives v3.12.15-L+R2 byte for byte
+PASS T3 loader step 1 rules hash check on the new rules file — RULES 134011 bytes sha256(LF 정규화) bcee847ac929aaadab01230f9e07500c22f58b4fd45366fd47926533d210f825 MATCH
+PASS T4 build·finalize·fix1 section hash check (3 MATCH) — build 4320 MATCH | finalize 3054 MATCH | fix1 1179 MATCH
+PASS T4b build and finalize bodies identical to v3.12.15-L+R2
+PASS T5 2026-11-13 data wrapper: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PWR', 'PLTR']
+PASS T5 2026-11-13 top level: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PWR', 'PLTR']
+PASS T5b 2026-11-13 output holds only buyReq (update payload; core and other fields not sent)
+PASS T5c 2026-11-13 only ① cells differ inside buyReq
+PASS T5d 2026-11-13 fixed cells read 막힘 and others untouched
+PASS T5e 2026-11-13 second run is a no-op (FIX1 [])
+PASS T5 2026-11-14 data wrapper: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'PLTR']
+PASS T5 2026-11-14 top level: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'PLTR']
+PASS T5b 2026-11-14 output holds only buyReq (update payload; core and other fields not sent)
+PASS T5c 2026-11-14 only ① cells differ inside buyReq
+PASS T5d 2026-11-14 fixed cells read 막힘 and others untouched
+PASS T5e 2026-11-14 second run is a no-op (FIX1 [])
+PASS T5 2026-11-17 data wrapper: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PLTR']
+PASS T5 2026-11-17 top level: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PLTR']
+PASS T5b 2026-11-17 output holds only buyReq (update payload; core and other fields not sent)
+PASS T5c 2026-11-17 only ① cells differ inside buyReq
+PASS T5d 2026-11-17 fixed cells read 막힘 and others untouched
+PASS T5e 2026-11-17 second run is a no-op (FIX1 [])
+PASS T5 2026-11-18 data wrapper: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PWR', 'PLTR']
+PASS T5 2026-11-18 top level: FIX1 equals the core compare blackout set — ['BE', 'LITE', 'MU', 'PWR', 'PLTR']
+PASS T5b 2026-11-18 output holds only buyReq (update payload; core and other fields not sent)
+PASS T5c 2026-11-18 only ① cells differ inside buyReq
+PASS T5d 2026-11-18 fixed cells read 막힘 and others untouched
+PASS T5e 2026-11-18 second run is a no-op (FIX1 [])
+PASS T6 synthetic: index ETFs skipped, future VERIFIED/NOT_ANNOUNCED kept, lower-case/missing/stale VERIFIED → 막힘, unk/no untouched — ['CRWD', 'PWR', 'BE']
+PASS T6a stale VERIFIED reads 지남, missing reads 확인 못 함
+PASS T6b empty earnings: every ok non-index row → 막힘 — ['MVLL', 'DELL', 'CRWD', 'PWR', 'BE']
+PASS T6c no evaluation_session: VERIFIED cannot be dated → 막힘 (fail closed) — ['MVLL', 'DELL', 'CRWD', 'PWR', 'BE']
+PASS T6d earnings not a dict: treated as empty — ['MVLL', 'DELL', 'CRWD', 'PWR', 'BE']
+PASS T7 bad get file (no buyReq): FIX1-NOROWS, no output file — FIX1-NOROWS KeyError
+PASS T7 bad get file (rows not list): FIX1-NOROWS, no output file — FIX1-NOROWS AssertionError
+PASS T7 bad get file (data null): FIX1-NOROWS, no output file — FIX1-NOROWS KeyError
+PASS T7 bad get file (meta only top level): FIX1-NOROWS, no output file — FIX1-NOROWS KeyError
+PASS T7 bad get file (not json): FIX1-NOROWS, no output file — FIX1-NOROWS JSONDecodeError
+PASS T7b unreadable research record: FIX1-BADREC, no output file — FIX1-BADREC JSONDecodeError
+PASS T7c malformed rows: no crash, nothing fixed — []
+PASS T8 fix1 has no network, device, write other than argv[3]
+H1 43 / 43 PASS
