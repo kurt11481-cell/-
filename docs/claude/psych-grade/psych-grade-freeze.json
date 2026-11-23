@@ -1,0 +1,18 @@
+{
+ "what": "psych-1123 심리 등급표 사전 등록 고정",
+ "frozen_kst": "2026-11-23T19:06:23+09:00",
+ "basis": "사장 결정 카드 2026-11-23 18:46:02 KST (나) cmsg_0137MRzn9nuDvvQmVxm6WeX94djYwkgUEiPRw4kMHJE1hV — 독립 검수(Fable high) 8건 반영 뒤 고정",
+ "prereg_doc": "psych-grade-prereg-2026-11-23.md",
+ "prereg_sha256": "688ebc258ba7cff7ed4fc923a57e80244a085bc2814016ce45e8a8fb684405e6",
+ "script": "psych_grade.py",
+ "script_sha256": "990a6092f70c8b906c1f7546925a0e486a6d0600e8359632f8cc3f180c6c0cd8",
+ "data_sha256": {
+  "finra_rows.json": "8ac12590eeef9ae18a463581d45804d221fa5e3352078d674fcc39f2d12dc4e8",
+  "finra.xlsx": "ce727deff430a8c924b552bff8437f55494b7284d332e2c7fb36ed3aff1e681f",
+  "cftc_nq.json": "7d16d0d1705c5bc02cbf3777a26f541e79ecf394a023c76da5c38e3c3a71c122",
+  "nasdaqcom.csv": "cdeaae283d51e56967d2af102bb8621fae0a43df95513991e892495050ba053f"
+ },
+ "events_sha256": "c10232457bac7b0748dad1bfc058577b46db33d73f82da01614aeda924c06117",
+ "python": "3.13.18",
+ "rule": "1회 계산. 결과와 상관없이 매매 규칙·노출·한도·코어·예약 그대로. 고정 뒤 정의 변경 = 새 사전 등록."
+}
