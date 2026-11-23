@@ -74,6 +74,74 @@ def CRONPREV(expr,now):
                 c=dt.datetime.combine(d,dt.time(h,mn),tz)
                 if c<=loc:return c
     return None
+PRSYM=('QQQ','SOXL','SOXX')
+def PRQ0(sat):return dt.date(sat.year,3*((sat.month-1)//3)+1,1)
+def PRDAYS(sat,cd):a=(PRQ0(sat-dt.timedelta(days=6))-dt.timedelta(days=10)).isoformat();return [d for d in sorted(cd or []) if re.fullmatch(r'\d{4}-\d{2}-\d{2}',str(d)) and a<=d<=sat.isoformat()]
+def PERF(L,sat,cd):
+    # G10 기간 수익(period-return-g10-1123): 달러 계좌 %만, 판정어 없음, 표시 전용, 금액 출력 없음. 자금 이동·대조 미완료는 숫자를 내지 않는다.
+    try:
+        from decimal import Decimal as D_
+        import statistics as st_
+        pts={};flow=[];miss=[]
+        def NZ(v):
+            try:return D_(str(v))!=0
+            except Exception:return True
+        for d in PRDAYS(sat,cd):
+            x=L(f'workspace/outputs/auto-core/{d}/decision.json');r=L(f'workspace/outputs/auto-core/{d}/reconcile.json')
+            if isinstance(r,dict):
+                i3=(r.get('invariants') or {}).get('I3') or {};cf=r.get('cash_flow_evidence') or {}
+                fl=cf.get('declaration_status')!='NO_EXTERNAL_FLOW' or any(re.search(r'OUTFLOW|INFLOW|EXTERNAL_FLOW',str(z)) for k in (r.get('reasons'),r.get('warnings'),i3.get('reasons'),cf.get('reasons')) for z in (k or [])) or bool(i3.get('flows')) or NZ(i3.get('flow_cash_usd') or 0) or NZ(cf.get('hwm_adjustment_usd') or 0)
+                flow.append((d,fl,i3.get('status')=='PASS'))
+            else:flow.append((d,True,False))
+            if not isinstance(x,dict):miss.append(d);continue
+            es=str(x.get('evaluation_session') or '');ac=x.get('account') or {};ex=x.get('exposure') or {};tot=ac.get('total');E_=(ex.get('S7') or {}).get('E')
+            try:tv=D_(str(tot)) if tot is not None and not isinstance(tot,bool) else None
+            except Exception:tv=None
+            if re.fullmatch(r'\d{4}-\d{2}-\d{2}',es) and tv is not None and tv>0 and ex.get('cash_basis')=='ORDER_AVAILABLE':pts[es]={'t':tv,'E':E_ if isinstance(E_,(int,float)) and not isinstance(E_,bool) else None,'d':d}
+            else:miss.append(d)
+        if not pts:return '확인 필요(코어 기록 없음)'
+        cl={}
+        for s in PRSYM:
+            try:cl[s]={z['session_date']:D_(str(z['close'])) for z in ((L(f'workspace/outputs/regular-session-closes/history/{s}.close-history.json') or {}).get('sessions') or []) if z.get('verified') and z.get('close')}
+            except Exception:cl[s]={}
+        cal=sorted(cl['QQQ'])
+        def one(nm,p0,p1=None):
+            ss=[s for s in sorted(pts) if p1 is None or s<p1.isoformat()];pre=[s for s in ss if s<p0.isoformat()];inn=[s for s in ss if s>=p0.isoformat()]
+            if not inn:return f'{nm} 확인 필요(기록 없음)'
+            b=pre[-1] if pre else inn[0];end=inn[-1]
+            if b==end:return f'{nm} 확인 필요(구간 없음)'
+            db,de=pts[b]['d'],pts[end]['d']
+            if any(fl for d,fl,ok in flow if db<d<=de):return f'{nm} 확인 필요(자금 이동 미확정·대조 기록 빠짐)'
+            if not any(ok for d,fl,ok in flow if d==de):return f'{nm} 확인 필요(끝 날 현금 대조 미완료)'
+            lb=max([s for s in cal if s<p0.isoformat()],default=None);gap=len([s for s in cal if b<s<=end and s not in pts])
+            tag='(부분, '+b[5:]+'~)' if not pre else ('(기준 '+b[5:]+')' if lb and b<lb else '')
+            a=pts[end]['t']/pts[b]['t']-1;txt=f"{nm}{tag} 계좌 {a*100:+.1f}%"
+            q=cl['QQQ'];qq=(q[end]/q[b]-1) if b in q and end in q else None
+            se=[s for s in sorted(cl['SOXL']) if b<s<=end and s in cl['SOXX']];Es=[float(pts[s]['E']) for s in ss if b<=s<end and pts[s]['E'] is not None]
+            alt=None
+            if len(se)>=5 and Es and b in cl['SOXL'] and b in cl['SOXX']:
+                pv={'SOXL':cl['SOXL'][b],'SOXX':cl['SOXX'][b]};rl=[];rx=[]
+                for s in se:rl.append(float(cl['SOXL'][s]/pv['SOXL']-1));rx.append(float(cl['SOXX'][s]/pv['SOXX']-1));pv={'SOXL':cl['SOXL'][s],'SOXX':cl['SOXX'][s]}
+                vx=st_.pstdev(rx);m=max(3.0,(st_.pstdev(rl)/vx) if vx>0 else 3.0);w=(sum(Es)/len(Es))/m;v=1.0
+                for z in rl:v*=1+w*z
+                alt=v-1
+            txt+=(f' · 단순 대안 {alt*100:+.1f}%(차 {(float(a)-alt)*100:+.1f}%p, 평균 E 표본 {len(Es)})' if alt is not None else ' · 단순 대안 확인 필요')
+            txt+=(f' · QQQ {qq*100:+.1f}%(차 {(a-qq)*100:+.1f}%p)' if qq is not None else ' · QQQ 확인 필요')
+            return txt+f' · 세션 ~{end[5:]}'+(f' · 빈 세션 {gap}' if gap else '')
+        ed=dt.date.fromisoformat(max(pts));m0=dt.date(ed.year,ed.month,1);pm=(m0-dt.timedelta(days=1)).replace(day=1)
+        o=[one(f'{ed.month}월',m0),one(f'{(ed.month-1)//3+1}분기',PRQ0(ed))];pv_=one(f'{pm.month}월(확정)',pm,m0)
+        if '(부분' not in pv_ and '기록 없음' not in pv_:o.append(pv_)
+        return ' | '.join(o)+f' (잇지 못한 실행일 {len(miss)})'
+    except Exception as e_:return f'확인 필요(계산 실패: {type(e_).__name__})'
+def PRPUSH(S):
+    try:
+        m=re.search(r'^- 기간 수익\(.*?\): (.*)$',S or '',re.M)
+        if not m:return ''
+        g=m.group(1).split(' | ')[0];a=re.match(r'^(\S+?)(?:\([^)]*\))? 계좌 ([-+]\d+\.\d%)',g)
+        if not a:return ' · 기간 수익 '+g.split(' · ')[0][:40]
+        da=re.search(r'단순 대안 [-+]\d+\.\d%\(차 ([-+]\d+\.\d%p)',g);dq=re.search(r'QQQ [-+]\d+\.\d%\(차 ([-+]\d+\.\d%p)',g)
+        return f" · 기간 수익 {a.group(1)} 계좌 {a.group(2)}(단순 대안 대비 {da.group(1) if da else '확인 필요'}, QQQ 대비 {dq.group(1) if dq else '확인 필요'})"
+    except Exception:return ''
 mode=sys.argv[1]
 if mode=='period':
     t,sun,sat,days=per(sys.argv[2]);s=int(dt.datetime.combine(sun,dt.time(0,0),K).timestamp()*1000)
@@ -96,7 +164,8 @@ if mode=='plan':
     P+=['workspace/outputs/secretary/'+n for n in SECW(I.get('secretary'),sun,sat)][:7]
     P+=['docs/claude/'+n for n in WDOCS(I.get('week_docs'))[:60]]
     P=list(dict.fromkeys(P))
-    print(json.dumps([[W+p.replace('/','\\') for p in P[i:i+45]] for i in range(0,len(P),45)],ensure_ascii=False));sys.exit()
+    Q=[p for p in dict.fromkeys([f'workspace/outputs/auto-core/{d}/{f}' for d in PRDAYS(sat,H.get('core_dirs')) for f in('decision.json','reconcile.json')]+[f'workspace/outputs/regular-session-closes/history/{x}.close-history.json' for x in PRSYM]) if p not in P]
+    print(json.dumps([[W+p.replace('/','\\') for p in X_[i:i+45]] for X_ in (P,Q) for i in range(0,len(X_),45)],ensure_ascii=False));sys.exit()
 if mode=='run':
     today,root,inj,boardtxt,tdir=sys.argv[2:7]
     t,sun,sat,days=per(today);I=json.load(open(inj,encoding='utf-8'));PS=sun.isoformat();PE=sat.isoformat();C=I.get('complete') or {};HV=I.get('have') or {}
@@ -443,6 +512,7 @@ if mode=='run':
     S=[f"## 주간 경영보고 {today} (기간 {PS}~{PE}) — 회사 상태 {col} · {{{{N}}}}",f'<!-- id: ceo-{today} -->',
     f"### 1. 운용 (코어 파일 값 그대로, 기준 {X.get('run_day_kst','확인 필요')} · 모드 {X.get('decision_mode','확인 필요')})",
     f"- 노출 E {E} ({S7.get('band','확인 필요')}, 세션 {S7.get('session','확인 필요')}) · 멈춤: {pa} · 계좌 검토선 {ac.get('state','확인 필요')}(첫 쿠션 {cu})",
+    f"- 기간 수익(ceo.py 계산 · 달러 계좌 % · 잠정 · 표시 전용 · 판정 아님): {PERF(L,sat,HV.get('core_dirs'))}",
     f"- 종목 고점 검토: {pk}",f"- 이번 주 주문표 {tk}건 · 열린 주문표 {len(X.get('open_tickets') or [])}건 · 결과 기록 {len(X.get('outcomes') or [])}건",
     '### 2. 팀별',
     f"- 운영관리: 코어 정상 {okc}/{len(days)}(폴더 있는 날 {len([d for d in days if d in cd]) if cd is not None else '확인 필요'}) · 예외 알림 {ptot}건 · 코어가 요청한 사람 손(주문 입력 제외) {len(touch)}건 · PC 상태 {host} · 장부 어긋남(R1·R2) {bn if bn is not None else '불완전'}",
@@ -547,7 +617,7 @@ if mode=='finalize':
     os.makedirs('/mnt/user-data/outputs',exist_ok=True);open('/mnt/user-data/outputs/ceo-weekly-report.md','wb').write(body)
     d8=today.replace('-','');open(f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','w',encoding='utf-8',newline='\n').write(f"docs(claude): ceo weekly report {today} (weekly team-lead meeting)\ndocs/claude/ceo-weekly-report.md\n")
     fi=sum(1 for f in U['findings'] if f.get('sev')=='ℹ');fc=len(U['findings'])-fi;fn=sum(1 for f in U['findings'] if f.get('sev')!='ℹ' and f.get('weeks',1)==1);bn=U.get('board_n');bw=U.get('bnew');pre=f'⚠ 이번 주 답 필요 {hot}건 · ' if hot else ''
-    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 새 발견 {fn}건(계속 {fc-fn}건{f' · 참고 {fi}건 별도' if fi else ''}) · 장부 어긋남 {(f'새로 {bw}건(전체 {bn}건)' if bw is not None else str(bn)+'건') if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
+    push=f"{pre}주간 경영보고 {today[5:].replace('-','/')}: {U['color']} · 결정 {n}건(답 대기 {U.get('waiting_n',0)}) · 새 발견 {fn}건(계속 {fc-fn}건{f' · 참고 {fi}건 별도' if fi else ''}) · 장부 어긋남 {(f'새로 {bw}건(전체 {bn}건)' if bw is not None else str(bn)+'건') if bn is not None else '불완전'}"+(f" · 받은 결과 {len(sids)}건(팀장 확인 {len(RM)})" if sids else '')+PRPUSH(S)+(' (형식 확인 필요)' if V else '')+" — 대시보드 '주간 팀장회의'"
     print(json.dumps({'validation':V or 'OK','D':n,'hot':hot,'push':push,'report':'/mnt/user-data/outputs/ceo-weekly-report.md','report_sha256':hashlib.sha256(body).hexdigest(),'pending':f'/mnt/user-data/outputs/ceo-weekly-{d8}.txt','pending_name':f'ceo-weekly-{d8}.txt'},ensure_ascii=False))
 if mode=='dash':
     src,out=sys.argv[2:4];tx=open(src,encoding='utf-8',errors='replace').read().replace('\r\n','\n')
