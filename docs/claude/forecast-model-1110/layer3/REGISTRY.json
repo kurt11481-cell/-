@@ -6,7 +6,7 @@
   "60": "FM2"
  },
  "last_judgement_quarter": "2026Q4",
- "last_run_asof": "2026-11-13",
+ "last_run_asof": "2026-11-20",
  "interval_check": null,
  "findings": [
   {
@@ -78,9 +78,16 @@
    },
    "judged_quarter": "2026Q4",
    "held": {},
-   "issued": []
+   "issued": [
+    {
+     "asof": "2026-11-20",
+     "file": "challengers/c01_vixr.issued/2026-11-20_001.npz",
+     "sha256": "ab5c5a6e11260ac56a8b79e29be87f4dfdce8a7f195d12d14380b4cf90431113",
+     "rows": 60
+    }
+   ]
   }
  ],
- "log_seq": 4,
+ "log_seq": 6,
  "outbox": {}
 }

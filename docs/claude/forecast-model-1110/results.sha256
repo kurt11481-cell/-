@@ -1,5 +1,5 @@
 # hashes of result files and helper scripts, written after the fact for reproducibility (not a pre-registration)
-# rewritten 2026-11-14 14:11:12 KST; groups below carry the time they were first recorded
+# rewritten 2026-11-23 14:11:49 KST; groups below carry the time they were first recorded
 # era table, model results and their inputs (first recorded 2026-11-10 10:18:59 KST)
 8171c7a128a3d913e350651ca107150dc86f09de3323ae1878cdbf1848a17d20  scripts/era_stats.py
 7ecb82b8e1e1f0a6be43a89841573426af5b57140938b40fcb1b95e5bcc0f13b  scripts/era_stats2.py
@@ -120,3 +120,39 @@ f12281790c7c9540e7294a7abc533a6066128d36a0bce2dc2b176bc3c5d61c55  scripts/inputs
 2161b133b716fdefb0da4f4afc2b3a32baa291cc6bda4a2ea8e691379400c877  scripts/inputs/weekly/2026-11-13/extra/_GSPC.json
 f66ce50148c3933cd8dba16798cee22ed97e1ffb44e6c8e7098628ee6cbb3b3f  scripts/inputs/weekly/2026-11-13/extra/_VIX.json
 f952442409be0c9a2ca04a04ecdb73c31c267ae7e7eb293551e8547a15276817  scripts/inputs/options/2026-11-13.json.gz
+# weekly run asof 2026-11-20 (recorded 2026-11-23 14:11:49 KST; run on Monday 2026-11-23 because the Saturday run was cut off): ledger lines 28-36, the first forecasts issued by c01_vixr, the kept inputs. No option snapshot this week
+# files that grow every week are not listed. At this run: forecast-ledger.jsonl 36 lines sha256 9268722a7cc61154d5efe60b022bd3410333884f1cf0aaf002ad7ac94ad0c2bb; layer3/LOG.jsonl 6 events sha256 f8e7b9ad6ed648e75bb3ab468189be8539da8790148c4caba5f11a747ef77f90; scripts/inputs/options/MANIFEST.jsonl 3 lines sha256 dafce074c25041301940e582ed98534a67860195af59a6480ed03e11bdde7161
+0b12360532826a2be58fe62a483afd85a84faa12be18c7f45205447c2757e084  scripts/runs/fm2_weekly_2026-11-20.json
+7a64a7834d1854b3bf2a38fb9838bc93c82350fbc7e93fb222b5d667ad4cfdc2  scripts/runs/fm2_weekly_2026-11-20.log.txt
+7c968358b4de976bdc3f66b641c00ddc696930533b7bb85e655b845ecd68c16b  scripts/runs/fm3_run_2026-11-20.log.txt
+61cf4e9fc5bfb683f1416a8d86b78c96a8c8e8c360567860cff6e6b54fc530a5  layer3/runs/shadow_2026-11-20.json
+ab5c5a6e11260ac56a8b79e29be87f4dfdce8a7f195d12d14380b4cf90431113  layer3/challengers/c01_vixr.issued/2026-11-20_001.npz
+eacb05252528f6b727c957f21d3d969261087a402ca9957dc9b0947dddb04d36  scripts/inputs/weekly/2026-11-20/MANIFEST.json
+af1ef60b76bd1665bf84bf6cf11375a7f3c45009cfcaec4c772fad86fb50aab9  scripts/inputs/weekly/2026-11-20/MANIFEST_EXTRA.json
+cdb0446a006c2d82977bc8fed99ffee6d4f7388474218a699b71bab1b0572756  scripts/inputs/weekly/2026-11-20/pool/AMD.json
+cb73e22bea922494a022131863cc86d6661f4b951dbb59c7d468717574108648  scripts/inputs/weekly/2026-11-20/pool/AMZN.json
+983a60f713c16ecabe825b6d8bba3259c315b2cfef618affb226e1b0a02f3eb4  scripts/inputs/weekly/2026-11-20/pool/IWM.json
+67957a6a918e1a164deb6a867a471c043c954aeed5c9352c5793d699a57bc967  scripts/inputs/weekly/2026-11-20/pool/MSFT.json
+683a9c30ae314891a871bd059b3a79b227f368e689cd82ea90e45633124bbc7e  scripts/inputs/weekly/2026-11-20/pool/MU.json
+9e7b923c74a55e27ce69496c3cf991952148e52df6414e5698280b10ad0c31cd  scripts/inputs/weekly/2026-11-20/pool/NVDA.json
+e85a14712131de1ec59e7dd9aad014d2902d8dec1cd4763a97058028fa25cf11  scripts/inputs/weekly/2026-11-20/pool/PWR.json
+340e9e683a77e8686350d730c3941a504b3f5b81608c5d81fe8c4549815c5622  scripts/inputs/weekly/2026-11-20/pool/XLB.json
+b7cb2d2735974b997809d12baab2b1d7fd94e6b18abc5ca77426facff0622cd2  scripts/inputs/weekly/2026-11-20/pool/XLE.json
+46cfc78bb79898fd35c2f9919e818c28fb4966d6234064fdd494950f378928bd  scripts/inputs/weekly/2026-11-20/pool/XLF.json
+061b506bb7dbc3b95b54e7e3ae1821a9bec738feab5b6c63bbabb89a9c2145fa  scripts/inputs/weekly/2026-11-20/pool/XLI.json
+1150273b910fbe6718d60e4e7abdc9856aacaaa802d7465bc66e949ed4bf8839  scripts/inputs/weekly/2026-11-20/pool/XLP.json
+cc39ab3de01c7406978df2d0b77ea83e6cd7431a8216d70d61fdedf5c3d21b70  scripts/inputs/weekly/2026-11-20/pool/XLU.json
+1bb474c1872c3d65db8183c48e20eb0b43271d575850b16b685894316d0320ed  scripts/inputs/weekly/2026-11-20/pool/XLV.json
+bfda02bf18963505f4d9e81e097e278b9d3199100695d6e84d6541ba0357b62f  scripts/inputs/weekly/2026-11-20/pool/XLY.json
+1493275208a0f826b9c51f7aacc1df3fe10dc16be2506a6606d60c914aa0d113  scripts/inputs/weekly/2026-11-20/pool/_FTSE.json
+988f663d208fd419bdf0594e82ed7eac49a25ea64d9ef6e66ed17b3bd7f24f87  scripts/inputs/weekly/2026-11-20/pool/_GDAXI.json
+7aebbb3a8c9becb45d82b4c0608d0b85f5737d5bc243cee8dfd8395b7a713b28  scripts/inputs/weekly/2026-11-20/pool/_HSI.json
+816fac48a7f5a7b8e5029affd017c9d863bd77baeef5cee5e2f712a0edbaaed8  scripts/inputs/weekly/2026-11-20/pool/_KS11.json
+dd0c7f6fe7e068af01e3954ace8c874371f1b2fe8472e65c30b48947fb789d51  scripts/inputs/weekly/2026-11-20/pool/_N225.json
+ce49bf6cb112296409f9e29a5bb90f1d24a5dc187a44b771e6893e8e1d5a6e81  scripts/inputs/weekly/2026-11-20/idx/_GSPC.json
+9124eb7d838bf89be1198d4ac0044a8239a1b2f0ef19ea812079cff561338270  scripts/inputs/weekly/2026-11-20/idx/_IRX.json
+71d918dc9e4020b1b78a985d879c935980b7d06e6a1e341d0b57f0b77b23ee24  scripts/inputs/weekly/2026-11-20/idx/_NDX.json
+119877a6c2637dbb40508cce464c25a16756f41f57468cc70eb23fd1280b7faa  scripts/inputs/weekly/2026-11-20/idx/_SOX.json
+3d709f81ddc99534768ff96f86004f21e967ac9ac9e4a3b7da254f8e893355de  scripts/inputs/weekly/2026-11-20/idx/_TNX.json
+ce49bf6cb112296409f9e29a5bb90f1d24a5dc187a44b771e6893e8e1d5a6e81  scripts/inputs/weekly/2026-11-20/extra/_GSPC.json
+555493aa6b899457a835674a6a28e8cd95095a645fc30f4ab0a12ef8d5ba16ca  scripts/inputs/weekly/2026-11-20/extra/_VIX.json
