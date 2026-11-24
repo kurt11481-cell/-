@@ -4,7 +4,9 @@ mode,tdir=sys.argv[1],sys.argv[2]
 T={}
 for f in glob.glob(tdir+'/*.json'):
     d=json.load(open(f,encoding='utf-8')); T[f.replace('\\','/').split('/')[-1][:-5]]=d.get('data',d)
-def iso(s): return dt.datetime.fromisoformat(s.replace('Z','+00:00')).astimezone(K) if s else None
+def iso(s):
+    try: return dt.datetime.fromisoformat(s.replace('Z','+00:00')).astimezone(K) if s else None
+    except (ValueError,AttributeError,TypeError): return None
 def nm(k): return T[k].get('plain') or T[k].get('title') or k
 if mode=='docs':
     S=set()
@@ -19,11 +21,11 @@ F=[]
 # R1 예약 작업 vs 관제판 기록 (v1.2: 이름 키워드 대신 관제판 문서의 trigs(예약 작업 id)로 짝짓는다)
 VER=re.compile(r'v\d+(?:\.\d+)*')
 C=I.get('complete',{}); N=[]; skipW=0; skipO=0
-def isw(s): return 'Windows 작업' in s['name'] or 'GuardedPortfolio' in s['name']
+def isw(s): return 'Windows 작업' in (s.get('name') or '') or 'GuardedPortfolio' in (s.get('name') or '')
 def sver(s):
-    m=VER.search(s['name'])
+    m=VER.search(s.get('name') or '')
     if m: return m.group()
-    m=re.search(r'지시문 (v\d+(?:\.\d+)*)',s.get('text',''))
+    m=re.search(r'지시문 (v\d+(?:\.\d+)*)',(s.get('text') or ''))
     return m.group(1) if m else None
 if C.get('trig') is False or C.get('sch') is False:
     N.append('R1 미점검(예약 작업 목록 또는 관제판 예약 기록을 끝까지 읽지 못함)')
@@ -31,7 +33,7 @@ else:
     tmap={}
     for s in I['sch']:
         for t in s.get('trigs') or []: tmap[t]=s
-    ids={tr['id'] for tr in I['trig']}; seen=set()
+    ids={tr['id'] for tr in I['trig']}; seen=set(); nu=set()
     for tr in I['trig']:
         s=tmap.get(tr['id'])
         if not s:
@@ -39,9 +41,12 @@ else:
             else: skipO+=1
             continue
         seen.add(s['id'])
-        if iso(tr['updated'])>iso(s['updated'])+dt.timedelta(minutes=30):
-            F.append(('R1',f"{tr['name']}: 예약 작업 수정 {iso(tr['updated']):%m/%d %H:%M} > 관제판 기록 {iso(s['updated']):%m/%d %H:%M} ({s['id']})"))
-        a=VER.search(tr.get('head','')); b=sver(s)
+        ut,us=iso(tr.get('updated')),iso(s.get('updated'))
+        if ut is None or us is None:
+            if s['id'] not in nu: nu.add(s['id']); F.append(('R1',f"{tr['name']}: 수정 시각 대조 못 함 — {'관제판 기록' if us is None else '예약 작업'}에 갱신 시각 없음·형식 다름 ({s['id']}, 확인 필요)"))
+        elif ut>us+dt.timedelta(minutes=30):
+            F.append(('R1',f"{tr['name']}: 예약 작업 수정 {ut:%m/%d %H:%M} > 관제판 기록 {us:%m/%d %H:%M} ({s['id']})"))
+        a=VER.search(tr.get('head') or ''); b=sver(s)
         if a and b and a.group()!=b: F.append(('R1',f"{tr['name']}: 지시문 {a.group()} ≠ 관제판 표기 {b} ({s['id']})"))
     for s in I['sch']:
         if not s.get('trigs'):
@@ -86,7 +91,7 @@ for (b,p),ks in g.items():
     if len(ks)>1 and p is not None: F.append(('R5',f"순서 숫자 {p} 동률: {', '.join(ks)}"))
 # R6 진행 중 방치
 for k,t in T.items():
-    if t.get('status')=='active' and t.get('updatedAt') and (NOW-iso(t['updatedAt'])).days>=7: F.append(('R6',f"{k} {nm(k)}: 진행 중인데 7일 넘게 갱신 없음"))
+    if t.get('status')=='active' and iso(t.get('updatedAt')) and (NOW-iso(t['updatedAt'])).days>=7: F.append(('R6',f"{k} {nm(k)}: 진행 중인데 7일 넘게 갱신 없음"))
 print(f"RESULT {len(F)}건 | 검사한 작업 {len(T)}개 · 지금 할 수 있는 일 {len(rec)}개")
 for r,x in F: print(r,x)
 if not N: print(f"R1 제외: Windows 작업 {skipW}건 · 관제판에 올리지 않는 단발성/종료 예약 {skipO}건")
