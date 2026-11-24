@@ -1,10 +1,10 @@
 {
  "schema": "earnings-anchors-1.0",
- "updated_at": "2026-11-19T22:45:00+09:00",
+ "updated_at": "2026-11-24T12:00:00+09:00",
  "decision": "사용자 \"결정 earn-na: a\" (2026-10-14 11:04 KST) — docs/claude/earnings-not-announced-review-2026-10-14.md",
  "rule": "통합 점검 4단계 finalize가 읽는다. 종목별 예상일 E = 기준일 + 364일 또는 + 728일(기준일과 지난 연구 기록의 VERIFIED 발표일 모두). 오늘이 E − 21일 ~ E + 21일 안이고 그 분기 발표(E ± 35일 안의 지난 VERIFIED 발표일)가 아직 없으면, 또는 E가 오늘 − 21일 ~ 오늘 + 130일 안에 하나도 없으면 NOT_ANNOUNCED를 뺀다(코어가 금지 구간으로 봄 — 매수만 막힘). MVLL은 MRVL 기준을 쓴다.",
  "maintenance": "새 관심·보유 종목은 이 표에 직전 4개 분기 발표일을 더해야 NOT_ANNOUNCED가 쓰인다(없으면 매수만 막힘). 표는 + 728일 투영으로 2027-08까지 유효.",
- "sources": "SEC data.sec.gov submissions(8-K item 2.02 filingDate), NBIS는 nebius.com 보도자료(6-K 제출자). 조회 2026-10-14 11:2x KST, Claude 내장 브라우저·WebFetch. PLTR·AMD·CRWD는 2026-11-19 22시대 KST data.sec.gov submissions(8-K item 2.02 filingDate, 접수 시각 모두 미국 동부 16~17시 = 같은 날 장 뒤)로 추가(사장 결정 카드 2026-11-19 22:25:56 KST 'v4 + 기준표 3종목 추가', 적용 카드 22:44:07 KST '지금 추가'; Fable 독립 검토가 SEC 원문과 17행 일치 확인).",
+ "sources": "SEC data.sec.gov submissions(8-K item 2.02 filingDate), NBIS는 nebius.com 보도자료(6-K 제출자). 조회 2026-10-14 11:2x KST, Claude 내장 브라우저·WebFetch. PLTR·AMD·CRWD는 2026-11-19 22시대 KST data.sec.gov submissions(8-K item 2.02 filingDate, 접수 시각 모두 미국 동부 16~17시 = 같은 날 장 뒤)로 추가(사장 결정 카드 2026-11-19 22:25:56 KST 'v4 + 기준표 3종목 추가', 적용 카드 22:44:07 KST '지금 추가'; Fable 독립 검토가 SEC 원문과 17행 일치 확인). CRWD 2026-11-23(Q3 FY27 조기 발표, 장 전 접수)은 2026-11-24 KST data.sec.gov submissions로 추가(사장실 회사PC 스레드 'CRWD 관심 카드 실적 뒤 다시 쓰기', card-review-auto 진행 중 바로잡기).",
  "aliases": {
   "MVLL": "MRVL"
  },
@@ -333,6 +333,12 @@
     "kind": "SEC_FILING",
     "note": "8-K item 2.02 filing date",
     "source_url": "https://www.sec.gov/Archives/edgar/data/1535527/000153552726000029/crwd-20260826.htm"
+   },
+   {
+    "session": "2026-11-23",
+    "kind": "SEC_FILING",
+    "note": "8-K item 2.02 filing date (accepted 06:04 ET = before open; Dec 1 call cancelled per Ex.99.1)",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1535527/000153552726000035/crwd-20261123.htm"
    }
   ]
  },

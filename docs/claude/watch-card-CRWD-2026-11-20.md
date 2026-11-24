@@ -1,7 +1,7 @@
 ---
 id: watch-card-CRWD-2026-11-20
 type: card
-status: "current (사용자 수락 2026-11-20 15:59:32 KST, 결정 카드 'CRWD 관심 카드 새 판(v1)을 수락할까요?' → '수락'(사장이 직접 누름, CRWD 관심 카드 다시 쓰기 스레드, cmsg_0137MRzn9nuDvvQmVxm6WeX93h3xBmS52rG6qUwyewV3jb) — 관심 유지·상품 승인 아님. 수락 기록은 이 머리말에만 적는다. 본문을 고치면 절 해시가 바뀐다)"
+status: "superseded (2026-11-24 13:08:16 KST 사장 수락으로 v2 watch-card-CRWD-2026-11-24.md로 교체 — 이전: 사용자 수락 2026-11-20 15:59:32 KST, 결정 카드 'CRWD 관심 카드 새 판(v1)을 수락할까요?' → '수락'(사장이 직접 누름, CRWD 관심 카드 다시 쓰기 스레드, cmsg_0137MRzn9nuDvvQmVxm6WeX93h3xBmS52rG6qUwyewV3jb) — 관심 유지·상품 승인 아님. 수락 기록은 이 머리말에만 적는다. 본문을 고치면 절 해시가 바뀐다)"
 supersedes: "watch-card-CRWD-2026-11-14.md(v0, 관심 명단 주간 재채점 자동 초안, 미수락)"
 as_of: 2026-11-20
 valid_until: "다음 CRWD 실적 발표(2026-12-01 장 뒤, 회사 IR 공지 — 코어 실적일 표 VERIFIED) 뒤 첫 세션 — 그 뒤 다시 씀"
