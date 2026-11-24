@@ -131,3 +131,29 @@ authority: "order_authority=false · quantity_authority=none. 계좌 금액 없�
 - ⑥ ⓐ --new-lines 실행(새 줄 없음) · ⓑ 규칙 파일 LF 해시 8ff5847d… 일치 · ⓒ 지금 로더 394d55e0… 보관(pending-swing-1121/integrated-check-daily-v3.12.19.txt) · ⓓ 교체·보관본 갱신(7a9be86a…, build·finalize·fix1 MATCH) · ⓔ README 표·변경 기록 · ⓕ 사전 등록 3-2절 적용 줄·사이드카 새 해시 줄(888df5b0…).
 - 확인 필요: ~~별도 `예약 작업 변경 승인` 직접 입력 기록 없음(비서실 직접 지시를 승인으로 봄)~~ [정정 11:0x KST, 사장실 스레드: 사장 직접 입력 "예약 작업 변경 승인: 보유 관심 종목 통합 점검" 2026-11-21 09:13:44 KST(가운뎃점 빠짐, 같은 승인으로 봄), cmsg_0137MRzn9nuDvvQmVxm6WeX9RwZohdZM9K2Kf9ZP7kiorL] · 독립 검토는 초안 Fable 1회(H1 증거 없음) · 로더 길이 29,935자 한도 · 첫 실행 2026-11-24 06:40 KST의 1단계 MATCH 8ff5847d·스윙 관찰 줄.
 - 사장실 스레드 대조(11:0x KST): get_trigger 지시문 29,935자 sha256 7a9be86a…가 보관본과 글자까지 같음(CR 0). --new-lines의 '새 줄 없음'은 교체 전 09:2x KST에 사장실 스레드가 신호 2줄(PWR 10/29·LITE 11/02, ic_prompt_sha256 394d55e0…)을 swing-signal-ledger.jsonl(e228df6a…)에 먼저 붙였기 때문이다.
+
+## 8. 고친 판 — v3.12.21 (2026-11-24 KST, 적용 2026-11-24 10:19 KST — 8-1)
+
+**왜.** 2026-11-24 06:40 KST 첫 실행(규칙 MATCH 8ff5847d…)에서 스윙 관찰 ②가 `www.sec.gov/cgi-bin/browse-edgar …output=atom`을 WebFetch로 열다 "failed at its site (robots_disallowed)"로 두 번 실패해 건너뛰었다(보고 끝 줄 "스윙 관찰 건너뜀(sec.gov 거부) — 대상 6 · 조회 2(실패 2)"). 원인: www.sec.gov/robots.txt에 `Disallow: /cgi-bin`(`Allow: /Archives/edgar/data`). 판정·보고·대시보드·연구 기록의 다른 칸, 돈·주문 영향 없음. 새 6종목(AMAT·DDOG·KLAC·LRCX·NOW·SNOW)의 2세션 창에 실적 8-K는 없었다(efts 조회로 확인: AMAT 11/12, DDOG 11/04가 마지막 2.02).
+
+**무엇을 바꾸나.** 규칙 파일 403행 ② 한 줄, 404행 끝 문장(WebFetch 한도 '대상 수 + 4' → 5번), 401행 판 표기, 1행 머리말. 로더는 경로·해시·판 표기만. 2~400행과 402·405~407행은 v3.12.20과 같다(줄별 해시 비교).
+- 새 ②: EDGAR 전문 검색 `https://efts.sec.gov/LATEST/search-index?forms=8-K&ciks=<6개 CIK>&dateRange=custom&startdt=<SESSION 7일 전>&enddt=<오늘 KST>` 한 번. 고르는 조건(8-K 정확히·2세션 창·2.02)과 ③~⑥은 그대로. filing-href는 접수 번호로 Archives 색인 주소를 만든다.
+- CIK 표: AMAT 0000006951 · DDOG 0001561550 · KLAC 0000319201 · LRCX 0000707549 · NOW 0001373715 · SNOW 0001640147(sec.gov company_tickers.json).
+- 실패 정의를 넓힘: 못 엶 · hits.total 없음 · relation≠eq · 100건 초과 · 받은 줄 수 ≠ value · 칸 빠짐 · 대상 밖 CIK hit → '스윙 관찰 건너뜀(efts 조회 실패: <사유>)'.
+
+**시험(2026-11-24, WebFetch).** efts 6개 CIK 한 번 = HTTP 200 JSON(AMAT 11/12·KLAC 11/06·LRCX 11/05 8-K, 과거 창 SNOW 09/02 2.02) · Archives 색인 = Accepted 시각·EX-99.1 주소 받음 · data.sec.gov submissions JSON = 요약 모델이 열 배열을 잘못 맞춰 배제 · efts robots.txt는 HTTP 403이지만 WebFetch는 통과.
+
+**남는 위험(확인 필요).**
+- efts 색인 지연: 장 마감 뒤 접수(16:0x ET)된 8-K가 06:40 KST(겨울 16:40 ET) 실행 때 색인에 없으면 그 실행은 0건, 다음 실행이 2세션 창으로 잡는다. 그러면 그림자 장부 진입이 한 세션 늦어진다(사전 등록 3-2절 진입 규칙). 지연 크기는 모른다 → DELL(CIK 0001571996) 실적 8-K로 한 번 잰다.
+- efts는 공개 문서가 약한 검색 색인이라 형식이 바뀔 수 있다. 바뀌면 위 실패 정의로 건너뜀이 된다(쓰기 없음). 이틀 연속 실패면 그 신호는 빠진다.
+- 더 나은 길(이번 판 밖): 규칙 2-2) 로컬 공시 피드에 스윙 6종목을 넣고 ②가 그 파일을 읽게 하는 개발.
+
+**승인과 적용.** 사장 직접 입력 `예약 작업 변경 승인: 보유·관심 종목 통합 점검` → 비서실 교체. 적용 순서는 7절 ⑥ ⓐ~ⓕ와 같고 이름만 v3.12.21: ⓑ 규칙 파일 docs/claude/integrated-check-prompt-v3.12.21-2026-11-24.txt(LF sha256 f4b12861a0850f6488e7f2bc821ea2b3cf2f2a6e869c3fe9706feb3bed3a26c1, 407행 152,205 B) ⓒ 지금 로더 7a9be86a… 보관 ⓓ 새 로더 09969adb8ab404305035508cd8e07a441ba65c7ceba2cd85ec03a6a98ac00770(30,186자) ⓕ 사전 등록 3-2절·사이드카에 "v3.12.21 sha <규칙> — ② 조회 길만 efts로(진입 세션 한 세션 늦을 수 있음)" 줄. 초안 폴더: docs/claude/scheduled-prompts/pending-swing-1124/. SNOW 실적(12/2 예정, 확인 필요) 전에 적용해야 한다.
+
+**검토 기록.** Fable 1회(추론 노력 high): 문제 7건 중 반영 6건(실패 정의 넓힘·대상 0개·⑥ 보고 줄 맞춤·옛 낱말·8절 작성·보조 길 기록), 미반영 1건(색인 지연은 문안으로 못 고침 → 위 '남는 위험'과 DELL 실측).
+
+## 8-1. v3.12.21 적용 기록 (2026-11-24)
+
+- 10:19 KST 사장 직접 입력(10:02) 뒤 비서실이 trig_01YWzNq847nJfNgDUnnukBqP 지시문 교체 — 응답 "prompt re-signed by 금동한"(updated_at 01:19:07Z). 이름·일정·모델·폴더 그대로.
+- ⓐ --new-lines 실행(새 줄 없음) · ⓑ 규칙 파일 LF 해시 f4b12861… 일치(pending 사본과 같음) · ⓒ 지금 로더 7a9be86a… 보관(pending-swing-1124/integrated-check-daily-v3.12.20.txt) · ⓓ 교체·보관본 갱신(09969adb…, build·finalize·fix1 MATCH) · ⓔ README 표·변경 기록 · ⓕ 사전 등록 3-2절 적용 줄·사이드카 새 해시 줄(6bc57602…).
+- ~~확인 필요: 지시문 바이트 대조(응답 본문 눈 대조만)~~ [사장실 스레드 10:2x KST: get_trigger 저장 지시문 43,909 B sha256 09969adb…가 보관본·pending 사본과 바이트까지 같음(CR 0), 이름·일정(화~토 06:40)·모델 Sonnet 5.5·폴더 2개·켜짐 그대로] · 남은 확인: 첫 실행 2026-11-25 06:40 KST의 1단계 MATCH f4b12861·스윙 관찰 줄(efts 조회) · efts 색인 지연 실측(DELL).
