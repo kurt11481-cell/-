@@ -1,0 +1,1 @@
+pending: 사장님 주문 할 일 알림 v2 (스윙 청산 날 알림 — 도우미 v2 opens_on·manual·kind) — 사장 직접 입력 '예약 작업 변경 승인: 사장님 주문 할 일 알림' 뒤 교체(trig_01NCkc5WHdUL1oz6uiUwDZnE). 적용: 도우미 v2를 scheduled-prompts/ceo-order-todo-alert/open-actions-check-v2.py로 복사(bbc34d22…) → 지시문 교체(14e86f92…). 되돌림: SW- 항목 parked → ceo-order-todo-alert-v1.txt(ba244d10…). 근거 docs/claude/swing-live-path-proposal-2026-11-19.md 9절.
