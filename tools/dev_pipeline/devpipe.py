@@ -19,7 +19,9 @@ import argparse
 import datetime
 import fnmatch
 import hashlib
+import importlib.util
 import json
+import math
 import os
 import re
 import shutil
@@ -102,6 +104,26 @@ STATE_DIR = "stock-strategy-system/"
 DOCS_DIR = "docs/claude/"
 KST = datetime.timezone(datetime.timedelta(hours=9))
 AUTO_CORE_WINDOW_KST = ((6, 10), (6, 40))  # auto-core writes state files at 06:15 in recording mode
+
+# devq-api stage 1 (Judge only; docs/claude/devq-api-proposal-2026-11-25.md section 2): the Judge may run on API
+# credits through the Agent SDK (sdk_agent.py) only when every pick-route condition holds; otherwise it runs as
+# before (`claude -p`, subscription). The switch is read from the HEAD commit only (never the working tree) and
+# holds no amounts: the cap, the floor and the per-Judge budget are code constants a docs file cannot raise.
+API_ROUTE_REL = "docs/claude/devq-api-route.json"
+API_ROUTE_KEYS = ("approved_kst", "approved_ref", "judge_enabled")
+API_APPROVED_REF_RE = re.compile(r"^card cmsg_[A-Za-z0-9]{20,} option [A-D] by user_01KuMGKfZu1SBYxtMmg4vAiH$")
+API_APPROVED_KST_RE = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} KST$")
+API_OFF_NAME = "_api-route-off"  # under workspace/outputs/dev-runs/ (git-ignored): next runs use the subscription
+API_CLOSED_PREFIX = "_api-closed-"  # + KST YYYY-MM: auth, credit or limit refusal closes the rest of that month
+API_SPEND_NAME = "_api-spend.jsonl"  # append-only ledger, written only by api-spend-record
+API_SDK_MODULE = "claude_agent_sdk"
+DEVQ_API_MONTHLY_CAP_USD = 60
+DEVQ_API_MIN_REMAINING_USD = 3
+JUDGE_MAX_BUDGET_USD = 8
+API_CLOSE_STATUSES = (401, 403, 429)
+API_CLOSE_WORDS = ("credit", "limit")  # with HTTP 400, matched case-insensitively in result and subtype
+# Never passed to a test run (test_env); dev-run.ps1 also removes them from its own process at start.
+API_KEY_ENV_NAMES = ("INVESTV2_DEVQ_API_KEY", "INVESTV2_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY")
 
 # P6 protected paths: a pipeline task can never change these; changing them takes the old route
 # (worktree Builder + separate Judge + user). Compared in lower case because Windows file names ignore
@@ -585,7 +607,8 @@ def parse_unittest_output(text):
 
 
 def test_env(pycache_dir):
-    env = dict(os.environ)
+    # devq-api: an API key never reaches a test run (Windows names compare without case).
+    env = {name: value for name, value in os.environ.items() if name.upper() not in API_KEY_ENV_NAMES}
     env.update({"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1",
                 "PYTHONPYCACHEPREFIX": str(pycache_dir)})
     return env
@@ -1387,6 +1410,186 @@ def builder_envelope_summary(path):
         return {"missing_or_invalid": True}
 
 
+# ------------------------------------------------------------------------ devq-api route (stage 1)
+
+def api_runs_root(run_dir):
+    """workspace/outputs/dev-runs of the run (the run folder's parent): ledger, off file and month markers."""
+    return Path(run_dir).resolve().parent
+
+
+def kst_now():
+    return datetime.datetime.now(KST)
+
+
+def kst_month(moment=None):
+    return (moment or kst_now()).astimezone(KST).strftime("%Y-%m")
+
+
+def is_usd(value):
+    return (isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+            and value >= 0)
+
+
+def read_route_config(repo):
+    """(enabled, reason) from docs/claude/devq-api-route.json in the HEAD commit (never the working tree)."""
+    code, raw = git(repo, "show", "HEAD:%s" % API_ROUTE_REL, check=False)
+    if code != 0:
+        return False, "disabled"
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return False, "config_invalid"
+    if not isinstance(data, dict) or sorted(data) != sorted(API_ROUTE_KEYS) or not isinstance(data["judge_enabled"], bool):
+        return False, "config_invalid"
+    if data["judge_enabled"] is not True:
+        return False, "disabled"
+    ref, kst = data["approved_ref"], data["approved_kst"]
+    if not (isinstance(ref, str) and API_APPROVED_REF_RE.fullmatch(ref)
+            and isinstance(kst, str) and API_APPROVED_KST_RE.fullmatch(kst)):
+        return False, "config_invalid"
+    return True, "ok"
+
+
+def sdk_available():
+    """The Agent SDK can be imported by this python (found, never imported here: only sdk_agent.py imports it)."""
+    try:
+        return importlib.util.find_spec(API_SDK_MODULE) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def read_spend_entries(path):
+    """Entries of the spend ledger in file order. No file = no spend. Any line that cannot be read raises
+    ValueError (or OSError / UnicodeDecodeError): the caller then fails closed (reason=cap)."""
+    path = Path(path)
+    if not path.exists():
+        return []
+    entries = []
+    for line in path.read_bytes().decode("utf-8").splitlines():
+        if not line.strip():
+            continue
+        entry = json.loads(line)
+        if (not isinstance(entry, dict) or entry.get("kind") not in ("reserve", "actual")
+                or not isinstance(entry.get("id"), str) or not is_usd(entry.get("usd"))
+                or isinstance(entry.get("attempt"), bool) or not isinstance(entry.get("attempt"), int)
+                or not isinstance(entry.get("kst"), str)):
+            raise ValueError("ledger_entry")
+        moment = datetime.datetime.fromisoformat(entry["kst"])
+        if moment.tzinfo is None:
+            raise ValueError("ledger_kst")
+        entries.append(dict(entry, month=kst_month(moment)))
+    return entries
+
+
+def month_spend(entries, month):
+    """USD counted for the KST month: one slot per reserve, closed by the next actual of the same (id, attempt);
+    a closed slot counts its actual, an open one (no envelope, e.g. timeout) its reserve. A slot belongs to the
+    month of its reserve (an actual without a reserve counts in its own month)."""
+    slots, open_slots = [], {}
+    for entry in entries:
+        key = (entry["id"], entry["attempt"])
+        if entry["kind"] == "reserve":
+            slot = {"month": entry["month"], "reserve": float(entry["usd"]), "actual": None}
+            slots.append(slot)
+            open_slots.setdefault(key, []).append(slot)
+        elif open_slots.get(key):
+            open_slots[key].pop()["actual"] = float(entry["usd"])
+        else:
+            slots.append({"month": entry["month"], "reserve": None, "actual": float(entry["usd"])})
+    return sum(s["actual"] if s["actual"] is not None else s["reserve"] for s in slots if s["month"] == month)
+
+
+def pick_route(run_dir, role, key_present, now=None):
+    """(route, reason, budget) for one Judge start. route is "api" only when every condition holds."""
+    if role != "judge":
+        return "subscription", "builder_stage1", None
+    run = load_run(run_dir)
+    enabled, why = read_route_config(run["repo"])
+    if not enabled:
+        return "subscription", why, None
+    root = api_runs_root(run_dir)
+    month = kst_month(now)
+    if (root / API_OFF_NAME).exists():
+        return "subscription", "off_file", None
+    if (root / (API_CLOSED_PREFIX + month)).exists():
+        return "subscription", "closed_month", None
+    if key_present != "yes":
+        return "subscription", "no_key", None
+    if not sdk_available():
+        return "subscription", "no_sdk", None
+    try:
+        spent = month_spend(read_spend_entries(root / API_SPEND_NAME), month)
+    except (OSError, ValueError, UnicodeDecodeError, KeyError, TypeError):
+        return "subscription", "cap", None
+    remaining = DEVQ_API_MONTHLY_CAP_USD - spent
+    if remaining < DEVQ_API_MIN_REMAINING_USD:
+        return "subscription", "cap", None
+    budget = math.floor(min(JUDGE_MAX_BUDGET_USD, remaining) * 100) / 100
+    return "api", "ok", budget
+
+
+def envelope_cost(run_dir, attempt):
+    """total_cost_usd of this attempt's api envelope (judge-N.api.json after a fallback, else judge-N.json), or None."""
+    run_dir = Path(run_dir)
+    for name in ("judge-%d.api.json" % attempt, "judge-%d.json" % attempt):
+        path = run_dir / name
+        if not path.is_file():
+            continue
+        try:
+            envelope = json.loads(path.read_bytes().decode("utf-8"))
+        except (OSError, ValueError, UnicodeDecodeError):
+            return None
+        if isinstance(envelope, dict) and envelope.get("route") == "api" and is_usd(envelope.get("total_cost_usd")):
+            return float(envelope["total_cost_usd"])
+        return None
+    return None
+
+
+def fallback_decision(envelope):
+    """(yes, reason, close_month) for an api Judge envelope. yes = it failed before any work (is_error and at most
+    one turn), whatever the status or text; then auth, credit or limit refusals also close the KST month. A failure
+    after two or more turns and error_max_budget_usd are not run again (parse-judge handles them as before)."""
+    if not isinstance(envelope, dict) or envelope.get("route") != "api":
+        return False, "not_api_envelope", False
+    if envelope.get("is_error") is not True:
+        return False, "not_error", False
+    subtype = envelope.get("subtype")
+    if subtype == "error_max_budget_usd":
+        return False, "max_budget", False
+    turns = envelope.get("num_turns")
+    if isinstance(turns, bool) or not isinstance(turns, int):
+        return False, "turns_unknown", False
+    if turns > 1:
+        return False, "after_work:turns=%d" % turns, False
+    status = envelope.get("api_error_status")
+    if isinstance(status, bool) or not isinstance(status, int):
+        status = None
+    words = " ".join(v for v in (envelope.get("result"), subtype) if isinstance(v, str)).lower()
+    close = status in API_CLOSE_STATUSES or (status == 400 and any(word in words for word in API_CLOSE_WORDS))
+    return True, "pre_work_error:status=%s:turns=%d" % ("none" if status is None else status, turns), close
+
+
+def judge_routes(run_dir, attempts):
+    """[{attempt, route}] for every attempt with a Judge envelope: fallback (an api envelope was kept as
+    judge-N.api.json), api (judge-N.json says route api) or subscription."""
+    run_dir = Path(run_dir)
+    routes = []
+    for attempt in attempts:
+        main_path = run_dir / ("judge-%d.json" % attempt)
+        if (run_dir / ("judge-%d.api.json" % attempt)).is_file():
+            route = "fallback"
+        elif main_path.is_file():
+            try:
+                envelope = json.loads(main_path.read_bytes().decode("utf-8"))
+            except (OSError, ValueError, UnicodeDecodeError):
+                envelope = None
+            route = "api" if isinstance(envelope, dict) and envelope.get("route") == "api" else "subscription"
+        else:
+            continue
+        routes.append({"attempt": attempt, "route": route})
+    return routes
+
+
 def safe_worktree_folder(wt, task_id):
     """The run folder inside the worktree (git-ignored). Refuse links so writes never leave the worktree."""
     folder = Path(wt)
@@ -1826,6 +2029,63 @@ def cmd_parse_judge(args):
                 0 if parsed["verdict"] == "PASS" else 1)
 
 
+def cmd_pick_route(args):
+    """devq-api: one line ROUTE api reason=ok budget=<USD> or ROUTE subscription reason=<why>. Writes nothing (the
+    run records stay as they are); dev-run logs the line and api-spend-record keeps the ledger."""
+    route, reason, budget = pick_route(args.run_dir, args.role, args.key_present)
+    if route == "api":
+        return emit("ROUTE api reason=ok budget=%.2f" % budget, 0)
+    return emit("ROUTE subscription reason=%s" % reason, 0)
+
+
+def cmd_api_spend_record(args):
+    """devq-api: append one ledger line. reserve needs --usd (the budget pick-route gave); actual takes --usd or,
+    without it, total_cost_usd of the attempt's api envelope (none -> nothing written, the reserve keeps counting)."""
+    run_dir = Path(args.run_dir)
+    task_id = run_dir.resolve().name
+    if not ID_RE.match(task_id):
+        raise Stop("STOP_API_SPEND", "run_dir_name")
+    usd = args.usd
+    if usd is None and args.kind == "actual":
+        usd = envelope_cost(run_dir, args.attempt)
+        if usd is None:
+            return emit("API_SPEND SKIP kind=actual reason=no_cost", 1)
+    if not is_usd(usd):
+        raise Stop("STOP_API_SPEND", "usd")
+    entry = {"kst": kst_now().isoformat(timespec="seconds"), "id": task_id, "attempt": args.attempt,
+             "kind": args.kind, "usd": float(usd)}
+    ledger = api_runs_root(run_dir) / API_SPEND_NAME
+    with open(ledger, "a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(entry, sort_keys=True) + "\n")
+    return emit("API_SPEND OK kind=%s attempt=%d usd=%.4f" % (args.kind, args.attempt, usd), 0)
+
+
+def cmd_route_fallback(args):
+    """devq-api: FALLBACK yes|no reason=... for the api envelope judge-N.json. On yes the envelope is kept as
+    judge-N.api.json (dev-run then runs the subscription Judge once for the same attempt) and an auth, credit or
+    limit refusal writes _api-closed-<KST YYYY-MM>."""
+    run_dir = Path(args.run_dir)
+    path = run_dir / ("judge-%d.json" % args.attempt)
+    try:
+        envelope = json.loads(path.read_bytes().decode("utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return emit("FALLBACK no reason=no_envelope", 1)
+    yes, reason, close = fallback_decision(envelope)
+    if not yes:
+        return emit("FALLBACK no reason=%s" % reason, 1)
+    closed = "no"
+    if close:
+        closed = kst_month()
+        marker = api_runs_root(run_dir) / (API_CLOSED_PREFIX + closed)
+        status = envelope.get("api_error_status")
+        if isinstance(status, bool) or not isinstance(status, int):
+            status = None
+        write_json(marker, {"kst": kst_now().isoformat(timespec="seconds"), "id": run_dir.resolve().name,
+                            "attempt": args.attempt, "api_error_status": status})
+    os.replace(path, run_dir / ("judge-%d.api.json" % args.attempt))
+    return emit("FALLBACK yes reason=%s closed=%s" % (reason, closed), 0)
+
+
 def cmd_fix_prep(args):
     run_dir = Path(args.run_dir)
     run = load_run(run_dir)
@@ -1992,6 +2252,7 @@ def cmd_write_result(args):
         "builder_runs": [builder_envelope_summary(run_dir / ("builder-%d.json" % n)) for n in attempts],
         "started_utc": run["started_utc"], "finished_utc": utc_now(),
         "next": next_hint(run["id"], status),
+        "judge_routes": judge_routes(run_dir, attempts),  # devq-api: api | subscription | fallback per attempt
     }
     if (run_dir / BASELINE_CLEANUP_JSON).is_file():
         result["baseline_cleanup"] = read_json(run_dir / BASELINE_CLEANUP_JSON)
@@ -2001,7 +2262,8 @@ def cmd_write_result(args):
         line += " baseline=%s" % ",".join(notices)
     result["line"] = ascii_safe(line, 2000)
     write_json(run_dir / "result.json", result)
-    write_latest(run["repo"], {k: result[k] for k in ("id", "status", "class", "base", "line", "next", "finished_utc")})
+    write_latest(run["repo"], {k: result[k] for k in ("id", "status", "class", "base", "line", "next", "finished_utc",
+                                                      "judge_routes")})
     write_docs(run["repo"], result, run, judge_texts_for(run_dir))
     return emit(line, 0 if status in ("READY_TO_MERGE", "NEEDS_APPROVAL") else 1)
 
@@ -2275,6 +2537,16 @@ def build_parser():
     p = sub.add_parser("write-latest"); p.add_argument("--repo", required=True); p.add_argument("--id", required=True)
     p.add_argument("--status", required=True); p.add_argument("--reason", default="")
     p.set_defaults(func=cmd_write_latest, kw="DEV-RUN")
+    # devq-api stage 1 (Judge route on API credits; see the API_* constants)
+    p = sub.add_parser("pick-route"); p.add_argument("--run-dir", required=True)
+    p.add_argument("--role", choices=("judge", "builder"), required=True)
+    p.add_argument("--key-present", choices=("yes", "no"), default="no"); p.set_defaults(func=cmd_pick_route, kw="ROUTE")
+    p = sub.add_parser("api-spend-record"); p.add_argument("--run-dir", required=True)
+    p.add_argument("--attempt", type=int, choices=(1, 2), required=True)
+    p.add_argument("--kind", choices=("reserve", "actual"), required=True); p.add_argument("--usd", type=float)
+    p.set_defaults(func=cmd_api_spend_record, kw="API_SPEND")
+    p = sub.add_parser("route-fallback"); p.add_argument("--run-dir", required=True)
+    p.add_argument("--attempt", type=int, choices=(1, 2), required=True); p.set_defaults(func=cmd_route_fallback, kw="FALLBACK")
     return parser
 
 

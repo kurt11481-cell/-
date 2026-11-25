@@ -23,6 +23,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# devq-api: no API key stays in this process, so nothing it starts (Builder, tests, devpipe, the subscription
+# Judge) inherits one. Only the Agent SDK Judge gets the dev-queue key, in its own ProcessStartInfo (Start-JudgeApi).
+foreach ($keyName in @('INVESTV2_DEVQ_API_KEY', 'INVESTV2_ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY')) {
+    [Environment]::SetEnvironmentVariable($keyName, $null, 'Process')
+}
+
 # ---- constants (a task prompt cannot change these) ----
 $IdPattern = '^[a-z0-9][a-z0-9-]{1,47}$'
 $JudgeMaxTurns = 80
@@ -63,6 +69,7 @@ if ($Id -cnotmatch $IdPattern) {
 
 $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $devpipe = Join-Path $PSScriptRoot 'dev_pipeline\devpipe.py'
+$sdkAgent = Join-Path $PSScriptRoot 'dev_pipeline\sdk_agent.py'
 $runsRoot = Join-Path $repo 'workspace\outputs\dev-runs'
 $lockPath = Join-Path $runsRoot '_lock'
 $worktree = Join-Path $repo ('.claude\worktrees\' + $Id)
@@ -113,19 +120,31 @@ function Stop-ProcessTree([int]$ProcessId) {
 }
 
 # Starts one cmd.exe command line (redirections inside it keep the bytes) and returns the process.
-function Start-Captured([string]$CommandLine, [string]$WorkingDirectory) {
+# ExtraEnv (optional, devq-api): variables set in this one child's environment only, never in this process.
+function Start-Captured([string]$CommandLine, [string]$WorkingDirectory, [hashtable]$ExtraEnv = $null) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $cmdExe
     $psi.Arguments = '/d /s /c "' + $CommandLine + '"'
     $psi.WorkingDirectory = $WorkingDirectory
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
+    if ($null -ne $ExtraEnv) {
+        foreach ($name in @($ExtraEnv.Keys)) {
+            if (-not [string]::IsNullOrEmpty([string]$ExtraEnv[$name])) { $psi.EnvironmentVariables[[string]$name] = [string]$ExtraEnv[$name] }
+        }
+    }
     return [System.Diagnostics.Process]::Start($psi)
 }
 
 # Runs one cmd.exe command line and waits. Optional timeout kills the tree.
 function Invoke-Captured([string]$CommandLine, [string]$WorkingDirectory, [int]$TimeoutSeconds = 0) {
     $proc = Start-Captured -CommandLine $CommandLine -WorkingDirectory $WorkingDirectory
+    return (Wait-Captured -Process $proc -TimeoutSeconds $TimeoutSeconds)
+}
+
+# Waits for a process Start-Captured started. Optional timeout kills the tree.
+function Wait-Captured([System.Diagnostics.Process]$Process, [int]$TimeoutSeconds = 0) {
+    $proc = $Process
     $timedOut = $false
     if ($TimeoutSeconds -gt 0) {
         if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {
@@ -347,12 +366,48 @@ function Start-Builder([int]$Attempt, [string]$PromptText, [string]$WorkingDirec
     return $result
 }
 
+function Get-JudgePromptText {
+    return ('Read workspace/outputs/dev-runs/' + $Id + '/judge-prompt.md and follow it exactly.')
+}
+
 # Headless Judge: model, effort, tools and turns are script constants; it runs inside the worktree and
 # reads only the files devpipe copied from the main checkout records and the base commit.
+# devq-api stage 1: devpipe pick-route decides the route (this script only starts processes). api = the same
+# Judge through the Agent SDK on API credits (Start-JudgeApi); anything else, including any devpipe failure, =
+# the subscription command (Start-JudgeSubscription, unchanged). An api run that failed before any work
+# (devpipe route-fallback says yes) runs the subscription command once for the same attempt.
 function Start-Judge([int]$Attempt) {
+    $keyPresent = 'no'
+    if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('INVESTV2_DEVQ_API_KEY', 'User'))) { $keyPresent = 'yes' }
+    $route = Invoke-Devpipe -Tag ('pick-route-' + $Attempt) -Arguments @('pick-route', '--run-dir', $script:runDir, '--role', 'judge', '--key-present', $keyPresent)
+    if ($route.Code -eq 0 -and $route.Line -cmatch '^ROUTE api reason=ok budget=([0-9]{1,3}\.[0-9]{2})$') {
+        $budget = $Matches[1]
+        Write-Log ('ROUTE judge-' + $Attempt + ' api reason=ok budget=' + $budget)
+        $reserve = Invoke-Devpipe -Tag ('api-reserve-' + $Attempt) -Arguments @('api-spend-record', '--run-dir', $script:runDir, '--attempt', [string]$Attempt, '--kind', 'reserve', '--usd', $budget)
+        if ($reserve.Code -eq 0) {
+            $api = Start-JudgeApi -Attempt $Attempt -Budget $budget
+            if ($api.TimedOut) { return $api }
+            # No envelope or no cost -> nothing is written and the reserve keeps counting.
+            [void](Invoke-Devpipe -Tag ('api-actual-' + $Attempt) -Arguments @('api-spend-record', '--run-dir', $script:runDir, '--attempt', [string]$Attempt, '--kind', 'actual'))
+            $fallback = Invoke-Devpipe -Tag ('route-fallback-' + $Attempt) -Arguments @('route-fallback', '--run-dir', $script:runDir, '--attempt', [string]$Attempt)
+            if (-not ($fallback.Code -eq 0 -and $fallback.Line -cmatch '^FALLBACK yes ')) { return $api }
+            Write-Log ('ROUTE_FALLBACK judge-' + $Attempt + ' reason=' + (Get-LineReason $fallback.Line))
+        } else {
+            Write-Log ('ROUTE judge-' + $Attempt + ' subscription reason=spend_record_failed')
+        }
+    } else {
+        $reason = Get-LineReason $route.Line
+        if ($route.Code -ne 0 -or [string]::IsNullOrWhiteSpace($reason) -or $reason -eq 'ok') { $reason = 'pick_route_failed' }
+        Write-Log ('ROUTE judge-' + $Attempt + ' subscription reason=' + $reason)
+    }
+    return (Start-JudgeSubscription -Attempt $Attempt)
+}
+
+# The subscription Judge (claude -p), the same command as before devq-api.
+function Start-JudgeSubscription([int]$Attempt) {
     $out = Join-Path $script:runDir ('judge-' + $Attempt + '.json')
     $err = Join-Path $script:runDir ('judge-' + $Attempt + '.err')
-    $promptText = 'Read workspace/outputs/dev-runs/' + $Id + '/judge-prompt.md and follow it exactly.'
+    $promptText = Get-JudgePromptText
     $command = '"' + $script:claude + '" -p "' + $promptText + '" --model opus --effort xhigh --tools "Read,Grep,Glob"' +
         ' --permission-prompts none --output-format json --strict-mcp-config --setting-sources project' +
         ' --disallowedTools "mcp__*" --max-turns ' + $JudgeMaxTurns +
@@ -360,6 +415,30 @@ function Start-Judge([int]$Attempt) {
     Write-Log ('JUDGE start attempt=' + $Attempt)
     $result = Invoke-Captured -CommandLine $command -WorkingDirectory $worktree -TimeoutSeconds ($JudgeTimeoutMinutes * 60)
     Write-Log ('JUDGE end attempt=' + $Attempt + ' exit=' + $result.Code + ' timeout=' + $result.TimedOut)
+    return $result
+}
+
+# devq-api: the same Judge (same claude.exe, prompt, model, effort, tools, turns and time limit) through
+# tools\dev_pipeline\sdk_agent.py on API credits. The python process runs in the main checkout like devpipe; the
+# CLI runs in the worktree (--cwd). The dev-queue key is read from the user scope here only, goes into this one
+# child's ProcessStartInfo (never $env: or a cmd set line) and is dropped right after the start.
+function Start-JudgeApi([int]$Attempt, [string]$Budget) {
+    $out = Join-Path $script:runDir ('judge-' + $Attempt + '.json')
+    $stdout = Join-Path $script:runDir ('judge-' + $Attempt + '.api.out')
+    $err = Join-Path $script:runDir ('judge-' + $Attempt + '.api.err')
+    $command = '"' + $python + '" "' + $sdkAgent + '" --role judge --cli "' + $script:claude + '" --cwd "' + $worktree +
+        '" --prompt-file-line "' + (Get-JudgePromptText) + '" --max-turns ' + $JudgeMaxTurns + ' --budget ' + $Budget +
+        ' --out "' + $out + '" < NUL > "' + $stdout + '" 2> "' + $err + '"'
+    Write-Log ('JUDGE start attempt=' + $Attempt + ' route=api')
+    $keyEnv = @{ 'INVESTV2_DEVQ_API_KEY' = [Environment]::GetEnvironmentVariable('INVESTV2_DEVQ_API_KEY', 'User') }
+    try {
+        $proc = Start-Captured -CommandLine $command -WorkingDirectory $repo -ExtraEnv $keyEnv
+    } finally {
+        $keyEnv.Clear()
+        $keyEnv = $null
+    }
+    $result = Wait-Captured -Process $proc -TimeoutSeconds ($JudgeTimeoutMinutes * 60)
+    Write-Log ('JUDGE end attempt=' + $Attempt + ' route=api exit=' + $result.Code + ' timeout=' + $result.TimedOut)
     return $result
 }
 
