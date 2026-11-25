@@ -5,14 +5,14 @@
     "approved_kst": "2026-11-07 16:18:55 KST"
   },
   "srccheck-submit": {
-    "enabled": false,
-    "approved_ref": "",
-    "approved_kst": ""
+    "enabled": true,
+    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9A7AqUsEfz8FL8Z8Rf18Ci1 option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
+    "approved_kst": "2026-11-25 18:40:14 KST"
   },
   "srccheck-collect": {
-    "enabled": false,
-    "approved_ref": "",
-    "approved_kst": ""
+    "enabled": true,
+    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9A7AqUsEfz8FL8Z8Rf18Ci1 option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
+    "approved_kst": "2026-11-25 18:40:14 KST"
   },
   "pdfcmp-submit": {
     "enabled": true,
