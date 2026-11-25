@@ -1,0 +1,5 @@
+# devq-api stage 1: Agent SDK for the dev-pipeline Judge on API credits (tools/dev_pipeline/sdk_agent.py).
+# Pinned from PyPI on 2026-11-25 KST (0.2.188, released 2026-11-23). Installed by the user once after the merge:
+#   pip install -r tools\dev_pipeline\requirements-sdk.txt
+# Not installed -> devpipe pick-route answers ROUTE subscription reason=no_sdk (the Judge runs as before).
+claude-agent-sdk==0.2.188
