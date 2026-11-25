@@ -2,20 +2,21 @@
 id: active-decisions
 type: index
 status: current
-as_of: 2026-10-25
+as_of: 2026-11-25
 summary: "지금도 유효한 사장 결정을 한곳에서 찾는 색인. 보기용 사본 — 원본은 각 문서(열 '원문'). 변경 제안 전에 대상 키워드(예약 작업 이름, 대시보드, 규칙 이름)를 여기서 먼저 검색한다."
 consumers: "사장실 코디네이터 · 회사PC 스레드 · 클라우드 스레드(읽기용 사본으로만)"
 authority: "order_authority=false · quantity_authority=none · 이 색인은 판단 근거가 아니라 입구. 이 색인과 원문이 다르면 원문이 맞다"
 source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레드가 기존 cowork의 \"Q2 a\"를 읽지 못한 것은 심각한 결함임' → 코디네이터 지시"
 ---
 
-# 현행 결정 색인 (2026-10-25)
+# 현행 결정 색인 (2026-10-25 시작 · 마지막 추가 2026-11-25)
 
 ## 쓰는 법
 1. 무엇을 바꾸자고 제안하기 **전에** 대상 키워드(작업 이름, 대시보드 이름, 규칙 이름, 결정 id)를 이 파일에서 검색한다.
 2. 걸리는 항목이 있으면 '조건/만료'와 '하지 않음'을 읽고, 원문 파일·행을 열어 확인한 뒤 제안한다. 부딪히면 제안서 첫 줄에 어떤 결정과 부딪히는지 적는다.
 3. 이 색인은 **보기용 사본**이다. 결정 일지·관제판 결정함·결정 문서 원본은 고치지 않았다. 새 결정이 생기면 원본에 먼저 기록하고 이 색인에 한 줄 추가한다(아직 자동 갱신 아님 — 아래 '한계').
 4. 표의 행 번호는 2026-10-25 20시대 KST에 grep으로 확인한 값. 행이 밀렸으면 id·문구로 다시 찾는다. 행 없이 '절'만 적은 칸은 그 절을 직접 읽어 확인하지는 않은 것(검색 결과만 봄).
+5. (2026-11-25 layer-audit-1125) 새 줄은 'id · 날짜 · 한 줄 요지 · 원문 파일(CLAUDE.md는 행 번호 대신 절 이름)'까지만 쓴다. 경위·메시지 id·긴 설명은 원문 결정 문서에 둔다. 머리 as_of는 마지막 추가일로 고친다.
 
 ## A. 예약 작업·대시보드·창구 (제안이 가장 자주 부딪히는 곳)
 
@@ -39,6 +40,7 @@ source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레�
 | **obs-sys Q1 a · Q2 a** · 2026-10-22 23:13 | Q1 볼트 보기(00-views.base 3개, backlink) 완료 23:2x / Q2 비서 v1.2에 ceo-inbox 개수 ㉴ | Q2는 board-merge Q1과 **한 번에** `결정 obs-sys-sec: 승인(비서실 문구 포함, briefs 쓰기 포함)`으로 교체(승인 문구 고정). 비서 v1.2 교체 여부는 이 repo에서 못 찾음(확인 필요) | 비서 제안, 00-home | obsidian-system-wide-research-2026-10-22.md:90-92 · ceo-room-merge-2026-10-22.md:49 |
 | **obs-1022b Q1 a** · 2026-10-22 (00-home source_decision = duet-1022 Q1 a ③) | Obsidian 볼트 = docs/claude 읽기 보기, 지식 문서 사본 제외 | 편집은 ceo-inbox/ 새 노트만. 고치면 안 되는 파일 표(00-home) | 00-home, 볼트 | 00-home.md:1-30 · obsidian-ops-review-2026-10-22.md:63-71 |
 | **obs-tidy: B** · 2026-11-01 13:05 KST (사장 버튼 선택 "B 설정 + 연결 만들기", 사장실 회사PC 스레드 'Obsidian 트리·그래프 뷰 정리') | 두 보관함 .obsidian 설정(제외 폴더·그래프 색 그룹·북마크) 변경 + 개발 큐 obs-links(INDEX-auto.md 파일 칸을 링크로) | 파일 이동·이름 바꾸기·문서 본문 링크 추가 안 함(obs-1022b Q1 a 안). 설정 쓰기는 Obsidian 닫힘 확인 뒤 | 두 보관함 .obsidian, make-index.py | obsidian-tidy-2026-11-01.md |
+| **obs-shrink-1125: 축소(㉴ 줄만 빼기)** · 2026-11-25 18:17 KST (사장 결정 카드 첫째 안 "축소: 메모 개수 줄만 빼기", 사장실 스레드 'Obsidian 운영 방식 다시 검토') | 비서 v1.2 사전 등록(4주 메모 0건 → 알림만) 판정일 11/27에 **v1.3에서 ㉴ 사장 메모 줄만 뺀 판**으로 교체 제안 · duet-idx는 관제판 닫기(NO_CHANGE) 안건으로 올림 · docs/claude 보관함·개인 보관함(pvault A)은 그대로 | v1.1 파일 복원 안 함(v1.3 저장 크기 확인이 사라짐). 이 결정만으로 예약을 바꾸지 않음 — 11/27 제안서(sha256·diff) + 사장 직접 입력 `예약 작업 변경 승인: 비서 제안` 필요. 11/27 전 ceo-inbox 메모 1건 이상이면 ㉴ 유지 | secretary-daily(trig_01QL11yZ…), 관제판 duet-idx | obsidian-ops-review-2026-11-25.md · secretary-v12-proposal-2026-10-30.md:36 |
 | **pb-1022 Q1 a · Q2 a** + E1·E2 도입 · 2026-10-22 06:04 | 플레이북 표준(H1/H2 포함) 채택 + 입력 출력칸·반복 실패 처리 2개 | Munder Difflin 도입 안 함. 사장 인터뷰 1회(주제 카드 수락 기준) | 플레이북, 예약 지시문 | delegation-loop-review-2026-10-22.md:83-102 · playbooks/README.md:1 |
 | **secretary-1021 a / secretary-daily 승인** · 2026-10-21 20:19/20:23 | 비서 제안 예약(월~토 09:25) 생성, 쓰기 = workspace/outputs/secretary/<날짜>.md 1개 | Projects/Duet 비서 자리와 겹치는 확장은 위 board-merge '하지 않음' | secretary-daily | secretary-agent-idea-2026-10-21.md:153-155 · scheduled-prompts/README.md:62 |
 | **skel-1022** (기한 2026-10-29) | Q1 S2+S4+S6 / Q2 S1 사전 등록부터 — **사장 답 기록을 못 찾음** | 무응답 = 전부 NO_CHANGE | 뼈대 후보 | skeleton-review-2026-10-22.md:64-67 · 답 **확인 필요** |
@@ -93,8 +95,10 @@ source_decision: "사장 2026-10-25 20:13 KST(스레드 직접 입력) '스레�
 | **approval-venue 표** · 2026-10-25 10:30Z "권장안대로"(Projects 진단 결정 1·3) | 승인류별 입력 장소 안내표(규칙 변경 없음, 안내만) | 표는 안내, 원본은 CLAUDE.md 줄 | 안내 | approval-venue-table-2026-10-25.md:1-12 |
 | **projects-1025** (기한 2026-11-01) | Q1 Projects 운영·Q2 Mods — **사장 답 없음**(Q2 미답) | 무응답 = Q1 c·Q2 c 현행 유지(설치된 모드 없음) | Projects, Mods | projects-mods-adoption-2026-10-25.md:5 · 95-103 · projects-handoff-2026-10-25.md:26 |
 | **projects 이사 지시** · 2026-10-25 09:11~09:35 | "새 판: a" — 실행층·점검층 그대로, 소통층·규칙층만 Projects 기준으로. 모든 권한 승인이지만 주문·키움 주문 도구 금지는 불변. 키움 MCP는 사장이 켜 두기로 결정(지침 v1.2) | K3 병합은 Judge 결과를 본 뒤 사장 한 줄 | 소통층 | projects-handoff-2026-10-25.md:12-15 · 23 |
-| **자동 코어 5·8번 근거 결정** (아래 C와 겹침) | CLAUDE.md Change classes 항목 전체가 현행 규칙 | — | 개발 변경 등급 | CLAUDE.md:52-71 (Change classes) |
+| **자동 코어 5·8번 근거 결정** (아래 C와 겹침) | CLAUDE.md Change classes 항목 전체가 현행 규칙 | — | 개발 변경 등급 | CLAUDE.md Change classes 절(2026-11-25 병합 c1536ab 뒤 79~108행) |
 | **관제판 완료 표시 (키움 주문 차단 보강 4건)** · 2026-10-26 11:40 | 키움 주문 차단 보강 4건 완료(병합 c9c0877·5cf97e3, 훅 시험 Bash·Monitor 거절). 확인 필요: 원격 스레드·Cowork 발동 여부 | 훅은 약화하지 않음. 개발 큐 Builder 막힘의 원인은 훅이 아니라 지시문(builder-blocked-diagnosis-2026-10-26.md) | 키움 주문 차단 | kiwoom-block-hook-test-2026-10-26.md:12-24 |
+| **layer-audit-1125: 지침 문서층 점검 ①~⑤ 고치기** · 2026-11-25 18:49 KST 사장 스레드 직접 입력 "이왕 고치는거 1~5 전부 고치는게 낫지 않아?" | ① 메모리 색인 결정·수치 빼기 ② 승인 장소 표·00-home·library·이 색인 머리 정정(규칙 불변) ③ 프로젝트 지침 문안(사장이 설정에 반영) ④⑤ CLAUDE.md·AGENTS.md 문구는 K3 제안 — 사장 직접 입력 뒤 수동 경로 | 헌법 본문은 고치지 않음(D9 보류). **④⑤ 착수: 2026-11-25 18:59:35 KST 사장 직접 입력 '승인: layer-audit-1125 ④⑤ CLAUDE.md 4항목(문안 5줄)·AGENTS.md 1줄 수동 경로 착수'(cmsg_0137MRzn9nuDvvQmVxm6WeX9TpjrHV5FaTGZRhvVX3rC8S, 제안 2판 직후)** · **권한 자리 순번 변경 2026-11-25 19:00:53 KST 사장 결정 카드 '앞당겨 오늘 착수'(cmsg_0137MRzn9nuDvvQmVxm6WeX9A8zCr74mwt5F3gcnrRbDry, 누른 계정 = 사장): layer-audit-1125 ④⑤ → cal-2027 → 정책 묶음 A**(qqq-first-1109 순번 갱신). 병합은 사장 PowerShell(docs/claude/layer-audit-1125-merge-2026-11-25.ps1) — **병합 완료 2026-11-25 22:30 KST c1536ab(변경 347b767, Judge PASS, CLAUDE.md cd0868ce·AGENTS.md c07e5094)**. ③ 프로젝트 지침 v2.20 반영 2026-11-25 22:35 KST(사장 직접 입력 '너가 직접 바꿔줘' 22:33 → 코디네이터가 설정 반영, 제안서 표 5곳) | 지침 문서층 | /mnt/project-files/layer-audit-1125/layer-audit-2026-11-25.md (저장소 사본 없음, D3) |
+| **constitution-venue-1125: 헌법 개정 확정 장소 = 사장실 회사PC 스레드 직접 입력만 (D3 예외, 사장 지시)** · 2026-11-25 22:44:01 KST (사장 결정 카드 '사장실 직접 입력만 (권장)', 사장실 회사PC 스레드 '헌법 개정 승인 장소 정하기' — 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX987HXFgYVRR2oZjsmaLwuPa, 누른 계정 = 사장; 계기 사장 직접 입력 22:36 KST) | 헌법 새 판 확정 = 사장이 사장실 회사PC 스레드에 직접 친 `헌법 x.y.z 확정: …` 한 줄(바로 앞 확정안 1건·같은 날·1회). 커밋은 지금처럼 사장 PowerShell -ApproveProtected | 결정 카드 누름·Cowork 대화·옮긴 문장은 확정 아님(S4 그대로). 헌법 본문·머리글 안 고침(D9). CLAUDE.md 안 고침(헌법 줄은 위치 안내). 이 결정은 장소만 정함 — 어떤 개정의 확정도 아님 | 헌법 개정 | approval-venue-table-2026-10-25.md 10행 · 제안 /mnt/project-files/constitution-venue-1125/constitution-venue-proposal-2026-11-25.md |
 | **ops-link-1107: 설계→운영→행동 연결 점검 — 세 안 모두(A′·A·B)** · 2026-11-07 12:01:27 KST 사장 직접 입력 "A, B, C 전부 다 넣어"(cmsg_0137MRzn9nuDvvQmVxm6WeX9YWQozN6PkxUjXViJm7R6YX, 사장실 '운영 빈틈 없는 설계 상위 지침 검토' 스레드 — 바로 앞 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9LXGU7icPCCmmugWmiLrZwb 선택지 1~3, 카드는 12:03 거둠; 계기 사장 질문 11:00:05·11:00:57 "기능을 만들어 놔도 회사 행동까지 이어지지 않으면 의미가 없다") | 연결표 6칸(① 자료·산출 ② 만드는 주체·시각 ③ 읽는 점검 원문 행 ④ 바뀌는 행동 ⑤ 끊기면 누가 아나 ⑥ 상태 = 연결/끊김/의도적 없음)을 설계 때 채운다. ① A′(적용 2026-11-07): analysis-linkage-map 0절·1절 머리·1절 8번·2절 칸 2개, review-stability L3 확장·사례 24번, 승인 장소 표 #7 첨부 + 지침 4절 ②·8절(코디네이터). ② A: CLAUDE.md 111행(새 기능·예약 변경까지, 연결표 ②③⑤ 원문 행) + tools/dev_pipeline/judge-prompt.md G9 + README 18행 — K3 수동 경로(이 입력이 S4 착수 직접 입력을 갈음), 병합은 사장 PowerShell. **병합 d520c5b**(2026-11-07 16:15 KST, 사장 PowerShell ops-link-merge 스크립트, 변경 커밋 017f2c3 — 4파일 해시 목표와 일치, llm-runner2 3947360 병합 뒤). G9는 기준 커밋이 d520c5b 뒤인 개발 run부터 적용(Judge는 기준 커밋의 judge-prompt.md를 읽음). ③ B: 헌법 §2-1 6항 → 1.5.0 새 판(이 입력이 착수를 갈음). **헌법 1.5.0 확정**(사장 직접 입력 2026-11-07 13:08:06 KST "헌법 1.5.0 확정: 12절 안, 저장소 원본, 지침 0절은 §2-1 사본으로 교체", cmsg_0137MRzn9nuDvvQmVxm6WeX9SDdDkNvT3AZgyCY9D4SoBr) — 원본 constitution-v1.5.0.md(sha256 2f81cf6a…f73035, §2-1 118-198행 0b1cb813…5c7e), 1.4.0은 역사본. 커밋 = 사장 `.\tools\commit-docs.ps1 -ApproveProtected`(_pending/ops-link-1107-constitution.txt). 지침 0절 = 1.5.0 §2-1 사본(적용 예 그대로)·2절 경로 교체는 코디네이터 | 적용 범위 = 설계·제안 세션(Cowork·사장실 스레드·대화형 Claude Code). 예약 실행·예약이 깨운 턴·Builder·Judge·하위 에이전트는 자기 지시문대로. ④ 행동은 기존 경로만(알림·주문 칸·카드·원장 판정·§20 규칙 후보, 주문표는 06:40 연구 기록 또는 §20 통과 규칙). '의도적 없음'은 다른 선택지와 나란히 보고 고른 사장 결정 id가 있을 때만. 줄이기·사건 대응 카드는 늦추지 않음(표는 같은 날 뒤). 측정 2026-11-07~12-05 KST(사장 질문으로 처음 드러난 연결 공백 0건이면 통과, 미달이면 카드 제안·무응답 NO_CHANGE). **하지 않음**: 새 매매 규칙·새 종류의 징후 알림·권한·한도·시험 절차 변경, 예약 지시문 변경(따로 승인), 헌법 1.4.0 덮어쓰기, 시스템이 이 규칙을 스스로 고치기. D3 동결 → 사장 지시 예외. 되돌림 = 고치기 전 sha256(검토 문서 기록 절) | 설계·제안 문서, 내장 재검토 L3, 개발 지시문 Judge 확인 항목, CLAUDE.md 111행, Judge 공통, 헌법 §2-1, 프로젝트 지침 4·8절 | ops-linkage-guideline-2026-11-07.md 3·5·6·7·12절·기록 · analysis-linkage-map-2026-10-05.md 1절 8번 · constitution-v1.5.0.md 118-198행 |
 
 ## C. 운영 규칙·정책(자동 코어) — 지금도 유효한 것
