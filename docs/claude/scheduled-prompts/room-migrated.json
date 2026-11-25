@@ -1,5 +1,20 @@
 {
   "version": 2,
-  "note": "사장실로 옮긴 예약만(지침 v2.19 4절 ⑦⑧). 쓰는 주체 = 사장실 대화형 이관 스레드(옮길 때·지시문 바꿀 때, 사장 승인 1건마다), 예약 전용 스레드는 쓰지 않음. body_sha256 = 본문 파일에서 CR을 지운 UTF-8 바이트의 sha256. changes[].at = 승인된 create_trigger/update_trigger 응답의 updated_at 값 그대로. cron = cron_expression 그대로, model = 예약 model 칸 그대로(비었으면 \"\"). README 표의 같은 줄과 함께 고친다.",
-  "tasks": []
+  "note": "사장실로 옮긴 예약과 그 그림자 예약(schedule-to-room-1124c — 그림자도 4절 ⑧ 대조를 받는다)(지침 v2.19 4절 ⑦⑧). 쓰는 주체 = 사장실 대화형 이관 스레드(옮길 때·지시문 바꿀 때, 사장 승인 1건마다), 예약 전용 스레드는 쓰지 않음. body_sha256 = 본문 파일에서 CR을 지운 UTF-8 바이트의 sha256. changes[].at = 승인된 create_trigger/update_trigger 응답의 updated_at 값 그대로. cron = cron_expression 그대로, model = 예약 model 칸 그대로(비었으면 \"\"). README 표의 같은 줄과 함께 고친다.",
+  "tasks": [
+    {
+      "name": "[그림자] 비서 제안",
+      "trigger_id": "trig_01G63NHQbmtJbFcA2DEyScJ8",
+      "cron": "CRON_TZ=Asia/Seoul 27 9 * * 1-6",
+      "model": "",
+      "body_path": "docs/claude/scheduled-prompts/room/secretary-shadow-body-v1.txt",
+      "body_sha256": "160e5a2590fc6271506a5ed95bbe4ab23dfbb9533d7f3150ba126574dbcc1f5f",
+      "changes": [
+        {
+          "at": "2026-11-25T01:30:01.296680Z",
+          "what": "그림자 만들기 — 로더 52139d50…, 사장 카드 승인 2026-11-25 10:29:21 KST"
+        }
+      ]
+    }
+  ]
 }
