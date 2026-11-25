@@ -1,0 +1,20 @@
+{
+ "what": "liquidity-1124 유동성 등급표 사전 등록 고정",
+ "frozen_kst": "2026-11-25T07:50:37+09:00",
+ "basis": "사장 결정 카드 2026-11-24 21:56:46 KST (나) cmsg_0137MRzn9nuDvvQmVxm6WeX9NyfLWahCGKay59FQ6nNaRn — 독립 검수 2회(Fable high, 8건 + 6건) 반영 뒤 고정",
+ "prereg_doc": "liquidity-grade-prereg-2026-11-25.md (3판)",
+ "prereg_sha256": "e03c1fc51d6112c0575f9b77acfa61f6ef72f55bd25fb4167ac74f2ff0f3586f",
+ "script": "liq_grade.py",
+ "script_sha256": "d581bfffefc4154465e42ed2bd1cc5afd95124e501c6b88073cdee7c5e2a72e2",
+ "data_sha256": {
+  "WALCL.csv": "9a42ddb135197ec68e31323adf54f348f17b9a1257047bde2c875c7977f3341a",
+  "WDTGAL.csv": "83997772e901cec058528d2de70609d62764dd4092adf1f1d6b4f1f8fc2d942f",
+  "RRPONTSYD.csv": "ca341e12c31d7b8d8119aa3b795b920446c598b64d917300f8ce58f8724fa629",
+  "nasdaqcom.csv": "cdeaae283d51e56967d2af102bb8621fae0a43df95513991e892495050ba053f"
+ },
+ "events_sha256": "fd6385d38d461617ed7765399a1295fe2fe88b817530158a52089f56911bae52",
+ "report_only_events_sha256": "819b7580be908972f9e5a6019074d2d6ddeb649a92c17d635865e429fd630287",
+ "events_txt_sha256": "832a0c2aba4acb7e43cff8f75df00875f5de919c6cd8a345de453e1b63de0cb3",
+ "python": "3.13.18",
+ "rule": "1회 계산. 결과와 상관없이 매매 규칙·노출·한도·코어·예약·D4 그대로. 고정 뒤 정의 변경 = 새 사전 등록."
+}
