@@ -77,3 +77,14 @@
 ## 7. 사장 결정 (2026-11-25 09:32:27 KST)
 - 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9YEvrpbLTSAKYXCJHcm1KZm · 수정안 devq-api-1125(이 문서 2판, sha256 bbadf4ad…) · 선택지 A '만들기 승인 (Judge만)' · 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH(프로젝트 주인) · 시각 2026-11-25 09:32:27 KST. 이 승인은 이 수정안 하나, 오늘(KST) 1회.
 - 다음: 사장실 직접 한 줄로 실행 스레드 시작 → 수동 경로 Builder(worktree) → 별도 읽기 전용 Judge → 사장 PowerShell 병합(꺼진 채). 켜기는 별도 카드.
+
+## 8. 실행·병합 기록 (2026-11-25 KST, 실행 스레드 '개발 큐 검사를 API 크레딧으로 전환')
+- 사장 직접 입력 09:54 KST "개발 큐 API 전환 실행해" → Builder(회사PC 세션, worktree magical-chatterjee-dc076d, 시험 47·162 OK) → 별도 읽기 전용 Judge VERDICT: PASS(docs/claude/devq-api-judge-report.md) → 병합 스크립트 docs/claude/devq-api-merge-2026-11-25.ps1.
+- llm-pdfcmp 먼저 병합(f184e56) 뒤 사장 PowerShell 병합 16:17 KST 전후: worktree 커밋 aa4b547, main 6ba732a. HEAD의 devq-api-route.json = judge_enabled false(꺼짐 확인).
+- 남은 것: 켜기 카드(Console 전용 workspace·전용 키 INVESTV2_DEVQ_API_KEY·자동 충전 꺼짐·잔액 기록, pip install -r tools\dev_pipeline\requirements-sdk.txt, 보고서 (e) 확인 3가지).
+
+## 9. 켜기 (2026-11-25 16:19:52 KST)
+- 사장 사장실 직접 입력 16:18:58 KST "개발 큐 API 켜기" → 결정 카드 cmsg_0137MRzn9nuDvvQmVxm6WeX9J7iQ3Gd4YnoDV6SGRg1kvs 선택지 A '켜기 승인 (준비 3가지 끝남)' · 누른 계정 user_01KuMGKfZu1SBYxtMmg4vAiH · 16:19:52 KST.
+- docs/claude/devq-api-route.json을 judge_enabled true + approved_ref·approved_kst로 씀(LF), _pending/devq-api-on-2026-11-25.txt. 효력은 docs-commit으로 HEAD에 들어간 뒤부터(pick-route는 HEAD본만 읽음).
+- 준비 3가지(Console 전용 키·자동 충전 꺼짐, 사용자 변수, SDK 설치)는 사장 카드 문구로만 확인(스레드는 키를 읽지 않음). 빠졌으면 매 run이 구독(no_key/no_sdk)으로 돈다.
+- 다음: 첫 개발 큐 run의 log.txt ROUTE 줄·result.json judge_routes·_api-spend.jsonl과 Console 차감을 대조.
