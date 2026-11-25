@@ -2,9 +2,9 @@
 id: 00-home
 type: home
 status: current
-as_of: 2026-10-22
+as_of: 2026-11-25
 summary: "Obsidian으로 docs/claude를 열 때 첫 화면 — 고치면 안 되는 파일, 지금 상태 보는 곳, 찾는 곳. 입구일 뿐 원본이 아님(원본은 각 파일·관제판)."
-consumers: "사장(Obsidian PC 창) · Cowork 세션(재개·찾기 입구). 비서·팀장회의·자동 코어는 읽지 않음"
+consumers: "사장(Obsidian PC 창) · Cowork 세션·사장실 회사PC 스레드(재개·찾기 입구). 비서·팀장회의·자동 코어는 읽지 않음"
 source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식 문서 사본 제외)"
 ---
 
@@ -37,6 +37,9 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식
 - 미국주식 현황판(보유): https://claude.ai/artifact/K5HqLvCGfQD9AQNbSHVE3Q
 
 ## 찾기
+- [헌법 1.5.0](constitution-v1.5.0.md) — 최상위 원칙(바꾸려면 사장 직접 입력 + 새 판 파일)
+- 규칙 원본 = 저장소 루트 CLAUDE.md(승인 장소는 [승인 입력 장소 표](approval-venue-table-2026-10-25.md))
+- [마스터플랜](masterplan-2026-11-18.md) — 시기·관문·달력의 한 곳
 - [로드맵](roadmap.md) — 개발·운영이 어디까지 왔고 다음이 무엇인지
 - [라이브러리](library.md) — 문서·자료 목록의 입구
 - [막혔다 푼 방법](ops-fixes.md) — 오류 문구로 검색
@@ -57,5 +60,5 @@ source_decision: "duet-1022 Q1 a (2026-10-22 18:41) = obs-1022b Q1 a ③ (지식
 
 ## 원칙
 - 원본은 제자리에 있다. 이 노트·로드맵·라이브러리는 입구라서 판단 근거가 아니다.
-- 결정은 Cowork 투자_V2 대화에서 사장 원문으로 한다(일지·대조·정책/상태·권한 결정은 지금 규칙상 거기서만 유효).
+- 결정은 사장 원문으로 한다. 어디서 유효한지는 CLAUDE.md Hard safety·Change classes 절이 원본이다 — Cowork 대화 외에 사장실 회사PC 스레드 예외(결정 일지 S7b·L4·L5·고점 검토, 계좌 대조 `확인 <code>`, 권한·한도 승인)가 있다. 한 장 안내는 승인 입력 장소 표(정정 2026-11-25).
 - 이 노트의 경로는 T4(docs/claude → archive/ 이동) 때 다시 확인한다.
