@@ -1,5 +1,7 @@
 # Stock Strategy Workspace
 
+This file is for Codex; CLAUDE.md Hard safety and Kiwoom query rules bind Codex too, and where this file differs CLAUDE.md wins.
+
 Use `$manage-us-stock-strategy` for U.S. stock/ETF research, semiconductor-infrastructure analysis, technical trade planning, option-chain context, portfolio design, and recurring post-market alerts.
 
 Read the applicable `manage-us-stock-strategy/SKILL.md` routes before stock
