@@ -15,14 +15,14 @@
     "approved_kst": "2026-11-25 18:40:14 KST"
   },
   "pdfcmp-submit": {
-    "enabled": true,
-    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9J115WiTBuyR6FAMKmM2BUQ option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
-    "approved_kst": "2026-11-25 16:16:09 KST"
+    "enabled": false,
+    "approved_ref": "off card cmsg_0137MRzn9nuDvvQmVxm6WeX9NaJdB9nGMVVSMSEivUuZR9 option A by user_01KuMGKfZu1SBYxtMmg4vAiH (on card cmsg_0137MRzn9nuDvvQmVxm6WeX9J115WiTBuyR6FAMKmM2BUQ)",
+    "approved_kst": "2026-11-26 18:25:28 KST"
   },
   "pdfcmp-collect": {
-    "enabled": true,
-    "approved_ref": "card cmsg_0137MRzn9nuDvvQmVxm6WeX9J115WiTBuyR6FAMKmM2BUQ option A by user_01KuMGKfZu1SBYxtMmg4vAiH",
-    "approved_kst": "2026-11-25 16:16:09 KST"
+    "enabled": false,
+    "approved_ref": "off card cmsg_0137MRzn9nuDvvQmVxm6WeX9NaJdB9nGMVVSMSEivUuZR9 option A by user_01KuMGKfZu1SBYxtMmg4vAiH (on card cmsg_0137MRzn9nuDvvQmVxm6WeX9J115WiTBuyR6FAMKmM2BUQ)",
+    "approved_kst": "2026-11-26 18:25:28 KST"
   },
   "news-submit": {
     "enabled": true,
