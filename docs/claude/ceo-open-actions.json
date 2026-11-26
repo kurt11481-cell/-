@@ -4,7 +4,7 @@
   "items": [
     {
       "id": "A1-soxl-10pct",
-      "status": "open",
+      "status": "done",
       "side": "sell",
       "symbol": "SOXL",
       "title": "SOXL(3배)을 계좌 10%까지 한 번에 줄이기",
@@ -14,8 +14,16 @@
       "opened": "2026-11-09",
       "alerts_md": "11/09 적기·11/16 기한 알림",
       "opened_by": "줄이기 적기 알림 11/09(workspace/outputs/pre-open/2026-11-09-events.md) · 기한 알림 11/16(2026-11-16-events.md)",
-      "done": {"kind": "weight_le", "value": 0.10, "basis": "코어 S7 노출 검토 positions[SOXL].weight(직전 종가 기준) — 결정 원문 '그날 코어 표시 비중'"},
-      "closed": null
+      "done": {
+        "kind": "weight_le",
+        "value": 0.1,
+        "basis": "코어 S7 노출 검토 positions[SOXL].weight(직전 종가 기준) — 결정 원문 '그날 코어 표시 비중'"
+      },
+      "closed": {
+        "date": "2026-11-26",
+        "by": "사장실 회사PC 스레드 '마스터플랜 로드맵 기준 현 상황 진단'(사장 직접 입력 2026-11-26 18:58 KST '4번 기록 정리 OK')",
+        "basis": "코어 노출 검토 positions[SOXL].weight 0.0697(2026-11-25 세션, workspace/outputs/exposure-review/2026-11-25) ≤ 0.10. 도우미 open-actions-check-v2.py도 '완료 확인'으로 판정."
+      }
     }
   ]
 }
