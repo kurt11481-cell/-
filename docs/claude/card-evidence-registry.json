@@ -1,8 +1,8 @@
 {
   "schema_version": "card-evidence-registry-1.0",
   "registry_type": "AUTO_CORE_CARD_REGISTRY",
-  "updated_at": "2026-11-24",
-  "updated_by": "사장실 회사PC 스레드 (2026-11-24: CRWD 관심 카드 v2(Q3 FY27 조기 실적 8-K 2026-11-23·Zscaler 인수 8-K) 수락 — 결정 카드 13:08:16 KST '갱신본 수락 (관심 유지)'; card_doc·card_section·절 해시·트리거·c8·kill 출처 줄·static_evidence(SE1 교체 as_of 11-24·SE2 갱신·SE3 + 강 → − 약) 갱신, accepted 유지(테제 훼손 재검토 아님), known_events [] 유지) / Cowork (2026-11-20: CRWD 관심 카드 v1 수락 등록 — 결정 카드 15:59:32 KST '수락', 새 항목 CRWD) / Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-19: BE known_events의 '2026-11-23 대기 허가 결정 기한(2차)' 제거 — 주 환경부·개발사가 기한 포기, 12/7 공청회 연기·새 날짜 없음(ABQ Journal 11/06, dc-loan-sale-impact-2026-11-19.md 5절 2번). 카드·판단·절 해시 불변 / 2026-11-19: MU·PWR 관심 카드 v2(재검토 갱신 · PWR 3분기 실적 8-K 2026-10-29) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"둘 다 갱신본 수락\", 17:21 KST) — card_doc·card_section·절 해시·static_evidence(SE1·SE2 갱신, SE3 이벤트 반응 − 약)·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지",
+  "updated_at": "2026-11-26",
+  "updated_by": "사장실 회사PC 스레드 (2026-11-24: CRWD 관심 카드 v2(Q3 FY27 조기 실적 8-K 2026-11-23·Zscaler 인수 8-K) 수락 — 결정 카드 13:08:16 KST '갱신본 수락 (관심 유지)'; card_doc·card_section·절 해시·트리거·c8·kill 출처 줄·static_evidence(SE1 교체 as_of 11-24·SE2 갱신·SE3 + 강 → − 약) 갱신, accepted 유지(테제 훼손 재검토 아님), known_events [] 유지) / Cowork (2026-11-20: CRWD 관심 카드 v1 수락 등록 — 결정 카드 15:59:32 KST '수락', 새 항목 CRWD) / Cowork (2026-10-17: PLTR 관심 카드 수락 \"결정 pltr-card: a\"; 관심 카드 7장 kill ④ 삭제로 절 해시 갱신 \"결정 wcg-1017: 1 b\" — accepted 날짜·원문은 유지) / 2026-10-19: 보유 3종목 L2 전면 재검토 카드(2~4절) 수락 \"L2 검토 HOLD 3종목 수락\" — 절 해시·accepted 갱신, 줄 번호 변경 없음 / 2026-10-27: BE·LITE 보유 카드 수락(사장실 회사PC 스레드 결정 카드 \"수락 — 비율만 남김\", 14:33 KST) — role holding·카드 문서·절 해시·kill_refs·card_action HOLD 갱신, accepted.date·트리거·근거·이벤트 유지 / 2026-11-04: PLTR 관심 카드 v2(3분기 실적 8-K 2026-11-02) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락\", 09:48 KST) — card_doc·card_section·절 해시·트리거 출처 줄·static_evidence·kill_refs 갱신, 지난 known_events(11/02 실적·11/03 선거) 제거, accepted 유지(테제 훼손 재검토 아님) / 2026-11-04: LITE 보유 카드 v2(11/2 실적 8-K·Marvell 합병 8-K) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:31 KST) — card_doc·card_section·절 해시·official_domains(+marvell.com)·static_evidence(SE1 교체·SE2 제거·SE3 합병 반응 −)·kill_refs 갱신, 지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-06: BE 보유 카드 v2(10/22 Q3 8-K 가이던스 상향·L4/L5 반영) 수락(사장실 회사PC 스레드 결정 카드 \"갱신본 수락 (HOLD)\", 13:27 KST) — card_doc·card_section·절 해시·static_evidence(SE1 교체·SE2 갱신·SE3 − 약)·kill_refs 갱신, accepted.date 유지(테제 훼손 재검토 아님), known_events 유지(11/23 허가 기한) / 2026-11-17: LITE 보유 카드 v3(HOLD, 13:01:04 KST 사장 결정 카드 '갱신본 수락 (HOLD)')·SOXL 보유 카드 v3(TRIM·trim_target_weight 0.10, 13:01:01 KST 사장 결정 카드 '옮기기 (TRIM·목표 10%)' — strategy-check-1105 3배 10%를 카드에 옮김) 수락, 사장실 회사PC 스레드 — card_doc·card_section·절 해시·accepted.text/source·kill_refs·static_evidence source(LITE) 갱신, SOXL card_action·trim_target_weight 변경·지난 known_events 제거, accepted.date 유지(테제 훼손 재검토 아님) / 2026-11-19: BE known_events의 '2026-11-23 대기 허가 결정 기한(2차)' 제거 — 주 환경부·개발사가 기한 포기, 12/7 공청회 연기·새 날짜 없음(ABQ Journal 11/06, dc-loan-sale-impact-2026-11-19.md 5절 2번). 카드·판단·절 해시 불변 / 2026-11-19: MU·PWR 관심 카드 v2(재검토 갱신 · PWR 3분기 실적 8-K 2026-10-29) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"둘 다 갱신본 수락\", 17:21 KST) — card_doc·card_section·절 해시·static_evidence(SE1·SE2 갱신, SE3 이벤트 반응 − 약)·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지 / 2026-11-26: DELL 관심 카드 v2(3분기 FY27 실적 8-K 2026-11-24) 수락(매수 후보 고르는 기준 재검토 스레드 결정 카드 \"갱신본 수락\", 08:57 KST), 지난 known_events(10/30 배당) 제거 — card_doc·card_section·절 해시·static_evidence(SE1 3분기 공식·SE2 밸류 갱신, SE3 이벤트 반응 약(+) → 중립(판정 전))·kill_refs·known_events 갱신, accepted.date 유지(테제 훼손 재검토 아님 — 매수 요건 ③·r_max 불변), c8·트리거·official_domains 유지",
   "rule": "카드를 고치거나 수락하는 Cowork 세션이 같은 세션에서 이 파일의 해당 종목 항목(절 해시·수락·근거·트리거)을 함께 갱신하고 커밋한다. 코어는 카드를 이 파일로만 읽으며, 항목·수락·절 해시·커밋 중 하나라도 맞지 않으면 그 종목 주문표를 내지 않는다. 공식 테제 훼손 사실을 검토하고 다시 수락할 때만 accepted.date·text·source를 새로 쓴다(이 날짜가 R-REC1 RG1 해제 신호다, ev-rg1-hyper 2026-10-18). 훼손과 무관한 카드 수정은 날짜를 유지한다.",
   "order_authority": false,
   "quantity_authority": "none",
@@ -539,9 +539,9 @@
     },
     "DELL": {
       "role": "watch",
-      "card_doc": "docs/claude/integrated-stock-cards-v1-2026-10-02.md",
-      "card_section": "### 5-2. DELL (Dell Technologies, NYSE) 관심 카드",
-      "section_sha256": "674ecfc9b19ddb76a5aee34468371d60900728bf374739379c6ddeab0adecf51",
+      "card_doc": "docs/claude/watch-card-DELL-2026-11-26.md",
+      "card_section": "# DELL (Dell Technologies, NYSE) 관심 카드 v2 (2026-11-26, 3분기 실적 갱신, 미보유)",
+      "section_sha256": "b2701c783070bb46090277e18fdebebda9bb0e2cbf7a6f1264a81792d9ac2a99",
       "accepted": {
         "text": "cardStatus 수락(2026-10-02)",
         "date": "2026-10-02",
@@ -628,50 +628,44 @@
           "e1_kind": "thesis",
           "strength": "strong",
           "direction": "+",
-          "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:240",
-          "quote": "공식(Dell 9/1 보도자료): 2분기 매출 $47.0B(+58%), AI 최적화 서버 매출 $16.4B(+100%), AI 서버 수주 $60.9B(분기 기록), AI 백로그 $95B(분기 말 기록), non-GAAP 영업이익률 12.6%(전년 7.7%)"
+          "as_of": "2026-11-26",
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:26",
+          "quote": "매출 $54.9B(+103%, 가이던스 $49.0B), AI 서버 매출 $22.0B(+291%), AI 수주 $60.2B, AI 백로그 $132.3B(기록, 2분기 $95B), non-GAAP EPS $9.45(가이던스 $6.50)"
         },
         {
           "id": "DELL-SE2",
           "e1_kind": "valuation",
           "strength": "neutral",
           "direction": "+",
-          "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:241",
-          "quote": "가격 ÷ FY27 non-GAAP EPS 가이던스 = 21.2배(산술, FY27은 2027-01 종료). 공식 희석주식수 6.52억 주 × 종가 = 시총 약 $353B(산술, saveticker 외부 $342B). 백로그 $95B ÷ FY27 AI 서버 매출 가이던스 $74B ="
+          "as_of": "2026-11-26",
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:27",
+          "quote": "11/25 종가 $297.06(야후, 키움 대조 확인 필요) ÷ FY27 non-GAAP EPS 가이던스 $29.68 = 약 10.0배(산술, v1 21.2배)"
         },
         {
           "id": "DELL-SE3",
           "e1_kind": "event_reaction",
-          "strength": "weak",
+          "strength": "neutral",
           "direction": "+",
-          "as_of": "2026-10-02",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:242",
-          "quote": "9/1 실적(장 마감 후) 다음 세션 9/2 +15.8%(종가 $425.00 → $492.20), 9/3 +4.9%, 9/4 +1.5%. 발표 전일 종가 아래로 복귀 없음. 이후 9/17 종가 고점 $588.40 → 10/1 $541.50(-8.0%)로 눌림"
+          "as_of": "2026-11-26",
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:28",
+          "quote": "3분기 발표(11/24 장 뒤) P0 $295.28 → 11/25 시가 $267.57(−9.4%)·종가 $297.06(+0.6%, 같은 날 QQQ −0.7%·SOXX −0.5%)"
         }
       ],
       "kill_refs": [
         {
           "id": "DL3",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:271"
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:58"
         },
         {
           "id": "DL9",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:277"
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:64"
         },
         {
           "id": "DELL-KILL",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:257"
+          "source": "docs/claude/watch-card-DELL-2026-11-26.md:44"
         }
       ],
-      "known_events": [
-        {
-          "date": "2026-10-30",
-          "label": "분기 배당 $0.63 지급(공식)",
-          "source": "docs/claude/integrated-stock-cards-v1-2026-10-02.md:258"
-        }
-      ]
+      "known_events": []
     },
     "AMD": {
       "role": "watch",

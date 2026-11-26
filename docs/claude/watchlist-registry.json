@@ -74,7 +74,7 @@
    "code": "DELL",
    "sector": "AI 서버",
    "since": "2026-10-02",
-   "card": "docs/claude/integrated-stock-cards-v1-2026-10-02.md#5-2",
+   "card": "docs/claude/watch-card-DELL-2026-11-26.md",
    "triggerSet": "DL",
    "capExempt": false,
    "score": 9,
@@ -100,7 +100,7 @@
    },
    "s1Basis": "공식 보도자료: AI 수주 $60.9B, AI 백로그 $95B, AI 서버 매출 +100%",
    "scoredAt": "2026-10-03",
-   "cardStatus": "수락(2026-10-02)",
+   "cardStatus": "수락(2026-10-02, v2 갱신 수락 2026-11-26)",
    "r1Score": 6,
    "detail": {
     "r60": 24.9,
