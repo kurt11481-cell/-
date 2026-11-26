@@ -587,7 +587,7 @@ class SrccheckTests(unittest.TestCase):
             self.assertEqual("claude-sonnet-5-5", params["model"])
             self.assertEqual(MODEL, params["model"])
             self.assertEqual(4096, params["max_tokens"])
-            self.assertEqual([{"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 1,
+            self.assertEqual([{"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 1,
                                "allowed_domains": [host], "max_content_tokens": 20000,
                                "citations": {"enabled": True}}], params["tools"])
             self.assertEqual([{"role": "user", "content": [
@@ -1004,6 +1004,33 @@ class SrccheckTests(unittest.TestCase):
         self.assertEqual(EXPECTED_HOSTS, hosts)
         self.assertEqual(("cgi-bin", "efts", "daily-index", "rss", "browse-edgar"), MODULE.BLOCKED_WORDS)
         self.assertEqual("/Archives/edgar/data/", MODULE.SEC_PATH_PREFIX)
+
+    # ------------------------------------------------------------ llm-srcfix
+    def test_web_fetch_version_without_dynamic_filtering(self):
+        text = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn("web_fetch_20260209", text)
+        self.assertEqual("web_fetch_20250910", MODULE.WEB_FETCH_TYPE)
+        self.assertEqual({"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 1,
+                          "allowed_domains": ["www.sec.gov"], "max_content_tokens": 20000,
+                          "citations": {"enabled": True}}, MODULE.web_fetch_tool("www.sec.gov"))
+
+    def test_def14a_claim_names_meeting_date(self):
+        self.assertEqual("주주총회일 %s", MODULE.CLAIM_SEC_MEETING)
+        proxy = {"kind": "sec", "fields": {"ticker": "MU", "company_name": "Micron Technology",
+                                           "form": "DEF 14A", "report_date": "2027-01-14", "items": []}}
+        claim = MODULE.claim_text(proxy)
+        self.assertEqual("Micron Technology(MU)의 DEF 14A 서류이고, 주주총회일 2027-01-14이다", claim)
+        self.assertIn("주주총회일 2027-01-14", claim)
+        self.assertNotIn("보고 기준일", claim)
+        current = {"kind": "sec", "fields": {"ticker": "DELL", "company_name": "Dell Technologies Inc.",
+                                             "form": "8-K", "report_date": "2026-11-17",
+                                             "items": ["2.02", "9.01"]}}
+        claim_8k = MODULE.claim_text(current)
+        self.assertEqual(CLAIM_8K, claim_8k)
+        self.assertNotIn("주주총회일", claim_8k)
+        no_date = {"kind": "sec", "fields": {"ticker": "MU", "company_name": "Micron Technology",
+                                             "form": "DEF 14A", "report_date": None, "items": []}}
+        self.assertEqual("Micron Technology(MU)의 DEF 14A 서류이다", MODULE.claim_text(no_date))
 
 
 if __name__ == "__main__":

@@ -114,7 +114,7 @@ SEC_DOC_URL = "https://" + SEC_HOST + SEC_PATH_PREFIX + "%d/%s/%s"
 BLOCKED_WORDS = ("cgi-bin", "efts", "daily-index", "rss", "browse-edgar")
 URL_SCHEME = "https://"
 
-WEB_FETCH_TYPE = "web_fetch_20260209"
+WEB_FETCH_TYPE = "web_fetch_20250910"
 WEB_FETCH_RESULT_TYPE = "web_fetch_tool_result"
 WEB_FETCH_MAX_CONTENT_TOKENS = 20_000
 
@@ -168,6 +168,8 @@ CLAIM_FACT = (
 CLAIM_SEC_HEAD = "%s(%s)\uc758 %s \uc11c\ub958"
 CLAIM_SEC_AND = "\uc774\uace0, "
 CLAIM_SEC_REPORT = "\ubcf4\uace0 \uae30\uc900\uc77c %s"
+# DEF 14A: EDGAR "period of report" is the shareholder meeting date.
+CLAIM_SEC_MEETING = "\uc8fc\uc8fc\ucd1d\ud68c\uc77c %s"
 CLAIM_SEC_ITEMS = "\ud56d\ubaa9 %s"
 CLAIM_END = "\uc774\ub2e4"
 
@@ -357,7 +359,8 @@ def claim_text(target) -> str:
     if kind == "sec":
         extras = []
         if f.get("report_date"):
-            extras.append(CLAIM_SEC_REPORT % f["report_date"])
+            date_claim = CLAIM_SEC_MEETING if f.get("form") == "DEF 14A" else CLAIM_SEC_REPORT
+            extras.append(date_claim % f["report_date"])
         if f.get("items"):
             extras.append(CLAIM_SEC_ITEMS % ", ".join(f["items"]))
         text = CLAIM_SEC_HEAD % (f["company_name"], f["ticker"], f["form"])
