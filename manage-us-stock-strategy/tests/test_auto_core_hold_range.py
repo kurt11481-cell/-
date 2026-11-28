@@ -328,6 +328,8 @@ class FullPathTests(E4Mixin, unittest.TestCase):  # H2
     def test_supplement_proposals_change_with_the_close(self):
         # SOXL (the S7 supplement, reduce_order[-1]) bought on two new + cues: below 100.10 its evidence no longer
         # meets the basis, so the full path makes no SOXL proposal and neither path has a SOXL ticket.
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         scenario = tickets_tests.Scenario()
         scenario.bars["SOXL"] = helpers.bars("SOXL", DAYS, tickets_tests.soxl_two_new_cues())
         probe = Probe(scenario)
@@ -552,6 +554,8 @@ class HoldOffTests(unittest.TestCase):  # H7 (E1)
     KEYS = ("default", "g2b", "cash5", "research_block", "sell", "pwr")
 
     def test_default_off_keeps_the_six_golden_keys(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         results = {name: item.run() for name, item in risk1r._scenarios().items()}
         measured = {name: risk1r._digest(risk1r._plan_view(result["planned"])) for name, result in results.items()}
         self.assertEqual(sorted(measured), sorted(self.KEYS))
@@ -748,6 +752,8 @@ class HoldCauseTests(unittest.TestCase):  # H11
 
     @unittest.skipUnless(sys.platform == "win32", "the decide_* hashes were measured on Windows (Linux differs)")
     def test_reverted_view_hashes_as_the_old_golden(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         measured = {f"decide_{mode}": risk1r._digest(revert_hold_view(self.golden_view(self.decide(mode, True))))
                     for mode in ("compare", "apply")}
         self.assertEqual(measured, OLD_DECIDE_GOLDEN)

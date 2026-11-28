@@ -123,6 +123,43 @@ def floor_to_step(value: Decimal) -> Decimal:
     return (value / WEIGHT_STEP).to_integral_value(rounding=ROUND_FLOOR) * WEIGHT_STEP
 
 
+ADD_DEFAULT_CARD_ONLY = "card_add_stock_only"
+ADD_DEFAULT_ELSE_PREFIX = "card_add_stock_else_"
+LEVERAGED_CAP_SECTION = "leveraged_3x_weight_cap"
+LEVERAGED_CAP_APPLIES_TO = "exposure_increasing_buy_of_member_only"
+LEVERAGED_CAP_REASON = "LEVERAGED_3X_WEIGHT_CAP"
+NO_DEFAULT_ADD_REASON = "NO_CARD_ADD_AND_ADD_DEFAULT_IS_CARD_ADD_STOCK_ONLY"
+
+
+def add_supplement_instrument(section: dict[str, Any]) -> str | None:
+    """policy-a: the default add (fill) instrument used when no card ADD is given.
+
+    card_add_stock_else_<reduce_order[-1]> -> that instrument (the earlier behaviour); card_add_stock_only -> None
+    (no default add). Any other value raises. The reduce-order supplement itself is not changed here."""
+    value = section["add_default"]
+    if value == ADD_DEFAULT_CARD_ONLY:
+        return None
+    supplement = str(list(section["reduce_order"])[-1])
+    if value != f"{ADD_DEFAULT_ELSE_PREFIX}{supplement}":
+        raise ExposureError("S5_POLICY_SUPPLEMENT_INSTRUMENT_INCONSISTENT")
+    return supplement
+
+
+def leveraged_cap_config(section: dict[str, Any]) -> tuple[Decimal, Decimal]:
+    """policy-a: (largest weight sum of instruments whose nominal multiplier >= the bound, that bound).
+    Missing or malformed raises; nothing is defaulted."""
+    item = section[LEVERAGED_CAP_SECTION]
+    if not isinstance(item, dict) or item.get("applies_to") != LEVERAGED_CAP_APPLIES_TO:
+        raise ExposureError("S5_POLICY_LEVERAGED_CAP_INVALID")
+    raw_cap, raw_bound = item["max_weight_sum"], item["applies_to_nominal_multiplier_gte"]
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in (raw_cap, raw_bound)):
+        raise ExposureError("S5_POLICY_LEVERAGED_CAP_INVALID")
+    cap, bound = Decimal(str(raw_cap)), Decimal(str(raw_bound))
+    if not cap.is_finite() or not bound.is_finite() or not ZERO <= cap <= ONE or bound <= ONE:
+        raise ExposureError("S5_POLICY_LEVERAGED_CAP_INVALID")
+    return cap, bound
+
+
 def exposure_config(policy: dict[str, Any]) -> dict[str, Any]:
     """Read both S5 sections. Missing or malformed values raise; nothing is defaulted."""
     section, lines = policy.get(EXPOSURE_SECTION), policy.get(LINES_SECTION)
@@ -137,8 +174,11 @@ def exposure_config(policy: dict[str, Any]) -> dict[str, Any]:
                        if symbol != "cash"}
         reduce_order = list(section["reduce_order"])
         supplement = str(reduce_order[-1])
-        if supplement not in multipliers or section["add_default"] != f"card_add_stock_else_{supplement}":
+        if supplement not in multipliers:
             raise ExposureError("S5_POLICY_SUPPLEMENT_INSTRUMENT_INCONSISTENT")
+        # policy-a: the add (fill) default is read apart from the reduce-order supplement, which keeps its meaning.
+        add_supplement = add_supplement_instrument(section)
+        leveraged_cap, leveraged_bound = leveraged_cap_config(section)
         configured = [(str(item["id"]), Decimal(str(item["fraction_of_hwm"])), bool(item["pause_add_recommendations"]),
                        bool(item["pause_new_buy_recommendations"]), str(item["action"])) for item in lines["lines"]]
         grades = {str(key).upper(): str(value) for key, value in section["alert_grade_mapping"].items()}
@@ -170,6 +210,8 @@ def exposure_config(policy: dict[str, Any]) -> dict[str, Any]:
             "allowed_index_etfs": [str(item) for item in section["allowed_index_etfs"]],
             "sell_only": [str(item) for item in section["sell_only_holdings"]],
             "supplement": supplement,
+            "add_supplement": add_supplement,
+            "leveraged_cap": leveraged_cap, "leveraged_bound": leveraged_bound,
             "cap": Decimal(str(section["single_stock_nominal_cap"])),
             "cap_exempt": [str(item) for item in section["single_stock_cap_exempt"]],
             "peak_drawdown": Decimal(str(section["single_stock_peak_review"]["drawdown_from_peak"])),
@@ -1226,9 +1268,21 @@ def increase_blockers(symbol: str, *, config: dict[str, Any], weights: dict[str,
     return reasons
 
 
+def leveraged(symbol: str, config: dict[str, Any]) -> bool:
+    """policy-a: a registered instrument whose nominal multiplier is at least the leveraged-cap bound (3)."""
+    multiplier = config["multipliers"].get(symbol)
+    return multiplier is not None and multiplier >= config["leveraged_bound"]
+
+
+def leveraged_weight_sum(weights: dict[str, Decimal], config: dict[str, Any]) -> Decimal:
+    """policy-a: the summed weight (S7 closing value / closing equity) of every leveraged instrument."""
+    return sum((weight for symbol, weight in weights.items() if leveraged(symbol, config)), ZERO)
+
+
 def projected_increase_reasons(model: ExposureModel, weights: dict[str, Decimal], symbol: str,
                                config: dict[str, Any]) -> list[str]:
-    """Projected E <= target (both parts, before rounding) and the single-stock cap."""
+    """Projected E <= target (both parts, before rounding), the single-stock cap and (policy-a) the leveraged
+    weight-sum cap, which applies only when the increased instrument itself is leveraged (multiplier >= bound)."""
     reasons: list[str] = []
     nominal, volatility = model.parts(weights)
     if not _lte(nominal, volatility, config["projected_lte"]):
@@ -1237,6 +1291,8 @@ def projected_increase_reasons(model: ExposureModel, weights: dict[str, Decimal]
     limit = cap_limit(symbol, config)
     if limit is not None and weights.get(symbol, ZERO) * config["multipliers"][symbol] > config["cap"]:
         reasons.append("SINGLE_STOCK_CAP")
+    if leveraged(symbol, config) and leveraged_weight_sum(weights, config) > config["leveraged_cap"]:
+        reasons.append(LEVERAGED_CAP_REASON)
     if sum(weights.values(), ZERO) > ONE:
         reasons.append("VERIFIED_CASH_INSUFFICIENT")
     return reasons
@@ -1481,7 +1537,11 @@ def build_exposure_review(*, policy: dict[str, Any], evaluation_session: str, ca
                                                "reasons": pauses["add_recommendations"]["reasons"]})
         else:
             card_adds = [symbol for symbol in sorted(valid_cards) if valid_cards[symbol].get("action") == "ADD"]
-            candidates = card_adds or [config["supplement"]]
+            # policy-a: without a card ADD the default add instrument is used only when the policy names one
+            # (card_add_stock_else_<X>); card_add_stock_only gives no add recommendation and one omitted line.
+            candidates = card_adds or ([config["add_supplement"]] if config["add_supplement"] is not None else [])
+            if not candidates:
+                recommendations["omitted"].append({"kind": "add", "symbol": None, "reasons": [NO_DEFAULT_ADD_REASON]})
             eligible = []
             for symbol in candidates:
                 reasons = blockers(symbol)

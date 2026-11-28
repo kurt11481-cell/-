@@ -303,13 +303,11 @@ class AddRecommendationTests(unittest.TestCase):
         scenario = Scenario({"SOXL": 30}, "7000")  # E = 0.9
         review = scenario.review()
         add = review["recommendations"]["add"]
-        self.assertEqual([item["symbol"] for item in add], ["SOXL"])
-        self.assertLessEqual(add[0]["projected_effective"], 1.55)
-        self.assertAlmostEqual(add[0]["target_weight"], 0.516, places=3)  # 3w <= 1.55 on the 0.1%p grid
-        self.assertEqual((add[0]["nature"], add[0]["return_gate"], add[0]["oos_and_shadow"], add[0]["output"]),
-                         ("return_seeking", "not_passed", "skipped", "display_only"))
-        self.assertEqual(add[0]["alert_grade"], "B")
-        self.assertIn({"code": "S5_ADD_RECOMMENDATION", "grade": "B"}, review["alerts"])
+        # policy-a-1126: add_default card_add_stock_only -> no card ADD gives no add (no SOXL fill).
+        self.assertEqual(add, [])
+        self.assertEqual(review["recommendations"]["omitted"],
+                         [{"kind": "add", "symbol": None, "reasons": [pe.NO_DEFAULT_ADD_REASON]}])
+        self.assertNotIn("S5_ADD_RECOMMENDATION", [alert["code"] for alert in review["alerts"]])
 
     def test_card_add_stock_is_used_instead_of_soxl_and_is_capped(self) -> None:
         scenario = Scenario({"SOXL": 30, "NBIS": 5}, "6000")  # NBIS 10%
@@ -347,16 +345,20 @@ class AddRecommendationTests(unittest.TestCase):
         items, omitted = pe.add_recommendations(candidates=["SOXL"], model=model,
                                                 weights={"SOXL": Decimal("0.516")}, config=config)
         self.assertEqual(items, [])
-        self.assertEqual(omitted, [{"kind": "add", "symbol": "SOXL", "reasons": ["PROJECTED_EXPOSURE_ABOVE_TARGET"]}])
-        # When V is the larger part it limits the target before N does.
+        # policy-a-1126: SOXL 0.517 is also above the leveraged weight-sum cap 0.10.
+        self.assertEqual(omitted, [{"kind": "add", "symbol": "SOXL",
+                                    "reasons": ["PROJECTED_EXPOSURE_ABOVE_TARGET", "LEVERAGED_3X_WEIGHT_CAP"]}])
+        # policy-a-1126: with card_add_stock_only there is no SOXL fill to be limited by V.
         scenario.closes = make_closes(scenario.sessions, soxl_multiple=4.0)
-        add = scenario.review()["recommendations"]["add"][0]
-        self.assertLess(add["target_weight"], 0.45)
-        self.assertLessEqual(add["projected_effective"], 1.55)
-        self.assertEqual(add["projected_effective"], add["projected_sox_equivalent"])
+        review = scenario.review()
+        self.assertEqual(review["recommendations"]["add"], [])
+        self.assertEqual(review["recommendations"]["omitted"],
+                         [{"kind": "add", "symbol": None, "reasons": [pe.NO_DEFAULT_ADD_REASON]}])
 
     def test_soxl_paused_by_peak_review_omits_the_add_without_substitute(self) -> None:
         scenario = Scenario({"SOXL": 3}, "9700")
+        # policy-a-1126: keep testing the old default add (SOXL fill) on a real_policy() copy.
+        scenario.policy["portfolio_exposure_policy"]["add_default"] = "card_add_stock_else_SOXL"
         index = scenario.sessions.index(EVAL)
         scenario.journal = fx.journal(fx.activation_entry(scenario.sessions[index - 3], "10150"))
         for offset, price in ((3, "150"), (2, "150"), (1, "104"), (0, "100")):  # 104 <= 150 * 0.70
@@ -462,6 +464,7 @@ class EarningsBlackoutTests(unittest.TestCase):
 class ProposalTests(unittest.TestCase):
     def test_new_buy_within_band_is_shown_only_when_projected_exposure_and_cap_hold(self) -> None:
         scenario = Scenario({"SOXL": 45, "NBIS": 5}, "4500")  # N = 1.35 + 0.1 = 1.45 (within band)
+        scenario.policy["portfolio_exposure_policy"]["leveraged_3x_weight_cap"]["max_weight_sum"] = 1.0  # policy-a copy
         scenario.proposals = [
             {"kind": "new_buy_within_band", "symbol": "NBIS", "target_weight": "0.2"},   # N 1.55 -> shown
             {"kind": "new_buy_within_band", "symbol": "NBIS", "target_weight": "0.201"},  # N 1.551 -> omitted

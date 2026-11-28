@@ -211,6 +211,8 @@ class GoldenCauseTests(unittest.TestCase):
                                            for ticket in view["tickets"]]} for name, view in views.items()}
 
     def test_the_old_enter_window_gives_the_base_golden(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         with mock.patch.object(tk, "enter_window", _old_enter_window):
             old = self.measure()
         self.assertEqual({name: risk1r._digest(revert_hold_view(view)) for name, view in old.items()}, BASE_GOLDEN)

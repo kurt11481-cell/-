@@ -633,6 +633,8 @@ class ResearchRecordGateTests(unittest.TestCase):
         return scenario.run()
 
     def test_no_research_record_blocks_the_index_etf_buy(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0
+        self.enterContext(test_policy_a.policy_file_copy(cap=True))
         result = self.soxl_case(ok=False)
         self.assertEqual(result["evidence"]["SOXL"]["buy"]["new_kinds"], ["new_high", "trend_recover"])
         self.assertIn({"symbol": "SOXL", "side": "buy", "trigger": "NEW_EVIDENCE"}, result["planned"]["candidates"])

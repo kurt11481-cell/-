@@ -747,7 +747,7 @@
     "allowed_index_etfs": ["SOXL", "TQQQ", "DRAM", "QQQ"],
     "excluded_instruments": ["SOXX", "SMH", "USD"],
     "sell_only_holdings": ["MVLL"],
-    "add_default": "card_add_stock_else_SOXL",
+    "add_default": "card_add_stock_only",
     "add_when_default_paused": "omit_recommendation_no_substitute",
     "reduce_order": ["single_stock_cap_excess_including_sell_only", "card_trim_or_exit", "SOXL"],
     "reduce_when_soxl_absent": "warn_excess_unresolved_no_substitute",
@@ -768,6 +768,7 @@
     "dram_cap": "apply_user_choice_2026-10-01",
     "single_stock_cap_exempt": ["SOXL", "TQQQ"],
     "single_stock_cap_breach": "block_new_buy_and_first_in_reduce_order",
+    "leveraged_3x_weight_cap": {"max_weight_sum": 0.10, "applies_to_nominal_multiplier_gte": 3, "applies_to": "exposure_increasing_buy_of_member_only", "weight_basis": "s7_closing_value_over_closing_equity", "source": "strategy-1101 / policy-a-1126"},
     "single_stock_peak_review": {
       "applies_to": "every_held_instrument",
       "drawdown_from_peak": 0.30,

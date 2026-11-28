@@ -1098,13 +1098,19 @@ def evaluate_session(*, day: str, mode: str, issued_at: str, calendar: dict[str,
     facts_seen = sorted({fact_id for item in evidence.values() for side in item.values()
                          for fact_id in side["official"]} | set(seen_fact_ids))
     # S7 with the buy-target proposals of every symbol whose buy circuit may open (D5): new evidence alone, or the
-    # S7 supplement with requirement (3) met (S7 adds only the supplement when no card ADD is passed to it).
+    # S7 default add instrument with requirement (3) met (S7 adds only that instrument when no card ADD is passed
+    # to it). policy-a: the default add instrument comes from add_default, not from the reduce order; with
+    # card_add_stock_only there is none and only the new-evidence branch remains.
+    from portfolio_exposure import add_supplement_instrument
+
     exposure_policy = policy["portfolio_exposure_policy"]
     cap = float(exposure_policy["single_stock_nominal_cap"])
     projected_lte = float(exposure_policy["thresholds"]["exposure_increasing_projected_exposure_lte"])
+    add_supplement = add_supplement_instrument(exposure_policy)
     proposal_symbols = sorted(symbol for symbol in symbols_out
                               if evidence[symbol]["buy"]["new_basis_met"]
-                              or (symbol == exposure_policy["reduce_order"][-1] and evidence[symbol]["buy"]["basis_met"]))
+                              or (add_supplement is not None and symbol == add_supplement
+                                  and evidence[symbol]["buy"]["basis_met"]))
     proposals, proposal_index = [], []
     for symbol in proposal_symbols:
         for target in tickets_module.proposal_targets(symbol, multipliers, cap, projected_lte,

@@ -198,6 +198,8 @@ class BuyTicketRiskTests(unittest.TestCase):
 
 class UnchangedTicketTests(unittest.TestCase):  # T4, T5
     def test_tickets_without_risk_1r_hash_as_before(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         results = {name: item.run() for name, item in _scenarios().items()}
         views = {name: _plan_view(result["planned"]) for name, result in results.items()}
         decisions = {"decide_compare": _decide("compare")[0], "decide_apply": _decide("apply")[0]}

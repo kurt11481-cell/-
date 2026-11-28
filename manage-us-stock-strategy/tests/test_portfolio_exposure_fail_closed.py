@@ -406,7 +406,11 @@ class FailClosedTriggerTests(unittest.TestCase):
         self.assertFalse(review["fail_closed"]["active"])
         self.assertEqual([item["id"] for item in review["fail_closed"]["triggers"]], list(
             fx.real_policy()["portfolio_exposure_policy"]["fail_closed"]["triggers"]))
-        self.assertTrue(review["recommendations"]["add"])
+        # policy-a-1126: card_add_stock_only -> no card ADD gives no add, only the no-default omitted line.
+        self.assertEqual(review["recommendations"]["add"], [])
+        self.assertEqual(review["recommendations"]["omitted"],
+                         [{"kind": "add", "symbol": None,
+                           "reasons": ["NO_CARD_ADD_AND_ADD_DEFAULT_IS_CARD_ADD_STOCK_ONLY"]}])
         self.assertNotIn("label", self.above_band().review()["recommendations"]["reduce"][0])
 
     def test_1_exposure_or_equity_or_v_unavailable(self) -> None:

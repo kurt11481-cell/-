@@ -184,6 +184,8 @@ class NewEvidenceTests(unittest.TestCase):
         self.assertTrue(self.summary(("unk", "unk"), side="sell")["basis_met"])
 
     def test_scenario_buy_circuit_closes_when_the_previous_session_is_unknown(self):
+        import test_policy_a  # policy-a: real policy copy with the 3x cap 1.0 and the old add_default
+        self.enterContext(test_policy_a.policy_file_copy(cap=True, old_add_default=True))
         def scenario():
             item = Scenario(facts=True, earnings=True)
             item.bars["SOXL"] = helpers.bars("SOXL", DAYS, tickets_tests.soxl_two_new_cues())

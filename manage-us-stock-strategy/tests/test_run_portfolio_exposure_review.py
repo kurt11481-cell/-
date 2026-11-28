@@ -192,11 +192,12 @@ class EndToEndTests(RunnerCase):
         self.assertFalse(review["fail_closed"]["active"], review["fail_closed"])
         self.assertEqual((review["exposure"]["status"], review["exposure"]["return_sessions_used"],
                           review["exposure"]["short_history"]), ("VERIFIED", 69, True))
-        self.assertEqual([item["symbol"] for item in review["recommendations"]["add"]], ["SOXL"])
+        # policy-a-1126: card_add_stock_only -> no card ADD gives no SOXL fill and no add summary line.
+        self.assertEqual([item["symbol"] for item in review["recommendations"]["add"]], [])
         self.assertEqual(review["review_lines"]["status"], "EVALUATED")
         self.assertIn("노출 E 0.90(짧은 이력)", output)
         self.assertIn("다음 검토선 L1까지 10.0%", output)
-        self.assertIn("채우기 권고 1건(미검증 사용자 위험 예산, 표시 전용)", output)
+        self.assertNotIn("채우기 권고", output)
         self.assertEqual((review["order_authority"], review["quantity_authority"], review["execution_quantity"]),
                          (False, "none", None))
         self.assertEqual(review["inputs"]["calendar"]["authority_status"], "ACTIVE")

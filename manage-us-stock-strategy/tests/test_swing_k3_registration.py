@@ -88,7 +88,7 @@ class PolicyValueTests(unittest.TestCase):
         self.assertEqual(section["target_exposure"], 1.55)
         self.assertEqual(section["single_stock_nominal_cap"], 0.4)
         self.assertEqual(section["allowed_index_etfs"], ["SOXL", "TQQQ", "DRAM", "QQQ"])
-        self.assertEqual(section["add_default"], "card_add_stock_else_SOXL")
+        self.assertEqual(section["add_default"], "card_add_stock_only")  # policy-a-1126
         self.assertIs(section["order_authority"], False)
         self.assertEqual(section["quantity_authority"], "none")
 
