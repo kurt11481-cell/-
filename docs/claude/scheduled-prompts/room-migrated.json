@@ -4,17 +4,25 @@
   "tasks": [
     {
       "name": "[그림자] 비서 제안",
-      "trigger_id": "trig_01G63NHQbmtJbFcA2DEyScJ8",
+      "trigger_id": "trig_01Gi5iVswMkRqizSt1xbwved",
       "cron": "CRON_TZ=Asia/Seoul 27 9 * * 1-6",
       "model": "",
       "body_path": "docs/claude/scheduled-prompts/room/secretary-shadow-body-v1.txt",
       "body_sha256": "160e5a2590fc6271506a5ed95bbe4ab23dfbb9533d7f3150ba126574dbcc1f5f",
       "changes": [
         {
-          "at": "2026-11-25T01:30:01.296680Z",
-          "what": "그림자 만들기 — 로더 52139d50…, 사장 카드 승인 2026-11-25 10:29:21 KST"
+          "at": "2026-11-28T00:51:11.260006Z",
+          "what": "그림자 다시 만들기(새 스레드 그림자 2) — 로더 52139d50…, 사장 카드 2026-11-28 09:50:27 KST"
         }
       ]
+    }
+  ],
+  "removed": [
+    {
+      "trigger_id": "trig_01G63NHQbmtJbFcA2DEyScJ8",
+      "name": "[그림자] 비서 제안",
+      "at": "2026-11-28T00:28:29.922240Z",
+      "why": "사전 등록 ⑧ 불통과(11/27·11/28 기기 연결 실패, 옛 예약은 성공) — 카드 schedule-to-room-1124c 범위로 끄고 등록에서 뺌"
     }
   ]
 }
