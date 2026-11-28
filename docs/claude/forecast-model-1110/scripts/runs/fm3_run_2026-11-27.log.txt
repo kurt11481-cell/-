@@ -1,0 +1,8 @@
+asof 2026-11-27 | scored ['c01_vixr'] | skipped {} | judged now []
+ c01_vixr h=20 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+ c01_vixr h=60 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+ c01_vixr h=250 forward weeks 0 scored 0 (by challenger 0) gain 채점 없음 | share not shown
+events [] | report ['c01_vixr: 14 issued forecasts differ when recomputed (a data revision?); the scores use them as issued'] | awaiting judge [] | next menu entry None (no eligible menu entry (menu used up, or its findings are closed or at the challenge limit))
+written layer3/runs/shadow_2026-11-27.json
+exit 0
+run logged at 2026-11-28 14:09:39 KST (LOG.jsonl seq 7-8)

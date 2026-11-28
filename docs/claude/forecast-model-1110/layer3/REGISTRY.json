@@ -6,7 +6,7 @@
   "60": "FM2"
  },
  "last_judgement_quarter": "2026Q4",
- "last_run_asof": "2026-11-20",
+ "last_run_asof": "2026-11-27",
  "interval_check": null,
  "findings": [
   {
@@ -84,10 +84,16 @@
      "file": "challengers/c01_vixr.issued/2026-11-20_001.npz",
      "sha256": "ab5c5a6e11260ac56a8b79e29be87f4dfdce8a7f195d12d14380b4cf90431113",
      "rows": 60
+    },
+    {
+     "asof": "2026-11-27",
+     "file": "challengers/c01_vixr.issued/2026-11-27_002.npz",
+     "sha256": "49d0dad689087313c1ee9bd4887daa631cb98f36cbb2806680143eac834f8654",
+     "rows": 60
     }
    ]
   }
  ],
- "log_seq": 6,
+ "log_seq": 8,
  "outbox": {}
 }
